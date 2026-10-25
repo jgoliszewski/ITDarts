@@ -89,3 +89,25 @@ _Avoid_: scoring average
 **Okno**:
 Zakres danych, z którego liczymy statystykę: czasowy (7 dni … all time) albo w legach (10, 100, all).
 _Avoid_: okres, filtr
+
+## Efekty
+
+**Wyzwalacz**:
+Zdarzenie gry, na które można podpiąć efekt: lotka, suma tury, kombinacja, bust, checkout, wygrany leg itd. Listę definiuje kod gry.
+_Avoid_: trigger (w dokumentach), event
+
+**Reguła**:
+Jeden lub więcej Wyzwalaczy z przypisanym dźwiękiem i presetem ledów, wyklikana na stronie „Effects”. Naraz gra jedna Reguła, ta o najwyższym priorytecie.
+_Avoid_: efekt (w tym znaczeniu), akcja
+
+**Biblioteka dźwięków**:
+Wspólna lista wgranych plików dźwiękowych, z której Reguły wybierają dźwięki.
+_Avoid_: sound pack, paczka
+
+**Caller**:
+Głos sędziego, który zapowiada wynik tury, „you require”, game shot i bust. Osobny kanał z własną paczką nagrań.
+_Avoid_: lektor, sędzia (w UI)
+
+**Stan bazowy**:
+Preset ledów świecący między efektami: lobby, mecz w toku, takeout, tarcza offline.
+_Avoid_: idle

@@ -35,7 +35,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - Przy 3+ graczach zostaje sama lista. Bez first 9, checkout % i liczby lotek w legu.
 - **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
-- **Efekty:** Ekran wyników ma warstwę na nakładki. Reguły i same efekty ustalamy w [#2](https://github.com/jgoliszewski/ITDarts/issues/2).
+- **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).
 
 ## Tura i takeout
 
@@ -88,6 +88,8 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 - End match, z potwierdzeniem. W trakcie legu pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
 - Players: zakładanie, zmiana imienia, scalanie, archiwizacja i anonimizacja graczy.
 - Board panel.
+- Effects: strona `/effects` z regułami, Biblioteką dźwięków, WLED i callerem ([EFEKTY.md](EFEKTY.md)).
+- Przełączniki Sounds, Caller i LEDs.
 - Show QR.
 - Close app, czyli wyjście z kiosku.
 
@@ -109,6 +111,6 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 ## Poza zakresem
 
-- Efekty, dźwięki, WLED, animacje i caller: [#2](https://github.com/jgoliszewski/ITDarts/issues/2).
+- Efekty, dźwięki, WLED, animacje i caller: [EFEKTY.md](EFEKTY.md). Paczka nagrań callera: [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
 - Typy gier: [#3](https://github.com/jgoliszewski/ITDarts/issues/3).
 - Widok „Stats” i zapis wyników: [STATYSTYKI.md](STATYSTYKI.md). Ranking: [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
