@@ -78,11 +78,11 @@ Wybrany pod pisanie przez AI ([ADR 0003](adr/0003-stack-pod-vibe-coding.md)):
 - [ ] Czy na Board Managerze v2.0.2 działają kalibracja i restart przez API. Dla resetu mamy dowód, a dla reszty tylko deklarację z kodu HomeDarts.
 - [ ] Czy usługa Board Managera wstaje sama po `sudo reboot` Raspberry Pi.
 
-## Etap 2 (jeszcze nie omawiany)
+## Etap 2
 
-- **UI:** widoki Ekranu wyników i Pilota, animacje.
+- **UI:** ustalone w [UI.md](UI.md). Animacje przeszły do efektów ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)).
 - **Gry:** X01 (sety, legi), 121, Cricket, Around the Clock, Killer, własne.
 - **Zapis wyników:** gracze, historia meczów, statystyki, ranking, storage.
-- **Dodatki:** caller głosowy, podpowiedzi checkoutu, Slack/Teams, LED.
-- **Poprawki:** UX poprawiania pojedynczej lotki.
+- **Dodatki:** Slack/Teams. Caller głosowy i LED są w [#2](https://github.com/jgoliszewski/ITDarts/issues/2), a podpowiedzi checkoutu w [UI.md](UI.md).
+- **Poprawki:** UX poprawiania pojedynczej lotki ustalony w [UI.md](UI.md).
 - **Prototyp:** los obecnego `index.html` (prototyp X01).
