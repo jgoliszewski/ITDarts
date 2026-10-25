@@ -67,3 +67,25 @@ _Avoid_: tryb meczu (w UI)
 **Bull-off**:
 Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC.
 _Avoid_: losowanie
+
+## Gracze i statystyki
+
+**Gracz**:
+Zarejestrowany profil ze stałym ID i unikalnym imieniem, zakładany przed meczem. Tylko Graczom zbieramy statystyki.
+_Avoid_: konto, użytkownik
+
+**Gość**:
+Uczestnik meczu dodany tylko na ten mecz, bez profilu i bez statystyk.
+_Avoid_: anonim, tymczasowy gracz
+
+**Log zdarzeń**:
+Lista zdarzeń bieżącego meczu (rzuty, poprawki, undo, takeouty), z której silnik gry wylicza stan. Po meczu kompaktowany do obowiązujących lotek.
+_Avoid_: historia (w tym znaczeniu), event store
+
+**Średnia until 170**:
+Średnia z 3 lotek liczona z całych Tur zaczętych z wynikiem powyżej 170.
+_Avoid_: scoring average
+
+**Okno**:
+Zakres danych, z którego liczymy statystykę: czasowy (7 dni … all time) albo w legach (10, 100, all).
+_Avoid_: okres, filtr

@@ -62,7 +62,7 @@ Panel pokazuje też status połączenia z tarczą. Podgląd kamer pominęliśmy.
 - **Offline:** działa bez internetu. Nie ładuje niczego z CDN, fontów z sieci ani zewnętrznych API.
 - **Odporność na awarie:**
   - Gdy Board Manager się rozłączy, serwer sam ponawia połączenie, a ekrany pokazują „brak tarczy”. Mecz trwa dalej na rzutach wpisywanych ręcznie z pilota.
-  - Stan bieżącego meczu trafia do pliku JSON po każdej zmianie i jest wczytywany po starcie, więc mecz przetrwa restart serwera lub laptopa.
+  - Bieżący mecz trafia do bazy SQLite po każdym zdarzeniu i jest wczytywany po starcie, więc mecz przetrwa restart serwera lub laptopa ([ADR 0004](adr/0004-log-zdarzen-i-sqlite.md)).
 - **Uruchamianie:** ręcznie, skryptem `start.bat`. Uruchamia serwer i otwiera przeglądarkę w trybie `--kiosk`. Autostart przy logowaniu dodamy, gdy ręczne odpalanie zacznie przeszkadzać.
 
 ## Stack
@@ -82,7 +82,7 @@ Wybrany pod pisanie przez AI ([ADR 0003](adr/0003-stack-pod-vibe-coding.md)):
 
 - **UI:** ustalone w [UI.md](UI.md). Animacje przeszły do efektów ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)).
 - **Gry:** X01 (sety, legi), 121, Cricket, Around the Clock, Killer, własne.
-- **Zapis wyników:** gracze, historia meczów, statystyki, ranking, storage.
+- **Zapis wyników:** gracze, historia meczów i statystyki ustalone w [STATYSTYKI.md](STATYSTYKI.md). Ranking odłożony do [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
 - **Dodatki:** Slack/Teams. Caller głosowy i LED są w [#2](https://github.com/jgoliszewski/ITDarts/issues/2), a podpowiedzi checkoutu w [UI.md](UI.md).
 - **Poprawki:** UX poprawiania pojedynczej lotki ustalony w [UI.md](UI.md).
 - **Prototyp:** los obecnego `index.html` (prototyp X01).

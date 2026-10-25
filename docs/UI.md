@@ -60,14 +60,14 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 - **Nowy mecz** to jeden ekran Pilota:
   - kafelki gier;
-  - gracze z kolejnością (przeciąganie, „Shuffle”, chipy ostatnio używanych imion);
+  - gracze z kolejnością (przeciąganie, „Shuffle”, chipy ostatnio używanych graczy, „Add guest” i „New player”);
   - opcje gry z modułu i „Start match”.
 - **Opcje X01:**
   - start score;
   - check-in i check-out;
   - match mode: Off, Legs lub Sets, z „First to N”;
   - bull-off: Off, „Closest to bull” lub zasady PDC.
-- **Trwała lista graczy** należy do tematu zapisu wyników.
+- **Gracze i goście:** opisani w [STATYSTYKI.md](STATYSTYKI.md).
 - **Koniec legu:** ekran ze zwycięzcą, checkoutem, liczbą lotek i średnią z legu.
   - W match mode trzyma się do końca takeoutu, potem następny leg startuje sam.
   - Bez match mode czeka na „Next leg” albo „End match”.
@@ -85,7 +85,8 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 ## Menu Pilota
 
 - New match.
-- End match, z potwierdzeniem.
+- End match, z potwierdzeniem. W trakcie legu pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
+- Players: zakładanie, zmiana imienia, scalanie, archiwizacja i anonimizacja graczy.
 - Board panel.
 - Show QR.
 - Close app, czyli wyjście z kiosku.
@@ -109,4 +110,5 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 ## Poza zakresem
 
 - Efekty, dźwięki, WLED, animacje i caller: [#2](https://github.com/jgoliszewski/ITDarts/issues/2).
-- Typy gier oraz zapis wyników (gracze, historia, ranking): osobne tematy etapu 2.
+- Typy gier: [#3](https://github.com/jgoliszewski/ITDarts/issues/3).
+- Widok „Stats” i zapis wyników: [STATYSTYKI.md](STATYSTYKI.md). Ranking: [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
