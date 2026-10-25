@@ -85,4 +85,4 @@ Wybrany pod pisanie przez AI ([ADR 0003](adr/0003-stack-pod-vibe-coding.md)):
 - **Zapis wyników:** gracze, historia meczów i statystyki ustalone w [STATYSTYKI.md](STATYSTYKI.md). Ranking odłożony do [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
 - **Dodatki:** Slack/Teams. Caller głosowy i LED są w [#2](https://github.com/jgoliszewski/ITDarts/issues/2), a podpowiedzi checkoutu w [UI.md](UI.md).
 - **Poprawki:** UX poprawiania pojedynczej lotki ustalony w [UI.md](UI.md).
-- **Prototyp:** los obecnego `index.html` (prototyp X01).
+- **Prototyp:** `index.html` zostaje w repo dla porównania. Aplikacja żyje w `server/`, `web/` i `games/` (patrz [README](../README.md)).

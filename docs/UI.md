@@ -52,7 +52,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - Zakładka „Nearby” to siatka 3×3: sąsiad z lewej, odczytane pole i sąsiad z prawej, w wierszach Double, Single i Triple. Pomyłkę o jedno pole poprawia jedno stuknięcie.
   - Zakładka „All” to przełącznik Single/Double/Triple i liczby 1–20.
   - Pod obiema zakładkami są Miss, 25 i Bull.
-  - Na laptopie jest trzecia zakładka „Board”: duża tarcza z pogrubionymi pierścieniami. Białe znaczniki pokazują, gdzie system odczytał lotki.
+  - Na laptopie obok zakładek jest zawsze widoczna duża tarcza z pogrubionymi pierścieniami. Białe znaczniki pokazują, gdzie system odczytał lotki. Przy implementacji zamiast trzeciej zakładki, bo na dużym ekranie mieści się obok.
 - Poprawić da się każdą lotkę w bieżącej turze, czyli przed takeoutem. Starsze tury tylko przez Undo.
 - Wybór od razu podmienia rzut. Poprawiona lotka jest krótko podświetlona, także na Ekranie wyników.
 
