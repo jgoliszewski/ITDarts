@@ -73,6 +73,7 @@ export function RuleList({ d, selected, wide }: { d: EffectsData; selected: stri
                   <span className="fx-what">
                     {sound && <span>♪ {sound}</span>}
                     {r.led && <span><Dot color={preset?.color} size={10} />{presetName(d, r.led.preset)} · {r.led.seconds} s</span>}
+                    {!sound && !r.led && <span className="fx-todo">No sound yet · tap to pick one</span>}
                   </span>
                 </button>
                 <Switch on={r.enabled} label={`${r.name || whenText(r)} on`} onChange={() => call('PUT', `/api/effects/rules/${r.id}`, toggled(r)).then(d.reload)} />

@@ -34,6 +34,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - preset ledów i czas trwania.
 
   Obie części są opcjonalne. Regułę można wyłączyć bez usuwania.
+- Reguła może nie mieć jeszcze ani dźwięku, ani ledów (2026-10-26). Wtedy nic nie gra, a lista pokazuje przy niej „No sound yet”. Dzięki temu można przygotować wyzwalacze, a dźwięki podpiąć później.
 - Nie ma reguł per gracz ani imion w efektach.
 - **Gra jedna reguła naraz**, ta o najwyższym priorytecie:
   1. wygrany mecz;
@@ -53,6 +54,24 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - start meczu, start legu, takeout i tarcza są na samym końcu.
   - Przy remisie priorytetów gra starsza reguła.
 - **„Dowolna liczba”** w lotce i kombinacji to 1–20, bez bulla i pudła. Bull i 25 wybiera się osobno.
+- **Zestaw startowy** (2026-10-26), zapisany w `effects/effects.json`, bez dźwięków. Kolejność ma znaczenie, bo przy remisie priorytetów gra reguła wcześniejsza:
+  - 180 (suma 180, a do tego kombinacja T20 · T20 · T20, żeby przy 180 wygrywała z „Clean 20s”);
+  - Big Fish (170 z checkoutem);
+  - High finish (100–170 z checkoutem);
+  - Madhouse (2 z checkoutem, czyli D1);
+  - Checkout;
+  - Bust;
+  - Clean 20s (trzy lotki w dowolne 20);
+  - Bed and breakfast (26);
+  - Ton 40 (140–179);
+  - Ton (100–139);
+  - No score (0 bez checkoutu);
+  - Bullseye;
+  - Match won i Set won;
+  - Game on (start meczu);
+  - New record, White Horse i Player out (minigierki).
+
+  Ostatni leg meczu gra „Match won” zamiast „Big Fish” czy „Checkout”, bo tak ustawia priorytet. Wcześniejsze postanowienie „bez szablonów” (Q17) dotyczy przycisków w UI, a ten zestaw to jednorazowo dodane reguły.
 - **Poprawki i Undo:**
   - świeża lotka (z tarczy albo dopisana ręcznie) odpala efekty;
   - Poprawka nie odpala efektu lotki. Odpala tylko efekt tury lub checkoutu, który dzięki niej powstał (S20 → T20 daje 180);

@@ -22,7 +22,7 @@ export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
         {row('Sounds', 'Rule sounds and the swoosh, on the laptop only', s.sounds, 'sounds')}
         {row('LEDs', 'Off turns the lights off', s.leds, 'leds')}
         {row('Swoosh on the next player', 'Built in. Turn it off to use your own sound on Takeout end', s.swoosh, 'swoosh')}
-        <label className="fx-volume big">
+        <label className="fx-volume stacked">
           <span><b>Effects volume</b> {volume}%</span>
           <input type="range" min={0} max={100} step={5} value={volume} onChange={e => setVolume(Number(e.target.value))}
             onPointerUp={() => put({ volume })} onKeyUp={() => put({ volume })} />

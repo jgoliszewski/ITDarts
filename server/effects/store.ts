@@ -123,7 +123,7 @@ function checkRuleBody(input: unknown, files: Set<string>): RuleInput {
     const seconds = typeof l.seconds === 'number' && l.seconds >= 0.1 && l.seconds <= 60 ? Math.round(l.seconds * 10) / 10 : fail('Duration is 0.1–60 s');
     led = { preset, seconds };
   }
-  if (sounds.length === 0 && !led) fail('Add a sound or an LED preset');
+  // A rule with neither a sound nor LEDs is allowed: it waits for one (e.g. the starter set) and plays nothing.
   return { name, enabled: r.enabled !== false, triggers: r.triggers.map(normalizeTrigger), sounds: sounds as string[], led };
 }
 

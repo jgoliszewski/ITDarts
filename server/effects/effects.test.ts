@@ -74,7 +74,9 @@ describe('effects store', () => {
   it('checks rules and gives them short random ids', () => {
     expect(() => store.createRule({ triggers: [], sounds: [] })).toThrow('at least one trigger');
     expect(() => store.createRule({ triggers: [{ kind: 'nope' }], led: { preset: 1, seconds: 1 } })).toThrow('Invalid trigger');
-    expect(() => store.createRule({ triggers: [t180] })).toThrow('sound or an LED preset');
+    // No sound and no LEDs yet: kept, plays nothing.
+    expect(store.rules().length).toBe(0);
+    store.deleteRule(store.createRule({ triggers: [t180] }));
     expect(() => store.createRule({ triggers: [t180], sounds: ['nope.mp3'] })).toThrow('Unknown sound');
     const id = store.createRule({ name: 'Ton 80', triggers: [t180], led: { preset: 10, seconds: 2.04 } });
     expect(id).toMatch(/^r[a-z0-9]{4}$/);

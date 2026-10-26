@@ -479,6 +479,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-row-main .muted { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fx-what { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--soft); }
 .fx-what span { display: inline-flex; align-items: center; gap: 6px; }
+.fx-what .fx-todo { color: var(--accent); font-weight: 600; }
 
 .fx-editor { display: flex; flex-direction: column; gap: 14px; }
 .fx-phone .fx-editor { padding: 0 16px 24px; }
@@ -540,8 +541,9 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-sound-top .icon-btn:last-child { color: var(--muted); }
 .fx-volume { display: flex; align-items: center; gap: 12px; padding-left: 14px; font-size: 13px; color: var(--muted); }
 .fx-volume span { width: 92px; flex-shrink: 0; }
-.fx-volume.big { flex-direction: column; align-items: stretch; padding: 0; gap: 8px; font-size: 15px; color: var(--soft); }
-.fx-volume.big span { width: auto; }
+/* Not “big”: that class is the scoreboard's full-screen frame. */
+.fx-volume.stacked { flex-direction: column; align-items: stretch; padding: 0; gap: 8px; font-size: 15px; color: var(--soft); }
+.fx-volume.stacked span { width: auto; }
 
 .fx-facts { display: grid; grid-template-columns: 96px minmax(0, 1fr); row-gap: 6px; font-size: 14px; }
 .fx-base { min-height: 64px; border-radius: 18px; background: var(--card); display: flex; align-items: center; gap: 8px; padding-right: 8px; }
