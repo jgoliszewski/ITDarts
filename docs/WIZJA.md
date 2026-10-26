@@ -82,7 +82,7 @@ Wybrany pod pisanie przez AI ([ADR 0003](adr/0003-stack-pod-vibe-coding.md)):
 
 - **UI:** ustalone w [UI.md](UI.md).
 - **Efekty:** dźwięki, ledy WLED, animacje i caller ustalone w [EFEKTY.md](EFEKTY.md). Paczka nagrań callera: [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
-- **Gry:** X01 (sety, legi), 121, Cricket, Around the Clock, Killer, własne.
+- **Gry:** X01 (sety, legi) oraz minigierki ustalone w [GRY.md](GRY.md). Backlog kolejnych: [#7](https://github.com/jgoliszewski/ITDarts/issues/7).
 - **Zapis wyników:** gracze, historia meczów i statystyki ustalone w [STATYSTYKI.md](STATYSTYKI.md). Ranking odłożony do [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
 - **Dodatki:** Slack/Teams. Podpowiedzi checkoutu są w [UI.md](UI.md).
 - **Poprawki:** UX poprawiania pojedynczej lotki ustalony w [UI.md](UI.md).

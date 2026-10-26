@@ -55,7 +55,7 @@ Później, bez zmian w modelu (policzą się wstecz): skuteczność na poszczeg�
 
 ## Inne gry
 
-Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lotek, np. MPR w Cricket albo rekord w ATC. Listę ustalamy w [#3](https://github.com/jgoliszewski/ITDarts/issues/3).
+Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lotek, np. MPR w Cricket albo rekord w ATC. Lista, rekordy i tabele na `/stats` są w [GRY.md](GRY.md).
 
 ## Prezentacja
 

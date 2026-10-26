@@ -112,5 +112,5 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 ## Poza zakresem
 
 - Efekty, dźwięki, WLED, animacje i caller: [EFEKTY.md](EFEKTY.md). Paczka nagrań callera: [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
-- Typy gier: [#3](https://github.com/jgoliszewski/ITDarts/issues/3).
+- Minigierki, ich setup, „How to play” i Ekran rekordu: [GRY.md](GRY.md).
 - Widok „Stats” i zapis wyników: [STATYSTYKI.md](STATYSTYKI.md). Ranking: [#6](https://github.com/jgoliszewski/ITDarts/issues/6).

@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-25. Aktualizuj przy każdym większym kroku.
+Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -9,7 +9,7 @@ Stan na 2026-10-25. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
-- **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)).
+- **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
   - serwer z adapterem Board Managera i SQLite;
@@ -41,10 +41,11 @@ Adapter ([server/board.ts](../server/board.ts)) opiera się na założeniach, kt
 
 1. Testy z tarczą według listy powyżej, poprawki adaptera, potem PR `feat/v1` → `main`.
 2. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
-3. Otwarte issues:
-   - [#3](https://github.com/jgoliszewski/ITDarts/issues/3): grilling minigierek;
+3. Implementacja minigierek według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Co-op, Ekran rekordu, „How to play”.
+4. Otwarte issues:
    - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów;
-   - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking.
+   - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
+   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
 
 ## Materiały poza repo
 

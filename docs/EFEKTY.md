@@ -25,7 +25,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 - **Warunek checkoutu** przy wyzwalaczach tury (suma, próg, kombinacja): „Any”, „Only checkout” albo „No checkout”.
   - Ton+ finish to przedział 100–170 z „Only checkout”.
   - Big Fish to suma 170 z „Only checkout”, bo 170 da się zamknąć tylko jako T20 · T20 · Bull.
-- **Minigierki** dopiszą własne wyzwalacze, np. trafiony cel w Around the Clock ([#3](https://github.com/jgoliszewski/ITDarts/issues/3)). Reguła działa w każdej grze, w której jej wyzwalacz ma sens.
+- **Minigierki** mają własne wyzwalacze, np. trafiony cel w Around the Clock albo „New record”. Lista jest w [GRY.md](GRY.md). Reguła działa w każdej grze, w której jej wyzwalacz ma sens.
 
 ## Reguły
 

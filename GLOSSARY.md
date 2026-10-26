@@ -68,6 +68,14 @@ _Avoid_: tryb meczu (w UI)
 Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC.
 _Avoid_: losowanie
 
+**Gra wspólna**:
+Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co-op.
+_Avoid_: team, drużyna (zostaje na przyszły tryb drużynowy)
+
+**Ekran rekordu**:
+Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry.
+_Avoid_: intro, splash
+
 ## Gracze i statystyki
 
 **Gracz**:
