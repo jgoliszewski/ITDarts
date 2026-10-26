@@ -162,5 +162,283 @@
       "durationMs": 1533
     }
   ],
-  "rules": []
+  "rules": [
+    {
+      "id": "rq2m6",
+      "name": "180",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 180,
+          "checkout": "any"
+        },
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 20,
+              "m": 3
+            },
+            {
+              "n": 20,
+              "m": 3
+            },
+            {
+              "n": 20,
+              "m": 3
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "ra9rw",
+      "name": "Big Fish",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 170,
+          "checkout": "only"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r50bk",
+      "name": "Ton+ finish",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "range",
+          "min": 100,
+          "max": 167,
+          "checkout": "only"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rfvmg",
+      "name": "Madhouse",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 2,
+          "checkout": "only"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r5u2t",
+      "name": "Checkout",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "checkout"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r7bi2",
+      "name": "Bust",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "bust"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r65kl",
+      "name": "Clean 20s",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 20,
+              "m": null
+            },
+            {
+              "n": 20,
+              "m": null
+            },
+            {
+              "n": 20,
+              "m": null
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rqprb",
+      "name": "Bed and breakfast",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 26,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "ryf40",
+      "name": "Ton 40",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "range",
+          "min": 140,
+          "max": 179,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "ryeqx",
+      "name": "Ton",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "range",
+          "min": 100,
+          "max": 139,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rx5ln",
+      "name": "No score",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 0,
+          "checkout": "no"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rk2d2",
+      "name": "Bullseye",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 25,
+            "m": 2
+          }
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r09al",
+      "name": "Match won",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "matchWon"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rspo5",
+      "name": "Set won",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "setWon"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rjspe",
+      "name": "Game on",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "matchStart"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r4fle",
+      "name": "New record",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "newRecord"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "r1l1a",
+      "name": "White Horse",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "whiteHorse"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    },
+    {
+      "id": "ru0o0",
+      "name": "Player out",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "eliminated"
+        }
+      ],
+      "sounds": [],
+      "led": null
+    }
+  ]
 }
