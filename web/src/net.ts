@@ -1,5 +1,6 @@
 // Websocket link to the server. The server owns all state; this only mirrors it.
 import { useSyncExternalStore } from 'react';
+import type { Fx } from '../../server/effects/index.ts';
 import type { ClientState, Command, ServerMessage } from '../../server/protocol.ts';
 import { deviceName } from './util.ts';
 
@@ -17,6 +18,13 @@ export interface Result {
 let snapshot: Snapshot = { state: null, connected: false };
 const listeners = new Set<() => void>();
 const pending = new Map<number, (r: Result) => void>();
+const fxListeners = new Set<(fx: Fx) => void>();
+
+/** Effects pushed by the server; returns the unsubscribe. */
+export function onFx(l: (fx: Fx) => void): () => void {
+  fxListeners.add(l);
+  return () => fxListeners.delete(l);
+}
 let ws: WebSocket | null = null;
 let nextId = 1;
 
@@ -48,6 +56,7 @@ function connect() {
   sock.onmessage = e => {
     const m = JSON.parse(e.data) as ServerMessage;
     if (m.type === 'state') set({ state: m.state });
+    else if (m.type === 'fx') fxListeners.forEach(l => l(m.fx));
     else {
       pending.get(m.id)?.(m);
       pending.delete(m.id);

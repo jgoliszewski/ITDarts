@@ -1,6 +1,6 @@
 // Effects storage (docs/EFEKTY.md): settings, the Biblioteka dźwięków and the Reguły. Files live in data/sounds/, the rest in SQLite.
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Trigger } from '../../games/effects.ts';
 import { isValidTrigger } from '../../games/effects.ts';
@@ -16,6 +16,8 @@ export interface EffectsSettings {
   leds: boolean;
   /** Effects volume in %, on top of each sound's own volume. */
   volume: number;
+  /** The built-in swoosh on the next player; off for those who put their own sound on “Takeout end”. */
+  swoosh: boolean;
   wled: {
     /** host or host:port; empty when there is no controller. */
     address: string;
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS: EffectsSettings = {
   sounds: true,
   leds: true,
   volume: 80,
+  swoosh: true,
   wled: { address: '', base: { lobby: null, match: null, takeout: null, offline: null } },
 };
 
@@ -99,6 +102,7 @@ export class EffectsStore {
     const s = this.settings();
     if ('sounds' in p) s.sounds = !!p.sounds;
     if ('leds' in p) s.leds = !!p.leds;
+    if ('swoosh' in p) s.swoosh = !!p.swoosh;
     if ('volume' in p) s.volume = int(p.volume, 0, 100) ?? fail('Volume is 0–100');
     if (p.wled && typeof p.wled === 'object') {
       const w = p.wled as Record<string, unknown>;
@@ -204,6 +208,11 @@ export class EffectsStore {
     const name = 'name' in p ? cleanSoundName(p.name) : s.name;
     const volume = 'volume' in p ? int(p.volume, 0, 200) ?? fail('Volume is 0–200 %') : s.volume;
     this.db.sql.prepare('UPDATE sounds SET name = ?, volume = ? WHERE id = ?').run(name, volume, id);
+  }
+
+  /** Copies sound files missing from each backup folder's sounds/; files never change once uploaded. */
+  backupSounds(dirs: string[]) {
+    for (const dir of dirs) cpSync(this.soundsDir, join(dir, 'sounds'), { recursive: true, force: false });
   }
 
   deleteSound(id: number) {

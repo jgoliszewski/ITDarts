@@ -95,7 +95,7 @@ Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikon
 - **Bez meczu:** Close app, czyli wyjście z kiosku.
 - **Na telefonie** dochodzi Show QR, bo nagłówek telefonu nie ma przycisku QR.
 - **Bez kontroli:** Take control i Stats.
-- Później: Effects (strona `/effects`, [EFEKTY.md](EFEKTY.md)) i przełączniki Sounds, Caller i LEDs.
+- **Efekty:** w menu meczu i ogólnym są przełączniki Sounds i LEDs. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Przełącznik Caller dojdzie z paczką nagrań.
 
 ## Players
 

@@ -8,6 +8,7 @@ import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
 import { controls, isX01, legTarget } from '../match.ts';
+import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { swoosh } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro } from './MiniBoard.tsx';
@@ -145,14 +146,14 @@ function StatsCards({ m }: { m: X01Match }) {
   );
 }
 
-/** Plays the swoosh on the kiosk when a visit goes to the next player; phones stay silent. */
-function useSwoosh(m: LiveMatch, on: boolean) {
+/** Plays the swoosh on the kiosk when a visit goes to the next player; phones stay silent. `volume` is the effects volume, 0–100. */
+function useSwoosh(m: LiveMatch, on: boolean, volume: number) {
   const seen = useRef<{ key: string; n: number } | null>(null);
   useEffect(() => {
     const prev = seen.current;
     seen.current = { key: m.key, n: m.turnPass };
-    if (on && prev?.key === m.key && m.turnPass > prev.n) swoosh();
-  }, [m.key, m.turnPass, on]);
+    if (on && prev?.key === m.key && m.turnPass > prev.n) swoosh(0.6 * (volume / 100));
+  }, [m.key, m.turnPass, on, volume]);
 }
 
 /** The finished visit, from its last dart until the takeout ends (docs/UI.md, Tura i takeout). */
@@ -211,7 +212,7 @@ function LegEnd({ m, takeout }: { m: X01Match; takeout: boolean }) {
   const sets = m.options.matchMode.kind === 'sets';
   return (
     <div className="overlay">
-      <div className="result-card">
+      <div className="result-card enter">
         <div className="kicker">{sets ? `SET ${v.set} · ` : ''}LEG {v.legNo} WON</div>
         <div className="winner">{m.roster[leg.winner].name}</div>
         <div className="result-grid">
@@ -311,11 +312,13 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
   const v = m.view;
   const isPilot = s.you.isPilot;
   const c = controls(s);
-  const flash = m.lastFix && Date.now() - m.lastFix.at < 3000 ? m.lastFix.index : null;
+  const anim = useAnim();
+  // A fixed dart flashes; so does a fresh T20 or bull (docs/EFEKTY.md).
+  const flash = m.lastFix && Date.now() - m.lastFix.at < 3000 ? m.lastFix.index : anim?.anim === 'tile' ? v.visit.darts.length - 1 : null;
   const takeout = s.board.takeout.active;
   const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
   const finished = v.visit.darts.length > 0 && v.visit.dartsLeft === 0;
-  useSwoosh(m, s.you.isLocal);
+  useSwoosh(m, s.you.isLocal && s.effects.sounds && s.effects.swoosh, s.effects.volume);
 
   return (
     <div className="big">
@@ -357,6 +360,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} onNew={onNew} /> : <MiniEnd m={m} isPilot={isPilot} onNew={onNew} />)}
       <HowToOverlay s={s} />
+      <FxLayer total={isX01(m) ? m.view.visit.total : null} />
       {overlay}
     </div>
   );

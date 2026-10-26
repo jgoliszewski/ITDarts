@@ -6,8 +6,10 @@ import { FixSheet } from './components/FixSheet.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
 import { endsNormally, isX01, visitDarts } from './match.ts';
-import { useSnapshot } from './net.ts';
+import { onFx, useSnapshot } from './net.ts';
+import { playFile } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
+import { EffectsPage } from './screens/Effects.tsx';
 import { Lobby } from './screens/Lobby.tsx';
 import { PhoneHome, PhonePilot, PhoneWatch } from './screens/Phone.tsx';
 import { Players } from './screens/Players.tsx';
@@ -33,6 +35,13 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
   const item = (label: string, run: () => void, danger = false) => (
     <button key={label} className={`btn block ${danger ? 'danger' : ''}`} style={{ justifyContent: 'flex-start', height: 56 }} onClick={() => { onClose(); run(); }}>{label}</button>
   );
+  // Pilot switches; the server keeps them, so they survive a restart.
+  const toggles = (
+    <div className="seg" style={{ gridAutoColumns: '1fr' }}>
+      <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
+      <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
+    </div>
+  );
   return (
     <>
       <div className="scrim" onClick={onClose} />
@@ -44,16 +53,21 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
             {item('Take control', () => void act({ type: 'takeControl' }))}
             {!wide && item('Show QR', () => open('qr'))}
             {item('Stats', () => (location.href = '/stats'))}
+            {item('Effects', () => (location.href = '/effects'))}
           </>
         ) : s.match ? (
           <>
             {item('How to play', () => open('howto'))}
             {!wide && item('Show QR', () => open('qr'))}
+            {toggles}
+            {item('Effects', () => (location.href = '/effects'))}
             {item('End match', () => open('end'), true)}
           </>
         ) : (
           <>
             {!wide && item('Show QR', () => open('qr'))}
+            {toggles}
+            {item('Effects', () => (location.href = '/effects'))}
             {s.you.isLocal && item('Close app', () => void act({ type: 'closeApp' }), true)}
           </>
         )}
@@ -73,6 +87,13 @@ function Main({ s }: { s: ClientState }) {
   const wasPilot = useRef(s.you.isPilot);
   const resumedShown = useRef(false);
   const m = s.match;
+
+  // Rule sounds play only in the kiosk browser on the laptop; phones stay silent.
+  const isLocal = useRef(s.you.isLocal);
+  isLocal.current = s.you.isLocal;
+  useEffect(() => onFx(fx => {
+    if (fx.sound && isLocal.current) void playFile(fx.sound.url, fx.sound.gain);
+  }), []);
 
   // Lost control: say who took it and offer it back.
   useEffect(() => {
@@ -188,6 +209,7 @@ export function App() {
   const path = usePath();
   const { state, connected } = useSnapshot();
   if (path.startsWith('/stats')) return <><StatsPage path={path} /><Toasts /></>;
+  if (path.startsWith('/effects')) return <><EffectsPage /><Toasts /></>;
   return (
     <>
       {!connected && state && <div className="banner" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 80 }}>Lost connection to ITDarts · reconnecting…</div>}

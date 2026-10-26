@@ -2,6 +2,7 @@
 import type { O121, View121 } from '../games/121.ts';
 import type { CricketOptions, CricketView } from '../games/cricket.ts';
 import type { Dart } from '../games/darts.ts';
+import type { Fx } from './effects/index.ts';
 import type { HolOptions, HolView } from '../games/hol.ts';
 import type { KillerOptions, KillerView } from '../games/killer.ts';
 import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
@@ -94,6 +95,8 @@ export interface ClientState {
   showQr: boolean;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
+  /** Pilot switches, the effects volume (0–100) and the built-in swoosh switch. */
+  effects: { sounds: boolean; leds: boolean; volume: number; swoosh: boolean };
 }
 
 export type PlayerCommand =
@@ -122,6 +125,7 @@ export type Command =
   | { type: 'board'; action: BoardAction }
   | { type: 'showQr'; show: boolean }
   | { type: 'player'; cmd: PlayerCommand }
+  | { type: 'effects'; sounds?: boolean; leds?: boolean }
   | { type: 'closeApp' };
 
 export type ClientMessage =
@@ -130,6 +134,8 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: 'state'; state: ClientState }
+  /** An effect to play now: the sound only on the kiosk, the animation on the scoreboard. */
+  | { type: 'fx'; fx: Fx }
   | { type: 'result'; id: number; ok: boolean; error?: string; playerId?: number };
 
 // ---------- stats API ----------

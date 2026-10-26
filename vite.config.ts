@@ -13,6 +13,7 @@ export default defineConfig({
     proxy: {
       '/ws': { target: 'ws://localhost:3000', ws: true },
       '/api': 'http://localhost:3000',
+      '/sounds': 'http://localhost:3000',
     },
   },
   test: { root: '.', include: ['games/**/*.test.ts', 'server/**/*.test.ts'] },

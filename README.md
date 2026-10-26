@@ -31,6 +31,8 @@ npm run dev:fake
 
 Uruchamia symulator Board Managera (`http://localhost:3180`, przyciski do rzucania lotek i takeoutu), serwer z przeładowaniem i Vite na `http://localhost:5173`. Z prawdziwą tarczą: `npm run dev`.
 
+Ledy bez kontrolera: `npm run fake-wled` uruchamia atrapę WLED na `http://localhost:3190`. Na stronie `/effects` wpisz adres `localhost:3190`.
+
 ```bash
 npm test
 npm run typecheck
@@ -39,6 +41,6 @@ npm run typecheck
 ## Struktura
 
 - `games/`: czysta logika gier, bez I/O. Każda gra odtwarza mecz z logu zdarzeń ([ADR 0004](docs/adr/0004-log-zdarzen-i-sqlite.md)). X01 jest w `games/x01/`, a minigierki ([GRY.md](docs/GRY.md)) dzielą log tur z `games/turns.ts`. Katalog gier jest w `games/index.ts`.
-- `server/`: Fastify, adapter Board Managera, SQLite (`node:sqlite`), websocket do przeglądarek, API statystyk.
-- `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` dla wszystkich.
+- `server/`: Fastify, adapter Board Managera, SQLite (`node:sqlite`), websocket do przeglądarek, API statystyk. Efekty (reguły, Biblioteka dźwięków, WLED) są w `server/effects/`, a wyzwalacze w `games/effects.ts` ([EFEKTY.md](docs/EFEKTY.md)).
+- `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` i `/effects` dla wszystkich.
 - `index.html`: pierwszy prototyp X01, zostawiony dla porównania.

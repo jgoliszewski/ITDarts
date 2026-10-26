@@ -9,10 +9,13 @@ import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { MiniView } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
+import type { Fact, Happening } from '../games/effects.ts';
+import { changes } from '../games/effects.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
 import { UserError, cleanName } from './db.ts';
+import type { Effects, Fx } from './effects/index.ts';
 import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
 
 interface Client {
@@ -30,6 +33,8 @@ interface Live {
   intro: boolean;
   newRecord: LiveMatch['newRecord'];
   turnPass: number;
+  /** Wyzwalacz occurrences as of the last event, to tell what the next one adds. */
+  happenings: Happening[];
 }
 
 const QR_TIMEOUT_MS = 60_000;
@@ -71,12 +76,16 @@ export class Hub {
     private db: Db,
     private board: Board,
     private cfg: Config,
+    private effects: Effects,
     private closeApp: () => void,
   ) {
     this.urls = lanUrls(cfg.port);
     const rec = db.loadLive();
     if (rec) {
-      this.live = { rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null, turnPass: 0 };
+      this.live = {
+        rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null, turnPass: 0,
+        happenings: GAMES[rec.game].happenings(rec.events, rec.roster.length, rec.options),
+      };
       this.live.newRecord = this.newRecords(this.live);
     }
 
@@ -85,7 +94,14 @@ export class Hub {
       const v = this.live?.view;
       return v && v.phase === 'throwing' ? v.visit.darts.length : Infinity;
     };
-    board.on('status', () => this.broadcast());
+    let online = board.status.connected;
+    board.on('status', () => {
+      if (board.status.connected !== online) {
+        online = board.status.connected;
+        this.hubFx({ kind: online ? 'boardOnline' : 'boardOffline' });
+      }
+      this.broadcast();
+    });
     board.on('throw', (dart, coords) => {
       const v = this.live?.view;
       if (!v || this.bullOut) return;
@@ -97,8 +113,12 @@ export class Hub {
       if (v.phase !== 'throwing' || v.visit.dartsLeft === 0) return;
       this.apply({ t: 'dart', dart, coords, at: Date.now() });
     });
-    board.on('takeoutStarted', () => this.broadcast());
+    board.on('takeoutStarted', () => {
+      this.broadcast();
+      this.hubFx({ kind: 'takeoutStart' });
+    });
     board.on('takeoutFinished', () => {
+      this.hubFx({ kind: 'takeoutEnd' });
       if (this.bullOut) {
         this.bullOut = false;
         this.broadcast();
@@ -159,6 +179,18 @@ export class Hub {
         state: { ...base, you: { clientId: c.clientId, isPilot: this.pilot?.clientId === c.clientId, isLocal: c.isLocal } },
       });
     }
+    const b = this.board.status;
+    this.effects.setBase(!b.connected ? 'offline' : b.takeout.active ? 'takeout' : this.live ? 'match' : 'lobby');
+  }
+
+  /** Every browser gets the effect; only the kiosk plays the sound and only the scoreboard animates. */
+  sendFx(fx: Fx) {
+    for (const ws of this.clients.keys()) this.send(ws, { type: 'fx', fx });
+  }
+
+  /** A Wyzwalacz that comes from the hub, not from the match log. */
+  private hubFx(fact: Fact) {
+    this.effects.fire([{ fact, before: null }]);
   }
 
   private baseState(): Omit<ClientState, 'you'> {
@@ -189,6 +221,7 @@ export class Hub {
       urls: this.urls,
       showQr: this.showQr,
       howTo: this.howTo,
+      effects: (({ sounds, leds, volume, swoosh }) => ({ sounds, leds, volume, swoosh }))(this.effects.store.settings()),
     };
   }
 
@@ -208,6 +241,7 @@ export class Hub {
     l.view = this.compute(l.rec);
     // The visit went to the next player, or the next leg started: not the end of the match.
     if ((e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing') l.turnPass++;
+    const hadRecord = !!l.newRecord;
     l.newRecord = this.newRecords(l);
     if (e.t !== 'fix') l.lastFix = null;
     // The first dart closes the record screen and “How to play”.
@@ -215,7 +249,13 @@ export class Hub {
       this.endIntro();
       this.howTo = null;
     }
+    const happenings = GAMES[l.rec.game].happenings(l.rec.events, l.rec.roster.length, l.rec.options);
+    const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' ? 'undo' : 'other');
+    l.happenings = happenings;
+    if (l.newRecord && !hadRecord && e.t !== 'undo') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
+    // State first, so the scoreboard animates the visit it already shows.
     this.broadcast();
+    this.effects.fire(cs);
   }
 
   private endIntro() {
@@ -293,7 +333,9 @@ export class Hub {
       this.db.appendLive(e);
     }
     const record = this.recordInfo(rec);
-    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null, turnPass: 0 };
+    const happenings = game.happenings(rec.events, roster.length, rec.options);
+    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null, turnPass: 0, happenings };
+    this.effects.fire([{ fact: { kind: 'matchStart' }, before: null }, ...changes([], happenings, 'other')]);
     this.howTo = null;
     this.bullOut = false;
     if (record) {
@@ -348,7 +390,9 @@ export class Hub {
 
   backup() {
     try {
-      this.db.backup([`${this.cfg.dataDir}/backups`, ...(this.cfg.extraBackupDir ? [this.cfg.extraBackupDir] : [])]);
+      const dirs = [`${this.cfg.dataDir}/backups`, ...(this.cfg.extraBackupDir ? [this.cfg.extraBackupDir] : [])];
+      this.db.backup(dirs);
+      this.effects.store.backupSounds(dirs);
     } catch (e) {
       console.error('Backup failed', e);
     }
@@ -421,7 +465,10 @@ export class Hub {
         this.apply({ t: 'undo' });
         return {};
       case 'next':
-        if (this.board.status.takeout.active || this.bullOut) await this.board.takeoutDone();
+        if (this.board.status.takeout.active || this.bullOut) {
+          await this.board.takeoutDone();
+          this.hubFx({ kind: 'takeoutEnd' });
+        }
         if (this.bullOut) {
           this.bullOut = false;
           return {};
@@ -458,6 +505,12 @@ export class Hub {
         return {};
       case 'player':
         return this.player(cmd.cmd);
+      case 'effects': {
+        const leds = this.effects.store.settings().leds;
+        this.effects.store.updateSettings({ ...(cmd.sounds !== undefined && { sounds: cmd.sounds }), ...(cmd.leds !== undefined && { leds: cmd.leds }) });
+        if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
+        return {};
+      }
       case 'closeApp':
         setTimeout(() => this.closeApp(), 300);
         return {};

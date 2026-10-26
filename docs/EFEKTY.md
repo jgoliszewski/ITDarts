@@ -47,10 +47,17 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   9. lotka.
 
   Reguła z kilkoma wyzwalaczami dostaje priorytet najbardziej konkretnego dopasowanego wyzwalacza.
+- **Wyzwalacze spoza tej listy** dostały miejsce przy implementacji (2026-10-26), bo grilling ich nie ustawił:
+  - „New record” jest przed wygranym meczem, bo pada tą samą lotką i inaczej nigdy by nie zagrał;
+  - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, killer, nieudane podejście, White Horse, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
+  - start meczu, start legu, takeout i tarcza są na samym końcu.
+  - Przy remisie priorytetów gra starsza reguła.
+- **„Dowolna liczba”** w lotce i kombinacji to 1–20, bez bulla i pudła. Bull i 25 wybiera się osobno.
 - **Poprawki i Undo:**
   - świeża lotka (z tarczy albo dopisana ręcznie) odpala efekty;
   - Poprawka nie odpala efektu lotki. Odpala tylko efekt tury lub checkoutu, który dzięki niej powstał (S20 → T20 daje 180);
   - Undo nic nie odpala.
+- **Jak to działa:** każdy moduł gry zwraca listę wystąpień wyzwalaczy z całego logu (`happenings` w `games/`). Hub porównuje listę przed i po każdym zdarzeniu i odpala to, co nowe lub zmienione. Dlatego Poprawka i Undo nie potrzebują osobnej logiki. Animacje wybiera ten sam mechanizm, więc Poprawka S20 → T20 pokazuje też animację 180.
 
 ## Dźwięk
 
@@ -77,8 +84,11 @@ Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, ż
 
 - Jeden kontroler WLED, sterowany z serwera przez JSON API, nigdy z przeglądarki.
 - Efekty są presetami zaprojektowanymi w aplikacji WLED. Reguła podaje preset i czas trwania, domyślnie 1 s.
-- Serwer wysyła playlistę z presetem efektu na zadany czas i `"end": 255`. WLED sam wraca wtedy do poprzedniego presetu, a serwer nie odmierza czasu.
+- Serwer wysyła playlistę z presetem efektu na zadany czas. Jako `"end"` podaje preset bieżącego stanu bazowego, a bez niego `255`. WLED sam wraca wtedy do tła, a serwer nie odmierza czasu.
 - Nowe zdarzenie przerywa trwający efekt.
+- Zmiana stanu bazowego czeka na koniec trwającego efektu, żeby takeout nie uciął efektu po 180 (z implementacji).
+- Przełącznik LEDs na Pilocie wyłączony gasi ledy, a włączony zapala stan bazowy.
+- Do testów bez kontrolera jest atrapa: `npm run fake-wled` (port 3190). Na stronie efektów wpisujemy adres `localhost:3190`, a `http://localhost:3190` pokazuje aktualny kolor.
 - **Stany bazowe**, czyli tło między efektami, każdy z własnym presetem:
   - lobby;
   - mecz w toku;
@@ -97,6 +107,13 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 | Wygrany leg | wejście ekranu końca legu |
 | Wygrany mecz | konfetti |
 | T20, Bull | błysk kafelka lotki |
+
+Z implementacji (2026-10-26):
+
+- 180 to pomarańczowy błysk na cały ekran z wielkim czarnym „180”, bo karta tury pokazuje już pomarańczowe 180 i zwykła animacja z nim zlewała się.
+- 140+ to plakietka z wynikiem nad kartą tury.
+- Bust to czerwony błysk od krawędzi ekranu. Drgnięcia hero nie ma, bo przy buście hero zasłania karta tury.
+- Animacje widzi każdy Ekran wyników, także nie-kiosk. Dźwięk gra tylko w kiosku.
 
 ## Caller
 
@@ -124,7 +141,8 @@ Caller to osobny kanał tego samego systemu: korzysta z tych samych zdarzeń i t
   - WLED: adres, test połączenia, presety pobierane z kontrolera z wyborem po nazwie, stany bazowe;
   - caller: kategorie i głośność.
 - Na start nie ma żadnych reguł. Animacje działają od razu, bo są w kodzie.
+- Z implementacji (2026-10-26): strona ma też sekcję „Playback” z przełącznikami Sounds i LEDs, wbudowanym swooshem i głośnością efektów. Sekcja callera dojdzie razem z paczką z #5.
 
 ## Pilot
 
-W menu Pilota są trzy przełączniki: Sounds, Caller i LEDs. Ich stan trzyma serwer, więc przetrwa restart.
+W menu Pilota są trzy przełączniki: Sounds, Caller i LEDs. Ich stan trzyma serwer, więc przetrwa restart. Caller dojdzie razem z paczką nagrań. Do tego czasu w menu są tylko Sounds i LEDs oraz wejście „Effects”.

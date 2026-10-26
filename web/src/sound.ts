@@ -12,6 +12,43 @@ function audio(): AudioContext | null {
   return ctx;
 }
 
+const buffers = new Map<string, Promise<AudioBuffer | null>>();
+let playing: AudioBufferSourceNode | null = null;
+
+function load(a: AudioContext, url: string): Promise<AudioBuffer | null> {
+  let b = buffers.get(url);
+  if (!b) {
+    b = fetch(url)
+      .then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then(data => a.decodeAudioData(data))
+      .catch(() => {
+        buffers.delete(url);
+        return null;
+      });
+    buffers.set(url, b);
+  }
+  return b;
+}
+
+/** A Reguła's sound (docs/EFEKTY.md). A new one cuts the one still playing; gain can go above 1 for quiet files. */
+export async function playFile(url: string, gain: number) {
+  const a = audio();
+  if (!a) return;
+  const buf = await load(a, url);
+  if (!buf) return;
+  playing?.stop();
+  const src = a.createBufferSource();
+  src.buffer = buf;
+  const g = a.createGain();
+  g.gain.value = gain;
+  src.connect(g).connect(a.destination);
+  src.onended = () => {
+    if (playing === src) playing = null;
+  };
+  playing = src;
+  src.start();
+}
+
 /** The next player's turn: noise through a band-pass filter that sweeps up and back down. */
 export function swoosh(volume = 0.5) {
   const a = audio();

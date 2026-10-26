@@ -8,6 +8,9 @@ import { isGameId } from '../games/index.ts';
 import { Board } from './board.ts';
 import { loadConfig } from './config.ts';
 import { Db } from './db.ts';
+import { Effects } from './effects/index.ts';
+import { effectsRoutes } from './effects/routes.ts';
+import { EffectsStore } from './effects/store.ts';
 import { Hub } from './hub.ts';
 import { Stats, parseWindow } from './stats.ts';
 
@@ -27,9 +30,11 @@ async function shutdown() {
   process.exit(0);
 }
 
-const hub = new Hub(db, board, cfg, () => void shutdown());
+const effects = new Effects(new EffectsStore(db, cfg.dataDir), fx => hub.sendFx(fx));
+const hub = new Hub(db, board, cfg, effects, () => void shutdown());
 
 await app.register(fastifyWebsocket);
+effectsRoutes(app, effects, () => hub.broadcast());
 
 app.get('/ws', { websocket: true }, (socket, req) => {
   const ip = req.socket.remoteAddress ?? '';

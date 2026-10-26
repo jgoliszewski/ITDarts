@@ -26,11 +26,25 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
   - Karta pokazuje werdykt („Checkout”, „Bust”, „Life lost”, „Out”, „N marks”) albo wynik Tury od ostatniej lotki do końca takeoutu.
   - 121 i Higher or Lower trzymają cel, życia i zakres do zamknięcia Tury.
   - Kiosk gra swoosh z WebAudio przy każdej zmianie gracza (`turnPass` w stanie meczu), a kiosk Edge dostał flagę `--autoplay-policy`.
-  - Przełącznik Sounds i głośność efektów podepnie system efektów; na razie swoosh gra zawsze.
+  - Swoosh wycisza przełącznik Sounds albo jego własny przełącznik na `/effects`. Głośność bierze z poziomu efektów.
   - Sprawdzone skryptem z symulatorem: checkout i bust w 121, Tura X01 z „Next player”.
+- **Efekty** według [EFEKTY.md](EFEKTY.md), bez callera:
+  - **Wyzwalacze:** każda gra zwraca wystąpienia z logu (`games/effects.ts`, `happenings` w modułach), a hub odpala nowe i zmienione. Tak samo działają minigierki, w tym „New record”. Takeout, start meczu i status tarczy zgłasza hub.
+  - **Reguły i Biblioteka dźwięków:** migracja 3 dodaje tabele `settings`, `sounds` i `effect_rules`. Pliki leżą w `data/sounds/`, a backup kopiuje je do `backups/sounds/`.
+  - **Strona `/effects`:** reguły z edytorem wyzwalaczy i „Test”, upload, odsłuch, nazwa i głośność dźwięków, WLED z presetami i stanami bazowymi, sekcja „Playback”.
+  - **Pilot:** Sounds i LEDs w menu, trzymane przez serwer.
+  - **Animacje:** 180, 140+, bust, konfetti, błysk kafelka T20 i Bull, wejście ekranu końca legu.
+  - **Sprawdzone** skryptem przez websocket z symulatorem tarczy i atrapą WLED (`npm run fake-wled`): reguły 180 i T20, Poprawka S20 ↔ T20, Undo, Sounds off, powrót WLED do stanu bazowego. Do tego zrzuty strony `/effects`, edytora, menu i animacji.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
   Testy: `npm test` (88), `npm run typecheck`.
+
+## Do sprawdzenia przy efektach
+
+- [ ] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
+- [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła i czy pobieranie `presets.json` działa na jego wersji.
+- [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
+- [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -52,7 +66,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 
 ## Znane problemy
 
-- Wyzwalacze minigierek z [GRY.md](GRY.md) („Target hit”, „Life lost” itd.) czekają na system efektów. Silnik nie zgłasza jeszcze zdarzeń, więc dojdą razem z [EFEKTY.md](EFEKTY.md).
+- W `npm run dev` Vite łączy się z serwerem z localhost, więc serwer bierze każdą przeglądarkę, także telefon, za kiosk. Dźwięki reguł grają wtedy też na telefonie. W `npm start` i w kiosku tego problemu nie ma.
 - Remis w ATC i Full Board zapisuje mecz bez zwycięzcy, więc nie wchodzi do winrate.
 - W Co-op 121 podejście liczy się graczowi, który je zakończył: checkoutem albo ostatnią Turą.
 
@@ -62,7 +76,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 ## Następne kroki
 
 1. Testy z tarczą według listy powyżej (`npm run dev`, tarcza z `config.json` albo domyślnie `192.168.1.183:3180`), potem PR `feat/v1` → `main`.
-2. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
+2. Caller według [EFEKTY.md](EFEKTY.md#caller), gdy w [#5](https://github.com/jgoliszewski/ITDarts/issues/5) będzie paczka nagrań. Wystąpienia, z których będzie mówił, już są. Do tego sprawdzenie efektów z listy „Do sprawdzenia przy efektach”.
 3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
 4. Otwarte issues:
    - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów;
