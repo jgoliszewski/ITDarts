@@ -38,7 +38,13 @@ function tick() {
 setInterval(tick, 50);
 
 app.get('/json/info', async () => ({ name: 'Fake WLED', ver: '0.15.0-fake' }));
-app.get('/presets.json', async () => ({ 0: {}, ...Object.fromEntries(Object.entries(PRESETS).map(([id, p]) => [id, { n: p.n }])) }));
+// Like the real file: name plus segments with [r, g, b] colours. The playlist (20) has no colour.
+const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+app.get('/presets.json', async () => ({
+  0: {},
+  ...Object.fromEntries(Object.entries(PRESETS).map(([id, p]) => [id, { n: p.n, on: true, seg: [{ id: 0, col: [rgb(p.color), [0, 0, 0], [0, 0, 0]], fx: 0 }] }])),
+  20: { n: 'Party playlist', playlist: { ps: [10, 11], dur: [50, 50] } },
+}));
 app.post<{ Body: { on?: boolean; ps?: number; playlist?: { ps: number[]; dur: number[]; end?: number } } }>('/json/state', async req => {
   const b = req.body ?? {};
   if (typeof b.on === 'boolean') on = b.on;

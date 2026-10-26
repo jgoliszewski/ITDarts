@@ -9,7 +9,7 @@ import { endsNormally, isX01, visitDarts } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
 import { playFile } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
-import { EffectsPage } from './screens/Effects.tsx';
+import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
 import { PhoneHome, PhonePilot, PhoneWatch } from './screens/Phone.tsx';
 import { Players } from './screens/Players.tsx';

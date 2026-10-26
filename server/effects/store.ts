@@ -137,7 +137,8 @@ export class EffectsStore {
     }));
   }
 
-  private checkRule(input: unknown): RuleInput {
+  /** Checks a rule from the page; also used by “Test whole rule”, which plays a rule that is not saved. */
+  checkRule(input: unknown): RuleInput {
     const r = (input ?? {}) as Record<string, unknown>;
     const name = typeof r.name === 'string' ? r.name.trim().slice(0, 40) : '';
     if (!Array.isArray(r.triggers) || r.triggers.length === 0) throw new UserError('Pick at least one trigger');

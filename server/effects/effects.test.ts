@@ -7,6 +7,7 @@ import { Db } from '../db.ts';
 import type { Fx } from './index.ts';
 import { Effects } from './index.ts';
 import { EffectsStore, soundType } from './store.ts';
+import { presetColor } from './wled.ts';
 
 // Smallest buffers the format check accepts.
 const WAV = Buffer.concat([Buffer.from('RIFF\0\0\0\0WAVE', 'latin1'), Buffer.alloc(32)]);
@@ -63,6 +64,14 @@ describe('effects store', () => {
     expect(store.rules()[0].enabled).toBe(false);
   });
 
+  it('reads a preset colour from its first segment', () => {
+    expect(presetColor({ seg: [{ col: [[245, 130, 36], [0, 0, 0]] }] })).toBe('#f58224');
+    expect(presetColor({ seg: { col: [[0, 0, 0, 255]] } })).toBe('#ffffff');
+    expect(presetColor({ seg: [{ col: ['FF0000'] }] })).toBe('#ff0000');
+    expect(presetColor({ seg: [{ col: [[0, 0, 0]] }] })).toBeNull();
+    expect(presetColor({ n: 'Playlist' })).toBeNull();
+  });
+
   it('patches settings and checks them', () => {
     store.updateSettings({ volume: 40, wled: { address: 'http://192.168.1.50/', base: { lobby: 1 } } });
     expect(store.settings()).toMatchObject({ volume: 40, sounds: true, wled: { address: '192.168.1.50', base: { lobby: 1, match: null } } });
@@ -94,11 +103,12 @@ describe('effects service', () => {
 
   it('keeps quiet with Sounds off but still animates, and Test ignores the switch', () => {
     const s = store.addSound(MP3, 'x', 500);
-    const rule = store.createRule({ triggers: [t180], sounds: [s] });
+    store.createRule({ triggers: [t180], sounds: [s] });
     store.updateSettings({ sounds: false });
     fx.fire(visit180);
     expect(sent).toEqual([{ sound: null, anim: '180' }]);
-    fx.test(rule);
+    // Test plays an unsaved rule too.
+    fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }));
     expect(sent[1].sound).not.toBeNull();
   });
 
@@ -111,6 +121,27 @@ describe('effects service', () => {
     expect(preset).toHaveBeenCalledWith(2);
     fx.fire(visit180);
     expect(effect).toHaveBeenCalledWith(10, 2, 2);
+  });
+
+  it('previews a preset and goes back to the base, or dark with the LEDs switched off', () => {
+    vi.useFakeTimers();
+    const effect = vi.spyOn(fx.wled, 'effect').mockImplementation(() => undefined);
+    const off = vi.spyOn(fx.wled, 'off').mockImplementation(() => undefined);
+    vi.spyOn(fx.wled, 'preset').mockImplementation(() => undefined);
+    store.updateSettings({ wled: { address: 'wled.local', base: { lobby: 1 } } });
+    fx.setBase('lobby');
+    fx.previewLed(11, 3);
+    expect(effect).toHaveBeenLastCalledWith(11, 3, 1);
+    vi.advanceTimersByTime(3000);
+    expect(off).not.toHaveBeenCalled();
+
+    store.updateSettings({ leds: false });
+    fx.previewLed(11, 3);
+    vi.advanceTimersByTime(2900);
+    expect(off).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(off).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 
   it('lets a running LED effect finish before a new base', () => {

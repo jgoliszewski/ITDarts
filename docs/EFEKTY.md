@@ -141,7 +141,44 @@ Caller to osobny kanał tego samego systemu: korzysta z tych samych zdarzeń i t
   - WLED: adres, test połączenia, presety pobierane z kontrolera z wyborem po nazwie, stany bazowe;
   - caller: kategorie i głośność.
 - Na start nie ma żadnych reguł. Animacje działają od razu, bo są w kodzie.
+- Ledy da się wypróbować bez reguły i bez rzucania: przycisk „Try” przy presecie w edytorze reguły i przy każdym stanie bazowym, a do tego lista presetów z kontrolera. Podgląd gra preset przez zadany czas (w liście 3 s) i wraca do stanu bazowego, także przy wyłączonym przełączniku LEDs. Wtedy po podglądzie ledy znowu gasną (2026-10-26).
 - Z implementacji (2026-10-26): strona ma też sekcję „Playback” z przełącznikami Sounds i LEDs, wbudowanym swooshem i głośnością efektów. Sekcja callera dojdzie razem z paczką z #5.
+
+### Układ strony
+
+Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczytelna. Makiety A1–A4 (telefon) i C (laptop) są w [ITDarts UI mockups](https://claude.ai/artifact/Bt8RmLqWv9733tb2nLkPQK).
+
+- **Zakładki:** Rules, Sounds, LEDs i Playback, każda z własnym adresem (`/effects/rules`, `/effects/sounds`, `/effects/leds`, `/effects/playback`). `/effects` otwiera Rules.
+- **Telefon (poniżej 1100 px):** zakładki na górze, a w nagłówku pigułka statusu. Kropka jest zielona, gdy Sounds i LEDs są włączone, a bursztynowa, gdy któryś jest wyłączony albo WLED nie odpowiada. Stuknięcie w pigułkę otwiera Playback.
+- **Laptop (od 1100 px):** zakładki z boku, a pod nimi ten sam status. W Rules obok listy jest edytor zaznaczonej reguły. Na start zaznaczona jest pierwsza reguła, a przy pustej liście edytor od razu tworzy nową. Sounds, LEDs i Playback to jedna kolumna do 720 px.
+
+**Rules**
+- Reguły są w grupach „Darts, visits and results”, „Minigames” i „Match and board”. Reguła trafia do grupy swojego najważniejszego wyzwalacza.
+- W grupie kolejność idzie według priorytetu, a przy remisie od najstarszej.
+- Wiersz pokazuje nazwę (bez nazwy: wyzwalacze), wyzwalacze, dźwięk, kolor i nazwę presetu ledów oraz przełącznik. Stuknięcie otwiera edytor. Na liście nie ma „Test” ani usuwania.
+- Pusta lista: „No rules yet. Scoreboard animations work without them.” i „New rule”. Bez szablonów.
+
+**Edytor reguły**
+- Na telefonie zajmuje cały ekran i ma własny adres (`/effects/rules/12`, `/effects/rules/new`). Wstecz działa jak „Cancel”.
+- Nazwa jest opcjonalna. Obok niej jest przełącznik reguły.
+- Blok „When”: wyzwalacze jako chipy, a parametry zaznaczonego chipu pod nimi. „+ Add trigger” otwiera arkusz z wyzwalaczami w grupach, z krótkim opisem.
+- Blok „Then”: warianty dźwięku z odsłuchem i „+ Add a variant from the library” oraz preset ledów z czasem i „Try”.
+- Zapis tylko przez „Save”, bo reguła w połowie edycji mogłaby zagrać w trakcie meczu. Wyjście albo przejście do innej reguły z niezapisanymi zmianami pyta „Discard changes?”.
+- „Test whole rule” gra to, co widać w edytorze, także bez zapisu. Gra też przy wyłączonych przełącznikach, a wtedy obok jest krótka informacja o tym.
+- „Delete” jest tylko w edytorze, z potwierdzeniem.
+
+**Sounds**
+- Na górze upload. Przy każdym dźwięku są odsłuch, długość, liczba reguł, które go używają, i suwak głośności.
+- Zmiana nazwy i usuwanie są w menu „⋯”. Przy użytym dźwięku „Delete” jest wyłączone i wymienia te reguły.
+
+**LEDs**
+- Status połączenia z adresem i wersją WLED. „Change” zmienia adres, a bez adresu od razu widać pole adresu.
+- Stany bazowe z kolorem i nazwą presetu oraz „Try”. Preset wybiera się w arkuszu z kolorami, a w nim każdy preset ma też „Try”. Ten sam wybór jest w edytorze reguły.
+- Siatka presetów z kontrolera: stuknięcie gra preset przez 3 s.
+- Kolor kropki to pierwszy kolor pierwszego segmentu z `presets.json`. Bez niego kropka jest pustym szarym okręgiem.
+
+**Playback**
+- Sounds, LEDs, swoosh i głośność efektów jak dotąd. Caller dojdzie z paczką z #5.
 
 ## Pilot
 

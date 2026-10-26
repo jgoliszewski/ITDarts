@@ -45,8 +45,16 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
   app.post('/api/effects/rules', async (req, reply) => guard(reply, () => ({ id: store.createRule(req.body) })));
   app.put<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.updateRule(Number(req.params.id), req.body)));
   app.delete<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.deleteRule(Number(req.params.id))));
-  app.post<{ Params: { id: string } }>('/api/effects/rules/:id/test', async (req, reply) =>
-    fx.test(Number(req.params.id)) ? { ok: true } : reply.code(404).send({ error: 'No such rule' }));
+  // Not a change, so no broadcast: only plays.
+  app.post('/api/effects/test', async (req, reply) => {
+    try {
+      fx.test(store.checkRule(req.body));
+      return { ok: true };
+    } catch (e) {
+      if (e instanceof UserError) return reply.code(400).send({ error: e.message });
+      throw e;
+    }
+  });
 
   app.post<{ Querystring: { name?: string; duration?: string } }>('/api/sounds', async (req, reply) => {
     if (!Buffer.isBuffer(req.body)) return reply.code(400).send({ error: 'Send the file as the request body' });
@@ -69,6 +77,14 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
     } catch (e) {
       return reply.code(502).send({ error: e instanceof Error ? e.message : 'WLED did not answer' });
     }
+  });
+  app.post<{ Body: { preset?: unknown; seconds?: unknown } }>('/api/wled/preview', async (req, reply) => {
+    const { preset, seconds = 3 } = req.body ?? {};
+    if (!Number.isInteger(preset) || (preset as number) < 1 || (preset as number) > 250) return reply.code(400).send({ error: 'Preset is 1–250' });
+    if (typeof seconds !== 'number' || seconds < 0.1 || seconds > 60) return reply.code(400).send({ error: 'Duration is 0.1–60 s' });
+    if (!fx.wled.configured) return reply.code(400).send({ error: 'Set the WLED address first' });
+    fx.previewLed(preset as number, seconds);
+    return { ok: true };
   });
   app.get('/api/wled/presets', async (_req, reply) => {
     try {

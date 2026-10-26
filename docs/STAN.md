@@ -31,13 +31,18 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
 - **Efekty** według [EFEKTY.md](EFEKTY.md), bez callera:
   - **Wyzwalacze:** każda gra zwraca wystąpienia z logu (`games/effects.ts`, `happenings` w modułach), a hub odpala nowe i zmienione. Tak samo działają minigierki, w tym „New record”. Takeout, start meczu i status tarczy zgłasza hub.
   - **Reguły i Biblioteka dźwięków:** migracja 3 dodaje tabele `settings`, `sounds` i `effect_rules`. Pliki leżą w `data/sounds/`, a backup kopiuje je do `backups/sounds/`.
-  - **Strona `/effects`:** reguły z edytorem wyzwalaczy i „Test”, upload, odsłuch, nazwa i głośność dźwięków, WLED z presetami i stanami bazowymi, sekcja „Playback”.
+  - **Strona `/effects`** w układzie z grillingu ([EFEKTY.md](EFEKTY.md#układ-strony)), kod w `web/src/screens/effects/`:
+    - zakładki Rules, Sounds, LEDs i Playback z własnymi adresami, na laptopie (od 1100 px) z boku, z listą reguł i edytorem obok;
+    - edytor „When → Then” z chipami wyzwalaczy, arkuszem dodawania i „Discard changes?”, także przy przycisku wstecz;
+    - „Test whole rule” gra niezapisaną regułę (`POST /api/effects/test`);
+    - presety mają kolor z `presets.json`, a każdy da się wypróbować przez „Try” (`POST /api/wled/preview`).
+    - Sprawdzone w przeglądarce na telefonie (375 px) i laptopie (1280 px) z atrapą WLED.
   - **Pilot:** Sounds i LEDs w menu, trzymane przez serwer.
   - **Animacje:** 180, 140+, bust, konfetti, błysk kafelka T20 i Bull, wejście ekranu końca legu.
   - **Sprawdzone** skryptem przez websocket z symulatorem tarczy i atrapą WLED (`npm run fake-wled`): reguły 180 i T20, Poprawka S20 ↔ T20, Undo, Sounds off, powrót WLED do stanu bazowego. Do tego zrzuty strony `/effects`, edytora, menu i animacji.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
-  Testy: `npm test` (88), `npm run typecheck`.
+  Testy: `npm test` (90), `npm run typecheck`.
 
 ## Do sprawdzenia przy efektach
 

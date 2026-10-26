@@ -2,7 +2,7 @@
 // Sound plays in the kiosk browser, LEDs go to WLED from here.
 import type { Change, Trigger } from '../../games/effects.ts';
 import { pickRule } from '../../games/effects.ts';
-import type { BaseState, EffectsStore, Rule } from './store.ts';
+import type { BaseState, EffectsStore, Rule, RuleInput } from './store.ts';
 import { Wled } from './wled.ts';
 
 /** Animations on the scoreboard, hard-coded. */
@@ -42,12 +42,18 @@ export class Effects {
     this.play(rule, anim, s.sounds, s.leds);
   }
 
-  /** The “Test” button: plays the rule even with the pilot switches off. */
-  test(id: number): boolean {
-    const rule = this.store.rules().find(r => r.id === id);
-    if (!rule) return false;
-    this.play(rule, null, true, true);
-    return true;
+  /** “Test whole rule”: plays what the editor shows, saved or not, even with the pilot switches off. */
+  test(rule: RuleInput) {
+    this.play({ ...rule, id: 0 }, null, true, true);
+  }
+
+  /** “Try” on the effects page: one preset for a while, then back to the base, even with the LEDs switch off. */
+  previewLed(preset: number, seconds: number) {
+    this.wled.effect(preset, seconds, this.basePreset());
+    this.ledUntil = Date.now() + seconds * 1000;
+    // With the switch off the lights go dark again afterwards, as the switch says.
+    if (this.baseTimer) clearTimeout(this.baseTimer);
+    this.baseTimer = this.store.settings().leds ? null : setTimeout(() => this.wled.off(), seconds * 1000);
   }
 
   private play(rule: Rule | null, anim: Anim | null, sounds: boolean, leds: boolean) {
