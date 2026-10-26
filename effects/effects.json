@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "settings": {
+    "volume": 80,
+    "swoosh": true,
+    "base": {
+      "lobby": 1,
+      "match": 2,
+      "takeout": 3,
+      "offline": 4
+    }
+  },
+  "sounds": [
+    {
+      "file": "rizz.mp3",
+      "name": "Rizz",
+      "volume": 100,
+      "durationMs": 1934
+    },
+    {
+      "file": "ph-intro.mp3",
+      "name": "PH Intro",
+      "volume": 120,
+      "durationMs": 4168
+    },
+    {
+      "file": "otoz-nie.mp3",
+      "name": "Papież - Otóż nie",
+      "volume": 100,
+      "durationMs": 1138
+    },
+    {
+      "file": "e-typie-skrzypas.mp3",
+      "name": "Srzypas - E typie",
+      "volume": 100,
+      "durationMs": 1254
+    },
+    {
+      "file": "geyyyy.mp3",
+      "name": "geyyyy",
+      "volume": 100,
+      "durationMs": 7357
+    },
+    {
+      "file": "shocked-sound-effect.mp3",
+      "name": "shocked sound effect",
+      "volume": 100,
+      "durationMs": 1417
+    },
+    {
+      "file": "bruhh.mp3",
+      "name": "Bruhh",
+      "volume": 100,
+      "durationMs": 817
+    },
+    {
+      "file": "plakal.mp3",
+      "name": "plakal",
+      "volume": 100,
+      "durationMs": 1686
+    },
+    {
+      "file": "michael-jackson-hee-hee.mp3",
+      "name": "michael jackson hee hee",
+      "volume": 100,
+      "durationMs": 1423
+    },
+    {
+      "file": "faaah.mp3",
+      "name": "faaah",
+      "volume": 100,
+      "durationMs": 1928
+    },
+    {
+      "file": "czesio-dziendobry-ztigd8p.mp3",
+      "name": "czesio dziendobry",
+      "volume": 100,
+      "durationMs": 1003
+    },
+    {
+      "file": "jeszcze-jak.mp3",
+      "name": "Papież - jeszcze jak",
+      "volume": 100,
+      "durationMs": 1151
+    },
+    {
+      "file": "piekny-jestes.mp3",
+      "name": "Stonoga - piekny jestes",
+      "volume": 100,
+      "durationMs": 1688
+    },
+    {
+      "file": "erro.mp3",
+      "name": "XP Error",
+      "volume": 100,
+      "durationMs": 993
+    },
+    {
+      "file": "roblox-death-sound-1.mp3",
+      "name": "roblox death sound 1",
+      "volume": 100,
+      "durationMs": 1000
+    },
+    {
+      "file": "anime-wow-sound-effect.mp3",
+      "name": "anime wow sound effect",
+      "volume": 100,
+      "durationMs": 4180
+    },
+    {
+      "file": "classic-hurt.mp3",
+      "name": "Minecraft - classic hurt",
+      "volume": 100,
+      "durationMs": 366
+    },
+    {
+      "file": "o-kurwa.mp3",
+      "name": "Stachu - o kurwa",
+      "volume": 100,
+      "durationMs": 2430
+    },
+    {
+      "file": "cute-uwu.mp3",
+      "name": "cute uwu",
+      "volume": 100,
+      "durationMs": 915
+    },
+    {
+      "file": "metal-gear-solid-alert.mp3",
+      "name": "Metal Gear Solid Alert",
+      "volume": 100,
+      "durationMs": 1568
+    },
+    {
+      "file": "co-to-kurwa-jest.mp3",
+      "name": "Co to kurwa jest?",
+      "volume": 100,
+      "durationMs": 1784
+    },
+    {
+      "file": "minecraft-villager-sound-effect.mp3",
+      "name": "minecraft villager sound effect",
+      "volume": 100,
+      "durationMs": 1333
+    },
+    {
+      "file": "obi-wan-hello-there.mp3",
+      "name": "obi wan hello there",
+      "volume": 100,
+      "durationMs": 817
+    },
+    {
+      "file": "wrong-answer-sound-effect.mp3",
+      "name": "wrong answer sound effect",
+      "volume": 100,
+      "durationMs": 1176
+    },
+    {
+      "file": "punch-gaming.mp3",
+      "name": "punch gaming",
+      "volume": 100,
+      "durationMs": 1533
+    }
+  ],
+  "rules": []
+}
