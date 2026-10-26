@@ -1,8 +1,9 @@
 // Higher or Lower: throw a visit outside the forbidden range, which grows with every success (docs/GRY.md). Pure, no I/O.
 import { value } from './darts.ts';
+import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface HolOptions {
   firstTo: number;
@@ -26,6 +27,7 @@ interface State extends Turn {
 function play(t: Turns, players: number, o: HolOptions): State {
   const points = Array(players).fill(0);
   const goods: boolean[][] = [];
+  const fx: Happening[] = [];
   let game = 0, lo: number = START_RANGE[0], hi: number = START_RANGE[1];
   let alive = Array(players).fill(true);
   let queue: number[] = [], pos = 0, failed = new Set<number>(), roundRange = [lo, hi];
@@ -41,7 +43,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
   };
   newRound();
 
-  for (const v of t.visits) {
+  for (const [vi, v] of t.visits.entries()) {
     let miss = false, total = 0;
     const w = walk(v, d => {
       if (over) return { good: false, end: true };
@@ -57,8 +59,10 @@ function play(t: Turns, players: number, o: HolOptions): State {
     sum = v.darts.length ? total : null;
     if (!w.complete || over) continue;
 
-    if (miss || (total >= lo && total <= hi)) failed.add(v.player);
-    else if (total > hi) hi = total;
+    if (miss || (total >= lo && total <= hi)) {
+      failed.add(v.player);
+      fx.push({ slot: `V${vi + 1}:out`, fact: { kind: 'game', event: 'eliminated' } });
+    } else if (total > hi) hi = total;
     else lo = total;
     if (++pos < queue.length) continue;
 
@@ -70,12 +74,15 @@ function play(t: Turns, players: number, o: HolOptions): State {
       const w = survivors[0];
       points[w]++;
       lastGame = { no: game + 1, winner: w };
+      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
       if (points[w] >= o.firstTo) {
         over = true;
         winner = w;
+        fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
         continue;
       }
       game++;
+      fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
       [lo, hi] = START_RANGE;
       alive = Array(players).fill(true);
     }
@@ -89,7 +96,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
     over,
     current: open ? open.player : over ? last!.player : queue[pos],
     dartsLeft: over ? 0 : open ? left : 3,
-    goods, lo, hi, sum: open || over ? sum : null, points, out, game, lastGame, winners: winner === null ? [] : [winner],
+    goods, fx, lo, hi, sum: open || over ? sum : null, points, out, game, lastGame, winners: winner === null ? [] : [winner],
   };
 }
 
@@ -154,6 +161,10 @@ export const hol: GameModule<HolOptions, HolView> = {
     const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
     const s = play(t, players, o);
     return compactTurns(t, s, players, s.winners[0] ?? null);
+  },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+    return turnHappenings(t, play(t, players, o));
   },
   isValidEvent: isValidTurnEvent,
 };

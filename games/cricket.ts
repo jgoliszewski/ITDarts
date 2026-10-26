@@ -1,7 +1,8 @@
 // Cricket: close 15–20 and the bull, score on what rivals still have open (docs/GRY.md). Pure, no I/O.
+import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, walk } from './turns.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface CricketOptions {
   mode: 'standard' | 'cutthroat';
@@ -27,11 +28,14 @@ function play(t: Turns, players: number, o: CricketOptions): State {
   const others = (p: number) => points.filter((_, i) => i !== p);
   const wins = (p: number) => closedAll(p) && (players === 1
     || (o.mode === 'standard' ? points[p] >= Math.max(...others(p)) : points[p] <= Math.min(...others(p))));
+  const fx: Happening[] = [];
   let winner: number | null = null, left = 3;
 
-  for (const v of t.visits) {
+  for (const [vi, v] of t.visits.entries()) {
     const p = v.player;
-    const w = walk(v, d => {
+    let visitMarks = 0;
+    const freshTrebles = new Set<number>();
+    const w = walk(v, (d, di) => {
       if (winner !== null) return { good: false, end: true };
       const k = CRICKET_SECTORS.indexOf(d.n);
       if (k < 0) return { good: false };
@@ -45,6 +49,9 @@ function play(t: Turns, players: number, o: CricketOptions): State {
         else for (const r of open) points[r] += extra * d.n;
       }
       scoredMarks[p] += add + (scores ? extra : 0);
+      visitMarks += add + (scores ? extra : 0);
+      if (add === 3) freshTrebles.add(d.n);
+      if (add > 0 && marks[p][k] === 3) fx.push({ slot: dartSlot(vi, di, 'closed'), fact: { kind: 'game', event: 'sectorClosed' } });
       // Cut-throat points land on rivals, so anyone may be the one who now wins.
       winner = wins(p) ? p : [...Array(players).keys()].find(wins) ?? null;
       return { good: add > 0 || scores, end: winner !== null };
@@ -52,11 +59,16 @@ function play(t: Turns, players: number, o: CricketOptions): State {
     goods.push(w.good);
     darts[p] += w.used;
     left = w.dartsLeft;
+    // White Horse: three trebles on three different numbers, each one fresh.
+    if (w.complete && visitMarks >= 5) {
+      fx.push({ slot: `V${vi + 1}:marks`, fact: { kind: 'game', event: 'marks', marks: Math.min(visitMarks, 9), whiteHorse: freshTrebles.size === 3 } });
+    }
   }
+  if (winner !== null) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
   const over = winner !== null;
   const current = !last ? t.starter! : last.closed ? (last.player + 1) % players : last.player;
-  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, marks, points, darts, scoredMarks, winners: over ? [winner!] : [] };
+  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, marks, points, darts, scoredMarks, winners: over ? [winner!] : [] };
 }
 
 export interface CricketView extends MiniView {
@@ -131,6 +143,10 @@ export const cricket: GameModule<CricketOptions, CricketView> = {
     const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
     const s = play(t, players, o);
     return compactTurns(t, s, players, s.winners[0] ?? null);
+  },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+    return turnHappenings(t, play(t, players, o));
   },
   isValidEvent: isValidTurnEvent,
 };

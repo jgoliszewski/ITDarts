@@ -2,7 +2,7 @@ import { isValidDart } from '../darts.ts';
 import type { GameModule, OptionDef } from '../turns.ts';
 import { BULL_OFF } from '../turns.ts';
 import type { X01Event, X01View } from './engine.ts';
-import { compact, replay, view } from './engine.ts';
+import { compact, happenings, replay, view } from './engine.ts';
 import type { X01Options } from './rules.ts';
 import { DEFAULT_OPTIONS, describeOptions } from './rules.ts';
 
@@ -70,5 +70,6 @@ export const x01: GameModule<X01Options, X01View> = {
   describe: describeOptions,
   view: (events: X01Event[], players: number, o: X01Options) => view(replay(events, players, o), players, o),
   compact: (events: X01Event[], players: number, o: X01Options) => compact(replay(events, players, o), players, o),
+  happenings: (events: X01Event[], players: number, o: X01Options) => happenings(replay(events, players, o), players, o),
   isValidEvent,
 };

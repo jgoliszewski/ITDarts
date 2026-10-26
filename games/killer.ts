@@ -1,7 +1,8 @@
 // Killer: hit your own double to become a killer, then take rivals' lives on their doubles (docs/GRY.md). Pure, no I/O.
+import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, livesLabel, nextIn, normalizeByDefs, replayTurns, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, dartSlot, frame, isValidTurnEvent, livesLabel, nextIn, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface KillerOptions {
   lives: number;
@@ -35,31 +36,38 @@ function play(t: Turns, players: number, o: KillerOptions): State {
   const lives = Array(players).fill(o.lives), taken = Array(players).fill(0);
   const killer = Array(players).fill(false), out = Array(players).fill(false);
   const goods: boolean[][] = [];
+  const fx: Happening[] = [];
   let over = false, left = 3;
-  for (const v of t.visits) {
+  for (const [vi, v] of t.visits.entries()) {
     const p = v.player;
-    const w = walk(v, d => {
+    const w = walk(v, (d, di) => {
       if (over || out[p]) return { good: false, end: true };
       const q = d.m === 2 ? numbers.indexOf(d.n) : -1;
       if (q < 0 || out[q]) return { good: false };
       if (q === p && !killer[p]) {
         killer[p] = true;
+        fx.push({ slot: dartSlot(vi, di, 'killer'), fact: { kind: 'game', event: 'becameKiller' } });
         return { good: true };
       }
       if (q !== p && !killer[p]) return { good: false };
       lives[q]--;
       if (q !== p) taken[p]++;
-      if (lives[q] === 0) out[q] = true;
+      fx.push({ slot: dartSlot(vi, di, 'life'), fact: { kind: 'game', event: 'lifeLost' } });
+      if (lives[q] === 0) {
+        out[q] = true;
+        fx.push({ slot: dartSlot(vi, di, 'out'), fact: { kind: 'game', event: 'eliminated' } });
+      }
       over = out.filter(x => !x).length <= 1;
       return { good: true, end: over || out[p] };
     });
     goods.push(w.good);
     left = w.dartsLeft;
   }
+  if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
   const current = !last ? t.starter! : !last.closed ? last.player : nextIn(last.player, players, q => out[q]);
   return {
-    over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods,
+    over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx,
     numbers, lives, killer, out, taken, winners: over ? out.flatMap((x, i) => (x ? [] : [i])) : [],
   };
 }
@@ -134,6 +142,10 @@ export const killer: GameModule<KillerOptions, KillerView> = {
     const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
     const s = play(t, players, o);
     return compactTurns(t, s, players, s.winners[0] ?? null);
+  },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+    return turnHappenings(t, play(t, players, o));
   },
   isValidEvent: isValidTurnEvent,
 };

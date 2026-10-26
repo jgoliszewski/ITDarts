@@ -1,9 +1,12 @@
 // Around the Clock and Full Board: race through the targets, fewest darts wins (docs/GRY.md). Pure, no I/O.
 import type { Dart } from './darts.ts';
 import { BOARD_ORDER } from './darts.ts';
+import type { GameEvent, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, walk } from './turns.ts';
+import {
+  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk,
+} from './turns.ts';
 
 export type TargetMode = 'any' | 'doubles' | 'trebles';
 
@@ -31,6 +34,8 @@ export function hits(d: Dart, n: number, mode: TargetMode): boolean {
 export const targetLabel = (n: number, mode: TargetMode) => (n === 25 ? 'Bull' : mode === 'any' ? String(n) : `${mode === 'doubles' ? 'D' : 'T'}${n}`);
 
 interface Rules<P> {
+  /** The Wyzwalacz a counted dart fires. */
+  event: GameEvent;
   init: () => P;
   /** Applies a dart, returns whether it counted. */
   hit: (p: P, d: Dart) => boolean;
@@ -51,11 +56,13 @@ function playRace<P>(t: Turns, players: number, coop: boolean, r: Rules<P>): Rac
   const sides = coop ? own.map(() => team) : own;
   const darts = Array(players).fill(0), hit = Array(players).fill(0);
   const goods: boolean[][] = [];
+  const fx: Happening[] = [];
   let complete = 0, left = 3;
-  for (const v of t.visits) {
+  for (const [vi, v] of t.visits.entries()) {
     const side = sides[v.player];
-    const w = walk(v, d => {
+    const w = walk(v, (d, di) => {
       const good = !r.done(side) && r.hit(side, d);
+      if (good) fx.push({ slot: dartSlot(vi, di, 'hit'), fact: { kind: 'game', event: r.event } });
       return { good, end: r.done(side) };
     });
     goods.push(w.good);
@@ -73,7 +80,8 @@ function playRace<P>(t: Turns, players: number, coop: boolean, r: Rules<P>): Rac
     const best = Math.min(...own.map((p, i) => (r.done(p) ? darts[i] : Infinity)));
     winners = own.map((_, i) => i).filter(i => r.done(own[i]) && darts[i] === best);
   }
-  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, sides, darts, hits: hit, winners };
+  if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
+  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, sides, darts, hits: hit, winners };
 }
 
 const total = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -124,6 +132,7 @@ export const atcTargets = (o: AtcOptions) => [...(o.order === 'clockwise' ? BOAR
 function atcRules(o: AtcOptions): Rules<{ i: number }> {
   const targets = atcTargets(o);
   return {
+    event: 'targetHit',
     init: () => ({ i: 0 }),
     hit: (p, d) => {
       const target = targets[p.i];
@@ -215,6 +224,10 @@ export const atc: GameModule<AtcOptions, AtcView> = {
     const s = atcPlay(t, players, o);
     return compactTurns(t, s, players, s.winners.length === 1 ? s.winners[0] : null);
   },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => atcPlay(x, players, o));
+    return turnHappenings(t, atcPlay(t, players, o));
+  },
   isValidEvent: isValidTurnEvent,
 };
 
@@ -230,6 +243,7 @@ export interface FullBoardView extends MiniView {
 
 function boardRules(o: FullBoardOptions): Rules<Set<number>> {
   return {
+    event: 'sectorCleared',
     init: () => new Set<number>(),
     hit: (p, d) => {
       if (p.has(d.n) || !hits(d, d.n, o.target)) return false;
@@ -295,6 +309,10 @@ export const fullBoard: GameModule<FullBoardOptions, FullBoardView> = {
     const t = replayTurns(events, players, o.bullOff, x => boardPlay(x, players, o));
     const s = boardPlay(t, players, o);
     return compactTurns(t, s, players, s.winners.length === 1 ? s.winners[0] : null);
+  },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => boardPlay(x, players, o));
+    return turnHappenings(t, boardPlay(t, players, o));
   },
   isValidEvent: isValidTurnEvent,
 };

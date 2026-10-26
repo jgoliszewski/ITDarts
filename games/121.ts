@@ -1,9 +1,10 @@
 // 121: check out a target within a few visits, then the next one up (docs/GRY.md). Solo or co-op. Pure, no I/O.
 import { checkoutRoute, formatRoute } from './x01/checkout.ts';
+import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, ON_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, walk } from './turns.ts';
+import { BULL_OFF, ON_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface O121 {
   visits: 3 | 4;
@@ -32,7 +33,8 @@ function play(t: Turns, players: number, o: O121): State {
   let over = false, left = 3;
   const attempts = Array(players).fill(0), checkouts = Array(players).fill(0);
   const goods: boolean[][] = [];
-  for (const v of t.visits) {
+  const fx: Happening[] = [];
+  for (const [vi, v] of t.visits.entries()) {
     const start = remaining;
     let bust = false, out = false;
     const w = walk(v, d => {
@@ -50,6 +52,10 @@ function play(t: Turns, players: number, o: O121): State {
     goods.push(w.good);
     left = w.dartsLeft;
     if (!w.complete || over) continue;
+    const V = `V${vi + 1}`;
+    if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
+    if (out) fx.push({ slot: `${V}:checkout`, fact: { kind: 'checkout' } });
+    else if (used + 1 >= o.visits) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
     if (out) {
       attempts[v.player]++;
       // The rest of the attempt's darts are gone; the next target starts with a fresh attempt.
@@ -72,7 +78,7 @@ function play(t: Turns, players: number, o: O121): State {
   const current = !last ? t.starter! : open ? open.player : (last.player + 1) % players;
   const dartsLeft = over ? 0 : open ? left : 3;
   const usedNow = open && left > 0 ? open.darts.length : 0;
-  return { over, current, dartsLeft, goods, target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow, best, attempts, checkouts };
+  return { over, current, dartsLeft, goods, fx, target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow, best, attempts, checkouts };
 }
 
 export interface View121 extends MiniView {
@@ -151,6 +157,10 @@ export const oneTwentyOne: GameModule<O121, View121> = {
   compact: (events, players, o) => {
     const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
     return compactTurns(t, play(t, players, o), players, null);
+  },
+  happenings: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+    return turnHappenings(t, play(t, players, o));
   },
   isValidEvent: isValidTurnEvent,
 };

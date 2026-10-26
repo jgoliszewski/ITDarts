@@ -4,6 +4,7 @@ import type { BullDart, BullEvent, BullOffView } from './bulloff.ts';
 import { beforeStart, bullView, undoStart } from './bulloff.ts';
 import type { Coords, Dart } from './darts.ts';
 import { MISS, isValidDart } from './darts.ts';
+import type { Happening } from './effects.ts';
 import type { DartRec, LegRecord } from './x01/engine.ts';
 import type { BullOff } from './x01/rules.ts';
 
@@ -42,6 +43,8 @@ export interface Turn {
   dartsLeft: number;
   /** Per visit, per dart: did it count? */
   goods: boolean[][];
+  /** The game's own Wyzwalacz occurrences; darts and the start come from turnHappenings. */
+  fx: Happening[];
 }
 
 export interface MiniView {
@@ -147,7 +150,7 @@ export interface Walked {
 }
 
 /** Applies a visit's darts in order until one ends the visit; later darts (left over after a fix) do nothing. */
-export function walk(v: Visit, apply: (d: Dart) => { good: boolean; end?: boolean }): Walked {
+export function walk(v: Visit, apply: (d: Dart, i: number) => { good: boolean; end?: boolean }): Walked {
   const good: boolean[] = [];
   let used = -1;
   for (const rec of v.darts) {
@@ -155,7 +158,7 @@ export function walk(v: Visit, apply: (d: Dart) => { good: boolean; end?: boolea
       good.push(false);
       continue;
     }
-    const r = apply(rec.dart);
+    const r = apply(rec.dart, good.length);
     good.push(r.good);
     if (r.end) used = good.length;
   }
@@ -176,6 +179,17 @@ export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | '
     visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [] },
   };
 }
+
+/** Every Wyzwalacz occurrence so far: the start and the thrown darts from the log, the rest from the game. */
+export function turnHappenings(t: Turns, s: Turn): Happening[] {
+  if (t.starter === null) return [];
+  const darts = t.visits.flatMap((v, vi) => v.darts.slice(0, v.darts.length - v.filled)
+    .map((d, di): Happening => ({ slot: `V${vi + 1}D${di + 1}`, fact: { kind: 'dart', dart: d.dart } })));
+  return [{ slot: 'L1:start', fact: { kind: 'legStart' } }, ...darts, ...s.fx];
+}
+
+/** Slot of a game event on a dart: visit and dart numbers from 1. */
+export const dartSlot = (vi: number, di: number, what: string) => `V${vi + 1}D${di + 1}:${what}`;
 
 /** Compacts the log to one stored leg; `scored` holds the darts that counted. */
 export function compactTurns(t: Turns, s: Turn, players: number, winner: number | null): LegRecord[] {
@@ -247,6 +261,7 @@ export interface GameModule<O = any, V = any> {
   describe: (o: O, players: number) => string;
   view: (events: any[], players: number, o: O) => V;
   compact: (events: any[], players: number, o: O) => LegRecord[];
+  happenings: (events: any[], players: number, o: O) => Happening[];
   isValidEvent: (e: any) => boolean;
 }
 

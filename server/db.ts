@@ -93,6 +93,28 @@ const MIGRATIONS = [
   CREATE INDEX matches_variant ON matches(variant);
   CREATE INDEX matches_game ON matches(game, ended_at);
   `,
+  // Effects (docs/EFEKTY.md): settings as JSON per key, the sound library and the rules. Triggers and sound ids are JSON.
+  `
+  CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  CREATE TABLE sounds (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    file TEXT NOT NULL UNIQUE,
+    volume INTEGER NOT NULL DEFAULT 100,
+    duration_ms INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE effect_rules (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL DEFAULT '',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    triggers TEXT NOT NULL,
+    sounds TEXT NOT NULL,
+    led_preset INTEGER,
+    led_seconds REAL NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL
+  );
+  `,
 ];
 
 // Options and events are whatever the game module takes; the module checks them.
@@ -291,7 +313,7 @@ export class Db {
   }
 
   lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[] } | null {
-    const m = this.sql.prepare('SELECT id, game, options FROM matches ORDER BY ended_at DESC LIMIT 1').get() as { id: number; game: GameId; options: string } | undefined;
+    const m = this.sql.prepare('SELECT id, game, options FROM matches ORDER BY ended_at DESC, id DESC LIMIT 1').get() as { id: number; game: GameId; options: string } | undefined;
     if (!m || !(m.game in GAMES)) return null;
     const roster = (this.sql.prepare(`
       SELECT mp.player_id AS playerId, COALESCE(p.name, mp.guest_name) AS name FROM match_players mp
@@ -300,7 +322,7 @@ export class Db {
   }
 
   lastMatch(): MatchSummary | null {
-    const m = this.sql.prepare('SELECT * FROM matches ORDER BY ended_at DESC LIMIT 1').get() as
+    const m = this.sql.prepare('SELECT * FROM matches ORDER BY ended_at DESC, id DESC LIMIT 1').get() as
       { id: number; game: GameId; options: string; ended_at: number; status: 'finished' | 'ended'; winner_position: number | null } | undefined;
     if (!m || !(m.game in GAMES)) return null;
     const game = GAMES[m.game];

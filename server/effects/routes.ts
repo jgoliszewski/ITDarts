@@ -1,0 +1,80 @@
+// REST for the “Effects” page: open to everyone in the LAN, no pilot needed (docs/EFEKTY.md).
+import { createReadStream, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import { UserError } from '../db.ts';
+import type { Effects } from './index.ts';
+import { MAX_SOUND_BYTES } from './store.ts';
+
+export interface EffectsResponse {
+  settings: ReturnType<Effects['store']['settings']>;
+  rules: ReturnType<Effects['store']['rules']>;
+  sounds: ReturnType<Effects['store']['sounds']>;
+  wledError: { text: string; at: number } | null;
+}
+
+const MIME: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' };
+
+/** `changed` runs after every edit, so the hub can broadcast the pilot switches and relight the base. */
+export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => void) {
+  const store = fx.store;
+
+  // Runs a store call and turns a UserError into a 400 with its message.
+  const guard = async <T>(reply: FastifyReply, run: () => T | Promise<T>) => {
+    try {
+      const r = await run();
+      changed();
+      return r ?? { ok: true };
+    } catch (e) {
+      if (e instanceof UserError) return reply.code(400).send({ error: e.message });
+      throw e;
+    }
+  };
+
+  app.addContentTypeParser(/^(audio\/|application\/octet-stream)/, { parseAs: 'buffer', bodyLimit: MAX_SOUND_BYTES + 1024 }, (_req, body, done) => done(null, body));
+
+  app.get('/api/effects', async (): Promise<EffectsResponse> => ({
+    settings: store.settings(), rules: store.rules(), sounds: store.sounds(), wledError: fx.wled.error,
+  }));
+
+  app.put('/api/effects/settings', async (req, reply) => guard(reply, () => {
+    store.updateSettings(req.body);
+    fx.applyBase();
+  }));
+
+  app.post('/api/effects/rules', async (req, reply) => guard(reply, () => ({ id: store.createRule(req.body) })));
+  app.put<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.updateRule(Number(req.params.id), req.body)));
+  app.delete<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.deleteRule(Number(req.params.id))));
+  app.post<{ Params: { id: string } }>('/api/effects/rules/:id/test', async (req, reply) =>
+    fx.test(Number(req.params.id)) ? { ok: true } : reply.code(404).send({ error: 'No such rule' }));
+
+  app.post<{ Querystring: { name?: string; duration?: string } }>('/api/sounds', async (req, reply) => {
+    if (!Buffer.isBuffer(req.body)) return reply.code(400).send({ error: 'Send the file as the request body' });
+    const body = req.body;
+    return guard(reply, () => ({ id: store.addSound(body, req.query.name, Number(req.query.duration)) }));
+  });
+  app.put<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.updateSound(Number(req.params.id), req.body)));
+  app.delete<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.deleteSound(Number(req.params.id))));
+
+  app.get<{ Params: { file: string } }>('/sounds/:file', async (req, reply) => {
+    const m = req.params.file.match(/^[\w-]+\.(mp3|wav|ogg)$/);
+    const path = m && join(store.soundsDir, req.params.file);
+    if (!m || !path || !existsSync(path)) return reply.code(404).send({ error: 'Not found' });
+    return reply.type(MIME[m[1]]).header('cache-control', 'public, max-age=31536000, immutable').send(createReadStream(path));
+  });
+
+  app.get('/api/wled/info', async (_req, reply) => {
+    try {
+      return await fx.wled.info();
+    } catch (e) {
+      return reply.code(502).send({ error: e instanceof Error ? e.message : 'WLED did not answer' });
+    }
+  });
+  app.get('/api/wled/presets', async (_req, reply) => {
+    try {
+      return await fx.wled.presets();
+    } catch (e) {
+      return reply.code(502).send({ error: e instanceof Error ? e.message : 'WLED did not answer' });
+    }
+  });
+}

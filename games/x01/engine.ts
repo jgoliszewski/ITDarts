@@ -3,6 +3,7 @@ import type { BullDart, BullEvent, BullOffView } from '../bulloff.ts';
 import { beforeStart, bullView, undoStart } from '../bulloff.ts';
 import type { Coords, Dart } from '../darts.ts';
 import { MISS } from '../darts.ts';
+import type { Happening } from '../effects.ts';
 import { checkoutRoute, formatRoute } from './checkout.ts';
 import type { X01Options } from './rules.ts';
 import { scoreDart } from './rules.ts';
@@ -360,6 +361,39 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
     stats: Array.from({ length: players }, (_, p) => playerStats(results, p)),
     bullOff: bullView(raw.bull, players, o.bullOff),
   };
+}
+
+// ---------- effects ----------
+
+/** Every Wyzwalacz occurrence so far (games/effects.ts). Slots are leg, visit and dart numbers. */
+export function happenings(raw: Raw, players: number, o: X01Options): Happening[] {
+  if (raw.starter === null) return [];
+  const out: Happening[] = [];
+  const results = raw.legs.map(l => analyzeLeg(l, players, o));
+  let sets = 0;
+  results.forEach((r, li) => {
+    const L = `L${li + 1}`;
+    out.push({ slot: `${L}:start`, fact: { kind: 'legStart' } });
+    r.visits.forEach((v, vi) => {
+      const V = `${L}V${vi + 1}`;
+      // Misses filled in by Next player are no throws.
+      const thrown = v.darts.length - raw.legs[li].visits[vi].filled;
+      v.darts.slice(0, Math.min(thrown, v.live)).forEach((d, di) => out.push({ slot: `${V}D${di + 1}`, fact: { kind: 'dart', dart: d.dart } }));
+      if (!(v.closed || v.bust || v.checkoutAt >= 0 || v.darts.length >= 3)) return;
+      out.push({
+        slot: V,
+        fact: v.bust ? { kind: 'bust' } : { kind: 'visit', total: v.scored, darts: v.darts.slice(0, v.live).map(d => d.dart), checkout: v.checkoutAt >= 0 },
+      });
+    });
+    if (r.winner === null) return;
+    out.push({ slot: `${L}:won`, fact: { kind: 'checkout' } });
+    const t = tally(results.slice(0, li + 1), players, o);
+    const setsNow = t.sets.reduce((a, b) => a + b, 0);
+    if (setsNow > sets) out.push({ slot: `S${setsNow}:won`, fact: { kind: 'setWon' } });
+    sets = setsNow;
+    if (t.matchWinner !== null) out.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
+  });
+  return out;
 }
 
 // ---------- history ----------
