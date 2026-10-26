@@ -9,7 +9,7 @@ import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
 import { controls, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
-import { swoosh } from '../sound.ts';
+import { turnSound } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro } from './MiniBoard.tsx';
 
@@ -146,13 +146,13 @@ function StatsCards({ m }: { m: X01Match }) {
   );
 }
 
-/** Plays the swoosh on the kiosk when a visit goes to the next player; phones stay silent. `volume` is the effects volume, 0–100. */
-function useSwoosh(m: LiveMatch, on: boolean, volume: number) {
+/** Plays the turn sound on the kiosk when a visit goes to the next player; phones stay silent. `volume` is the effects volume, 0–100. */
+function useTurnSound(m: LiveMatch, on: boolean, volume: number) {
   const seen = useRef<{ key: string; n: number } | null>(null);
   useEffect(() => {
     const prev = seen.current;
     seen.current = { key: m.key, n: m.turnPass };
-    if (on && prev?.key === m.key && m.turnPass > prev.n) swoosh(0.6 * (volume / 100));
+    if (on && prev?.key === m.key && m.turnPass > prev.n) turnSound(0.75 * (volume / 100));
   }, [m.key, m.turnPass, on, volume]);
 }
 
@@ -318,7 +318,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
   const takeout = s.board.takeout.active;
   const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
   const finished = v.visit.darts.length > 0 && v.visit.dartsLeft === 0;
-  useSwoosh(m, s.you.isLocal && s.effects.sounds && s.effects.swoosh, s.effects.volume);
+  useTurnSound(m, s.you.isLocal && s.effects.sounds && s.effects.swoosh, s.effects.volume);
 
   return (
     <div className="big">

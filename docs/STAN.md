@@ -25,8 +25,8 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
 - **Karta tury i swoosh** z pierwszych testów ([UI.md](UI.md#tura-i-takeout), [EFEKTY.md](EFEKTY.md#wbudowane-dźwięki)):
   - Karta pokazuje werdykt („Checkout”, „Bust”, „Life lost”, „Out”, „N marks”) albo wynik Tury od ostatniej lotki do końca takeoutu.
   - 121 i Higher or Lower trzymają cel, życia i zakres do zamknięcia Tury.
-  - Kiosk gra swoosh z WebAudio przy każdej zmianie gracza (`turnPass` w stanie meczu), a kiosk Edge dostał flagę `--autoplay-policy`.
-  - Swoosh wycisza przełącznik Sounds albo jego własny przełącznik na `/effects`. Głośność bierze z poziomu efektów.
+  - Kiosk gra dźwięk zmiany gracza z WebAudio (`turnPass` w stanie meczu), a kiosk Edge dostał flagę `--autoplay-policy`. Od 2026-10-26 to arpeggio marimby zamiast swoosha.
+  - Dźwięk wycisza przełącznik Sounds albo jego własny przełącznik na `/effects`. Głośność bierze z poziomu efektów.
   - Sprawdzone skryptem z symulatorem: checkout i bust w 121, Tura X01 z „Next player”.
 - **Efekty** według [EFEKTY.md](EFEKTY.md), bez callera:
   - **Wyzwalacze:** każda gra zwraca wystąpienia z logu (`games/effects.ts`, `happenings` w modułach), a hub odpala nowe i zmienione. Tak samo działają minigierki, w tym „New record”. Takeout, start meczu i status tarczy zgłasza hub.
@@ -91,7 +91,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 2. Caller według [EFEKTY.md](EFEKTY.md#caller), gdy w [#5](https://github.com/jgoliszewski/ITDarts/issues/5) będzie paczka nagrań. Wystąpienia, z których będzie mówił, już są. Do tego sprawdzenie efektów z listy „Do sprawdzenia przy efektach”.
 3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
 4. Otwarte issues:
-   - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów;
+   - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów. Głos już wybrany (Stephen v8, [EFEKTY.md](EFEKTY.md#caller)), zostaje instalacja paczki i dźwięki efektów;
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
    - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
 

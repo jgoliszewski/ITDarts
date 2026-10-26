@@ -556,3 +556,4 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-preset .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .fx-setting { min-height: 64px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--raised); }
 .fx-setting b { font-size: 16px; }
+.fx-setting .icon-btn { background: transparent; color: var(--accent); }

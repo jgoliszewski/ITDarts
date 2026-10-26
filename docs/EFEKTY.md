@@ -93,11 +93,12 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 
 Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, że kolej następnego.
 
-- **Swoosh przy zmianie gracza:** gra, gdy Tura przechodzi na następnego gracza, czyli po końcu takeoutu, po „Takeout done” i po „Next player”. Gra też przy starcie następnego legu. Nie gra w bull-offie ani po końcu meczu.
+- **Dźwięk zmiany gracza:** gra, gdy Tura przechodzi na następnego gracza, czyli po końcu takeoutu, po „Takeout done” i po „Next player”. Gra też przy starcie następnego legu. Nie gra w bull-offie ani po końcu meczu.
+- To arpeggio marimby: C5, E5, G5 co 75 ms. Wybrane 2026-10-26 z kilkunastu propozycji w miejsce pierwszego swoosha (szum z opadającym filtrem), który brzmiał za ostro.
 - Jest na sztywno w kodzie, jak animacje. Nie jest Regułą i nie da się go przypisać do innego wyzwalacza.
-- Syntetyzowany w przeglądarce kiosku (WebAudio, krótki szum z opadającym filtrem), więc nie potrzebuje pliku ani licencji.
-- Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów.
-- Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany swoosh na stronie efektów.
+- Syntetyzowany w przeglądarce kiosku (WebAudio), więc nie potrzebuje pliku ani licencji.
+- Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów. W Playback jest jego odsłuch.
+- Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany dźwięk na stronie efektów. Jego przełącznik ma w `effects.json` klucz `swoosh`, zostawiony po pierwszej wersji.
 
 ## Konfiguracja w repo
 
@@ -165,7 +166,12 @@ Caller to osobny kanał tego samego systemu: korzysta z tych samych zdarzeń i t
 - **Wynik tury** pada zaraz po trzeciej lotce. Przy krótszej turze pada przy „Next player” albo przy takeoucie.
 - **Kolejność:** najpierw dźwięk efektu, potem caller. Caller czeka na koniec efektu, ale najdłużej 2 s. Nigdy nie grają na siebie.
 - Bez imion graczy. Wrócimy do tego, jeśli w #5 wyjdzie TTS.
-- **Paczka nagrań:** źródło i sposób instalacji ustalamy w [#5](https://github.com/jgoliszewski/ITDarts/issues/5). Bez paczki caller milczy, a reszta efektów działa.
+- **Paczka nagrań:** sposób instalacji ustalamy w [#5](https://github.com/jgoliszewski/ITDarts/issues/5). Bez paczki caller milczy, a reszta efektów działa.
+- **Głos** (wybrany 2026-10-26 z około 90 głosów: paczki darts-caller, Edge, Kokoro i Piper): Stephen z Amazon Polly, EN-US, paczka darts-caller `en-US-Stephen-Male-v8` (`https://darts-downloads.peschi.org/soundfiles/en-US-Stephen-Male-v8.zip`, 60 MB).
+  - Bierzemy starszą wersję v8, bo nowa paczka Stephena (`amazon/en-US-Stephen-Male.zip`) nie ma nagrania „You require”. Ma tylko „You need”, w którym Polly połyka „need”.
+  - Paczka ma klucze darts-caller: wyniki `0`–`180`, `you_require`, `gameon`, `gameshot`, `matchshot`, `busted`, `bulling_start` i `bulling_end`, `leg_N`, `set_N`, `d1`–`t20`, `bull` i `bullseye`.
+  - Większość kluczy ma po kilkadziesiąt wariantów, także dziwnych („Nada”, „Goose egg”). Klasyczne warianty wybieramy przy instalacji.
+  - Paczka nie ma licencji. Czy może leżeć w repo, czy tylko lokalnie na laptopie, ustalamy w #5 razem z instalacją.
 
 ## Strona „Effects”
 

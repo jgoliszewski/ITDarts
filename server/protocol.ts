@@ -66,7 +66,7 @@ interface LiveBase {
   newRecord: { office: boolean; personal: string[] } | null;
   /** A bull-off dart waits for its takeout; the bull-off screen stays up until then. */
   bullTakeout: boolean;
-  /** Counts visits handed to the next player since the server started; the kiosk plays the swoosh when it goes up. */
+  /** Counts visits handed to the next player since the server started; the kiosk plays the turn sound when it goes up. */
   turnPass: number;
 }
 
@@ -95,7 +95,7 @@ export interface ClientState {
   showQr: boolean;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
-  /** Pilot switches, the effects volume (0–100) and the built-in swoosh switch. `rev` changes with every effects change. */
+  /** Pilot switches, the effects volume (0–100) and the built-in turn sound switch (`swoosh`, its first name). `rev` changes with every effects change. */
   effects: { sounds: boolean; leds: boolean; volume: number; swoosh: boolean; rev: number };
 }
 

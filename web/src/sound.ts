@@ -49,29 +49,31 @@ export async function playFile(url: string, gain: number) {
   src.start();
 }
 
-/** The next player's turn: noise through a band-pass filter that sweeps up and back down. */
-export function swoosh(volume = 0.5) {
+/** One sine voice with a fast attack and an exponential decay. */
+function tone(a: AudioContext, t: number, freq: number, dur: number, peak: number, attack: number) {
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+
+/** A marimba note: the fundamental plus a short fourth partial for the wooden knock. */
+function marimba(a: AudioContext, t: number, freq: number, volume: number) {
+  tone(a, t, freq, 0.28, volume * 0.4, 0.002);
+  tone(a, t, freq * 4, 0.06, volume * 0.12, 0.001);
+}
+
+const C5 = 523.25, E5 = 659.25, G5 = 783.99;
+
+/** The next player's turn: a marimba arpeggio, C5 E5 G5 (picked after the first tests in place of a noise swoosh). */
+export function turnSound(volume = 0.6) {
   const a = audio();
   if (!a) return;
-  const len = 0.5;
-  const peak = 0.16;
-  const t = a.currentTime;
-  const buf = a.createBuffer(1, Math.ceil(a.sampleRate * len), a.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-  const src = a.createBufferSource();
-  src.buffer = buf;
-  const filter = a.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.Q.value = 1.5;
-  filter.frequency.setValueAtTime(500, t);
-  filter.frequency.exponentialRampToValueAtTime(3200, t + peak);
-  filter.frequency.exponentialRampToValueAtTime(700, t + len);
-  const gain = a.createGain();
-  gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(volume, t + peak);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + len);
-  src.connect(filter).connect(gain).connect(a.destination);
-  src.start(t);
-  src.stop(t + len);
+  const t = a.currentTime + 0.01;
+  [C5, E5, G5].forEach((f, i) => marimba(a, t + i * 0.075, f, volume));
 }

@@ -19,7 +19,7 @@ export interface EffectsSettings {
   leds: boolean;
   /** Effects volume in %, on top of each sound's own volume (repo). */
   volume: number;
-  /** The built-in swoosh on the next player; off for those who put their own sound on “Takeout end” (repo). */
+  /** The built-in turn sound (first a swoosh, now a marimba arpeggio); off for those who put their own sound on “Takeout end” (repo). */
   swoosh: boolean;
   wled: {
     /** host or host:port; empty when there is no controller (this laptop). */
