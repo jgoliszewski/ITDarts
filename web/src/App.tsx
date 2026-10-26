@@ -3,8 +3,9 @@ import type { Dart } from '../../games/darts.ts';
 import type { ClientState } from '../../server/protocol.ts';
 import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
+import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
-import { endsNormally, visitDarts } from './match.ts';
+import { endsNormally, isX01, visitDarts } from './match.ts';
 import { useSnapshot } from './net.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -15,7 +16,7 @@ import { Setup } from './screens/Setup.tsx';
 import { StatsPage } from './screens/Stats.tsx';
 import { useWide } from './util.ts';
 
-type Screen = 'main' | 'setup' | 'players' | 'board';
+type Screen = 'main' | 'setup' | 'players' | 'board' | 'howto';
 
 function usePath(): string {
   const [path, setPath] = useState(location.pathname);
@@ -40,6 +41,7 @@ function Menu({ s, onClose, open }: { s: ClientState; onClose: () => void; open:
         {pilot ? (
           <>
             {item('New match', () => open('new'))}
+            {s.match && item('How to play', () => open('howto'))}
             {s.match && item('End match', () => open('end'))}
             {item('Board panel', () => open('board'))}
             {item('Players', () => open('players'))}
@@ -90,7 +92,7 @@ function Main({ s }: { s: ClientState }) {
   }, [m?.resumed, s.you.isPilot]);
 
   // The fix sheet belongs to one visit; close it when the visit moves on.
-  const visitKey = m ? `${m.view.legNo}-${m.view.set}-${m.view.current}-${m.view.phase}` : '';
+  const visitKey = m ? `${isX01(m) ? `${m.view.legNo}-${m.view.set}` : m.view.visit.darts.length === 0}-${m.view.current}-${m.view.phase}` : '';
   useEffect(() => setFix(null), [visitKey]);
 
   const openFix = (index: number) => {
@@ -152,6 +154,7 @@ function Main({ s }: { s: ClientState }) {
 
   if (pilotOnly === 'setup') return <><Setup s={s} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'players') return <><Players s={s} onClose={() => setScreen('main')} />{dialogs}</>;
+  if (pilotOnly === 'howto' && m) return <><HowToScreen game={m.game} options={m.options} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'board' && !wide) {
     return <><BoardPanel s={s} wide={false} onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />{dialogs}</>;
   }

@@ -1,23 +1,33 @@
 import { useRef, useState } from 'react';
-import { GAMES } from '../../../games/index.ts';
+import type { GameId } from '../../../games/index.ts';
+import { GAMES, GAME_IDS, MAX_PLAYERS } from '../../../games/index.ts';
+import type { OptionDef } from '../../../games/turns.ts';
+import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { X01Options } from '../../../games/x01/rules.ts';
-import { DEFAULT_OPTIONS } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
+import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
 const ROW = 64; // row height + gap, for dragging
-const OPTIONS_KEY = 'itdarts.x01Options';
+const LAST_GAME_KEY = 'itdarts.lastGame';
+// X01 keeps its original key so saved options survive.
+const optionsKey = (g: GameId) => (g === 'x01' ? 'itdarts.x01Options' : `itdarts.options.${g}`);
 
-function loadOptions(): X01Options {
+function loadOptions(g: GameId): Record<string, unknown> {
   try {
-    return { ...DEFAULT_OPTIONS, ...JSON.parse(store.get(OPTIONS_KEY) ?? '{}') };
+    return { ...GAMES[g].defaults, ...JSON.parse(store.get(optionsKey(g)) ?? '{}') };
   } catch {
-    return DEFAULT_OPTIONS;
+    return { ...GAMES[g].defaults };
   }
 }
 
-function Seg<T extends string | number>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
+function lastGame(): GameId {
+  const g = store.get(LAST_GAME_KEY);
+  return g && g in GAMES ? (g as GameId) : 'x01';
+}
+
+function Seg<T extends string | number | boolean>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
     <div className="seg">
       {options.map(([v, l]) => <button key={String(v)} aria-pressed={v === value} onClick={() => onChange(v)}>{l}</button>)}
@@ -79,25 +89,91 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
   );
 }
 
+function Label({ def, text }: { def?: OptionDef<any>; text: string }) {
+  return <div className="opt-label"><b>{text}</b>{def && <Info text={def.info} />}</div>;
+}
+
+const x01Def = (key: string) => X01_OPTIONS.find(d => d.key === key || d.label === key);
+
+function X01Section({ options, setOptions }: { options: X01Options; setOptions: (o: X01Options) => void }) {
+  const mm = options.matchMode;
+  return (
+    <>
+      <div className="section"><Label def={x01Def('startScore')} text="Start score" />
+        <Seg value={options.startScore} options={[[301, '301'], [501, '501'], [701, '701']]} onChange={v => setOptions({ ...options, startScore: v })} />
+      </div>
+      <div className="section"><Label def={x01Def('checkIn')} text="Check-in" />
+        <Seg value={options.checkIn} options={[['straight', 'Straight'], ['double', 'Double']]} onChange={v => setOptions({ ...options, checkIn: v })} />
+      </div>
+      <div className="section"><Label def={x01Def('checkOut')} text="Check-out" />
+        <Seg value={options.checkOut} options={[['double', 'Double'], ['single', 'Single'], ['master', 'Master']]} onChange={v => setOptions({ ...options, checkOut: v })} />
+      </div>
+      <div className="section"><Label def={x01Def('Match mode')} text="Match mode" />
+        <Seg value={mm.kind} options={[['off', 'Off'], ['legs', 'Legs'], ['sets', 'Sets']]}
+          onChange={k => setOptions({ ...options, matchMode: k === 'off' ? { kind: 'off' } : k === 'legs' ? { kind: 'legs', firstTo: 3 } : { kind: 'sets', firstTo: 2, legsPerSet: 3 } })} />
+      </div>
+      {mm.kind !== 'off' && (
+        <div className="option-row">
+          <div><b style={{ fontSize: 15 }}>First to</b><div className="muted" style={{ fontSize: 13 }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
+          <Stepper label={mm.kind} value={mm.firstTo} min={1} max={mm.kind === 'legs' ? 21 : 11} onChange={v => setOptions({ ...options, matchMode: { ...mm, firstTo: v } })} />
+        </div>
+      )}
+      {mm.kind === 'sets' && (
+        <div className="option-row">
+          <div><b style={{ fontSize: 15 }}>Legs per set</b><div className="muted" style={{ fontSize: 13 }}>first to this many legs wins a set</div></div>
+          <Stepper label="legs per set" value={mm.legsPerSet} min={1} max={7} onChange={v => setOptions({ ...options, matchMode: { ...mm, legsPerSet: v } })} />
+        </div>
+      )}
+      {mm.kind === 'off' && <div className="muted" style={{ fontSize: 13 }}>After each leg you choose: next leg or end the match.</div>}
+      <div className="section"><Label def={x01Def('bullOff')} text="Bull-off" />
+        <Seg value={options.bullOff} options={[['off', 'Off'], ['closest', 'Closest'], ['pdc', 'PDC rules']]} onChange={v => setOptions({ ...options, bullOff: v })} />
+      </div>
+    </>
+  );
+}
+
+/** Minigame options straight from the module's definitions. */
+function MiniSection({ game, options, players, setOptions }: { game: GameId; options: Record<string, unknown>; players: number; setOptions: (o: Record<string, unknown>) => void }) {
+  const defs = GAMES[game].options.filter(d => d.key && (!d.when || d.when(options, players)));
+  return (
+    <>
+      {defs.map(d => (
+        <div key={d.key} className="section">
+          <Label def={d} text={d.label} />
+          <Seg value={options[d.key!] as string} options={d.choices as [string, string][]} onChange={v => setOptions({ ...options, [d.key!]: v })} />
+        </div>
+      ))}
+      {game === '121' && players > 1 && <div className="muted" style={{ fontSize: 13 }}>With 2 or more players 121 is played in Co-op: one shared target.</div>}
+      {game === 'killer' && <div className="muted" style={{ fontSize: 13 }}>Numbers are drawn at the start. Reroll them on the pilot before the first dart.</div>}
+    </>
+  );
+}
+
 export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
-  const [options, setOptionsState] = useState<X01Options>(loadOptions);
+  const [first] = useState(lastGame);
+  const [game, setGame] = useState<GameId>(first);
+  const [allOptions, setAllOptions] = useState<Partial<Record<GameId, Record<string, unknown>>>>({});
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [adding, setAdding] = useState<null | 'guest' | 'player'>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [howTo, setHowTo] = useState(false);
 
-  const setOptions = (o: X01Options) => {
-    setOptionsState(o);
-    store.set(OPTIONS_KEY, JSON.stringify(o));
+  const g = GAMES[game];
+  const options = allOptions[game] ?? loadOptions(game);
+  const setOptions = (o: Record<string, unknown>) => {
+    setAllOptions({ ...allOptions, [game]: o });
+    store.set(optionsKey(game), JSON.stringify(o));
   };
-  const mm = options.matchMode;
   const inRoster = new Set(roster.map(r => r.playerId));
   const active = s.players.filter(p => !p.archived && !inRoster.has(p.id));
   const recent = s.recentPlayerIds.map(id => active.find(p => p.id === id)).filter(p => !!p);
   const others = active.filter(p => !s.recentPlayerIds.includes(p.id));
+  // The last game played comes first; the order stays put while this screen is open.
+  const tiles = [first, ...GAME_IDS.filter(id => id !== first)];
 
   const add = (r: RosterEntry) => {
-    if (roster.length >= 8) return toast({ text: 'At most 8 players', kind: 'error' });
+    if (roster.length >= MAX_PLAYERS) return toast({ text: `At most ${MAX_PLAYERS} players`, kind: 'error' });
     setRoster([...roster, r]);
   };
 
@@ -132,10 +208,20 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
 
   const startMatch = async () => {
     setBusy(true);
-    const r = await act({ type: 'startMatch', game: 'x01', options, roster });
+    const r = await act({ type: 'startMatch', game, options, roster });
     setBusy(false);
-    if (r.ok) onClose();
+    if (r.ok) {
+      store.set(LAST_GAME_KEY, game);
+      onClose();
+    }
   };
+
+  if (howTo) return <HowToScreen game={game} options={options} onClose={() => setHowTo(false)} />;
+
+  const blocked = s.match ? 'A match is in progress'
+    : roster.length === 0 ? 'Add players to start'
+    : roster.length < g.minPlayers ? `${g.name} needs at least ${g.minPlayers} players`
+    : null;
 
   return (
     <div className="phone" style={{ maxWidth: 640 }}>
@@ -146,13 +232,28 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
       <div className="phone-body" style={{ gap: 24 }}>
         <section className="section">
           <div className="caps">Game</div>
-          <div className="tile-grid">
-            {GAMES.map(g => (
-              <button key={g.id} className={`tile ${g.id === 'x01' ? 'on' : ''}`} disabled={!g.available}>
-                {g.name}{!g.available && <small>Soon</small>}
-              </button>
-            ))}
+          <div className="game-grid">
+            {tiles.map(id => {
+              const t = GAMES[id];
+              return (
+                <button key={id} className={`game-tile ${id === game ? 'on' : ''}`} aria-pressed={id === game} onClick={() => setGame(id)}>
+                  <b>{t.name}</b>
+                  <span>{t.blurb}</span>
+                  <small>{t.minPlayers}–{MAX_PLAYERS} players</small>
+                </button>
+              );
+            })}
           </div>
+        </section>
+
+        <section className="section" style={{ gap: 16 }}>
+          <div className="option-row">
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{g.name}</h2>
+            <HowToButton onClick={() => setHowTo(true)} />
+          </div>
+          {game === 'x01'
+            ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
+            : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
         </section>
 
         <section className="section">
@@ -174,7 +275,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
               <button className="btn ghost" onClick={() => startAdding('player')}>{Icon.plus(18)}New player</button>
             </div>
           )}
-          {adding === 'guest' && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats are kept for them.</div>}
+          {adding === 'guest' && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
           {adding === 'player' && <div className="muted" style={{ fontSize: 13 }}>Creates a profile that collects stats from now on.</div>}
           {(recent.length > 0 || others.length > 0) && (
             <div className="chip-row">
@@ -185,44 +286,9 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
             </div>
           )}
         </section>
-
-        <section className="section" style={{ gap: 16 }}>
-          <div className="caps" style={{ fontSize: 13 }}>X01 options</div>
-          <div className="section"><b style={{ fontSize: 15 }}>Start score</b>
-            <Seg value={options.startScore} options={[[301, '301'], [501, '501'], [701, '701']]} onChange={v => setOptions({ ...options, startScore: v })} />
-          </div>
-          <div className="section"><b style={{ fontSize: 15 }}>Check-in</b>
-            <Seg value={options.checkIn} options={[['straight', 'Straight'], ['double', 'Double']]} onChange={v => setOptions({ ...options, checkIn: v })} />
-          </div>
-          <div className="section"><b style={{ fontSize: 15 }}>Check-out</b>
-            <Seg value={options.checkOut} options={[['double', 'Double'], ['single', 'Single'], ['master', 'Master']]} onChange={v => setOptions({ ...options, checkOut: v })} />
-          </div>
-          <div className="section"><b style={{ fontSize: 15 }}>Match mode</b>
-            <Seg value={mm.kind} options={[['off', 'Off'], ['legs', 'Legs'], ['sets', 'Sets']]}
-              onChange={k => setOptions({ ...options, matchMode: k === 'off' ? { kind: 'off' } : k === 'legs' ? { kind: 'legs', firstTo: 3 } : { kind: 'sets', firstTo: 2, legsPerSet: 3 } })} />
-          </div>
-          {mm.kind !== 'off' && (
-            <div className="option-row">
-              <div><b style={{ fontSize: 15 }}>First to</b><div className="muted" style={{ fontSize: 13 }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
-              <Stepper label={mm.kind} value={mm.firstTo} min={1} max={mm.kind === 'legs' ? 21 : 11} onChange={v => setOptions({ ...options, matchMode: { ...mm, firstTo: v } })} />
-            </div>
-          )}
-          {mm.kind === 'sets' && (
-            <div className="option-row">
-              <div><b style={{ fontSize: 15 }}>Legs per set</b><div className="muted" style={{ fontSize: 13 }}>first to this many legs wins a set</div></div>
-              <Stepper label="legs per set" value={mm.legsPerSet} min={1} max={7} onChange={v => setOptions({ ...options, matchMode: { ...mm, legsPerSet: v } })} />
-            </div>
-          )}
-          {mm.kind === 'off' && <div className="muted" style={{ fontSize: 13 }}>After each leg you choose: next leg or end the match.</div>}
-          <div className="section"><b style={{ fontSize: 15 }}>Bull-off</b>
-            <Seg value={options.bullOff} options={[['off', 'Off'], ['closest', 'Closest'], ['pdc', 'PDC rules']]} onChange={v => setOptions({ ...options, bullOff: v })} />
-          </div>
-        </section>
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
-        <button className="btn primary" disabled={roster.length === 0 || busy || !!s.match} onClick={startMatch}>
-          {s.match ? 'A match is in progress' : roster.length === 0 ? 'Add players to start' : 'Start match'}
-        </button>
+        <button className="btn primary" disabled={!!blocked || busy} onClick={startMatch}>{blocked ?? 'Start match'}</button>
       </div>
     </div>
   );

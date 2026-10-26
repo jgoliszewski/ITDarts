@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import QRCode from 'qrcode';
-import type { Command } from '../../../server/protocol.ts';
+import type { ClientState, Command } from '../../../server/protocol.ts';
 import type { Result } from '../net.ts';
 import { send } from '../net.ts';
 
@@ -95,6 +95,12 @@ export function Dialog({ title, children, actions, onClose }: { title: string; c
 }
 
 // ---------- QR ----------
+
+// The page's own port, so the QR points at Vite (5173) in dev and at the server in production.
+export function pilotUrl(s: ClientState): string {
+  const url = s.urls[0];
+  return url && location.port ? url.replace(/:\d+\/$/, `:${location.port}/`) : location.origin + '/';
+}
 
 export function Qr({ text }: { text: string }) {
   const [markup, setMarkup] = useState('');

@@ -38,7 +38,7 @@ npm run typecheck
 
 ## Struktura
 
-- `games/`: czysta logika gier, bez I/O. X01 odtwarza mecz z logu zdarzeń ([ADR 0004](docs/adr/0004-log-zdarzen-i-sqlite.md)) i liczy statystyki.
+- `games/`: czysta logika gier, bez I/O. Każda gra odtwarza mecz z logu zdarzeń ([ADR 0004](docs/adr/0004-log-zdarzen-i-sqlite.md)). X01 jest w `games/x01/`, a minigierki ([GRY.md](docs/GRY.md)) dzielą log tur z `games/turns.ts`. Katalog gier jest w `games/index.ts`.
 - `server/`: Fastify, adapter Board Managera, SQLite (`node:sqlite`), websocket do przeglądarek, API statystyk.
 - `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` dla wszystkich.
 - `index.html`: pierwszy prototyp X01, zostawiony dla porównania.

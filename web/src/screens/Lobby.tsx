@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import type { ClientState } from '../../../server/protocol.ts';
-import { Qr, act } from '../components/ui.tsx';
+import { HowToOverlay } from '../components/HowTo.tsx';
+import { Qr, act, pilotUrl } from '../components/ui.tsx';
 import { fmtAvg } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
 export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onMenu: () => void; onQr: () => void; onNew: () => void; overlay?: ReactNode }) {
-  const url = s.urls[0] ?? location.origin + '/';
+  const url = pilotUrl(s);
   const last = s.lastMatch;
-  const sets = last?.players.some(p => p.sets > 0);
   const takeThen = async (fn: () => void | Promise<unknown>) => {
     if (!s.you.isPilot && !(await act({ type: 'takeControl' })).ok) return;
     await fn();
@@ -34,11 +34,11 @@ export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onM
               {last.players.map((p, i) => (
                 <div key={i} className={`last-row ${p.winner ? 'win' : ''}`}>
                   <span className="n">{p.name}</span>
-                  <span className="num">{sets ? p.sets : p.legs}</span>
+                  <span className="num">{p.value}</span>
                 </div>
               ))}
               <div className="muted" style={{ fontSize: 'calc(20 * var(--u))' }}>
-                Avg {last.players.map(p => fmtAvg(p.avg)).join(' vs ')}{last.checkout ? ` · checkout ${last.checkout}` : ''}
+                {last.game === 'x01' && <>Avg {last.players.map(p => fmtAvg(p.avg)).join(' vs ')}{last.checkout ? ` · checkout ${last.checkout}` : ''}</>}
                 {last.status === 'ended' ? ' · ended early' : ''}
               </div>
             </div>
@@ -54,6 +54,7 @@ export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onM
           </div>
         </aside>
       </main>
+      <HowToOverlay s={s} />
       {overlay}
     </div>
   );

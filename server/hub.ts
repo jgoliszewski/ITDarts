@@ -3,13 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
 import type { WebSocket } from 'ws';
 import { isValidDart } from '../games/darts.ts';
-import type { X01Event, X01View } from '../games/x01/index.ts';
-import { isValidEvent, x01 } from '../games/x01/index.ts';
+import type { GameId } from '../games/index.ts';
+import { GAMES, MAX_PLAYERS, isGameId } from '../games/index.ts';
+import type { HolView } from '../games/hol.ts';
+import { drawNumbers } from '../games/killer.ts';
+import type { MiniView } from '../games/turns.ts';
+import type { X01View } from '../games/x01/index.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
 import { UserError, cleanName } from './db.ts';
-import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RosterEntry, ServerMessage } from './protocol.ts';
+import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
 
 interface Client {
   clientId: string;
@@ -19,23 +23,36 @@ interface Client {
 
 interface Live {
   rec: LiveRecord;
-  view: X01View;
+  view: X01View | MiniView;
   resumed: boolean;
   lastFix: LiveMatch['lastFix'];
+  record: RecordInfo | null;
+  intro: boolean;
+  newRecord: LiveMatch['newRecord'];
 }
 
-const MAX_PLAYERS = 8;
 const QR_TIMEOUT_MS = 60_000;
+const INTRO_MS = 4_000;
+
+// Phones reach the laptop over Wi-Fi, so typical LAN ranges go first. VPNs (Tailscale's 100.64/10) and
+// link-local addresses are unreachable from the phone and get dropped.
+function lanRank(ip: string): number {
+  if (ip.startsWith('192.168.')) return 0;
+  if (ip.startsWith('10.')) return 1;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return 2;
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(ip) || ip.startsWith('169.254.')) return -1;
+  return 3;
+}
 
 export function lanUrls(port: number): string[] {
-  const urls: string[] = [];
+  const ips: string[] = [];
   for (const list of Object.values(networkInterfaces())) {
-    for (const a of list ?? []) {
-      if (a.family === 'IPv4' && !a.internal && !a.address.startsWith('169.254.')) urls.push(`http://${a.address}:${port}/`);
-    }
+    for (const a of list ?? []) if (a.family === 'IPv4' && !a.internal && lanRank(a.address) >= 0) ips.push(a.address);
   }
-  return urls;
+  return ips.sort((a, b) => lanRank(a) - lanRank(b)).map(ip => `http://${ip}:${port}/`);
 }
+
+const beats = (better: 'lower' | 'higher', v: number, best: number) => (better === 'lower' ? v < best : v > best);
 
 export class Hub {
   private clients = new Map<WebSocket, Client>();
@@ -43,6 +60,8 @@ export class Hub {
   private live: Live | null = null;
   private showQr = false;
   private qrTimer: NodeJS.Timeout | null = null;
+  private introTimer: NodeJS.Timeout | null = null;
+  private howTo: ClientState['howTo'] = null;
   private urls: string[];
 
   constructor(
@@ -53,7 +72,10 @@ export class Hub {
   ) {
     this.urls = lanUrls(cfg.port);
     const rec = db.loadLive();
-    if (rec) this.live = { rec, view: this.compute(rec), resumed: true, lastFix: null };
+    if (rec) {
+      this.live = { rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null };
+      this.live.newRecord = this.newRecords(this.live);
+    }
 
     // Darts in the board during a visit are already in the match; later ones are new.
     board.countedOnBoard = () => {
@@ -68,8 +90,10 @@ export class Hub {
     });
     board.on('takeoutStarted', () => this.broadcast());
     board.on('takeoutFinished', () => {
-      const v = this.live?.view;
-      if (v && ((v.phase === 'throwing' && v.visit.darts.length > 0) || (v.phase === 'legWon' && this.live!.rec.options.matchMode.kind !== 'off'))) {
+      const l = this.live;
+      const v = l?.view;
+      const nextLeg = v?.phase === 'legWon' && l!.rec.game === 'x01' && l!.rec.options.matchMode.kind !== 'off';
+      if (v && ((v.phase === 'throwing' && v.visit.darts.length > 0) || nextLeg)) {
         this.apply({ t: 'next', at: Date.now() });
       } else this.broadcast();
     });
@@ -129,40 +153,97 @@ export class Hub {
     return {
       pilot: this.pilot ? { ...this.pilot, connected: pilotConnected } : null,
       board: this.board.status,
-      match: l && {
+      match: l && ({
         key: l.rec.key,
-        game: 'x01',
+        game: l.rec.game,
         options: l.rec.options,
-        description: x01.describe(l.rec.options),
+        description: GAMES[l.rec.game].describe(l.rec.options, l.rec.roster.length),
         roster: l.rec.roster,
         startedAt: l.rec.startedAt,
         view: l.view,
         resumed: l.resumed,
         lastFix: l.lastFix,
-      },
+        record: l.record,
+        intro: l.intro,
+        newRecord: l.newRecord,
+      } as LiveMatch),
       lastMatch: this.db.lastMatch(),
       players: this.db.players(),
       recentPlayerIds: this.db.recentPlayerIds(),
       urls: this.urls,
       showQr: this.showQr,
+      howTo: this.howTo,
     };
   }
 
   // ---------- match ----------
 
-  private compute(rec: LiveRecord): X01View {
-    return x01.view(rec.events, rec.roster.length, rec.options);
+  private compute(rec: LiveRecord): X01View | MiniView {
+    return GAMES[rec.game].view(rec.events, rec.roster.length, rec.options);
   }
 
-  private apply(e: X01Event) {
+  private apply(e: { t: string; [k: string]: unknown }) {
     const l = this.live;
     if (!l) throw new UserError('No match in progress');
-    if (!isValidEvent(e)) throw new UserError('Invalid input');
+    if (!GAMES[l.rec.game].isValidEvent(e)) throw new UserError('Invalid input');
     l.rec.events.push(e);
     this.db.appendLive(e);
     l.view = this.compute(l.rec);
+    l.newRecord = this.newRecords(l);
     if (e.t !== 'fix') l.lastFix = null;
+    // The first dart closes the record screen and “How to play”.
+    if (e.t === 'dart') {
+      this.endIntro();
+      this.howTo = null;
+    }
     this.broadcast();
+  }
+
+  private endIntro() {
+    if (this.introTimer) clearTimeout(this.introTimer);
+    this.introTimer = null;
+    if (this.live) this.live.intro = false;
+  }
+
+  private variant(rec: LiveRecord) {
+    const game = GAMES[rec.game];
+    const v = game.record?.variant(rec.options, rec.roster.length);
+    return v && game.record ? { ...v, ...game.record } : null;
+  }
+
+  /** The office record of the variant, for the record screen. */
+  private recordInfo(rec: LiveRecord): RecordInfo | null {
+    const v = this.variant(rec);
+    if (!v) return null;
+    const best = this.db.records(v.key, v.better, 1)[0];
+    return { label: v.label, value: best ? v.format(best.value) : null, by: best?.who ?? null, at: best?.at ?? null };
+  }
+
+  /** Scores that count for records: finished games only, registered players only, and no co-op with guests. */
+  private recordScores(l: Live): (number | null)[] | null {
+    const v = this.variant(l.rec);
+    if (!v || l.view.phase !== 'matchWon' || !('scores' in l.view)) return null;
+    if (v.key.endsWith(':coop') && l.rec.roster.some(r => r.playerId === null)) return null;
+    return l.view.scores.map((s, i) => (l.rec.roster[i].playerId === null ? null : s));
+  }
+
+  /** New office or personal records, checked against history at the end of the game. */
+  private newRecords(l: Live): Live['newRecord'] {
+    const v = this.variant(l.rec);
+    const scores = this.recordScores(l);
+    if (!v || !scores) return null;
+    const mine = scores.flatMap(s => (s === null ? [] : [s]));
+    if (mine.length === 0) return null;
+    const top = mine.reduce((a, b) => (beats(v.better, b, a) ? b : a));
+    const office = this.db.records(v.key, v.better, 1)[0];
+    const personal = v.key.endsWith(':coop') ? [] : l.rec.roster.flatMap((r, i) => {
+      const s = scores[i];
+      if (s === null || r.playerId === null) return [];
+      const best = this.db.records(v.key, v.better, 1, r.playerId)[0];
+      return !best || beats(v.better, s, best.value) ? [r.name] : [];
+    });
+    const isOffice = !office || beats(v.better, top, office.value);
+    return isOffice || personal.length ? { office: isOffice, personal } : null;
   }
 
   private checkRoster(input: unknown): RosterEntry[] {
@@ -179,12 +260,28 @@ export class Hub {
     });
   }
 
-  private startMatch(options: unknown, rosterInput: unknown) {
+  private startMatch(gameId: unknown, options: unknown, rosterInput: unknown) {
     if (this.live) throw new UserError('A match is already in progress');
+    if (!isGameId(gameId)) throw new UserError('Unknown game');
+    const game = GAMES[gameId];
     const roster = this.checkRoster(rosterInput);
-    const rec: LiveRecord = { key: randomUUID(), game: 'x01', options: x01.normalizeOptions(options), roster, startedAt: Date.now(), events: [] };
+    if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs at least ${game.minPlayers} players`);
+    const rec: LiveRecord = { key: randomUUID(), game: gameId, options: game.normalizeOptions(options), roster, startedAt: Date.now(), events: [] };
     this.db.startLive(rec);
-    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null };
+    if (gameId === 'killer') {
+      const e = { t: 'numbers', numbers: drawNumbers(roster.length) };
+      rec.events.push(e);
+      this.db.appendLive(e);
+    }
+    const record = this.recordInfo(rec);
+    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null };
+    this.howTo = null;
+    if (record) {
+      this.introTimer = setTimeout(() => {
+        this.endIntro();
+        this.broadcast();
+      }, INTRO_MS);
+    }
     // Darts still sitting in the board belong to no one.
     void this.board.action('reset').catch(() => undefined);
   }
@@ -194,27 +291,36 @@ export class Hub {
     const l = this.live;
     if (!l) throw new UserError('No match in progress');
     const { rec, view } = l;
+    const game = GAMES[rec.game];
     const n = rec.roster.length;
     let status: 'finished' | 'ended' = 'ended';
     let winner: number | null = null;
     if (view.phase === 'matchWon') {
       status = 'finished';
-      winner = view.matchWinner;
-    } else if (view.phase === 'legWon' && rec.options.matchMode.kind === 'off') {
+      winner = 'winners' in view ? (view.winners.length === 1 ? view.winners[0] : null) : view.matchWinner;
+    } else if (view.phase === 'legWon' && rec.game === 'x01' && rec.options.matchMode.kind === 'off') {
       // Without match mode, ending after a leg is the normal end; most legs wins.
       status = 'finished';
-      const best = Math.max(...view.legs);
-      winner = view.legs.filter(x => x === best).length === 1 ? view.legs.indexOf(best) : null;
+      const legs = (view as X01View).legs;
+      const best = Math.max(...legs);
+      winner = legs.filter(x => x === best).length === 1 ? legs.indexOf(best) : null;
     }
     if (status === 'finished' || save) {
+      const mini = 'winners' in view ? view : null;
+      const scores = this.recordScores(l);
       this.db.saveMatch({
-        game: 'x01', options: rec.options, roster: rec.roster, startedAt: rec.startedAt, endedAt: Date.now(),
-        status, winner, sets: view.sets, legs: x01.compact(rec.events, n, rec.options),
+        game: rec.game, options: rec.options, roster: rec.roster, startedAt: rec.startedAt, endedAt: Date.now(),
+        status, winner, sets: 'sets' in view ? view.sets : [], legs: game.compact(rec.events, n, rec.options),
+        legsWon: rec.game === 'hol' ? (view as HolView).points : undefined,
+        variant: scores ? this.variant(rec)!.key : null,
+        scores: scores ?? undefined,
+        stats: mini?.stats,
       });
       this.backup();
     } else {
       this.db.clearLive();
     }
+    this.endIntro();
     this.live = null;
     return rec;
   }
@@ -227,10 +333,10 @@ export class Hub {
     }
   }
 
-  private rematch(options: LiveRecord['options'], roster: RosterEntry[]) {
+  private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[]) {
     // The next player in order starts, so no bull-off.
     const rotated = [...roster.slice(1), roster[0]];
-    this.startMatch({ ...options, bullOff: 'off' }, rotated);
+    this.startMatch(game, { ...options, bullOff: 'off' }, rotated);
   }
 
   private player(c: PlayerCommand): { playerId?: number } {
@@ -255,14 +361,24 @@ export class Hub {
 
     switch (cmd.type) {
       case 'startMatch':
-        this.startMatch(cmd.options, cmd.roster);
+        this.startMatch(cmd.game, cmd.options, cmd.roster);
         return {};
       case 'rematch': {
         const last = this.db.lastMatchSetup();
         if (!last) throw new UserError('No match to repeat');
-        this.rematch(last.options, last.roster);
+        this.rematch(last.game, last.options, last.roster);
         return {};
       }
+      case 'skipIntro':
+        this.endIntro();
+        return {};
+      case 'reroll':
+        if (!v || !('canReroll' in v) || !v.canReroll) throw new UserError('Numbers are fixed once the first dart is in');
+        this.apply({ t: 'numbers', numbers: drawNumbers(this.live!.rec.roster.length) });
+        return {};
+      case 'showHowTo':
+        this.howTo = isGameId(cmd.game) ? { game: cmd.game, options: cmd.options ?? this.live?.rec.options ?? null } : null;
+        return {};
       case 'bullOff':
         if (v?.phase !== 'bulloff') throw new UserError('Bull-off is over');
         this.apply({ t: 'start', starter: cmd.starter });
@@ -292,7 +408,7 @@ export class Hub {
         return {};
       case 'closeMatch': {
         const rec = this.finish(true);
-        if (cmd.then === 'rematch') this.rematch(rec.options, rec.roster);
+        if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster);
         return {};
       }
       case 'dismissResumed':

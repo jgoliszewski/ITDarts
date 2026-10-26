@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import type { X01Event, X01Options } from '../games/x01/index.ts';
+import { atc } from '../games/race.ts';
 import { x01 } from '../games/x01/index.ts';
 import { Db } from './db.ts';
 import type { RosterEntry } from './protocol.ts';
@@ -100,5 +101,40 @@ describe('history and stats', () => {
     const out = join(dir, 'b');
     db.backup([out], 2);
     expect(readdirSync(out)).toHaveLength(1);
+  });
+});
+
+describe('minigames', () => {
+  // A Next player after every third dart.
+  const atcEvents = (...darts: string[]) => darts.flatMap((s, i) => [{ t: 'dart', dart: parseDart(s)!, at: Date.now() }, ...(i % 3 === 2 ? [{ t: 'next' }] : [])]);
+  const saveAtc = (roster: RosterEntry[], events: unknown[]) => {
+    const o = atc.normalizeOptions({});
+    const v = atc.view(events as never, roster.length, o);
+    return db.saveMatch({
+      game: 'atc', options: o, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status: 'finished',
+      winner: v.winners.length === 1 ? v.winners[0] : null, sets: [], legs: atc.compact(events as never, roster.length, o),
+      variant: atc.record!.variant(o, roster.length)!.key, scores: v.scores, stats: v.stats,
+    });
+  };
+  // 1 → 4 → 7 → 10 → 13 → 16 → 19 → bull with trebles and skips: 8 darts.
+  const fast = ['T1', 'T4', 'T7', 'T10', 'T13', 'T16', 'T19', 'Bull'];
+
+  it('keeps records per variant, best first, and shows the result in the last match', () => {
+    const a = db.createPlayer('Anna');
+    saveAtc([{ playerId: a, name: 'Anna' }], atcEvents(...fast));
+    saveAtc([{ playerId: a, name: 'Anna' }], atcEvents('Miss', ...fast));
+    const rows = db.records('atc:any:skips', 'lower');
+    expect(rows.map(r => r.value)).toEqual([8, 9]);
+    expect(rows[0].who).toBe('Anna');
+    expect(db.lastMatch()).toMatchObject({ game: 'atc', players: [{ name: 'Anna', value: '9 darts' }] });
+    expect(new Stats(db).game(a, 'atc', 'all')).toMatchObject({ played: 2, totals: { darts: 17, hits: 16 } });
+    expect(new Stats(db).records('atc')[0]).toMatchObject({ label: 'ATC · Any · Skips' });
+  });
+
+  it('does not count minigames in the X01 stats', () => {
+    const a = db.createPlayer('Anna');
+    saveAtc([{ playerId: a, name: 'Anna' }], atcEvents(...fast));
+    expect(new Stats(db).player(a, 'all')!.x01.darts).toBe(0);
+    expect(new Stats(db).list()[0].avg).toBeNull();
   });
 });

@@ -1,5 +1,11 @@
 // Messages between the server and browsers. Imported by web/ as types only.
+import type { O121, View121 } from '../games/121.ts';
+import type { CricketOptions, CricketView } from '../games/cricket.ts';
 import type { Dart } from '../games/darts.ts';
+import type { HolOptions, HolView } from '../games/hol.ts';
+import type { KillerOptions, KillerView } from '../games/killer.ts';
+import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
+import type { GameId } from '../games/turns.ts';
 import type { X01Options, X01View } from '../games/x01/index.ts';
 
 /** A seat in a match: a registered player or a guest for this match only. */
@@ -26,25 +32,49 @@ export interface BoardStatus {
   busy: { action: BoardAction; since: number } | null;
 }
 
-export interface LiveMatch {
+interface Games {
+  x01: { options: X01Options; view: X01View };
+  atc: { options: AtcOptions; view: AtcView };
+  fullboard: { options: FullBoardOptions; view: FullBoardView };
+  '121': { options: O121; view: View121 };
+  cricket: { options: CricketOptions; view: CricketView };
+  killer: { options: KillerOptions; view: KillerView };
+  hol: { options: HolOptions; view: HolView };
+}
+
+/** The office record of the variant being played, for the record screen. */
+export interface RecordInfo {
+  label: string;
+  value: string | null;
+  by: string | null;
+  at: number | null;
+}
+
+interface LiveBase {
   key: string;
-  game: 'x01';
-  options: X01Options;
   description: string;
   roster: RosterEntry[];
   startedAt: number;
-  view: X01View;
   /** Match came back after a server restart; the pilot shows a notice. */
   resumed: boolean;
   lastFix: { index: number; at: number } | null;
+  record: RecordInfo | null;
+  /** The record screen is up. */
+  intro: boolean;
+  /** Set once the game is over: an office record, and names with a new personal record. */
+  newRecord: { office: boolean; personal: string[] } | null;
 }
+
+export type LiveMatch = { [G in GameId]: LiveBase & { game: G } & Games[G] }[GameId];
 
 export interface MatchSummary {
   id: number;
+  game: GameId;
   description: string;
   endedAt: number;
   status: 'finished' | 'ended';
-  players: { name: string; legs: number; sets: number; avg: number | null; winner: boolean }[];
+  /** `value` is what the lobby shows big: legs or sets in X01, the result in minigames. */
+  players: { name: string; value: string; avg: number | null; winner: boolean }[];
   checkout: string | null;
 }
 
@@ -58,6 +88,8 @@ export interface ClientState {
   recentPlayerIds: number[];
   urls: string[];
   showQr: boolean;
+  /** “How to play” shown on the scoreboard. */
+  howTo: { game: GameId; options: unknown } | null;
 }
 
 export type PlayerCommand =
@@ -69,7 +101,10 @@ export type PlayerCommand =
 
 export type Command =
   | { type: 'takeControl' }
-  | { type: 'startMatch'; game: 'x01'; options: X01Options; roster: RosterEntry[] }
+  | { type: 'startMatch'; game: GameId; options: unknown; roster: RosterEntry[] }
+  | { type: 'skipIntro' }
+  | { type: 'reroll' }
+  | { type: 'showHowTo'; game: GameId | null; options?: unknown }
   | { type: 'rematch' }
   | { type: 'bullOff'; starter: number }
   | { type: 'dart'; dart: Dart }
@@ -102,7 +137,7 @@ export interface PlayerStatsResponse {
   window: StatsWindow;
   x01: import('../games/x01/stats.ts').X01Stats;
   results: { played: number; won: number; winrate: number | null };
-  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved'; score: string }[];
+  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played'; score: string }[];
   opponents: { id: number; name: string; played: number; won: number }[];
 }
 
@@ -112,6 +147,24 @@ export interface H2HResponse {
   played: number;
   wins: [number, number];
   avg: [number | null, number | null];
+}
+
+/** Stats of one player in one minigame. Totals are the game's per-player stats summed over matches. */
+export interface GameStatsResponse {
+  player: PlayerInfo;
+  game: GameId;
+  window: StatsWindow;
+  played: number;
+  won: number;
+  totals: Record<string, number>;
+  /** Best result per record variant. */
+  bests: { label: string; value: string }[];
+}
+
+export interface RecordTable {
+  key: string;
+  label: string;
+  rows: { value: string; who: string; at: number }[];
 }
 
 export interface PlayerListItem {

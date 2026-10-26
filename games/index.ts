@@ -1,14 +1,19 @@
-// Game catalog. Only X01 is playable; the rest waits for issue #3.
-export interface GameInfo {
-  id: string;
-  name: string;
-  available: boolean;
-}
+// Game catalog: every playable game and its module.
+import { oneTwentyOne } from './121.ts';
+import { cricket } from './cricket.ts';
+import { hol } from './hol.ts';
+import { killer } from './killer.ts';
+import { atc, fullBoard } from './race.ts';
+import type { GameId, GameModule } from './turns.ts';
+import { x01 } from './x01/index.ts';
 
-export const GAMES: GameInfo[] = [
-  { id: 'x01', name: 'X01', available: true },
-  { id: '121', name: '121', available: false },
-  { id: 'cricket', name: 'Cricket', available: false },
-  { id: 'atc', name: 'Around the Clock', available: false },
-  { id: 'killer', name: 'Killer', available: false },
-];
+export type { GameId, GameModule } from './turns.ts';
+
+export const GAMES: Record<GameId, GameModule> = { x01, atc, fullboard: fullBoard, '121': oneTwentyOne, cricket, killer, hol };
+
+/** In the order of the setup tiles (object keys would put '121' first). */
+export const GAME_IDS: GameId[] = ['x01', 'cricket', 'atc', 'fullboard', '121', 'killer', 'hol'];
+
+export const isGameId = (id: unknown): id is GameId => typeof id === 'string' && id in GAMES;
+
+export const MAX_PLAYERS = 8;

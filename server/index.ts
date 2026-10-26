@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
 import Fastify from 'fastify';
+import { isGameId } from '../games/index.ts';
 import { Board } from './board.ts';
 import { loadConfig } from './config.ts';
 import { Db } from './db.ts';
@@ -37,10 +38,15 @@ app.get('/ws', { websocket: true }, (socket, req) => {
 
 app.get('/api/stats/players', async () => stats.list());
 
-app.get<{ Params: { id: string }; Querystring: { window?: string } }>('/api/stats/players/:id', async (req, reply) => {
-  const r = stats.player(Number(req.params.id), parseWindow(req.query.window));
+app.get<{ Params: { id: string }; Querystring: { window?: string; game?: string } }>('/api/stats/players/:id', async (req, reply) => {
+  const { game } = req.query;
+  const r = isGameId(game) && game !== 'x01'
+    ? stats.game(Number(req.params.id), game, parseWindow(req.query.window))
+    : stats.player(Number(req.params.id), parseWindow(req.query.window));
   return r ?? reply.code(404).send({ error: 'No such player' });
 });
+
+app.get<{ Querystring: { game?: string } }>('/api/stats/records', async req => (isGameId(req.query.game) ? stats.records(req.query.game) : []));
 
 app.get<{ Querystring: { a?: string; b?: string; window?: string } }>('/api/stats/h2h', async (req, reply) => {
   const r = stats.h2h(Number(req.query.a), Number(req.query.b), parseWindow(req.query.window));

@@ -1,10 +1,12 @@
 import { label, value } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
+import { LIVES } from '../../../games/121.ts';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, shortDescription } from '../match.ts';
-import { fmtAvg } from '../util.ts';
+import { controls, isX01, shortDescription, winnersOf } from '../match.ts';
+import { fmtAvg, shortDate } from '../util.ts';
+import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
 
 function PhoneHeader({ s, title, onMenu, onBoard }: { s: ClientState; title: string; onMenu: () => void; onBoard?: () => void }) {
@@ -27,16 +29,32 @@ function Players({ m }: { m: LiveMatch }) {
     <div className="p-players">
       {m.roster.map((r, i) => {
         const active = i === v.current && v.phase !== 'bulloff';
-        const sets = m.options.matchMode.kind === 'sets' ? `${v.sets[i]} sets · ` : '';
+        let meta: string, big: string, out = false;
+        if (isX01(m)) {
+          const sets = m.options.matchMode.kind === 'sets' ? `${m.view.sets[i]} sets · ` : '';
+          meta = `${sets}${legsWord(m.view.legs[i])} · avg ${fmtAvg(m.view.stats[i].matchAvg)}`;
+          big = String(m.view.scores[i]);
+        } else {
+          ({ meta, value: big, out } = m.view.rows[i]);
+          // The active player's line shows what the hero shows on the big screen.
+          if (active) meta = `${m.view.hero.caption} · ${m.view.hero.note}`;
+          if (active && m.game === '121') meta += ` · ${'♥'.repeat(m.view.lives)}${'♡'.repeat(LIVES - m.view.lives)}`;
+        }
         return (
-          <div key={i} className={`p-player ${active ? 'active' : ''}`}>
-            <div className="who"><b>{r.name}</b><span>{sets}{legsWord(v.legs[i])} · avg {fmtAvg(v.stats[i].matchAvg)}</span></div>
-            <div className="num">{v.scores[i]}</div>
+          <div key={i} className={`p-player ${active ? 'active' : ''} ${out ? 'out' : ''}`}>
+            <div className="who"><b>{r.name}</b><span>{meta}</span></div>
+            <div className="num">{big}</div>
           </div>
         );
       })}
     </div>
   );
+}
+
+function checkoutHint(m: LiveMatch): string | null {
+  if (m.view.phase !== 'throwing') return null;
+  const route = isX01(m) || m.game === '121' ? m.view.checkout : null;
+  return route ? `Checkout ${route}` : null;
 }
 
 function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDart: (i: number) => void }) {
@@ -53,9 +71,11 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
             : <div key={i} className="p-dart empty" />;
         }
         const inner = <><span className="num">{value(d.dart)}</span><span className="lbl">{label(d.dart)}</span></>;
+        // In minigames a dart that did nothing is dimmed.
+        const dead = !isX01(m) && !m.view.visit.good[i] ? 'dead' : '';
         return editable
-          ? <button key={`${i}-${flash}`} className={`p-dart ${flash === i ? 'flash' : ''}`} onClick={() => onDart(i)}>{inner}</button>
-          : <div key={i} className="p-dart">{inner}</div>;
+          ? <button key={`${i}-${flash}`} className={`p-dart ${dead} ${flash === i ? 'flash' : ''}`} onClick={() => onDart(i)}>{inner}</button>
+          : <div key={i} className={`p-dart ${dead}`}>{inner}</div>;
       })}
     </div>
   );
@@ -63,6 +83,16 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
 
 function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () => void }) {
   const v = m.view;
+  if (m.intro && m.record) {
+    const r = m.record;
+    return (
+      <div className="box">
+        <div className="caps" style={{ color: 'var(--accent)', fontSize: 13 }}>Office record · {r.label}</div>
+        <b style={{ fontSize: 22 }}>{r.value ? `${r.value} · ${r.by}${r.at ? ` · ${shortDate(r.at)}` : ''}` : 'No record yet'}</b>
+        <button className="btn block" onClick={() => act({ type: 'skipIntro' })}>Skip</button>
+      </div>
+    );
+  }
   if (v.phase === 'bulloff') {
     return (
       <div className="box">
@@ -73,20 +103,23 @@ function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () =>
       </div>
     );
   }
-  if (v.phase === 'legWon' && v.lastLeg) {
+  const leg = isX01(m) && m.view.phase === 'legWon' ? m.view.lastLeg : null;
+  if (isX01(m) && leg) {
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Leg {v.legNo} won</div>
-        <b style={{ fontSize: 22 }}>{m.roster[v.lastLeg.winner].name}</b>
-        <span className="muted" style={{ fontSize: 14 }}>{label(v.lastLeg.checkout)} · {v.lastLeg.darts} darts · avg {fmtAvg(v.lastLeg.avg)}</span>
+        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Leg {m.view.legNo} won</div>
+        <b style={{ fontSize: 22 }}>{m.roster[leg.winner].name}</b>
+        <span className="muted" style={{ fontSize: 14 }}>{label(leg.checkout)} · {leg.darts} darts · avg {fmtAvg(leg.avg)}</span>
       </div>
     );
   }
-  if (v.phase === 'matchWon' && v.matchWinner !== null) {
+  if (v.phase === 'matchWon') {
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Match won</div>
-        <b style={{ fontSize: 24 }}>{m.roster[v.matchWinner].name}</b>
+        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>{isX01(m) ? 'Match won' : 'Game over'}</div>
+        <b style={{ fontSize: 24 }}>{isX01(m) ? m.roster[m.view.matchWinner!].name : winnersOf(m)}</b>
+        {!isX01(m) && <span className="muted" style={{ fontSize: 14 }}>{m.view.result}</span>}
+        {!isX01(m) && <NewRecord m={m} />}
         <button className="btn primary block" onClick={() => act({ type: 'closeMatch', then: 'rematch' })}>Rematch</button>
         <button className="btn block" onClick={onNew}>New match</button>
         <button className="btn block" onClick={() => act({ type: 'closeMatch', then: 'lobby' })}>Back to lobby</button>
@@ -95,6 +128,14 @@ function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () =>
   }
   if (s.board.takeout.active) {
     return <div className="banner info" style={{ borderRadius: 16 }}>Removing darts… don't throw yet</div>;
+  }
+  if (m.game === 'killer' && m.view.canReroll) {
+    return (
+      <div className="box">
+        <span className="muted" style={{ fontSize: 14 }}>Numbers: {m.roster.map((r, i) => `${r.name} ${m.view.numbers[i]}`).join(' · ')}</span>
+        <button className="btn block" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
+      </div>
+    );
   }
   return null;
 }
@@ -118,10 +159,12 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
           <div className="section">
             <div className="p-turn-head">
               <span className="caps">{m.roster[v.current].name} · this turn</span>
-              <span className="num" style={{ color: v.visit.bust ? 'var(--red)' : undefined }}>{v.visit.bust ? 'BUST' : v.visit.total}</span>
+              {isX01(m)
+                ? <span className="num" style={{ color: m.view.visit.bust ? 'var(--red)' : undefined }}>{m.view.visit.bust ? 'BUST' : m.view.visit.total}</span>
+                : <span className="num">{m.game === 'hol' ? m.view.sum ?? 0 : m.view.hero.big}</span>}
             </div>
             <Darts m={m} editable onDart={onFix} />
-            <div className="p-hint">{v.checkout && v.phase === 'throwing' ? `Checkout ${v.checkout}` : c.hint}</div>
+            <div className="p-hint">{checkoutHint(m) ?? c.hint}</div>
           </div>
         )}
         {offline && v.phase === 'throwing' && v.visit.dartsLeft > 0 && (
@@ -183,7 +226,7 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
             {last.players.map((p, i) => (
               <div key={i} className="option-row">
                 <span style={{ fontWeight: p.winner ? 800 : 500, color: p.winner ? 'var(--text)' : 'var(--muted)' }}>{p.name}</span>
-                <span className="num" style={{ fontSize: 32, color: p.winner ? 'var(--accent)' : 'var(--muted)' }}>{last.players.some(x => x.sets) ? p.sets : p.legs}</span>
+                <span className="num" style={{ fontSize: 32, color: p.winner ? 'var(--accent)' : 'var(--muted)' }}>{p.value}</span>
               </div>
             ))}
           </div>

@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
 import { label, value } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
-import { Icon, Logo, Qr, act } from '../components/ui.tsx';
-import { controls, legTarget } from '../match.ts';
+import { HowToOverlay } from '../components/HowTo.tsx';
+import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
+import type { X01Match } from '../match.ts';
+import { controls, isX01, legTarget } from '../match.ts';
 import { fmtAvg, useNow } from '../util.ts';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -15,7 +18,7 @@ export function boardPill(s: ClientState): { dot: string; text: string } {
   if (!b.detecting) return { dot: 'amber', text: 'Detection off' };
   const phase = s.match?.view.phase;
   if (phase === 'legWon') return { dot: 'green', text: 'Leg won' };
-  if (phase === 'matchWon') return { dot: 'green', text: 'Match won' };
+  if (phase === 'matchWon') return { dot: 'green', text: s.match?.game === 'x01' ? 'Match won' : 'Game over' };
   return { dot: 'green', text: s.match ? 'Ready · throw' : 'Board ready' };
 }
 
@@ -37,7 +40,7 @@ function Pips({ won, of }: { won: number; of: number }) {
   return <div className="pips">{Array.from({ length: of }, (_, i) => <span key={i} className={`pip ${i < won ? 'on' : ''}`} />)}</div>;
 }
 
-function Hero({ m, flash, onDart, canEdit }: { m: LiveMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
+function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const p = v.current;
   const target = legTarget(m);
@@ -82,7 +85,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: LiveMatch; flash: number | nul
   );
 }
 
-function PlayerList({ m }: { m: LiveMatch }) {
+function PlayerList({ m }: { m: X01Match }) {
   const v = m.view;
   const compact = m.roster.length > 2;
   const target = legTarget(m);
@@ -109,7 +112,7 @@ function PlayerList({ m }: { m: LiveMatch }) {
   );
 }
 
-function StatsCards({ m }: { m: LiveMatch }) {
+function StatsCards({ m }: { m: X01Match }) {
   const p = m.view.current;
   const st = m.view.stats[p];
   const name = m.roster[p].name.toUpperCase();
@@ -143,17 +146,19 @@ function TakeoutOverlay({ s, m }: { s: ClientState; m: LiveMatch }) {
   const since = s.board.takeout.since ?? now;
   const stuck = now - since > STUCK_AFTER_MS;
   const darts = v.visit.darts;
+  const x = isX01(m) ? m.view : null;
+  const big = x ? (x.visit.bust ? 'BUST' : String(x.visit.total)) : m.game === 'hol' ? String(m.view.sum ?? 0) : null;
   return (
     <div className="overlay">
       <div className="overlay-card">
         {darts.length > 0 && (
           <div className="body">
-            <div className="who">{m.roster[v.current].name} scored</div>
-            <div className={`bigscore num ${v.visit.bust ? 'bust' : ''}`}>{v.visit.bust ? 'BUST' : v.visit.total}</div>
+            <div className="who">{m.roster[v.current].name}{big !== null ? ' scored' : ''}</div>
+            {big !== null && <div className={`bigscore num ${x?.visit.bust ? 'bust' : ''}`}>{big}</div>}
             <div className="chips">
               {darts.map((d, i) => <span key={i}>{label(d.dart)}</span>)}
               {[0, 1, 2].slice(darts.length).map(i => <span key={`m${i}`} className="plain">Miss</span>)}
-              <span className="plain">{v.scores[v.current]} left</span>
+              <span className="plain">{isX01(m) ? `${m.view.scores[v.current]} left` : `${m.view.hero.caption} ${m.view.hero.big}`}</span>
             </div>
           </div>
         )}
@@ -170,13 +175,13 @@ function TakeoutOverlay({ s, m }: { s: ClientState; m: LiveMatch }) {
   );
 }
 
-function legsSoFar(m: LiveMatch): string {
+function legsSoFar(m: X01Match): string {
   const v = m.view;
   const key = m.options.matchMode.kind === 'sets' ? v.sets : v.legs;
   return m.roster.length === 2 ? `${m.roster[0].name} ${key[0]} – ${key[1]} ${m.roster[1].name}` : m.roster.map((r, i) => `${r.name} ${key[i]}`).join(' · ');
 }
 
-function LegEnd({ m, takeout }: { m: LiveMatch; takeout: boolean }) {
+function LegEnd({ m, takeout }: { m: X01Match; takeout: boolean }) {
   const v = m.view;
   const leg = v.lastLeg!;
   const off = m.options.matchMode.kind === 'off';
@@ -198,7 +203,7 @@ function LegEnd({ m, takeout }: { m: LiveMatch; takeout: boolean }) {
   );
 }
 
-function MatchEnd({ m, isPilot, onNew }: { m: LiveMatch; isPilot: boolean; onNew: () => void }) {
+function MatchEnd({ m, isPilot, onNew }: { m: X01Match; isPilot: boolean; onNew: () => void }) {
   const v = m.view;
   const w = v.matchWinner!;
   return (
@@ -245,7 +250,7 @@ function BullOff({ m, isPilot }: { m: LiveMatch; isPilot: boolean }) {
 }
 
 export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void }) {
-  const url = s.urls[0] ?? location.origin + '/';
+  const url = pilotUrl(s);
   return (
     <div className="qr-overlay" onClick={onClose} role="dialog" aria-label="Scan to take control">
       <Qr text={url} />
@@ -275,21 +280,32 @@ export function Scoreboard({ s, onMenu, onQr, onFix, onEnd, onNew, overlay }: {
   const c = controls(s);
   const flash = m.lastFix && Date.now() - m.lastFix.at < 3000 ? m.lastFix.index : null;
   const takeout = s.board.takeout.active;
+  const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
 
   return (
     <div className="big">
       <BigHeader s={s} sub={m.description} onQr={onQr} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
       <main className="board-main">
-        <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
-        <aside className="side">
-          <PlayerList m={m} />
-          {m.roster.length === 2 && <StatsCards m={m} />}
-        </aside>
+        {isX01(m) ? (
+          <>
+            <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
+            <aside className="side">
+              <PlayerList m={m} />
+              {m.roster.length === 2 && <StatsCards m={m} />}
+            </aside>
+          </>
+        ) : (
+          <>
+            <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
+            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} /> : <MiniList m={m} />}</aside>
+          </>
+        )}
       </main>
       {isPilot ? (
         <footer className="pilot-bar">
           <span className="hint">{c.hint}</span>
+          {reroll && <button className="btn" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>}
           {c.canUndo && <button className="btn" onClick={() => act({ type: 'undo' })}>{Icon.undo()}Undo</button>}
           {c.endInstead && <button className="btn" onClick={onEnd}>End match</button>}
           {c.primary && <button className="btn primary" onClick={() => act(c.primary!.cmd)}>{c.primary.label}</button>}
@@ -300,10 +316,12 @@ export function Scoreboard({ s, onMenu, onQr, onFix, onEnd, onNew, overlay }: {
           <button className="btn" onClick={() => act({ type: 'takeControl' })}>Take control</button>
         </footer>
       )}
-      {v.phase === 'bulloff' && <BullOff m={m} isPilot={isPilot} />}
+      {m.intro && !isX01(m) ? <RecordIntro m={m} isPilot={isPilot} />
+        : v.phase === 'bulloff' && <BullOff m={m} isPilot={isPilot} />}
       {v.phase === 'throwing' && takeout && <TakeoutOverlay s={s} m={m} />}
-      {v.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
-      {v.phase === 'matchWon' && <MatchEnd m={m} isPilot={isPilot} onNew={onNew} />}
+      {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
+      {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} onNew={onNew} /> : <MiniEnd m={m} isPilot={isPilot} onNew={onNew} />)}
+      <HowToOverlay s={s} />
       {overlay}
     </div>
   );

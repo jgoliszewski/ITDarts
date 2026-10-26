@@ -1,0 +1,159 @@
+// Higher or Lower: throw a visit outside the forbidden range, which grows with every success (docs/GRY.md). Pure, no I/O.
+import { value } from './darts.ts';
+import type { BullOff } from './x01/rules.ts';
+import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, walk } from './turns.ts';
+
+export interface HolOptions {
+  firstTo: number;
+  bullOff: BullOff;
+}
+
+export const START_RANGE = [26, 45] as const;
+
+interface State extends Turn {
+  lo: number;
+  hi: number;
+  /** Sum of the visit on screen, null before its first dart. */
+  sum: number | null;
+  points: number[];
+  out: boolean[];
+  game: number;
+  lastGame: { no: number; winner: number } | null;
+  winners: number[];
+}
+
+function play(t: Turns, players: number, o: HolOptions): State {
+  const points = Array(players).fill(0);
+  const goods: boolean[][] = [];
+  let game = 0, lo: number = START_RANGE[0], hi: number = START_RANGE[1];
+  let alive = Array(players).fill(true);
+  let queue: number[] = [], pos = 0, failed = new Set<number>(), roundRange = [lo, hi];
+  let over = false, left = 3, sum: number | null = null, lastGame: State['lastGame'] = null, winner: number | null = null;
+
+  // A round: everyone still in throws once, in order from this game's starter.
+  const newRound = () => {
+    const from = (t.starter! + game) % players;
+    queue = [...Array(players).keys()].map(k => (from + k) % players).filter(q => alive[q]);
+    pos = 0;
+    failed = new Set();
+    roundRange = [lo, hi];
+  };
+  newRound();
+
+  for (const v of t.visits) {
+    let miss = false, total = 0;
+    const w = walk(v, d => {
+      if (over) return { good: false, end: true };
+      if (d.n === 0) {
+        miss = true;
+        return { good: false, end: true };
+      }
+      total += value(d);
+      return { good: true };
+    });
+    goods.push(w.good);
+    left = w.dartsLeft;
+    sum = v.darts.length ? total : null;
+    if (!w.complete || over) continue;
+
+    if (miss || (total >= lo && total <= hi)) failed.add(v.player);
+    else if (total > hi) hi = total;
+    else lo = total;
+    if (++pos < queue.length) continue;
+
+    // End of the round. If everyone left failed, the round does not count.
+    const survivors = queue.filter(q => !failed.has(q));
+    if (survivors.length === 0) [lo, hi] = roundRange;
+    else alive = alive.map((_, q) => survivors.includes(q));
+    if (survivors.length === 1) {
+      const w = survivors[0];
+      points[w]++;
+      lastGame = { no: game + 1, winner: w };
+      if (points[w] >= o.firstTo) {
+        over = true;
+        winner = w;
+        continue;
+      }
+      game++;
+      [lo, hi] = START_RANGE;
+      alive = Array(players).fill(true);
+    }
+    newRound();
+  }
+
+  const last = t.visits.at(-1);
+  const open = last && !last.closed ? last : null;
+  const out = alive.map((a, q) => !a || failed.has(q));
+  return {
+    over,
+    current: open ? open.player : over ? last!.player : queue[pos],
+    dartsLeft: over ? 0 : open ? left : 3,
+    goods, lo, hi, sum: open || over ? sum : null, points, out, game, lastGame, winners: winner === null ? [] : [winner],
+  };
+}
+
+export interface HolView extends MiniView {
+  lo: number;
+  hi: number;
+  sum: number | null;
+  points: number[];
+  game: number;
+  lastGame: { no: number; winner: number } | null;
+}
+
+function view(events: TurnEvent[], players: number, o: HolOptions): HolView {
+  const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+  const s = play(t, players, o);
+  return {
+    ...frame(t, s),
+    winners: s.winners,
+    hero: { big: s.sum === null ? '–' : String(s.sum), caption: `Range ${s.lo}–${s.hi}`, note: `Above ${s.hi} or below ${s.lo}` },
+    rows: s.points.map((p, i) => ({ value: String(p), meta: s.out[i] ? 'Out' : plural(p, 'point'), out: s.out[i] })),
+    result: s.winners.length ? `Points ${[...s.points].sort((a, b) => b - a).join('–')}` : '',
+    scores: s.points.map(() => null),
+    stats: s.points.map(() => ({})),
+    lo: s.lo,
+    hi: s.hi,
+    sum: s.sum,
+    points: s.points,
+    game: s.game + 1,
+    lastGame: s.lastGame,
+  };
+}
+
+const OPTIONS: OptionDef<HolOptions>[] = [
+  {
+    key: 'firstTo',
+    label: 'First to',
+    info: 'Games to win the match. Each game starts again from 26–45 with everyone in.',
+    choices: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']],
+  },
+  BULL_OFF as OptionDef<HolOptions>,
+];
+
+const DEFAULTS: HolOptions = { firstTo: 1, bullOff: 'off' };
+
+export const hol: GameModule<HolOptions, HolView> = {
+  id: 'hol',
+  name: 'Higher or Lower',
+  blurb: 'Throw above or below the red range. It only grows.',
+  minPlayers: 2,
+  defaults: DEFAULTS,
+  options: OPTIONS,
+  howTo: {
+    goal: 'Stay in the game longest: every visit must land outside the forbidden range.',
+    turn: 'Three darts per visit; what counts is their sum. The range starts at 26–45.',
+    counts: 'Above the range moves its top up to your sum; below moves its bottom down. A sum equal to an edge is inside. Any dart outside the scoring area fails the visit.',
+    win: 'A failed visit puts you out at once. If everyone still in fails in the same round, that round does not count. The last player in wins the game; first to the set number of games wins the match.',
+  },
+  normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
+  describe: o => `Higher or Lower · First to ${o.firstTo}`,
+  view,
+  compact: (events, players, o) => {
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
+    const s = play(t, players, o);
+    return compactTurns(t, s, players, s.winners[0] ?? null);
+  },
+  isValidEvent: isValidTurnEvent,
+};

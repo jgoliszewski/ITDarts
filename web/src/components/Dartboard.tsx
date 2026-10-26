@@ -54,3 +54,20 @@ export function Dartboard({ marks, selected, onPick, size = 760 }: { marks: Dart
     </svg>
   );
 }
+
+/** Read-only board for Full Board: cleared sectors (and the bull) in orange. */
+export function SectorMap({ cleared }: { cleared: number[] }) {
+  const done = new Set(cleared);
+  return (
+    <svg className="sector-map" viewBox="-380 -380 760 760" role="img" aria-label={`${cleared.length} of 21 sectors cleared`}>
+      {BOARD_ORDER.map((n, k) => {
+        const [x, y] = pt(362, k * 18);
+        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#F58224' : '#8E8E94'} fontSize="34" fontWeight="800" textAnchor="middle" dominantBaseline="central">{n}</text>;
+      })}
+      {BOARD_ORDER.map((n, k) => (
+        <path key={n} d={arc(R[1], R[5], k * 18 - 9, k * 18 + 9)} fill={done.has(n) ? '#F58224' : k % 2 ? '#3A3A40' : '#232327'} stroke="#0A0A0B" strokeWidth="4" />
+      ))}
+      <circle cx="0" cy="0" r={R[1]} fill={done.has(25) ? '#F58224' : '#3A3A40'} stroke="#0A0A0B" strokeWidth="4" />
+    </svg>
+  );
+}

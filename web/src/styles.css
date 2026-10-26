@@ -327,3 +327,72 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .center-msg { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 24px; }
 .center-msg h2 { margin: 0; font-size: 28px; font-weight: 800; }
 .center-msg p { margin: 0; color: var(--muted); }
+
+/* ---------- minigames ---------- */
+.game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.game-tile { text-align: left; min-height: 92px; border-radius: 18px; background: var(--card); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.game-tile b { font-size: 17px; font-weight: 800; }
+.game-tile span { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.game-tile small { margin-top: auto; font-size: 12px; font-weight: 700; color: var(--muted2); }
+.game-tile.on { background: var(--accent); color: var(--on-accent); }
+.game-tile.on span, .game-tile.on small { color: var(--accent-ink); }
+.howto-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px 0 8px; border-radius: 9999px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 16px; white-space: nowrap; }
+.howto-btn .q { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+.opt-label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }
+.info-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 800; font-style: italic; font-family: Georgia, serif; }
+.info-btn.on { background: var(--text); color: #111; border-color: var(--text); }
+.info-text { flex-basis: 100%; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.howto-screen { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow: auto; }
+.howto { display: flex; flex-direction: column; gap: 18px; }
+.howto h3 { margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.howto p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--soft); }
+.howto ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.howto li { display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4; }
+.howto .choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.howto .choices span { padding: 2px 10px; border-radius: 9999px; border: 1px solid var(--line); font-size: 13px; font-weight: 700; color: var(--muted); }
+.howto .choices span.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.howto-card { width: calc(1600 * var(--u)); max-height: 94%; overflow: auto; border-radius: calc(40 * var(--u)); background: var(--sheet); padding: calc(48 * var(--u)) calc(64 * var(--u)); display: flex; flex-direction: column; gap: calc(28 * var(--u)); }
+.howto-card .kicker { font-size: calc(22 * var(--u)); font-weight: 800; letter-spacing: 0.12em; color: var(--accent); }
+.howto-card .howto { display: grid; grid-template-columns: 1fr 1fr; gap: calc(28 * var(--u)) calc(56 * var(--u)); }
+.howto-card .howto h3 { font-size: calc(20 * var(--u)); }
+.howto-card .howto section:last-child { grid-column: 1 / -1; }
+.howto-card .howto ul { display: grid; grid-template-columns: 1fr 1fr; gap: calc(16 * var(--u)) calc(56 * var(--u)); }
+.howto-card .howto p, .howto-card .howto li { font-size: calc(24 * var(--u)); }
+.howto-card .howto .choices span { font-size: calc(20 * var(--u)); }
+.howto-card .btn { height: calc(64 * var(--u)); font-size: calc(22 * var(--u)); }
+
+.mini-big { display: flex; flex-direction: column; gap: calc(8 * var(--u)); min-width: 0; }
+.mini-big .caps { font-size: calc(26 * var(--u)); color: var(--accent); }
+.mini-big .num { font-size: calc(340 * var(--u)); line-height: 0.85; white-space: nowrap; }
+.mini-big .num.long { font-size: calc(220 * var(--u)); }
+.hero-note { font-size: calc(30 * var(--u)); color: var(--soft); font-weight: 600; }
+.sector-map { width: calc(340 * var(--u)); height: calc(340 * var(--u)); margin-left: auto; flex-shrink: 0; }
+.hol-scale { position: relative; height: calc(56 * var(--u)); margin: calc(8 * var(--u)) 0 calc(24 * var(--u)); }
+.hol-scale .track { position: absolute; left: 0; right: 0; top: calc(16 * var(--u)); height: calc(16 * var(--u)); border-radius: 9999px; background: var(--raised); }
+.hol-scale .range { position: absolute; top: calc(16 * var(--u)); height: calc(16 * var(--u)); border-radius: 9999px; background: var(--red); }
+.hol-scale .edge { position: absolute; top: calc(36 * var(--u)); transform: translateX(-50%); font-size: calc(26 * var(--u)); color: var(--red-soft); }
+.hol-scale .mark { position: absolute; top: calc(4 * var(--u)); width: calc(10 * var(--u)); height: calc(40 * var(--u)); border-radius: 9999px; background: var(--green); transform: translateX(-50%); }
+.hol-scale .mark.in { background: var(--text); }
+.prow.out, .p-player.out { opacity: 0.4; }
+.cricket { display: grid; gap: calc(6 * var(--u)); border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(16 * var(--u)); align-content: start; min-height: 0; overflow: hidden; }
+.cricket .ch { display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u)); padding: calc(10 * var(--u)) calc(4 * var(--u)); border-radius: calc(18 * var(--u)); background: var(--card2); min-width: 0; }
+.cricket .ch .n { font-size: calc(20 * var(--u)); font-weight: 700; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cricket .ch .num { font-size: calc(48 * var(--u)); line-height: 1; }
+.cricket .ch.active { background: var(--accent); color: var(--on-accent); }
+.cricket .sector { display: flex; align-items: center; justify-content: center; font-size: calc(44 * var(--u)); color: var(--soft); }
+.cricket .mk { display: flex; align-items: center; justify-content: center; height: calc(84 * var(--u)); border-radius: calc(14 * var(--u)); background: var(--card2); font-size: calc(52 * var(--u)); }
+.cricket .mk.active { box-shadow: inset 0 0 0 calc(3 * var(--u)) var(--accent); }
+.cricket .crow.dead .sector, .cricket .crow.dead .mk { opacity: 0.3; }
+.new-record { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px; border-radius: 18px; background: var(--accent); color: var(--on-accent); font-weight: 800; letter-spacing: 0.08em; animation: pop 0.6s ease-out; }
+.new-record span { font-weight: 600; letter-spacing: 0; font-size: 0.85em; }
+.big .new-record { font-size: calc(32 * var(--u)); padding: calc(16 * var(--u)) calc(40 * var(--u)); }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.stats-game { display: flex; gap: 8px; flex-wrap: wrap; }
+.record-table { display: flex; flex-direction: column; gap: 6px; }
+.record-table .row { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 14px; background: var(--card); font-size: 15px; }
+.record-table .row .num { font-size: 22px; }
+.record-table .row:first-child .num { color: var(--accent); }
+.hero-top { position: relative; }
+/* Centred over the hero, not next to the name. */
+.hearts { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: calc(10 * var(--u)); font-size: calc(72 * var(--u)); line-height: 1; color: #3A3A40; }
+.hearts .on { color: var(--red); }

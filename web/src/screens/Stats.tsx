@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { H2HResponse, PlayerListItem, PlayerStatsResponse, StatsWindow } from '../../../server/protocol.ts';
+import type { GameId } from '../../../games/index.ts';
+import { GAMES, GAME_IDS, isGameId } from '../../../games/index.ts';
+import type { GameStatsResponse, H2HResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
 import { Icon, Logo } from '../components/ui.tsx';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
@@ -116,7 +118,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           <div className="caps" style={{ fontSize: 13 }}>Recent matches</div>
           {data.recent.map(r => (
             <div key={r.id} className="match-row">
-              <span className={`res ${r.result}`}>{r.result === 'saved' ? 'ENDED' : r.result.toUpperCase()}</span>
+              <span className={`res ${r.result === 'played' ? 'saved' : r.result}`}>{r.result === 'saved' ? 'ENDED' : r.result.toUpperCase()}</span>
               <div className="grow">vs {r.opponents}<small>{r.description.replace(/^X01 · /, '')} · {shortDate(r.endedAt)}</small></div>
               <span className="num" style={{ fontSize: 22 }}>{r.score}</span>
             </div>
@@ -127,10 +129,80 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
   );
 }
 
+const GAME_KEY = 'itdarts.statsGame';
+const pct = (a: number | undefined, b: number | undefined) => (b ? `${Math.round(((a ?? 0) / b) * 1000) / 10}%` : '–');
+
+/** The game's own numbers, from the totals the module keeps per match. */
+function gameStats(game: GameId, t: Record<string, number>): [string, string, string?][] {
+  switch (game) {
+    case 'atc':
+    case 'fullboard': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Darts', String(t.darts ?? 0)]];
+    case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
+    case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];
+    case 'killer': return [['Lives taken', String(t.taken ?? 0)]];
+    default: return [];
+  }
+}
+
+function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
+  const { data, error } = useJson<GameStatsResponse>(`/api/stats/players/${id}?game=${game}&window=${w}`);
+  if (error) return <p className="muted">This player does not exist.</p>;
+  if (!data) return <p className="muted">Loading…</p>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{data.player.name}</h2>
+      <WindowPicker value={w} onChange={setW} />
+      {data.played === 0 ? <p className="muted" style={{ margin: 0 }}>No {GAMES[game].name} in this window.</p> : (
+        <div className="stat-grid">
+          {gameStats(game, data.totals).map(([l, v, sub], i) => <Stat key={l} l={l} v={v} s={sub} hl={i === 0} />)}
+          <Stat l="Played" v={String(data.played)} />
+          <Stat l="Won" v={String(data.won)} s={data.played ? pct(data.won, data.played) : undefined} />
+        </div>
+      )}
+      {data.bests.length > 0 && (
+        <div className="section">
+          <div className="caps" style={{ fontSize: 13 }}>Personal bests · all time</div>
+          {data.bests.map(b => (
+            <div key={b.label} className="match-row"><div className="grow">{b.label}</div><span className="num" style={{ fontSize: 22 }}>{b.value}</span></div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Records({ game }: { game: GameId }) {
+  const { data } = useJson<RecordTable[]>(`/api/stats/records?game=${game}`);
+  if (!GAMES[game].record) return null;
+  if (!data) return <p className="muted">Loading…</p>;
+  if (data.length === 0) return <p className="muted">No records yet.</p>;
+  return (
+    <>
+      {data.map(t => (
+        <div key={t.key} className="section">
+          <div className="caps" style={{ fontSize: 13 }}>Top 10 · {t.label}</div>
+          <div className="record-table">
+            {t.rows.map((r, i) => (
+              <div key={i} className="row">
+                <span className="muted">{i + 1}</span>
+                <b style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.who}</b>
+                <span className="muted" style={{ fontSize: 13 }}>{shortDate(r.at)}</span>
+                <span className="num">{r.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function StatsPage({ path }: { path: string }) {
   const id = Number(path.split('/')[2]) || null;
   const [w, setWState] = useState<StatsWindow>((store.get(WINDOW_KEY) as StatsWindow) || '30d');
   const setW = (v: StatsWindow) => { setWState(v); store.set(WINDOW_KEY, v); };
+  const [game, setGameState] = useState<GameId>(() => (isGameId(store.get(GAME_KEY)) ? (store.get(GAME_KEY) as GameId) : 'x01'));
+  const setGame = (g: GameId) => { setGameState(g); store.set(GAME_KEY, g); };
   const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
 
   // Phones remember “this is me” and open straight on that profile, once per visit.
@@ -141,6 +213,7 @@ export function StatsPage({ path }: { path: string }) {
     if (path === '/stats' && me && list.some(p => String(p.id) === me)) go(`/stats/${me}`);
   }, [path, list]);
 
+  const x01 = game === 'x01';
   return (
     <div className="stats-page">
       <header className="stats-head">
@@ -148,18 +221,22 @@ export function StatsPage({ path }: { path: string }) {
         <h1>{id ? 'Player' : 'Stats'}</h1>
         <Logo />
       </header>
+      <div className="stats-game" style={{ marginBottom: 16 }}>
+        {GAME_IDS.map(g => <button key={g} className={`chip ${g === game ? 'on' : ''}`} onClick={() => setGame(g)}>{GAMES[g].name}</button>)}
+      </div>
       {id ? (
-        <Profile key={id} id={id} w={w} setW={setW} />
+        x01 ? <Profile key={id} id={id} w={w} setW={setW} /> : <GameProfile key={`${id}-${game}`} id={id} game={game} w={w} setW={setW} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {!x01 && <Records game={game} />}
           {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them on the pilot under Players.</p> : (
             <>
-              <div className="caps" style={{ fontSize: 13 }}>Players · average last 30 days</div>
+              <div className="caps" style={{ fontSize: 13 }}>{x01 ? 'Players · average last 30 days' : 'Players'}</div>
               <div className="player-cards">
                 {list.map(p => (
                   <button key={p.id} className="player-card" onClick={() => go(`/stats/${p.id}`)}>
                     <b>{p.name}</b>
-                    <span className="num" style={{ color: 'var(--text)' }}>{fmtAvg(p.avg)}</span>
+                    {x01 && <span className="num" style={{ color: 'var(--text)' }}>{fmtAvg(p.avg)}</span>}
                     <span>{p.matches} {p.matches === 1 ? 'match' : 'matches'}{p.lastPlayed ? ` · last ${shortDate(p.lastPlayed)}` : ''}</span>
                   </button>
                 ))}

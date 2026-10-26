@@ -2,10 +2,10 @@
 import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { X01Event, X01Options } from '../games/x01/index.ts';
-import type { LegRecord } from '../games/x01/index.ts';
-import { describeOptions } from '../games/x01/index.ts';
 import { label } from '../games/darts.ts';
+import type { GameId } from '../games/index.ts';
+import { GAMES } from '../games/index.ts';
+import type { LegRecord } from '../games/x01/index.ts';
 import type { MatchSummary, PlayerInfo, RosterEntry } from './protocol.ts';
 
 // Each entry moves the schema one version up. Never edit a shipped entry; add a new one.
@@ -85,20 +85,29 @@ const MIGRATIONS = [
   CREATE INDEX legs_match ON legs(match_id);
   CREATE INDEX match_players_player ON match_players(player_id);
   `,
+  // Minigames: the record variant of the match, and per player the record value and the game's own totals (JSON).
+  `
+  ALTER TABLE matches ADD COLUMN variant TEXT;
+  ALTER TABLE match_players ADD COLUMN score REAL;
+  ALTER TABLE match_players ADD COLUMN stats TEXT;
+  CREATE INDEX matches_variant ON matches(variant);
+  CREATE INDEX matches_game ON matches(game, ended_at);
+  `,
 ];
 
+// Options and events are whatever the game module takes; the module checks them.
 export interface LiveRecord {
   key: string;
-  game: 'x01';
-  options: X01Options;
+  game: GameId;
+  options: any;
   roster: RosterEntry[];
   startedAt: number;
-  events: X01Event[];
+  events: any[];
 }
 
 export interface SaveMatch {
-  game: 'x01';
-  options: X01Options;
+  game: GameId;
+  options: unknown;
   roster: RosterEntry[];
   startedAt: number;
   endedAt: number;
@@ -106,6 +115,17 @@ export interface SaveMatch {
   winner: number | null;
   sets: number[];
   legs: LegRecord[];
+  /** Legs won per player; counted from `legs` when missing. Higher or Lower stores its games here. */
+  legsWon?: number[];
+  variant?: string | null;
+  scores?: (number | null)[];
+  stats?: Record<string, number>[];
+}
+
+export interface RecordRow {
+  value: number;
+  who: string;
+  at: number;
 }
 
 export class UserError extends Error {}
@@ -221,7 +241,7 @@ export class Db {
     });
   }
 
-  appendLive(event: X01Event) {
+  appendLive(event: unknown) {
     this.sql.prepare('INSERT INTO live_events (event) VALUES (?)').run(JSON.stringify(event));
   }
 
@@ -231,9 +251,9 @@ export class Db {
 
   loadLive(): LiveRecord | null {
     const m = this.sql.prepare('SELECT * FROM live_match WHERE id = 1').get() as
-      { match_key: string; game: 'x01'; options: string; roster: string; started_at: number } | undefined;
-    if (!m) return null;
-    const events = (this.sql.prepare('SELECT event FROM live_events ORDER BY seq').all() as { event: string }[]).map(r => JSON.parse(r.event) as X01Event);
+      { match_key: string; game: GameId; options: string; roster: string; started_at: number } | undefined;
+    if (!m || !(m.game in GAMES)) return null;
+    const events = (this.sql.prepare('SELECT event FROM live_events ORDER BY seq').all() as { event: string }[]).map(r => JSON.parse(r.event));
     return { key: m.match_key, game: m.game, options: JSON.parse(m.options), roster: JSON.parse(m.roster), startedAt: m.started_at, events };
   }
 
@@ -242,13 +262,15 @@ export class Db {
   saveMatch(s: SaveMatch): number {
     const registered = s.roster.every(r => r.playerId !== null);
     const counts = s.status === 'finished' && s.winner !== null && s.roster.length >= 2 && registered;
-    const legsWon = s.roster.map((_, i) => s.legs.filter(l => l.winner === i).length);
+    const legsWon = s.legsWon ?? s.roster.map((_, i) => s.legs.filter(l => l.winner === i).length);
     return this.tx(() => {
       const matchId = Number(this.sql.prepare(
-        'INSERT INTO matches (game, options, started_at, ended_at, status, winner_position, counts_results) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      ).run(s.game, JSON.stringify(s.options), s.startedAt, s.endedAt, s.status, s.winner, counts ? 1 : 0).lastInsertRowid);
-      const mp = this.sql.prepare('INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won) VALUES (?, ?, ?, ?, ?, ?)');
-      s.roster.forEach((r, i) => mp.run(matchId, i, r.playerId, r.playerId === null ? r.name : null, legsWon[i], s.sets[i] ?? 0));
+        'INSERT INTO matches (game, options, started_at, ended_at, status, winner_position, counts_results, variant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      ).run(s.game, JSON.stringify(s.options), s.startedAt, s.endedAt, s.status, s.winner, counts ? 1 : 0, s.variant ?? null).lastInsertRowid);
+      const mp = this.sql.prepare(
+        'INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won, score, stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      s.roster.forEach((r, i) => mp.run(matchId, i, r.playerId, r.playerId === null ? r.name : null, legsWon[i], s.sets[i] ?? 0,
+        r.playerId === null ? null : (s.scores?.[i] ?? null), s.stats?.[i] ? JSON.stringify(s.stats[i]) : null));
       const legIns = this.sql.prepare('INSERT INTO legs (match_id, set_no, leg_no, starter_position, winner_position) VALUES (?, ?, ?, ?, ?)');
       const visitIns = this.sql.prepare(
         'INSERT INTO visits (leg_id, player_id, visit_no, score_before, scored, bust, checkout, darts_count, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -268,40 +290,76 @@ export class Db {
     });
   }
 
-  lastMatchSetup(): { options: X01Options; roster: RosterEntry[] } | null {
-    const m = this.sql.prepare("SELECT id, options FROM matches WHERE game = 'x01' ORDER BY ended_at DESC LIMIT 1").get() as { id: number; options: string } | undefined;
-    if (!m) return null;
+  lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[] } | null {
+    const m = this.sql.prepare('SELECT id, game, options FROM matches ORDER BY ended_at DESC LIMIT 1').get() as { id: number; game: GameId; options: string } | undefined;
+    if (!m || !(m.game in GAMES)) return null;
     const roster = (this.sql.prepare(`
       SELECT mp.player_id AS playerId, COALESCE(p.name, mp.guest_name) AS name FROM match_players mp
       LEFT JOIN players p ON p.id = mp.player_id WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as unknown as RosterEntry[]);
-    return { options: JSON.parse(m.options), roster };
+    return { game: m.game, options: JSON.parse(m.options), roster };
   }
 
   lastMatch(): MatchSummary | null {
     const m = this.sql.prepare('SELECT * FROM matches ORDER BY ended_at DESC LIMIT 1').get() as
-      { id: number; options: string; ended_at: number; status: 'finished' | 'ended'; winner_position: number | null } | undefined;
-    if (!m) return null;
+      { id: number; game: GameId; options: string; ended_at: number; status: 'finished' | 'ended'; winner_position: number | null } | undefined;
+    if (!m || !(m.game in GAMES)) return null;
+    const game = GAMES[m.game];
     const players = this.sql.prepare(`
-      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.legs_won, mp.sets_won,
+      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.legs_won, mp.sets_won, mp.score,
         (SELECT SUM(v.scored) * 3.0 / NULLIF(SUM(v.darts_count), 0) FROM visits v JOIN legs l ON l.id = v.leg_id
           WHERE l.match_id = mp.match_id AND v.player_id = mp.player_id) AS avg
       FROM match_players mp LEFT JOIN players p ON p.id = mp.player_id
-      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; legs_won: number; sets_won: number; avg: number | null }[];
+      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; legs_won: number; sets_won: number; score: number | null; avg: number | null }[];
+    const x01 = m.game === 'x01';
+    const sets = players.some(p => p.sets_won > 0);
+    const value = (p: (typeof players)[number]) =>
+      x01 ? String(sets ? p.sets_won : p.legs_won)
+      : p.score !== null && game.record ? game.record.format(p.score)
+      : m.game === 'hol' ? String(p.legs_won)
+      : m.winner_position === p.position ? 'Won' : '';
     const last = this.sql.prepare(`
       SELECT d.n, d.m FROM legs l JOIN visits v ON v.leg_id = l.id AND v.checkout = 1
       JOIN darts d ON d.visit_id = v.id WHERE l.match_id = ? ORDER BY l.id DESC, d.idx DESC LIMIT 1`).get(m.id) as { n: number; m: 1 | 2 | 3 } | undefined;
     return {
       id: m.id,
-      description: describeOptions(JSON.parse(m.options)),
+      game: m.game,
+      description: game.describe(game.normalizeOptions(JSON.parse(m.options)), players.length),
       endedAt: m.ended_at,
       status: m.status,
       players: players.map(p => ({
-        name: p.name, legs: p.legs_won, sets: p.sets_won,
-        avg: p.avg === null ? null : Math.round(p.avg * 100) / 100,
+        name: p.name,
+        value: value(p),
+        avg: !x01 || p.avg === null ? null : Math.round(p.avg * 100) / 100,
         winner: m.winner_position === p.position,
       })),
-      checkout: last ? label(last) : null,
+      checkout: x01 && last ? label(last) : null,
     };
+  }
+
+  // ---------- records ----------
+
+  /**
+   * Best results of a record variant, best first. Co-op variants give one row per match with the whole lineup,
+   * the others one row per player and match. `playerId` narrows it to the results of one player.
+   */
+  records(variant: string, better: 'lower' | 'higher', limit = 10, playerId?: number): RecordRow[] {
+    const dir = better === 'lower' ? 'ASC' : 'DESC';
+    const mine = playerId === undefined ? '' : 'AND mp.player_id = ?';
+    const args = playerId === undefined ? [variant, limit] : [variant, playerId, limit];
+    if (variant.endsWith(':coop')) {
+      return this.sql.prepare(`
+        SELECT MAX(mp.score) AS value, m.ended_at AS at,
+          (SELECT GROUP_CONCAT(name, ' & ') FROM (SELECT p2.name FROM match_players o JOIN players p2 ON p2.id = o.player_id
+            WHERE o.match_id = m.id ORDER BY o.position)) AS who
+        FROM matches m JOIN match_players mp ON mp.match_id = m.id
+        WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
+        GROUP BY m.id ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
+    }
+    return this.sql.prepare(`
+      SELECT mp.score AS value, m.ended_at AS at, p.name AS who
+      FROM matches m JOIN match_players mp ON mp.match_id = m.id JOIN players p ON p.id = mp.player_id
+      WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
+      ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
   }
 
   // ---------- backup ----------

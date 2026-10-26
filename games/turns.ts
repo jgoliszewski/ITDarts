@@ -1,0 +1,265 @@
+// Turn log shared by the minigames: replays darts, fixes, undo and Next player into visits. Pure, no I/O.
+// Each game only says, for the visits so far, who throws next and how many darts the visit still takes.
+import type { Coords, Dart } from './darts.ts';
+import { MISS, isValidDart } from './darts.ts';
+import type { DartRec, LegRecord } from './x01/engine.ts';
+import type { BullOff } from './x01/rules.ts';
+
+export type TurnEvent =
+  | { t: 'start'; starter: number }
+  | { t: 'dart'; dart: Dart; coords?: Coords; at: number }
+  | { t: 'fix'; index: number; dart: Dart }
+  | { t: 'undo' }
+  | { t: 'next'; at?: number }
+  /** Killer numbers, drawn by the server before the first dart. */
+  | { t: 'numbers'; numbers: number[] };
+
+export interface Visit {
+  player: number;
+  darts: DartRec[];
+  /** Misses added when the visit was closed with fewer than three darts. */
+  filled: number;
+  closed: boolean;
+}
+
+export interface Turns {
+  starter: number | null;
+  visits: Visit[];
+  numbers: number[];
+}
+
+/** What a game says about the log so far. */
+export interface Turn {
+  over: boolean;
+  /** Who throws the open visit, or the next one. */
+  current: number;
+  /** Darts the open (or next) visit still takes. */
+  dartsLeft: number;
+  /** Per visit, per dart: did it count? */
+  goods: boolean[][];
+}
+
+export interface MiniView {
+  phase: 'bulloff' | 'throwing' | 'matchWon';
+  current: number;
+  visit: { player: number; darts: DartRec[]; dartsLeft: number; good: boolean[] };
+  winners: number[];
+  /** Hero on the scoreboard: a big value, a caption above it and a note under the player's name. */
+  hero: { big: string; caption: string; note: string };
+  /** One line per player for the player list. */
+  rows: { value: string; meta: string; out: boolean }[];
+  /** End screen line, e.g. “Completed in 74 darts”. */
+  result: string;
+  /** Record value per player (co-op: the same for everyone), null when there is none. */
+  scores: (number | null)[];
+  /** Per-player totals kept in history, e.g. { darts, hits }. */
+  stats: Record<string, number>[];
+}
+
+export const isValidTurnEvent = (e: TurnEvent): boolean => {
+  switch (e.t) {
+    case 'dart': return isValidDart(e.dart);
+    case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
+    case 'start': return Number.isInteger(e.starter);
+    case 'numbers': return Array.isArray(e.numbers) && e.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 20);
+    default: return e.t === 'undo' || e.t === 'next';
+  }
+};
+
+function reopenLast(t: Turns) {
+  const last = t.visits.at(-1)!;
+  last.closed = false;
+  last.darts.splice(last.darts.length - last.filled);
+  last.filled = 0;
+  if (last.darts.length === 0) t.visits.pop();
+}
+
+export function replayTurns(events: TurnEvent[], players: number, bullOff: BullOff, play: (t: Turns) => Turn): Turns {
+  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [] };
+  for (const e of events) {
+    if (e.t === 'numbers') {
+      if (t.visits.length === 0) t.numbers = e.numbers;
+      continue;
+    }
+    if (t.starter === null) {
+      if (e.t === 'start' && e.starter >= 0 && e.starter < players) t.starter = e.starter;
+      continue;
+    }
+    const last = t.visits.at(-1);
+    const open = last && !last.closed ? last : null;
+    switch (e.t) {
+      case 'dart': {
+        const s = play(t);
+        if (s.over || s.dartsLeft === 0) break;
+        const v = open ?? { player: s.current, darts: [], filled: 0, closed: false };
+        if (!open) t.visits.push(v);
+        v.darts.push({ dart: e.dart, coords: e.coords, at: e.at });
+        break;
+      }
+      case 'fix':
+        if (open && e.index >= 0 && e.index < open.darts.length) open.darts[e.index] = { dart: e.dart, at: open.darts[e.index].at };
+        break;
+      case 'undo':
+        if (open) {
+          open.darts.pop();
+          if (open.darts.length === 0) t.visits.pop();
+        } else if (last) reopenLast(t);
+        else if (bullOff !== 'off') t.starter = null;
+        break;
+      case 'next': {
+        const s = play(t);
+        if (s.over) break;
+        const v = open ?? { player: s.current, darts: [], filled: 0, closed: false };
+        if (!open) t.visits.push(v);
+        // A visit that already ended (bust, checkout, elimination) gets no extra misses.
+        if (s.dartsLeft > 0) {
+          while (v.darts.length < 3) {
+            v.darts.push({ dart: MISS, at: e.at ?? v.darts.at(-1)?.at ?? 0 });
+            v.filled++;
+          }
+        }
+        v.closed = true;
+        break;
+      }
+    }
+  }
+  return t;
+}
+
+export interface Walked {
+  good: boolean[];
+  /** Darts that took effect: all of them, or up to the one that ended the visit. */
+  used: number;
+  /** No more darts go into this visit. */
+  complete: boolean;
+  dartsLeft: number;
+}
+
+/** Applies a visit's darts in order until one ends the visit; later darts (left over after a fix) do nothing. */
+export function walk(v: Visit, apply: (d: Dart) => { good: boolean; end?: boolean }): Walked {
+  const good: boolean[] = [];
+  let used = -1;
+  for (const rec of v.darts) {
+    if (used >= 0) {
+      good.push(false);
+      continue;
+    }
+    const r = apply(rec.dart);
+    good.push(r.good);
+    if (r.end) used = good.length;
+  }
+  const ended = used >= 0;
+  const complete = v.closed || ended || v.darts.length >= 3;
+  return { good, used: ended ? used : v.darts.length, complete, dartsLeft: complete ? 0 : 3 - v.darts.length };
+}
+
+/** Builds the common part of a view: phase and the visit on screen. */
+export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit'> {
+  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [] } };
+  const last = t.visits.at(-1);
+  const shown = last && (!last.closed || s.over) ? last : null;
+  return {
+    phase: s.over ? 'matchWon' : 'throwing',
+    current: s.current,
+    visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [] },
+  };
+}
+
+/** Compacts the log to one stored leg; `scored` holds the darts that counted. */
+export function compactTurns(t: Turns, s: Turn, players: number, winner: number | null): LegRecord[] {
+  if (t.starter === null) return [];
+  const counter = Array(players).fill(0);
+  const visits = t.visits
+    .map((v, i) => ({ v, i }))
+    .filter(({ v }) => v.darts.length > 0)
+    .map(({ v, i }) => ({
+      player: v.player,
+      visitNo: ++counter[v.player],
+      start: 0,
+      scored: (s.goods[i] ?? []).filter(Boolean).length,
+      bust: false,
+      checkout: false,
+      dartsCount: v.darts.length,
+      darts: v.darts,
+    }));
+  return visits.length ? [{ set: 1, legNo: 1, starter: t.starter, winner, visits }] : [];
+}
+
+/** Next player in throwing order after `p`, skipping those for whom `out` is true. */
+export function nextIn(p: number, players: number, out: (q: number) => boolean = () => false): number {
+  for (let k = 1; k <= players; k++) {
+    const q = (p + k) % players;
+    if (!out(q)) return q;
+  }
+  return p;
+}
+
+// ---------- game modules ----------
+
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol';
+
+/** One setup option. The same text feeds the “i” hint and the Options part of “How to play”. */
+export interface OptionDef<O> {
+  key?: keyof O & string;
+  label: string;
+  info: string;
+  choices: [unknown, string][];
+  /** Shown in setup only when this holds. */
+  when?: (o: O, players: number) => boolean;
+}
+
+export interface HowTo {
+  goal: string;
+  turn: string;
+  counts: string;
+  win: string;
+}
+
+export interface RecordDef<O> {
+  /** The variant a match counts for, or null when it keeps no record. */
+  variant: (o: O, players: number) => { key: string; label: string } | null;
+  better: 'lower' | 'higher';
+  format: (v: number) => string;
+}
+
+export interface GameModule<O = any, V = any> {
+  id: GameId;
+  name: string;
+  blurb: string;
+  minPlayers: number;
+  defaults: O;
+  options: OptionDef<O>[];
+  howTo: HowTo;
+  record?: RecordDef<O>;
+  normalizeOptions: (input: unknown) => O;
+  describe: (o: O, players: number) => string;
+  view: (events: any[], players: number, o: O) => V;
+  compact: (events: any[], players: number, o: O) => LegRecord[];
+  isValidEvent: (e: any) => boolean;
+}
+
+export const BULL_OFF: OptionDef<{ bullOff: BullOff }> = {
+  key: 'bullOff',
+  label: 'Bull-off',
+  info: 'Who throws first: one dart each at the bull, closest starts. Off means the order above.',
+  choices: [['off', 'Off'], ['closest', 'Closest'], ['pdc', 'PDC rules']],
+  when: (_o, players) => players >= 2,
+};
+
+/** Keeps every keyed option that is one of its choices; anything else falls back to the default. */
+export function normalizeByDefs<O>(defs: OptionDef<O>[], defaults: O, input: unknown): O {
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const o = { ...defaults } as Record<string, unknown>;
+  for (const d of defs) if (d.key && d.choices.some(([v]) => v === raw[d.key!])) o[d.key] = raw[d.key];
+  return o as O;
+}
+
+export const choiceLabel = <O>(defs: OptionDef<O>[], o: O, key: keyof O & string) =>
+  defs.find(d => d.key === key)?.choices.find(([v]) => v === o[key])?.[1] ?? '';
+
+export const ON_OFF: [unknown, string][] = [[true, 'On'], [false, 'Off']];
+export const OFF_ON: [unknown, string][] = [[false, 'Off'], [true, 'On']];
+
+export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+export const livesLabel = (n: number) => `${n} ${n === 1 ? 'life' : 'lives'}`;
