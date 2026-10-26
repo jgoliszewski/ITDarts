@@ -197,12 +197,36 @@ function Records({ game }: { game: GameId }) {
   );
 }
 
-export function StatsPage({ path }: { path: string }) {
-  const id = Number(path.split('/')[2]) || null;
+function useStatsPrefs() {
   const [w, setWState] = useState<StatsWindow>((store.get(WINDOW_KEY) as StatsWindow) || '30d');
   const setW = (v: StatsWindow) => { setWState(v); store.set(WINDOW_KEY, v); };
   const [game, setGameState] = useState<GameId>(() => (isGameId(store.get(GAME_KEY)) ? (store.get(GAME_KEY) as GameId) : 'x01'));
   const setGame = (g: GameId) => { setGameState(g); store.set(GAME_KEY, g); };
+  return { w, setW, game, setGame };
+}
+
+function GamePicker({ game, setGame }: { game: GameId; setGame: (g: GameId) => void }) {
+  return (
+    <div className="stats-game" style={{ marginBottom: 16 }}>
+      {GAME_IDS.map(g => <button key={g} className={`chip ${g === game ? 'on' : ''}`} onClick={() => setGame(g)}>{GAMES[g].name}</button>)}
+    </div>
+  );
+}
+
+/** One player's stats with the game and window pickers: on /stats and on the pilot's Players. */
+export function PlayerStats({ id }: { id: number }) {
+  const { w, setW, game, setGame } = useStatsPrefs();
+  return (
+    <>
+      <GamePicker game={game} setGame={setGame} />
+      {game === 'x01' ? <Profile key={id} id={id} w={w} setW={setW} /> : <GameProfile key={`${id}-${game}`} id={id} game={game} w={w} setW={setW} />}
+    </>
+  );
+}
+
+export function StatsPage({ path }: { path: string }) {
+  const id = Number(path.split('/')[2]) || null;
+  const { game, setGame } = useStatsPrefs();
   const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
 
   // Phones remember “this is me” and open straight on that profile, once per visit.
@@ -221,12 +245,9 @@ export function StatsPage({ path }: { path: string }) {
         <h1>{id ? 'Player' : 'Stats'}</h1>
         <Logo />
       </header>
-      <div className="stats-game" style={{ marginBottom: 16 }}>
-        {GAME_IDS.map(g => <button key={g} className={`chip ${g === game ? 'on' : ''}`} onClick={() => setGame(g)}>{GAMES[g].name}</button>)}
-      </div>
-      {id ? (
-        x01 ? <Profile key={id} id={id} w={w} setW={setW} /> : <GameProfile key={`${id}-${game}`} id={id} game={game} w={w} setW={setW} />
-      ) : (
+      {id ? <PlayerStats id={id} /> : (
+        <>
+        <GamePicker game={game} setGame={setGame} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {!x01 && <Records game={game} />}
           {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them on the pilot under Players.</p> : (
@@ -244,6 +265,7 @@ export function StatsPage({ path }: { path: string }) {
             </>
           )}
         </div>
+        </>
       )}
     </div>
   );

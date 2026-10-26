@@ -63,6 +63,8 @@ interface LiveBase {
   intro: boolean;
   /** Set once the game is over: an office record, and names with a new personal record. */
   newRecord: { office: boolean; personal: string[] } | null;
+  /** A bull-off dart waits for its takeout; the bull-off screen stays up until then. */
+  bullTakeout: boolean;
 }
 
 export type LiveMatch = { [G in GameId]: LiveBase & { game: G } & Games[G] }[GameId];

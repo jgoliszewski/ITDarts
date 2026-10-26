@@ -22,9 +22,10 @@ export function controls(s: ClientState): Controls {
   const off = isX01(m) && m.options.matchMode.kind === 'off';
   const takeout = s.board.takeout.active;
   if (m.intro) return { hint: 'Record screen', primary: { label: 'Skip', cmd: { type: 'skipIntro' } }, endInstead: false, canUndo: false };
+  if (m.bullTakeout) return { hint: 'Take out the bull-off dart', primary: { label: 'Takeout done', cmd: { type: 'next' } }, endInstead: false, canUndo: true };
   switch (v.phase) {
     case 'bulloff':
-      return { hint: 'Bull-off: pick who throws first', primary: null, endInstead: false, canUndo: false };
+      return { hint: 'Bull-off: one dart each at the bull', primary: null, endInstead: false, canUndo: !!v.bullOff?.throws.length };
     case 'matchWon':
       return { hint: `${isX01(m) ? 'Match' : 'Game'} over. Undo fixes the last dart.`, primary: null, endInstead: false, canUndo: true };
     case 'legWon':

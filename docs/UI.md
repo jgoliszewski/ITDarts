@@ -84,14 +84,32 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 ## Menu Pilota
 
-- New match.
-- End match, z potwierdzeniem. W trakcie legu pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
-- Players: zakładanie, zmiana imienia, scalanie, archiwizacja i anonimizacja graczy.
-- Board panel.
-- Effects: strona `/effects` z regułami, Biblioteką dźwięków, WLED i callerem ([EFEKTY.md](EFEKTY.md)).
-- Przełączniki Sounds, Caller i LEDs.
-- Show QR.
-- Close app, czyli wyjście z kiosku.
+Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku obok QR (na telefonie: status tarczy w nagłówku). New match, Players i Stats to przyciski na ekranie głównym.
+
+- **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
+- **Bez meczu:** Close app, czyli wyjście z kiosku.
+- **Na telefonie** dochodzi Show QR, bo nagłówek telefonu nie ma przycisku QR.
+- **Bez kontroli:** Take control i Stats.
+- Później: Effects (strona `/effects`, [EFEKTY.md](EFEKTY.md)) i przełączniki Sounds, Caller i LEDs.
+
+## Players
+
+- Lista graczy z polem „New player name”. Archiwalni są pod „Show archived”.
+- Wejście w gracza pokazuje jego statystyki, te same co `/stats/:id` (wybór gry i okresu), a pod nimi „Manage”: zmiana imienia, scalanie, archiwizacja i anonimizacja.
+
+## Bull-off z tarczy
+
+Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzutów w bulla. Serwer liczy odległość od środka z coords Board Managera (1 = 170 mm, zewnętrzna krawędź double).
+
+- Każdy rzuca jedną lotkę, w kolejności z setupu. Po każdej lotce takeout. Lotka rzucona przed takeoutem jest ignorowana.
+- **Closest:** wygrywa najmniejsza odległość. **PDC:** to samo, ale trafienie w to samo pole co lider (bull albo 25) to remis.
+- Remis: rzucają ponownie tylko remisujący liderzy, w odwrotnej kolejności. Tak samo przy 3+ graczach.
+- Lotka poza tarczą liczy się po odległości. Lotka bez coords jest ostatnia. Niewykryta lotka: rzuca się jeszcze raz.
+- Undo zdejmuje ostatnią lotkę bull-offu. Przyciski „X starts” na Pilocie zostają jako ręczne nadpisanie.
+- Ekran pokazuje przybliżonego bulla z ringiem trebli i sektorami, kropki lotek z imionami i przerywany okrąg wokół bulla dla każdej lotki (obszar do pobicia), obok listę od najbliższej z mm i kto rzuca.
+- Po rozstrzygnięciu ekran mówi „X starts”, a pierwszy leg rusza po takeoucie.
+- Lotki bull-offu są w logu meczu z coords, ale nie liczą się do statystyk.
+- Działa we wszystkich grach (X01 i minigierki przez `games/turns.ts`).
 
 ## Panel tarczy
 

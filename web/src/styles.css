@@ -185,6 +185,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .result-card .btn { height: calc(80 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(24 * var(--u)); }
 .bulloff-players { display: flex; gap: calc(16 * var(--u)); flex-wrap: wrap; justify-content: center; }
 .bulloff-players .btn { height: calc(88 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(28 * var(--u)); }
+.result-card.bulloff-card { width: calc(1500 * var(--u)); }
+.bulloff-main { display: flex; gap: calc(56 * var(--u)); align-items: center; width: 100%; }
+.bulloff-main svg { width: calc(520 * var(--u)); height: calc(520 * var(--u)); flex: none; }
+.bulloff-side { flex: 1; display: flex; flex-direction: column; gap: calc(24 * var(--u)); text-align: left; }
+.bulloff-side .winner { font-size: calc(64 * var(--u)); }
+.bull-rows { display: flex; flex-direction: column; gap: calc(10 * var(--u)); }
+.bull-row { display: flex; align-items: baseline; gap: calc(20 * var(--u)); padding: calc(14 * var(--u)) calc(24 * var(--u)); border-radius: calc(20 * var(--u)); background: var(--card); font-size: calc(32 * var(--u)); }
+.bull-row .who { flex: 1; font-weight: 700; }
+.bull-row .num { font-size: calc(44 * var(--u)); }
+.bull-row.lead { background: var(--accent-ink); }
+.bull-row.lead .num { color: var(--accent); }
+.p-bull .bull-row { font-size: 16px; padding: 10px 14px; border-radius: 14px; gap: 12px; }
+.p-bull .bull-row .num { font-size: 22px; }
+.p-bull svg { width: 100%; height: auto; max-width: 320px; align-self: center; }
 
 .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(600px, 100vw); background: #121214; padding: 32px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow: auto; }
 .qr-overlay { position: absolute; inset: 0; background: rgba(10, 10, 11, 0.92); z-index: 45; display: flex; align-items: center; justify-content: center; gap: calc(72 * var(--u)); }

@@ -28,7 +28,7 @@ function usePath(): string {
   return path;
 }
 
-function Menu({ s, onClose, open }: { s: ClientState; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr') => void }) {
+function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr') => void }) {
   const pilot = s.you.isPilot;
   const item = (label: string, run: () => void, danger = false) => (
     <button key={label} className={`btn block ${danger ? 'danger' : ''}`} style={{ justifyContent: 'flex-start', height: 56 }} onClick={() => { onClose(); run(); }}>{label}</button>
@@ -38,22 +38,23 @@ function Menu({ s, onClose, open }: { s: ClientState; onClose: () => void; open:
       <div className="scrim" onClick={onClose} />
       <div className="dialog" role="menu" aria-label="Menu" style={{ gap: 8, width: 'min(420px, calc(100vw - 32px))' }}>
         <h2 style={{ marginBottom: 8 }}>Menu</h2>
-        {pilot ? (
+        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel and QR are in the header. */}
+        {!pilot ? (
           <>
-            {item('New match', () => open('new'))}
-            {s.match && item('How to play', () => open('howto'))}
-            {s.match && item('End match', () => open('end'))}
-            {item('Board panel', () => open('board'))}
-            {item('Players', () => open('players'))}
-            {item('Show QR', () => open('qr'))}
+            {item('Take control', () => void act({ type: 'takeControl' }))}
+            {!wide && item('Show QR', () => open('qr'))}
             {item('Stats', () => (location.href = '/stats'))}
-            {s.you.isLocal && item('Close app', () => void act({ type: 'closeApp' }), true)}
+          </>
+        ) : s.match ? (
+          <>
+            {item('How to play', () => open('howto'))}
+            {!wide && item('Show QR', () => open('qr'))}
+            {item('End match', () => open('end'), true)}
           </>
         ) : (
           <>
-            {item('Take control', () => void act({ type: 'takeControl' }))}
-            {item('Show QR', () => open('qr'))}
-            {item('Stats', () => (location.href = '/stats'))}
+            {!wide && item('Show QR', () => open('qr'))}
+            {s.you.isLocal && item('Close app', () => void act({ type: 'closeApp' }), true)}
           </>
         )}
         <button className="btn ghost block" style={{ marginTop: 8 }} onClick={onClose}>Close</button>
@@ -138,7 +139,7 @@ function Main({ s }: { s: ClientState }) {
   );
   const dialogs = (
     <>
-      {menu && <Menu s={s} onClose={() => setMenu(false)} open={openFromMenu} />}
+      {menu && <Menu s={s} wide={wide} onClose={() => setMenu(false)} open={openFromMenu} />}
       {endAsk && (
         <Dialog title="End this match?" onClose={() => setEndAsk(null)} actions={<>
           <button className="btn" onClick={() => setEndAsk(null)}>Keep playing</button>
@@ -168,8 +169,8 @@ function Main({ s }: { s: ClientState }) {
       </>
     );
     return m
-      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onFix={openFix} onEnd={() => askEnd('end')} onNew={() => askEnd('new')} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onNew={() => setScreen('setup')} overlay={overlay} />;
+      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onNew={() => askEnd('new')} overlay={overlay} />
+      : <Lobby s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;

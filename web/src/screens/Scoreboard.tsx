@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { label, value } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import { HowToOverlay } from '../components/HowTo.tsx';
+import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
 import { controls, isX01, legTarget } from '../match.ts';
@@ -22,7 +23,7 @@ export function boardPill(s: ClientState): { dot: string; text: string } {
   return { dot: 'green', text: s.match ? 'Ready · throw' : 'Board ready' };
 }
 
-export function BigHeader({ s, sub, onQr, onMenu }: { s: ClientState; sub?: string; onQr: () => void; onMenu: () => void }) {
+export function BigHeader({ s, sub, onQr, onBoard, onMenu }: { s: ClientState; sub?: string; onQr: () => void; onBoard?: () => void; onMenu: () => void }) {
   const pill = boardPill(s);
   return (
     <header className="big-header">
@@ -30,6 +31,7 @@ export function BigHeader({ s, sub, onQr, onMenu }: { s: ClientState; sub?: stri
       {sub && <><span className="sep" /><div className="sub">{sub}</div></>}
       <div className="spacer" />
       <div className="pill"><span className={`dot ${pill.dot}`} />{pill.text}</div>
+      {onBoard && <button className="icon-btn" aria-label="Board panel" onClick={onBoard}>{Icon.board()}</button>}
       <button className="icon-btn" aria-label="Show QR code" onClick={onQr}>{Icon.qr()}</button>
       <button className="icon-btn" aria-label="Menu" onClick={onMenu}>{Icon.menu()}</button>
     </header>
@@ -229,21 +231,30 @@ function MatchEnd({ m, isPilot, onNew }: { m: X01Match; isPilot: boolean; onNew:
 }
 
 function BullOff({ m, isPilot }: { m: LiveMatch; isPilot: boolean }) {
+  const b = m.view.bullOff;
   const pdc = m.options.bullOff === 'pdc';
   return (
     <div className="overlay">
-      <div className="result-card">
+      <div className="result-card bulloff-card">
         <div className="kicker" style={{ color: 'var(--accent)' }}>BULL-OFF</div>
-        <div className="winner">Who throws first?</div>
-        <div className="note">
-          {pdc ? 'One dart each at the bull. Closest starts; if both hit the same bull, throw again in reverse order.'
-            : 'One dart each at the bull. Closest to the centre starts.'}
-        </div>
-        {isPilot ? (
+        {b && (
+          <div className="bulloff-main">
+            <BullZoom m={m} b={b} size={520} />
+            <div className="bulloff-side">
+              <div className="winner">{bullStatus(m, b)}</div>
+              <BullRows m={m} b={b} />
+              <div className="note">
+                {pdc ? 'One dart each at the bull, closest starts. The same bull or 25 as the leader means throwing again in reverse order.'
+                  : 'One dart each at the bull, closest to the centre starts. Take the dart out before the next throw.'}
+              </div>
+            </div>
+          </div>
+        )}
+        {isPilot && b?.winner == null && (
           <div className="bulloff-players">
             {m.roster.map((r, i) => <button key={i} className="btn" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
           </div>
-        ) : <div className="note">Pick the starter on the pilot.</div>}
+        )}
       </div>
     </div>
   );
@@ -265,10 +276,11 @@ export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void 
   );
 }
 
-export function Scoreboard({ s, onMenu, onQr, onFix, onEnd, onNew, overlay }: {
+export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, overlay }: {
   s: ClientState;
   onMenu: () => void;
   onQr: () => void;
+  onBoard?: () => void;
   onFix: (index: number) => void;
   onEnd: () => void;
   onNew: () => void;
@@ -284,7 +296,7 @@ export function Scoreboard({ s, onMenu, onQr, onFix, onEnd, onNew, overlay }: {
 
   return (
     <div className="big">
-      <BigHeader s={s} sub={m.description} onQr={onQr} onMenu={onMenu} />
+      <BigHeader s={s} sub={m.description} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
       <main className="board-main">
         {isX01(m) ? (
@@ -317,8 +329,8 @@ export function Scoreboard({ s, onMenu, onQr, onFix, onEnd, onNew, overlay }: {
         </footer>
       )}
       {m.intro && !isX01(m) ? <RecordIntro m={m} isPilot={isPilot} />
-        : v.phase === 'bulloff' && <BullOff m={m} isPilot={isPilot} />}
-      {v.phase === 'throwing' && takeout && <TakeoutOverlay s={s} m={m} />}
+        : (v.phase === 'bulloff' || m.bullTakeout) && <BullOff m={m} isPilot={isPilot} />}
+      {v.phase === 'throwing' && takeout && !m.bullTakeout && <TakeoutOverlay s={s} m={m} />}
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} onNew={onNew} /> : <MiniEnd m={m} isPilot={isPilot} onNew={onNew} />)}
       <HowToOverlay s={s} />

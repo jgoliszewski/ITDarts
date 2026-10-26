@@ -34,6 +34,7 @@ export function isValidEvent(e: X01Event): boolean {
   switch (e.t) {
     case 'dart': return isValidDart(e.dart);
     case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
+    case 'bull': return isValidDart(e.dart);
     case 'start': return Number.isInteger(e.starter);
     default: return e.t === 'undo' || e.t === 'next' || e.t === 'nextLeg';
   }

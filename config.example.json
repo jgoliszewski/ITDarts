@@ -3,5 +3,5 @@
   "board": "192.168.1.183:3180",
   "dataDir": "data",
   "extraBackupDir": null,
-  "browser": "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+  "browser": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 }

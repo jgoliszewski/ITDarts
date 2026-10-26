@@ -5,7 +5,8 @@ import { Qr, act, pilotUrl } from '../components/ui.tsx';
 import { fmtAvg } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
-export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onMenu: () => void; onQr: () => void; onNew: () => void; overlay?: ReactNode }) {
+export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
+  s: ClientState; onMenu: () => void; onQr: () => void; onBoard?: () => void; onNew: () => void; onPlayers: () => void; overlay?: ReactNode }) {
   const url = pilotUrl(s);
   const last = s.lastMatch;
   const takeThen = async (fn: () => void | Promise<unknown>) => {
@@ -15,7 +16,7 @@ export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onM
 
   return (
     <div className="big">
-      <BigHeader s={s} onQr={onQr} onMenu={onMenu} />
+      <BigHeader s={s} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · check Board Manager on {s.board.address}</div>}
       <main className="lobby-main">
         <section className="lobby-qr">
@@ -51,6 +52,10 @@ export function Lobby({ s, onMenu, onQr, onNew, overlay }: { s: ClientState; onM
                 Rematch {last.players.map(p => p.name).join(' vs ')}
               </button>
             )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'calc(12 * var(--u))' }}>
+              <button className="btn" onClick={() => takeThen(onPlayers)}>Players</button>
+              <a className="btn" href="/stats" style={{ textDecoration: 'none' }}>Stats</a>
+            </div>
           </div>
         </aside>
       </main>

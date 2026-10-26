@@ -2,6 +2,7 @@ import { label, value } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
 import { LIVES } from '../../../games/121.ts';
+import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
 import { controls, isX01, shortDescription, winnersOf } from '../match.ts';
@@ -93,13 +94,16 @@ function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () =>
       </div>
     );
   }
-  if (v.phase === 'bulloff') {
+  const b = v.bullOff;
+  if (b && (v.phase === 'bulloff' || m.bullTakeout)) {
     return (
-      <div className="box">
+      <div className="box p-bull">
         <div className="caps" style={{ color: 'var(--accent)', fontSize: 13 }}>Bull-off</div>
-        <b style={{ fontSize: 20 }}>Who throws first?</b>
-        <span className="muted" style={{ fontSize: 14 }}>One dart each at the bull{m.options.bullOff === 'pdc' ? '; same bull means throw again' : ''}. Closest starts.</span>
-        {m.roster.map((r, i) => <button key={i} className="btn block" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
+        <b style={{ fontSize: 20 }}>{bullStatus(m, b)}</b>
+        <BullZoom m={m} b={b} size={320} />
+        <BullRows m={m} b={b} />
+        {b.winner === null && <span className="muted" style={{ fontSize: 14 }}>Detection wrong? Pick who starts:</span>}
+        {b.winner === null && m.roster.map((r, i) => <button key={i} className="btn block" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
       </div>
     );
   }
@@ -148,6 +152,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
   const c = controls(s);
   const offline = !s.board.connected;
   const addDart = (d: Dart) => act({ type: 'dart', dart: d });
+  const inBull = v.phase === 'bulloff' || m.bullTakeout;
   return (
     <div className="phone">
       <PhoneHeader s={s} title={shortDescription(m)} onMenu={onMenu} onBoard={onBoard} />
@@ -155,7 +160,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
       <div className="phone-body">
         <Players m={m} />
         <PhaseCard s={s} m={m} onNew={onNew} />
-        {v.phase !== 'bulloff' && (
+        {!inBull && (
           <div className="section">
             <div className="p-turn-head">
               <span className="caps">{m.roster[v.current].name} · this turn</span>
@@ -167,14 +172,14 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
             <div className="p-hint">{checkoutHint(m) ?? c.hint}</div>
           </div>
         )}
-        {offline && v.phase === 'throwing' && v.visit.dartsLeft > 0 && (
+        {offline && !inBull && v.phase === 'throwing' && v.visit.dartsLeft > 0 && (
           <div className="section">
             <span className="caps">Enter dart {v.visit.darts.length + 1}</span>
             <Keypad cur={null} onPick={addDart} />
           </div>
         )}
       </div>
-      {v.phase !== 'bulloff' && (
+      {(!inBull || c.canUndo) && (
         <div className={`p-actions ${c.endInstead ? 'three' : ''}`}>
           <button className="btn" onClick={() => act({ type: 'undo' })}>Undo</button>
           {c.endInstead && <button className="btn" onClick={onEnd}>End match</button>}

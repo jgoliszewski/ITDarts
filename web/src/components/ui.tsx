@@ -14,6 +14,7 @@ const svg = (path: ReactNode, size = 20) => (
 export const Icon = {
   menu: (s?: number) => svg(<path d="M4 7h16M4 12h16M4 17h16" />, s),
   qr: (s?: number) => svg(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" /></>, s),
+  board: (s?: number) => svg(<><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>, s),
   close: (s?: number) => svg(<path d="M18 6 6 18M6 6l12 12" />, s),
   back: (s?: number) => svg(<path d="m15 18-6-6 6-6" />, s),
   undo: (s?: number) => svg(<><path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-3" /></>, s),

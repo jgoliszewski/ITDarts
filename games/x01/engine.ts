@@ -1,4 +1,6 @@
 // X01 match engine: replays the event log of one match into its state. Pure, no I/O.
+import type { BullDart, BullEvent, BullOffView } from '../bulloff.ts';
+import { beforeStart, bullView, undoStart } from '../bulloff.ts';
 import type { Coords, Dart } from '../darts.ts';
 import { MISS } from '../darts.ts';
 import { checkoutRoute, formatRoute } from './checkout.ts';
@@ -11,7 +13,8 @@ export type X01Event =
   | { t: 'fix'; index: number; dart: Dart }
   | { t: 'undo' }
   | { t: 'next'; at?: number }
-  | { t: 'nextLeg' };
+  | { t: 'nextLeg' }
+  | BullEvent;
 
 export interface DartRec {
   dart: Dart;
@@ -36,6 +39,7 @@ interface LegRec {
 export interface Raw {
   starter: number | null;
   legs: LegRec[];
+  bull: BullDart[];
 }
 
 export interface VisitResult {
@@ -126,7 +130,7 @@ function tally(results: LegResult[], players: number, o: X01Options): Tally {
 // ---------- reducer ----------
 
 export function initialRaw(o: X01Options): Raw {
-  return o.bullOff === 'off' ? { starter: 0, legs: [{ set: 1, starter: 0, visits: [] }] } : { starter: null, legs: [] };
+  return o.bullOff === 'off' ? { starter: 0, legs: [{ set: 1, starter: 0, visits: [] }], bull: [] } : { starter: null, legs: [], bull: [] };
 }
 
 function currentPlayer(r: LegResult, players: number): number {
@@ -155,9 +159,10 @@ function reopenLast(leg: LegRec) {
 
 export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options): void {
   if (raw.starter === null) {
-    if (e.t === 'start' && e.starter >= 0 && e.starter < players) {
-      raw.starter = e.starter;
-      raw.legs = [{ set: 1, starter: e.starter, visits: [] }];
+    const s = beforeStart(raw.bull, e, players, o.bullOff);
+    if (s !== null) {
+      raw.starter = s;
+      raw.legs = [{ set: 1, starter: s, visits: [] }];
     }
     return;
   }
@@ -170,6 +175,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
 
   switch (e.t) {
     case 'start':
+    case 'bull':
       return;
     case 'dart': {
       if (cur.winner !== null) return;
@@ -195,6 +201,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
         raw.legs.pop();
         reopenLast(raw.legs.at(-1)!);
       } else if (o.bullOff !== 'off') {
+        undoStart(raw.bull, players, o.bullOff);
         raw.starter = null;
         raw.legs = [];
       }
@@ -256,6 +263,7 @@ export interface X01View {
   lastLeg: { winner: number; checkout: Dart; darts: number; avg: number | null } | null;
   matchWinner: number | null;
   stats: PlayerMatchStats[];
+  bullOff: BullOffView | null;
 }
 
 const avg = (points: number, darts: number) => (darts > 0 ? Math.round((points / darts) * 3 * 100) / 100 : null);
@@ -292,6 +300,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
       checkedIn: Array(players).fill(o.checkIn === 'straight'),
       visit: { player: 0, darts: [], total: 0, bust: false, checkout: false, dartsLeft: 3 },
       checkout: null, lastLeg: null, matchWinner: null, stats,
+      bullOff: bullView(raw.bull, players, o.bullOff),
     };
   }
   const results = raw.legs.map(l => analyzeLeg(l, players, o));
@@ -349,6 +358,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
     lastLeg,
     matchWinner: t.matchWinner,
     stats: Array.from({ length: players }, (_, p) => playerStats(results, p)),
+    bullOff: bullView(raw.bull, players, o.bullOff),
   };
 }
 

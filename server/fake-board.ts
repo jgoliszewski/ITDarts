@@ -1,5 +1,5 @@
 // Fake Board Manager for development without the real board.
-// Run: npm run fake-board, then open http://localhost:3180 to throw darts by hand.
+// Run: npm run fake-board, then open http://localhost:3180 and click the board to throw darts.
 import fastifyWebsocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import type { WebSocket } from 'ws';
@@ -21,10 +21,27 @@ let offline = false;
 
 function coordsFor(n: number, m: number) {
   if (n === 0) return { x: 1.2, y: 1.2 };
-  if (n === 25) return m === 2 ? { x: 0.01, y: 0.01 } : { x: 0.05, y: 0 };
+  // Random spot inside the bull or the 25 ring, so bull-offs have a winner.
+  if (n === 25) {
+    const r = m === 2 ? Math.random() * 0.035 : 0.04 + Math.random() * 0.05, a = Math.random() * 2 * Math.PI;
+    return { x: +(r * Math.sin(a)).toFixed(4), y: +(r * Math.cos(a)).toFixed(4) };
+  }
   const angle = (BOARD_ORDER.indexOf(n) * 18 * Math.PI) / 180;
   const r = m === 3 ? 0.6 : m === 2 ? 0.97 : 0.4;
   return { x: +(r * Math.sin(angle)).toFixed(3), y: +(r * Math.cos(angle)).toFixed(3) };
+}
+
+/** What Board Manager reports for a hit at normalized coords (1 = outer edge of the double ring, y up). */
+function segmentAt(x: number, y: number): Throw['segment'] {
+  const mm = Math.hypot(x, y) * 170;
+  const deg = ((Math.atan2(x, y) * 180) / Math.PI + 369) % 360;
+  const n = BOARD_ORDER[Math.floor(deg / 18)];
+  if (mm <= 6.35) return { name: 'Bull', number: 25, multiplier: 2, bed: 'Bull' };
+  if (mm <= 15.9) return { name: '25', number: 25, multiplier: 1, bed: 'Single' };
+  if (mm > 170) return { name: `M${n}`, number: n, multiplier: 0, bed: 'Outside' };
+  if (mm >= 162) return { name: `D${n}`, number: n, multiplier: 2, bed: 'Double' };
+  if (mm >= 99 && mm <= 107) return { name: `T${n}`, number: n, multiplier: 3, bed: 'Triple' };
+  return { name: `S${n}`, number: n, multiplier: 1, bed: mm < 99 ? 'SingleInner' : 'SingleOuter' };
 }
 
 function send(event: string) {
@@ -53,7 +70,13 @@ app.post('/api/restart', async () => {
   return { ok: true };
 });
 
-app.post<{ Querystring: { d?: string } }>('/fake/throw', async (req, reply) => {
+app.post<{ Querystring: { d?: string; x?: string; y?: string } }>('/fake/throw', async (req, reply) => {
+  const x = Number(req.query.x), y = Number(req.query.y);
+  if (req.query.x !== undefined && Number.isFinite(x) && Number.isFinite(y)) {
+    throws.push({ segment: segmentAt(x, y), coords: { x, y } });
+    send('Throw detected');
+    return { ok: true, throws: throws.length, segment: throws.at(-1)!.segment.name };
+  }
   const d = parseDart(req.query.d ?? '');
   if (!d) return reply.code(400).send({ error: 'Use e.g. ?d=T20' });
   const name = d.n === 0 ? 'Miss' : d.n === 25 ? (d.m === 2 ? 'Bull' : '25') : `${'SDT'[d.m - 1]}${d.n}`;
@@ -70,18 +93,53 @@ app.post('/fake/takeout', async () => {
 });
 
 app.get('/', async (_req, reply) => reply.type('text/html').send(`<!doctype html><meta name=viewport content="width=device-width">
-<title>Fake board</title><body style="font:16px system-ui;background:#111;color:#eee;padding:16px">
-<h2>Fake Board Manager :${PORT}</h2>
-<div id=b style="display:flex;flex-wrap:wrap;gap:6px;max-width:640px"></div>
-<p><button onclick="f('/fake/takeout')">Takeout (1.5 s)</button> <button onclick="f('/fake/takeout-start')">Takeout start</button>
-<button onclick="f('/fake/takeout-finish')">Takeout finish</button></p>
+<title>Fake board</title>
+<style>
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.actions button { font: 600 15px system-ui; height: 44px; padding: 0 22px; border-radius: 9999px; border: 1px solid #2E2E33; background: #1F1F23; color: #F5F5F5; cursor: pointer; }
+.actions button:hover { background: #2A2A2F; }
+.actions button.primary { background: #F58224; border-color: #F58224; color: #111; font-weight: 800; }
+.actions button.primary:hover { background: #FF9440; }
+</style>
+<body style="font:16px system-ui;background:#111;color:#eee;padding:16px;margin:0">
+<h2 style="margin:0 0 8px">Fake Board Manager :${PORT}</h2>
+<p style="margin:0 0 8px;color:#aaa">Click the board to throw. Outside the double ring is a miss. <span id=last></span></p>
+<svg id=board viewBox="-380 -380 760 760" style="width:min(96vw,82vh);height:auto;cursor:crosshair;display:block"></svg>
+<div class=actions><button class=primary onclick="takeout('/fake/takeout')">Takeout (1.5 s)</button>
+<button onclick="f('/fake/takeout-start')">Takeout start</button><button onclick="takeout('/fake/takeout-finish')">Takeout finish</button></div>
 <script>
-const f = p => fetch(p, { method: 'POST' });
-const b = document.getElementById('b');
-for (const d of ['T20','T19','T18','S20','S19','S5','S1','D20','D16','D12','D10','D8','D4','D2','D1','25','Bull','Miss']) {
-  const x = document.createElement('button'); x.textContent = d; x.style.cssText = 'padding:10px 14px;font:inherit';
-  x.onclick = () => f('/fake/throw?d=' + d); b.append(x);
-}
+// Rings drawn fatter than real ones (as on the app's Dartboard) so they are easy to hit. A click maps back
+// to real mm piecewise between ring edges, so the coords sent (mm / 170, y up) are realistic.
+const DRAWN = [0, 20, 46, 168, 220, 290, 340, 380], REAL = [0, 6.35, 15.9, 99, 107, 162, 170, 200];
+const toMm = r => { const i = Math.min(DRAWN.length - 2, DRAWN.findIndex((d, k) => r <= DRAWN[k + 1]) < 0 ? DRAWN.length - 2 : DRAWN.findIndex((d, k) => r <= DRAWN[k + 1]));
+  return REAL[i] + (r - DRAWN[i]) * (REAL[i + 1] - REAL[i]) / (DRAWN[i + 1] - DRAWN[i]); };
+const ORDER = ${JSON.stringify(BOARD_ORDER)};
+const svg = document.getElementById('board'), NS = 'http://www.w3.org/2000/svg';
+const f = p => fetch(p, { method: 'POST' }).then(r => r.json());
+const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.append(e); return e; };
+const pt = (r, deg) => [r * Math.sin(deg * Math.PI / 180), -r * Math.cos(deg * Math.PI / 180)];
+const arc = (r1, r2, a1, a2) => { const [x1, y1] = pt(r2, a1), [x2, y2] = pt(r2, a2), [x3, y3] = pt(r1, a2), [x4, y4] = pt(r1, a1);
+  return 'M' + x1 + ' ' + y1 + 'A' + r2 + ' ' + r2 + ' 0 0 1 ' + x2 + ' ' + y2 + 'L' + x3 + ' ' + y3 + 'A' + r1 + ' ' + r1 + ' 0 0 0 ' + x4 + ' ' + y4 + 'Z'; };
+el('circle', { r: 380, fill: '#141416' });
+ORDER.forEach((n, k) => {
+  const dark = k % 2 === 0;
+  for (const [r1, r2, ring] of [[46, 168, 0], [168, 220, 1], [220, 290, 0], [290, 340, 1]])
+    el('path', { d: arc(r1, r2, k * 18 - 9, k * 18 + 9), fill: ring ? (dark ? '#B8322F' : '#1F8A52') : (dark ? '#232327' : '#4A4A50'), stroke: '#0A0A0B', 'stroke-width': 2 });
+  const [x, y] = pt(360, k * 18);
+  el('text', { x, y, fill: '#A1A1A6', 'font-size': 24, 'font-weight': 700, 'text-anchor': 'middle', 'dominant-baseline': 'central' }).textContent = n;
+});
+el('circle', { r: 46, fill: '#1F8A52', stroke: '#0A0A0B', 'stroke-width': 2 });
+el('circle', { r: 20, fill: '#B8322F', stroke: '#0A0A0B', 'stroke-width': 2 });
+let dots = [];
+svg.onclick = async e => {
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  const { x, y } = p.matrixTransform(svg.getScreenCTM().inverse());
+  dots.push(el('circle', { cx: x, cy: y, r: 6, fill: '#F58224', stroke: '#0A0A0B', 'stroke-width': 2 }));
+  const drawn = Math.hypot(x, y), k = drawn ? toMm(drawn) / drawn / 170 : 0;
+  const r = await f('/fake/throw?x=' + (x * k).toFixed(5) + '&y=' + (-y * k).toFixed(5));
+  document.getElementById('last').textContent = 'Last: ' + r.segment + ' · ' + toMm(drawn).toFixed(1) + ' mm from centre';
+};
+const takeout = p => { dots.forEach(d => d.remove()); dots = []; return f(p); };
 </script>`));
 
 await app.listen({ port: PORT, host: '0.0.0.0' });

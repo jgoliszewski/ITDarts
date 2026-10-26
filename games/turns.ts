@@ -1,5 +1,7 @@
 // Turn log shared by the minigames: replays darts, fixes, undo and Next player into visits. Pure, no I/O.
 // Each game only says, for the visits so far, who throws next and how many darts the visit still takes.
+import type { BullDart, BullEvent, BullOffView } from './bulloff.ts';
+import { beforeStart, bullView, undoStart } from './bulloff.ts';
 import type { Coords, Dart } from './darts.ts';
 import { MISS, isValidDart } from './darts.ts';
 import type { DartRec, LegRecord } from './x01/engine.ts';
@@ -12,7 +14,8 @@ export type TurnEvent =
   | { t: 'undo' }
   | { t: 'next'; at?: number }
   /** Killer numbers, drawn by the server before the first dart. */
-  | { t: 'numbers'; numbers: number[] };
+  | { t: 'numbers'; numbers: number[] }
+  | BullEvent;
 
 export interface Visit {
   player: number;
@@ -26,6 +29,8 @@ export interface Turns {
   starter: number | null;
   visits: Visit[];
   numbers: number[];
+  bull: BullDart[];
+  bullOff: BullOffView | null;
 }
 
 /** What a game says about the log so far. */
@@ -42,6 +47,7 @@ export interface Turn {
 export interface MiniView {
   phase: 'bulloff' | 'throwing' | 'matchWon';
   current: number;
+  bullOff: BullOffView | null;
   visit: { player: number; darts: DartRec[]; dartsLeft: number; good: boolean[] };
   winners: number[];
   /** Hero on the scoreboard: a big value, a caption above it and a note under the player's name. */
@@ -58,7 +64,8 @@ export interface MiniView {
 
 export const isValidTurnEvent = (e: TurnEvent): boolean => {
   switch (e.t) {
-    case 'dart': return isValidDart(e.dart);
+    case 'dart':
+    case 'bull': return isValidDart(e.dart);
     case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
     case 'start': return Number.isInteger(e.starter);
     case 'numbers': return Array.isArray(e.numbers) && e.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 20);
@@ -75,14 +82,14 @@ function reopenLast(t: Turns) {
 }
 
 export function replayTurns(events: TurnEvent[], players: number, bullOff: BullOff, play: (t: Turns) => Turn): Turns {
-  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [] };
+  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [], bull: [], bullOff: null };
   for (const e of events) {
     if (e.t === 'numbers') {
       if (t.visits.length === 0) t.numbers = e.numbers;
       continue;
     }
     if (t.starter === null) {
-      if (e.t === 'start' && e.starter >= 0 && e.starter < players) t.starter = e.starter;
+      t.starter = beforeStart(t.bull, e, players, bullOff);
       continue;
     }
     const last = t.visits.at(-1);
@@ -104,7 +111,10 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
           open.darts.pop();
           if (open.darts.length === 0) t.visits.pop();
         } else if (last) reopenLast(t);
-        else if (bullOff !== 'off') t.starter = null;
+        else if (bullOff !== 'off') {
+          undoStart(t.bull, players, bullOff);
+          t.starter = null;
+        }
         break;
       case 'next': {
         const s = play(t);
@@ -123,6 +133,7 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
       }
     }
   }
+  t.bullOff = bullView(t.bull, players, bullOff);
   return t;
 }
 
@@ -154,11 +165,12 @@ export function walk(v: Visit, apply: (d: Dart) => { good: boolean; end?: boolea
 }
 
 /** Builds the common part of a view: phase and the visit on screen. */
-export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit'> {
-  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [] } };
+export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff'> {
+  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [] }, bullOff: t.bullOff };
   const last = t.visits.at(-1);
   const shown = last && (!last.closed || s.over) ? last : null;
   return {
+    bullOff: t.bullOff,
     phase: s.over ? 'matchWon' : 'throwing',
     current: s.current,
     visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [] },

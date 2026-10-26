@@ -62,6 +62,8 @@ export class Hub {
   private qrTimer: NodeJS.Timeout | null = null;
   private introTimer: NodeJS.Timeout | null = null;
   private howTo: ClientState['howTo'] = null;
+  /** A bull-off dart is in the board: the next dart counts only after the takeout. */
+  private bullOut = false;
   private urls: string[];
 
   constructor(
@@ -85,11 +87,22 @@ export class Hub {
     board.on('status', () => this.broadcast());
     board.on('throw', (dart, coords) => {
       const v = this.live?.view;
-      if (!v || v.phase !== 'throwing' || v.visit.dartsLeft === 0) return;
+      if (!v || this.bullOut) return;
+      if (v.phase === 'bulloff') {
+        this.bullOut = true;
+        this.apply({ t: 'bull', dart, coords, at: Date.now() });
+        return;
+      }
+      if (v.phase !== 'throwing' || v.visit.dartsLeft === 0) return;
       this.apply({ t: 'dart', dart, coords, at: Date.now() });
     });
     board.on('takeoutStarted', () => this.broadcast());
     board.on('takeoutFinished', () => {
+      if (this.bullOut) {
+        this.bullOut = false;
+        this.broadcast();
+        return;
+      }
       const l = this.live;
       const v = l?.view;
       const nextLeg = v?.phase === 'legWon' && l!.rec.game === 'x01' && l!.rec.options.matchMode.kind !== 'off';
@@ -166,6 +179,7 @@ export class Hub {
         record: l.record,
         intro: l.intro,
         newRecord: l.newRecord,
+        bullTakeout: this.bullOut,
       } as LiveMatch),
       lastMatch: this.db.lastMatch(),
       players: this.db.players(),
@@ -192,7 +206,7 @@ export class Hub {
     l.newRecord = this.newRecords(l);
     if (e.t !== 'fix') l.lastFix = null;
     // The first dart closes the record screen and “How to play”.
-    if (e.t === 'dart') {
+    if (e.t === 'dart' || e.t === 'bull') {
       this.endIntro();
       this.howTo = null;
     }
@@ -276,6 +290,7 @@ export class Hub {
     const record = this.recordInfo(rec);
     this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null };
     this.howTo = null;
+    this.bullOut = false;
     if (record) {
       this.introTimer = setTimeout(() => {
         this.endIntro();
@@ -322,6 +337,7 @@ export class Hub {
     }
     this.endIntro();
     this.live = null;
+    this.bullOut = false;
     return rec;
   }
 
@@ -381,6 +397,7 @@ export class Hub {
         return {};
       case 'bullOff':
         if (v?.phase !== 'bulloff') throw new UserError('Bull-off is over');
+        this.bullOut = false;
         this.apply({ t: 'start', starter: cmd.starter });
         void this.board.action('reset').catch(() => undefined);
         return {};
@@ -394,10 +411,16 @@ export class Hub {
         this.live!.lastFix = { index: cmd.index, at: Date.now() };
         return {};
       case 'undo':
+        // An undone bull-off dart was a bad detection; don't wait for its takeout.
+        if (v?.phase === 'bulloff') this.bullOut = false;
         this.apply({ t: 'undo' });
         return {};
       case 'next':
-        if (this.board.status.takeout.active) await this.board.takeoutDone();
+        if (this.board.status.takeout.active || this.bullOut) await this.board.takeoutDone();
+        if (this.bullOut) {
+          this.bullOut = false;
+          return {};
+        }
         this.apply({ t: 'next', at: Date.now() });
         return {};
       case 'nextLeg':

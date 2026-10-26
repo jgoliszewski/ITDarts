@@ -5,9 +5,9 @@ import { BOARD_ORDER } from '../../../games/darts.ts';
 // bull, outer bull, treble in, treble out, double in, double out
 const R = [20, 46, 168, 220, 290, 340];
 
-const pt = (r: number, deg: number) => [r * Math.sin((deg * Math.PI) / 180), -r * Math.cos((deg * Math.PI) / 180)] as const;
+export const pt = (r: number, deg: number) => [r * Math.sin((deg * Math.PI) / 180), -r * Math.cos((deg * Math.PI) / 180)] as const;
 
-function arc(r1: number, r2: number, a1: number, a2: number) {
+export function arc(r1: number, r2: number, a1: number, a2: number) {
   const [x1, y1] = pt(r2, a1), [x2, y2] = pt(r2, a2), [x3, y3] = pt(r1, a2), [x4, y4] = pt(r1, a1);
   const f = (n: number) => n.toFixed(2);
   return `M${f(x1)} ${f(y1)}A${r2} ${r2} 0 0 1 ${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}A${r1} ${r1} 0 0 0 ${f(x4)} ${f(y4)}Z`;

@@ -21,7 +21,10 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
   - Migracja 2 bazy dodaje `matches.variant` oraz `match_players.score` i `stats`.
   - `/stats` ma wybór gry, top 10 per wariant i statystyki gracza w danej grze. Profil X01, winrate i head-to-head liczą tylko X01.
 
-  Testy: `npm test` (58), `npm run typecheck`.
+- **Bull-off z tarczy** ([UI.md](UI.md#bull-off-z-tarczy)): odległość z coords, Closest i PDC, remisy, takeout po każdej lotce. Symulator ma klikalną tarczę z prawdziwymi coords.
+- **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
+
+  Testy: `npm test` (65), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -30,11 +33,13 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
 
 ## Do sprawdzenia z prawdziwą tarczą
 
-Adapter ([server/board.ts](../server/board.ts)) opiera się na założeniach, których nie sprawdziliśmy na Board Managerze v2.0.2:
+Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 
-- [ ] Websocket `ws://BOARD/api/events` wysyła `{type:'state', data:{throws, event, status | running}}`, a rzut ma postać `{segment:{number, multiplier}, coords:{x, y}}`. Jeśli format jest inny, poprawić `BmThrow`, `toDart` i `onState` w `board.ts`.
-- [ ] Takeout przychodzi w polu `event` jako „Takeout started” i „Takeout finished”.
-- [ ] `GET /api/version` istnieje. Jeśli nie, panel pokaże pustą wersję i nic się nie zepsuje.
+- [x] `ws://BOARD/api/events` wysyła `{type:'state', data:{throws, event, status}}`, rzut to `{segment:{name, number, multiplier, bed}, coords:{x, y}}`, coords: 1 = 170 mm, y w górę. Poza tarczą: `bed: 'Outside'`, `multiplier: 0`.
+- [x] Takeout w polu `event`: „Takeout started”, „Takeout finished”. Po 3 lotkach `status: 'Takeout'`.
+- [x] `GET /api/version` zwraca `2.0.2`.
+- [ ] Bull-off na prawdziwej tarczy: kolejność, takeout po lotce, odległości w mm zgodne z rzeczywistością.
+- [ ] Pełny mecz X01 i jedna minigierka na prawdziwej tarczy.
 - [ ] Reset, start i stop detekcji, kalibracja i restart przez API.
 - [ ] Czy Board Manager wstaje sam po `sudo reboot` Raspberry Pi.
 - [ ] `start.bat` i tryb kiosku w Edge (nigdy nie odpalony), otwarty port 3000 w zaporze, wejście z telefonu przez QR.
@@ -50,7 +55,7 @@ Adapter ([server/board.ts](../server/board.ts)) opiera się na założeniach, kt
 
 ## Następne kroki
 
-1. Testy z tarczą według listy powyżej, poprawki adaptera, potem PR `feat/v1` → `main`.
+1. Testy z tarczą według listy powyżej (`npm run dev`, tarcza z `config.json` albo domyślnie `192.168.1.183:3180`), potem PR `feat/v1` → `main`.
 2. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
 3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
 4. Otwarte issues:
