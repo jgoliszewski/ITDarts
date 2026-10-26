@@ -31,7 +31,7 @@ npm run dev:fake
 
 Uruchamia symulator Board Managera (`http://localhost:3180`, przyciski do rzucania lotek i takeoutu), serwer z przeładowaniem i Vite na `http://localhost:5173`. Z prawdziwą tarczą: `npm run dev`.
 
-Ledy bez kontrolera: `npm run fake-wled` uruchamia atrapę WLED na `http://localhost:3190`. Na stronie `/effects` wpisz adres `localhost:3190`.
+`dev:fake` uruchamia też atrapę WLED na `http://localhost:3190`, a sama atrapa startuje przez `npm run fake-wled`. Na stronie `/effects` wpisz adres `localhost:3190`.
 
 ```bash
 npm test
