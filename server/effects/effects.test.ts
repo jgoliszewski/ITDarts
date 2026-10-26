@@ -96,11 +96,11 @@ describe('effects store', () => {
   });
 
   it('keeps the WLED address and pilot switches out of the repo file', () => {
-    store.updateSettings({ volume: 40, sounds: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
+    store.updateSettings({ volume: 40, callerVolume: 60, sounds: false, caller: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
     const file = JSON.parse(fileText());
-    expect(file.settings).toEqual({ volume: 40, swoosh: false, base: { lobby: 1, match: null, takeout: null, offline: null } });
+    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, swoosh: false, base: { lobby: 1, match: null, takeout: null, offline: null } });
     expect(fileText()).not.toContain('192.168.1.50');
-    expect(store.settings()).toMatchObject({ sounds: false, leds: true, wled: { address: '192.168.1.50' } });
+    expect(store.settings()).toMatchObject({ sounds: false, caller: false, leds: true, wled: { address: '192.168.1.50' } });
   });
 
   it('reloads the file after a pull, and keeps the last good version when it is broken', () => {
@@ -178,7 +178,7 @@ describe('effects service', () => {
     store.updateSettings({ volume: 50 });
     store.createRule({ triggers: [t180], sounds: [s] });
     fx.fire(visit180);
-    expect(sent).toEqual([{ sound: { url: `/sounds/${store.sound(s)!.file}`, gain: 0.75 }, anim: '180' }]);
+    expect(sent).toEqual([{ sound: { url: `/sounds/${store.sound(s)!.file}`, gain: 0.75 }, anim: '180', caller: null }]);
   });
 
   it('keeps quiet with Sounds off but still animates, and Test ignores the switch', () => {
@@ -186,10 +186,22 @@ describe('effects service', () => {
     store.createRule({ triggers: [t180], sounds: [s] });
     store.updateSettings({ sounds: false });
     fx.fire(visit180);
-    expect(sent).toEqual([{ sound: null, anim: '180' }]);
+    expect(sent).toEqual([{ sound: null, anim: '180', caller: null }]);
     // Test plays an unsaved rule too.
     fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }));
     expect(sent[1].sound).not.toBeNull();
+  });
+
+  it('sends the caller’s lines with the caller volume, apart from the Sounds switch', () => {
+    store.updateSettings({ sounds: false, callerVolume: 50 });
+    fx.fire(visit180, ['180']);
+    expect(sent).toEqual([{ sound: null, anim: '180', caller: { urls: ['/caller/180.mp3'], gain: 0.5 } }]);
+    // Lines alone, without changes, still go out (e.g. “you require” after Next player).
+    fx.fire([], ['you_require', '40']);
+    expect(sent[1].caller!.urls).toEqual(['/caller/you_require.mp3', '/caller/40.mp3']);
+    store.updateSettings({ caller: false });
+    fx.fire([], ['you_require', '40']);
+    expect(sent).toHaveLength(2);
   });
 
   it('sends the LED effect with the base preset to go back to', () => {

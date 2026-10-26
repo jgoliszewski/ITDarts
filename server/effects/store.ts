@@ -16,9 +16,12 @@ export const BASE_STATES: BaseState[] = ['lobby', 'match', 'takeout', 'offline']
 export interface EffectsSettings {
   /** Pilot switches (this laptop). */
   sounds: boolean;
+  caller: boolean;
   leds: boolean;
   /** Effects volume in %, on top of each sound's own volume (repo). */
   volume: number;
+  /** Caller volume in % (repo). */
+  callerVolume: number;
   /** The built-in turn sound (first a swoosh, now a marimba arpeggio); off for those who put their own sound on “Takeout end” (repo). */
   swoosh: boolean;
   wled: {
@@ -58,13 +61,14 @@ export type RuleInput = Omit<Rule, 'id'>;
 /** What effects/effects.json holds. Keys are written in this order. */
 interface EffectsFile {
   version: 1;
-  settings: { volume: number; swoosh: boolean; base: Record<BaseState, number | null> };
+  settings: { volume: number; callerVolume: number; swoosh: boolean; base: Record<BaseState, number | null> };
   sounds: { file: string; name: string; volume: number; durationMs: number }[];
   rules: Rule[];
 }
 
 interface LocalSettings {
   sounds: boolean;
+  caller: boolean;
   leds: boolean;
   address: string;
 }
@@ -77,7 +81,7 @@ const RULE_ID = /^[a-z0-9]{1,16}$/;
 
 const EMPTY: EffectsFile = {
   version: 1,
-  settings: { volume: 80, swoosh: true, base: { lobby: null, match: null, takeout: null, offline: null } },
+  settings: { volume: 80, callerVolume: 80, swoosh: true, base: { lobby: null, match: null, takeout: null, offline: null } },
   sounds: [],
   rules: [],
 };
@@ -147,6 +151,7 @@ export function parseEffectsFile(text: string): EffectsFile {
   const settings = structuredClone(EMPTY.settings);
   where('settings', () => {
     if ('volume' in s) settings.volume = int(s.volume, 0, 100) ?? fail('volume is 0–100');
+    if ('callerVolume' in s) settings.callerVolume = int(s.callerVolume, 0, 100) ?? fail('callerVolume is 0–100');
     if ('swoosh' in s) settings.swoosh = s.swoosh === true;
     const base = (s.base ?? {}) as Record<string, unknown>;
     for (const b of BASE_STATES) settings.base[b] = checkPreset(base[b]);
@@ -175,7 +180,7 @@ export function parseEffectsFile(text: string): EffectsFile {
 export function formatEffectsFile(f: EffectsFile): string {
   const out: EffectsFile = {
     version: 1,
-    settings: { volume: f.settings.volume, swoosh: f.settings.swoosh, base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
+    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, swoosh: f.settings.swoosh, base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
     sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs })),
     rules: f.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, triggers: r.triggers.map(normalizeTrigger), sounds: r.sounds, led: r.led && { preset: r.led.preset, seconds: r.led.seconds } })),
   };
@@ -261,7 +266,7 @@ export class EffectsStore {
     const row = this.db.sql.prepare("SELECT value FROM settings WHERE key = 'effects'").get() as { value: string } | undefined;
     // Older rows held every setting; only the local ones are read now.
     const s = row ? (JSON.parse(row.value) as Partial<LocalSettings> & { wled?: { address?: string } }) : {};
-    return { sounds: s.sounds ?? true, leds: s.leds ?? true, address: s.address ?? s.wled?.address ?? '' };
+    return { sounds: s.sounds ?? true, caller: s.caller ?? true, leds: s.leds ?? true, address: s.address ?? s.wled?.address ?? '' };
   }
 
   private saveLocal(l: LocalSettings) {
@@ -271,7 +276,10 @@ export class EffectsStore {
   settings(): EffectsSettings {
     const l = this.local();
     const s = this.data.settings;
-    return { sounds: l.sounds, leds: l.leds, volume: s.volume, swoosh: s.swoosh, wled: { address: l.address, base: { ...s.base } } };
+    return {
+      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, swoosh: s.swoosh,
+      wled: { address: l.address, base: { ...s.base } },
+    };
   }
 
   /** Takes any part of the settings; anything malformed is an error. Local ones go to SQLite, the rest to the file. */
@@ -280,9 +288,11 @@ export class EffectsStore {
     const l = this.local();
     const s = structuredClone(this.data.settings);
     if ('sounds' in p) l.sounds = !!p.sounds;
+    if ('caller' in p) l.caller = !!p.caller;
     if ('leds' in p) l.leds = !!p.leds;
     if ('swoosh' in p) s.swoosh = !!p.swoosh;
     if ('volume' in p) s.volume = int(p.volume, 0, 100) ?? fail('Volume is 0–100');
+    if ('callerVolume' in p) s.callerVolume = int(p.callerVolume, 0, 100) ?? fail('Caller volume is 0–100');
     if (p.wled && typeof p.wled === 'object') {
       const w = p.wled as Record<string, unknown>;
       if ('address' in w) {

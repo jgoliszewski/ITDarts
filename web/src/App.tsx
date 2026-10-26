@@ -7,7 +7,7 @@ import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
 import { endsNormally, isX01, visitDarts } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
-import { playFile } from './sound.ts';
+import { playCaller, playFile } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -39,6 +39,7 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
   const toggles = (
     <div className="seg" style={{ gridAutoColumns: '1fr' }}>
       <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
+      <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
       <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
     </div>
   );
@@ -88,11 +89,13 @@ function Main({ s }: { s: ClientState }) {
   const resumedShown = useRef(false);
   const m = s.match;
 
-  // Rule sounds play only in the kiosk browser on the laptop; phones stay silent.
+  // Rule sounds and the caller play only in the kiosk browser on the laptop; phones stay silent.
   const isLocal = useRef(s.you.isLocal);
   isLocal.current = s.you.isLocal;
   useEffect(() => onFx(fx => {
-    if (fx.sound && isLocal.current) void playFile(fx.sound.url, fx.sound.gain);
+    if (!isLocal.current) return;
+    const effect = fx.sound ? playFile(fx.sound.url, fx.sound.gain) : undefined;
+    if (fx.caller) playCaller(fx.caller.urls, fx.caller.gain, effect);
   }), []);
 
   // Lost control: say who took it and offer it back.

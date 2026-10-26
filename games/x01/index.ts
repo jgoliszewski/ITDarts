@@ -6,6 +6,7 @@ import { compact, happenings, replay, view } from './engine.ts';
 import type { X01Options } from './rules.ts';
 import { DEFAULT_OPTIONS, describeOptions } from './rules.ts';
 
+export * from './caller.ts';
 export * from './checkout.ts';
 export * from './engine.ts';
 export * from './rules.ts';

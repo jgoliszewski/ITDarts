@@ -96,7 +96,7 @@ export interface ClientState {
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
   /** Pilot switches, the effects volume (0–100) and the built-in turn sound switch (`swoosh`, its first name). `rev` changes with every effects change. */
-  effects: { sounds: boolean; leds: boolean; volume: number; swoosh: boolean; rev: number };
+  effects: { sounds: boolean; caller: boolean; leds: boolean; volume: number; swoosh: boolean; rev: number };
 }
 
 export type PlayerCommand =
@@ -125,7 +125,7 @@ export type Command =
   | { type: 'board'; action: BoardAction }
   | { type: 'showQr'; show: boolean }
   | { type: 'player'; cmd: PlayerCommand }
-  | { type: 'effects'; sounds?: boolean; leds?: boolean }
+  | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
   | { type: 'closeApp' };
 
 export type ClientMessage =

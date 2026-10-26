@@ -8,10 +8,11 @@ import { Wled } from './wled.ts';
 /** Animations on the scoreboard, hard-coded. */
 export type Anim = '180' | '140' | 'bust' | 'confetti' | 'tile';
 
-/** What the kiosk browser plays; `gain` already includes the effects volume. */
+/** What the kiosk browser plays; `gain` already includes the effects volume. The caller's files play in order, after the sound. */
 export interface Fx {
   sound: { url: string; gain: number } | null;
   anim: Anim | null;
+  caller: { urls: string[]; gain: number } | null;
 }
 
 const ANIMS: { id: number; enabled: true; anim: Anim; triggers: Trigger[] }[] = [
@@ -33,18 +34,19 @@ export class Effects {
     this.wled = new Wled(() => this.store.settings().wled.address);
   }
 
-  /** Changes from one log event or one hub event. */
-  fire(cs: Change[]) {
-    if (cs.length === 0) return;
+  /** Changes from one log event or one hub event, and what the caller says about them (sound-file keys). */
+  fire(cs: Change[], lines: string[] = []) {
+    if (cs.length === 0 && lines.length === 0) return;
     const rule = pickRule(this.store.rules(), cs);
     const anim = pickRule(ANIMS, cs)?.anim ?? null;
     const s = this.store.settings();
-    this.play(rule, anim, s.sounds, s.leds);
+    const caller = s.caller && lines.length > 0 ? { urls: lines.map(k => `/caller/${k}.mp3`), gain: s.callerVolume / 100 } : null;
+    this.play(rule, anim, s.sounds, s.leds, caller);
   }
 
   /** “Test whole rule”: plays what the editor shows, saved or not, even with the pilot switches off. */
   test(rule: RuleInput) {
-    this.play({ ...rule, id: 'test' }, null, true, true);
+    this.play({ ...rule, id: 'test' }, null, true, true, null);
   }
 
   /** “Try” on the effects page: one preset for a while, then back to the base, even with the LEDs switch off. */
@@ -56,9 +58,9 @@ export class Effects {
     this.baseTimer = this.store.settings().leds ? null : setTimeout(() => this.wled.off(), seconds * 1000);
   }
 
-  private play(rule: Rule | null, anim: Anim | null, sounds: boolean, leds: boolean) {
+  private play(rule: Rule | null, anim: Anim | null, sounds: boolean, leds: boolean, caller: Fx['caller']) {
     const sound = rule && sounds ? this.pickSound(rule) : null;
-    if (sound || anim) this.send({ sound, anim });
+    if (sound || anim || caller) this.send({ sound, anim, caller });
     if (rule?.led && leds) {
       this.wled.effect(rule.led.preset, rule.led.seconds, this.basePreset());
       this.ledUntil = Date.now() + rule.led.seconds * 1000;

@@ -113,7 +113,7 @@ Wspólna lista wgranych plików dźwiękowych, z której Reguły wybierają dźw
 _Avoid_: sound pack, paczka
 
 **Caller**:
-Głos sędziego, który zapowiada wynik tury, „you require”, game shot i bust. Osobny kanał z własną paczką nagrań.
+Głos sędziego w X01: „game on”, wynik tury, „no score”, „you require” i game shot. Zaszyty w kodzie, z nagraniami w `assets/caller/`; da się go tylko włączyć lub wyłączyć i ściszyć.
 _Avoid_: lektor, sędzia (w UI)
 
 **Stan bazowy**:

@@ -14,6 +14,8 @@ function audio(): AudioContext | null {
 
 const buffers = new Map<string, Promise<AudioBuffer | null>>();
 let playing: AudioBufferSourceNode | null = null;
+/** When the effect sound or the turn sound ends, in AudioContext time; the caller waits for it. */
+let effectEnd = 0;
 
 function load(a: AudioContext, url: string): Promise<AudioBuffer | null> {
   let b = buffers.get(url);
@@ -47,6 +49,39 @@ export async function playFile(url: string, gain: number) {
   };
   playing = src;
   src.start();
+  effectEnd = a.currentTime + buf.duration;
+}
+
+/** Longest the caller waits for an effect sound (docs/EFEKTY.md#caller). */
+const CALLER_WAIT_S = 2;
+let callerQueue: Promise<void> = Promise.resolve();
+
+function playToEnd(a: AudioContext, buf: AudioBuffer, gain: number): Promise<void> {
+  return new Promise(done => {
+    const src = a.createBufferSource();
+    src.buffer = buf;
+    const g = a.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(a.destination);
+    src.onended = () => done();
+    src.start();
+  });
+}
+
+/**
+ * The caller: its files one after another, after the effect sound of the same event (`after`) and at most 2 s later.
+ * Calls queue up, so a score and the next player's “you require” never talk over each other.
+ */
+export function playCaller(urls: string[], gain: number, after: Promise<unknown> = Promise.resolve()) {
+  callerQueue = callerQueue.then(async () => {
+    await after;
+    const a = audio();
+    if (!a) return;
+    const bufs = await Promise.all(urls.map(u => load(a, u)));
+    const wait = Math.min(Math.max(effectEnd - a.currentTime, 0), CALLER_WAIT_S);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait * 1000));
+    for (const b of bufs) if (b) await playToEnd(a, b, gain);
+  }).catch(() => undefined);
 }
 
 /** One sine voice with a fast attack and an exponential decay. */
@@ -76,4 +111,5 @@ export function turnSound(volume = 0.6) {
   if (!a) return;
   const t = a.currentTime + 0.01;
   [C5, E5, G5].forEach((f, i) => marimba(a, t + i * 0.075, f, volume));
+  effectEnd = Math.max(effectEnd, t + 2 * 0.075 + 0.28);
 }

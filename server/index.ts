@@ -67,6 +67,9 @@ app.get<{ Querystring: { a?: string; b?: string; window?: string } }>('/api/stat
   return r ?? reply.code(404).send({ error: 'Pick two players' });
 });
 
+// The caller's recordings are part of the app, not of the effects setup (docs/EFEKTY.md#caller).
+await app.register(fastifyStatic, { root: resolve('assets/caller'), prefix: '/caller/', decorateReply: false });
+
 const webRoot = resolve('dist/web');
 if (existsSync(join(webRoot, 'index.html'))) {
   await app.register(fastifyStatic, { root: webRoot });

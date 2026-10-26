@@ -9,7 +9,8 @@ import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { MiniView } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
-import type { Fact, Happening } from '../games/effects.ts';
+import { callerLines } from '../games/x01/index.ts';
+import type { Change, Fact, Happening } from '../games/effects.ts';
 import { changes } from '../games/effects.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
@@ -221,7 +222,7 @@ export class Hub {
       urls: this.urls,
       showQr: this.showQr,
       howTo: this.howTo,
-      effects: { ...(({ sounds, leds, volume, swoosh }) => ({ sounds, leds, volume, swoosh }))(this.effects.store.settings()), rev: this.effects.store.rev },
+      effects: { ...(({ sounds, caller, leds, volume, swoosh }) => ({ sounds, caller, leds, volume, swoosh }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
   }
 
@@ -255,7 +256,12 @@ export class Hub {
     if (l.newRecord && !hadRecord && e.t !== 'undo') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
     // State first, so the scoreboard animates the visit it already shows.
     this.broadcast();
-    this.effects.fire(cs);
+    this.effects.fire(cs, this.caller(l, cs, e.t === 'next' || e.t === 'nextLeg' || e.t === 'start'));
+  }
+
+  /** The caller speaks in X01 only (docs/EFEKTY.md#caller). */
+  private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
+    return l.rec.game === 'x01' ? callerLines(cs, l.view as X01View, turnStart) : [];
   }
 
   private endIntro() {
@@ -335,7 +341,8 @@ export class Hub {
     const record = this.recordInfo(rec);
     const happenings = game.happenings(rec.events, roster.length, rec.options);
     this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null, turnPass: 0, happenings };
-    this.effects.fire([{ fact: { kind: 'matchStart' }, before: null }, ...changes([], happenings, 'other')]);
+    const cs = changes([], happenings, 'other');
+    this.effects.fire([{ fact: { kind: 'matchStart' }, before: null }, ...cs], this.caller(this.live, cs, true));
     this.howTo = null;
     this.bullOut = false;
     if (record) {
@@ -507,7 +514,11 @@ export class Hub {
         return this.player(cmd.cmd);
       case 'effects': {
         const leds = this.effects.store.settings().leds;
-        this.effects.store.updateSettings({ ...(cmd.sounds !== undefined && { sounds: cmd.sounds }), ...(cmd.leds !== undefined && { leds: cmd.leds }) });
+        this.effects.store.updateSettings({
+          ...(cmd.sounds !== undefined && { sounds: cmd.sounds }),
+          ...(cmd.caller !== undefined && { caller: cmd.caller }),
+          ...(cmd.leds !== undefined && { leds: cmd.leds }),
+        });
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
         return {};
       }

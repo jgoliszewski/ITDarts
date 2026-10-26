@@ -86,7 +86,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - Przy każdym pliku jest odsłuch, zmiana nazwy i suwak głośności, bo pliki z różnych źródeł mają różny poziom.
   - Pliku używanego przez regułę nie da się usunąć.
   - Pliki i ich opis leżą w repo, w `effects/` ([Konfiguracja w repo](#konfiguracja-w-repo)). Wcześniej były w `data/sounds/` i SQLite.
-- Gotową darmową paczkę dźwięków efektów szukamy razem z paczką callera w [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
+- Dźwięki efektów wgrywamy sami do Biblioteki. Osobnej darmowej paczki pod darta nie szukamy (#5).
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
 
 ### Wbudowane dźwięki
@@ -104,8 +104,8 @@ Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, ż
 
 Grilling z 2026-10-26: konfiguracja wyklikana w domu ma działać też w pracy.
 
-- **Do repo trafiają:** reguły, Biblioteka dźwięków (pliki, nazwy, głośności), stany bazowe ledów, głośność efektów i przełącznik swoosha.
-- **Lokalnie zostają:** adres WLED oraz przełączniki Sounds i LEDs z Pilota. Leżą w SQLite, w tabeli `settings`.
+- **Do repo trafiają:** reguły, Biblioteka dźwięków (pliki, nazwy, głośności), stany bazowe ledów, głośność efektów i callera oraz przełącznik swoosha.
+- **Lokalnie zostają:** adres WLED oraz przełączniki Sounds, Caller i LEDs z Pilota. Leżą w SQLite, w tabeli `settings`.
 - Reguły i stany bazowe wskazują presety WLED po numerze, więc działają tak samo tylko na kontrolerach z tymi samymi numerami presetów.
 - **Miejsce:** `effects/effects.json` i `effects/sounds/` w katalogu głównym repo. Ścieżkę zmienia `effectsDir` w `config.json`.
 - **Źródło prawdy:** plik w repo. Serwer czyta go na starcie i zapisuje od razu przy każdej zmianie na stronie efektów. Commit, push i pull robimy ręcznie, aplikacja nie dotyka gita.
@@ -154,24 +154,26 @@ Z implementacji (2026-10-26):
 
 ## Caller
 
-Caller to osobny kanał tego samego systemu: korzysta z tych samych zdarzeń i tego samego odtwarzacza.
+Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/jgoliszewski/ITDarts/issues/5) (2026-10-26). Wszystko poza tym, co mówi sędzia (pojedyncze lotki, okrzyki, dźwięki pod konkretne wyniki), to Reguły.
 
-- **Co mówi** (każdą kategorię da się włączyć lub wyłączyć):
-  - wynik tury;
-  - „you require N” na początku tury, gdy zostaje 170 lub mniej;
-  - game on;
-  - game shot i match shot;
-  - bust;
-  - pojedyncze lotki, domyślnie wyłączone.
+- **Tylko X01.** W 121 i pozostałych minigierkach caller milczy.
+- **Co mówi** (stały zestaw, bez kategorii do wyłączania):
+  - „game on” na starcie każdego legu, a przy pierwszym legu po bull-offie;
+  - wynik tury, 1–180;
+  - „no score” przy turze za 0 i przy każdym buście;
+  - „you require N” na początku tury, tylko gdy zamknięcie jest możliwe w wybranym check-oucie (ta sama logika co podpowiedź checkoutu). Przy Double out milczy więc przy 169, 168, 166, 165, 163, 162 i 159, a przy Double in także przed wejściem;
+  - przy zamknięciu, zamiast wyniku: „game shot and the N-th leg” (przy setach numer legu w secie, powyżej 20. legu cisza) albo na koniec meczu „game shot and the match”.
 - **Wynik tury** pada zaraz po trzeciej lotce. Przy krótszej turze pada przy „Next player” albo przy takeoucie.
-- **Kolejność:** najpierw dźwięk efektu, potem caller. Caller czeka na koniec efektu, ale najdłużej 2 s. Nigdy nie grają na siebie.
-- Bez imion graczy. Wrócimy do tego, jeśli w #5 wyjdzie TTS.
-- **Paczka nagrań:** sposób instalacji ustalamy w [#5](https://github.com/jgoliszewski/ITDarts/issues/5). Bez paczki caller milczy, a reszta efektów działa.
-- **Głos** (wybrany 2026-10-26 z około 90 głosów: paczki darts-caller, Edge, Kokoro i Piper): Stephen z Amazon Polly, EN-US, paczka darts-caller `en-US-Stephen-Male-v8` (`https://darts-downloads.peschi.org/soundfiles/en-US-Stephen-Male-v8.zip`, 60 MB).
-  - Bierzemy starszą wersję v8, bo nowa paczka Stephena (`amazon/en-US-Stephen-Male.zip`) nie ma nagrania „You require”. Ma tylko „You need”, w którym Polly połyka „need”.
-  - Paczka ma klucze darts-caller: wyniki `0`–`180`, `you_require`, `gameon`, `gameshot`, `matchshot`, `busted`, `bulling_start` i `bulling_end`, `leg_N`, `set_N`, `d1`–`t20`, `bull` i `bullseye`.
-  - Większość kluczy ma po kilkadziesiąt wariantów, także dziwnych („Nada”, „Goose egg”). Klasyczne warianty wybieramy przy instalacji.
-  - Paczka nie ma licencji. Czy może leżeć w repo, czy tylko lokalnie na laptopie, ustalamy w #5 razem z instalacją.
+- **Poprawka** po wywołaniu wyniku wywołuje poprawiony wynik jeszcze raz. Undo milczy.
+- **Kolejność:** najpierw dźwięk efektu, potem caller. Caller czeka na koniec efektu, ale najdłużej 2 s. Kolejne wywołania czekają na poprzednie, np. wynik, a po takeoucie „you require” następnego gracza.
+- Bez imion graczy, pojedynczych lotek, bull-offa i zapowiedzi legów.
+- **Sterowanie:** przełącznik Caller na Pilocie, niezależny od Sounds, domyślnie włączony, trzymany per laptop w SQLite. Suwak głośności callera jest na stronie efektów, a jego wartość leży w repo obok głośności efektów. Gra tylko w kiosku, jak reszta dźwięków.
+- **Głos:** Ash z OpenAI TTS, EN-GB, z paczki darts-caller `openai/en-GB-ash-MALE-v2.zip` (`https://darts-downloads.peschi.org/soundfiles/openai/en-GB-ash-MALE-v2.zip`). Wybrany z około 90 głosów (paczki darts-caller, Edge, Kokoro i Piper).
+  - Nagrania leżą w repo w `assets/caller/` jako część aplikacji, a serwer podaje je pod `/caller/<plik>`. Wyciągnięte jednorazowo, 1:1, bez obróbki. W repo nie ma skryptu ani uploadu.
+  - Nazwy plików w konwencji darts-caller: `1.mp3`–`180.mp3`, `you_require.mp3`, `gameon.mp3`, `busted.mp3` (z nagraniem „no score”), `gameshot_l1_n.mp3`–`gameshot_l20_n.mp3`, `matchshot.mp3`. Inną paczkę darts-caller da się więc podłożyć bez mapowania.
+  - `assets/caller/SOURCE.md` mówi, z której paczki i którego wiersza CSV pochodzi każdy plik.
+  - Paczka nie ma licencji. Akceptujemy to, bo repo jest prywatne i nagrań nie publikujemy.
+  - Brak pliku oznacza ciszę przy tym wywołaniu. Test pilnuje, że każdy potrzebny plik jest w `assets/caller/`.
 
 ## Strona „Effects”
 
@@ -181,10 +183,10 @@ Caller to osobny kanał tego samego systemu: korzysta z tych samych zdarzeń i t
   - reguły, każda z przyciskiem „Test”, który odpala dźwięk i ledy bez rzucania;
   - Biblioteka dźwięków;
   - WLED: adres, test połączenia, presety pobierane z kontrolera z wyborem po nazwie, stany bazowe;
-  - caller: kategorie i głośność.
+  - caller: przełącznik i głośność.
 - Na start nie ma żadnych reguł. Animacje działają od razu, bo są w kodzie.
 - Ledy da się wypróbować bez reguły i bez rzucania: przycisk „Try” przy presecie w edytorze reguły i przy każdym stanie bazowym, a do tego lista presetów z kontrolera. Podgląd gra preset przez zadany czas (w liście 3 s) i wraca do stanu bazowego, także przy wyłączonym przełączniku LEDs. Wtedy po podglądzie ledy znowu gasną (2026-10-26).
-- Z implementacji (2026-10-26): strona ma też sekcję „Playback” z przełącznikami Sounds i LEDs, wbudowanym swooshem i głośnością efektów. Sekcja callera dojdzie razem z paczką z #5.
+- Z implementacji (2026-10-26): strona ma też sekcję „Playback” z przełącznikami Sounds i LEDs, wbudowanym swooshem i głośnością efektów. Od #5 jest w niej też caller.
 
 ### Układ strony
 
@@ -222,8 +224,9 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 - Kolor kropki to pierwszy kolor pierwszego segmentu z `presets.json`. Bez niego kropka jest pustym szarym okręgiem.
 
 **Playback**
-- Sounds, LEDs, swoosh i głośność efektów jak dotąd. Caller dojdzie z paczką z #5.
+- Sounds, LEDs, swoosh i głośność efektów jak dotąd.
+- Caller: przełącznik z odsłuchem przykładowego wywołania i suwak „Caller volume”.
 
 ## Pilot
 
-W menu Pilota są trzy przełączniki: Sounds, Caller i LEDs. Ich stan trzyma serwer, więc przetrwa restart. Caller dojdzie razem z paczką nagrań. Do tego czasu w menu są tylko Sounds i LEDs oraz wejście „Effects”.
+W menu Pilota są trzy przełączniki: Sounds, Caller i LEDs, oraz wejście „Effects”. Ich stan trzyma serwer, więc przetrwa restart.
