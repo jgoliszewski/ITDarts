@@ -6,6 +6,8 @@ export interface Config {
   /** Board Manager address, host:port. */
   board: string;
   dataDir: string;
+  /** Effects setup kept in the repo (docs/EFEKTY.md, Konfiguracja w repo). */
+  effectsDir: string;
   /** Second backup folder, e.g. a synced OneDrive folder. */
   extraBackupDir: string | null;
   /** Browser opened in kiosk mode with --kiosk. Edge by default. */
@@ -17,6 +19,7 @@ const DEFAULTS: Config = {
   port: 3000,
   board: '192.168.1.183:3180',
   dataDir: 'data',
+  effectsDir: 'effects',
   extraBackupDir: null,
   browser: null,
   kiosk: false,
@@ -34,5 +37,6 @@ export function loadConfig(argv = process.argv.slice(2)): Config {
     else if (argv[i] === '--data') cfg.dataDir = argv[++i];
   }
   cfg.dataDir = resolve(cfg.dataDir);
+  cfg.effectsDir = resolve(cfg.effectsDir);
   return cfg;
 }

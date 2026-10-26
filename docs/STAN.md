@@ -30,7 +30,12 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
   - Sprawdzone skryptem z symulatorem: checkout i bust w 121, Tura X01 z „Next player”.
 - **Efekty** według [EFEKTY.md](EFEKTY.md), bez callera:
   - **Wyzwalacze:** każda gra zwraca wystąpienia z logu (`games/effects.ts`, `happenings` w modułach), a hub odpala nowe i zmienione. Tak samo działają minigierki, w tym „New record”. Takeout, start meczu i status tarczy zgłasza hub.
-  - **Reguły i Biblioteka dźwięków:** migracja 3 dodaje tabele `settings`, `sounds` i `effect_rules`. Pliki leżą w `data/sounds/`, a backup kopiuje je do `backups/sounds/`.
+  - **Konfiguracja w repo** ([EFEKTY.md](EFEKTY.md#konfiguracja-w-repo)):
+    - reguły, Biblioteka dźwięków i wspólne ustawienia leżą w `effects/effects.json` i `effects/sounds/`, pod gitem;
+    - adres WLED i przełączniki Sounds i LEDs zostają w SQLite (`settings`);
+    - serwer pilnuje pliku i przeładowuje go po `git pull`, a uszkodzony plik zostawia ostatnią dobrą wersję i pokazuje baner;
+    - pierwszy start przeniósł dane z tabel z migracji 3 i je usunął.
+    - Pilnowanie pliku sprawdzone na Windows skryptem: podmiana pliku jak przy pullu i znaczniki konfliktu.
   - **Strona `/effects`** w układzie z grillingu ([EFEKTY.md](EFEKTY.md#układ-strony)), kod w `web/src/screens/effects/`:
     - zakładki Rules, Sounds, LEDs i Playback z własnymi adresami, na laptopie (od 1100 px) z boku, z listą reguł i edytorem obok;
     - edytor „When → Then” z chipami wyzwalaczy, arkuszem dodawania i „Discard changes?”, także przy przycisku wstecz;
@@ -42,7 +47,12 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
   - **Sprawdzone** skryptem przez websocket z symulatorem tarczy i atrapą WLED (`npm run fake-wled`): reguły 180 i T20, Poprawka S20 ↔ T20, Undo, Sounds off, powrót WLED do stanu bazowego. Do tego zrzuty strony `/effects`, edytora, menu i animacji.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
-  Testy: `npm test` (90), `npm run typecheck`.
+  Testy: `npm test` (95), `npm run typecheck`.
+- **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
+  - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
+  - przejęcie Pilota, End match z Save i Discard;
+  - wznowienie po restarcie serwera, restart Board Managera, baner braku tarczy, statystyki.
+- **Minigierki sprawdzone skryptem** przez websocket i symulator oraz zrzutami ekranu z headless Edge. Każda gra przeszła start, rzuty, takeout i koniec, a do tego Ekran rekordu, Reroll, „How to play” na ekranie, lobby, setup na telefonie i `/stats`. Nikt jeszcze w nie nie zagrał ręcznie.
 
 ## Do sprawdzenia przy efektach
 
@@ -50,11 +60,7 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
 - [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła i czy pobieranie `presets.json` działa na jego wersji.
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
-- **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
-  - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
-  - przejęcie Pilota, End match z Save i Discard;
-  - wznowienie po restarcie serwera, restart Board Managera, baner braku tarczy, statystyki.
-- **Minigierki sprawdzone skryptem** przez websocket i symulator oraz zrzutami ekranu z headless Edge. Każda gra przeszła start, rzuty, takeout i koniec, a do tego Ekran rekordu, Reroll, „How to play” na ekranie, lobby, setup na telefonie i `/stats`. Nikt jeszcze w nie nie zagrał ręcznie.
+- [ ] Przeniesienie konfiguracji: push z domu, pull w pracy przy działającym serwerze. Stany bazowe wskazują presety atrapy (1–4), więc w pracy trzeba je raz ustawić pod prawdziwy kontroler.
 
 ## Do sprawdzenia z prawdziwą tarczą
 
@@ -72,6 +78,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 ## Znane problemy
 
 - W `npm run dev` Vite łączy się z serwerem z localhost, więc serwer bierze każdą przeglądarkę, także telefon, za kiosk. Dźwięki reguł grają wtedy też na telefonie. W `npm start` i w kiosku tego problemu nie ma.
+- Kiosk trzyma zdekodowane dźwięki po nazwie pliku. Gdy dźwięk zostanie usunięty i w jego miejsce wgrany inny o tej samej nazwie, kiosk gra stary aż do przeładowania strony.
 - Remis w ATC i Full Board zapisuje mecz bez zwycięzcy, więc nie wchodzi do winrate.
 - W Co-op 121 podejście liczy się graczowi, który je zakończył: checkoutem albo ostatnią Turą.
 

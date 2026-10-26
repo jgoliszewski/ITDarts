@@ -44,7 +44,7 @@ export class Effects {
 
   /** “Test whole rule”: plays what the editor shows, saved or not, even with the pilot switches off. */
   test(rule: RuleInput) {
-    this.play({ ...rule, id: 0 }, null, true, true);
+    this.play({ ...rule, id: 'test' }, null, true, true);
   }
 
   /** “Try” on the effects page: one preset for a while, then back to the base, even with the LEDs switch off. */

@@ -95,8 +95,8 @@ export interface ClientState {
   showQr: boolean;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
-  /** Pilot switches, the effects volume (0–100) and the built-in swoosh switch. */
-  effects: { sounds: boolean; leds: boolean; volume: number; swoosh: boolean };
+  /** Pilot switches, the effects volume (0–100) and the built-in swoosh switch. `rev` changes with every effects change. */
+  effects: { sounds: boolean; leds: boolean; volume: number; swoosh: boolean; rev: number };
 }
 
 export type PlayerCommand =

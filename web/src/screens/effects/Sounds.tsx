@@ -1,13 +1,15 @@
 // Sounds tab: the Biblioteka dźwięków with upload, preview and per-file volume.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Sound } from '../../../../server/effects/store.ts';
 import { Dialog, Icon, toast } from '../../components/ui.tsx';
 import { playFile } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call } from './api.ts';
-import { Sheet } from './parts.tsx';
+import { slug } from '../../../../server/effects/slug.ts';
+import { SearchField, Sheet, matchesQuery } from './parts.tsx';
 
-const MAX_BYTES = 5 * 1024 * 1024;
+// Each file stays in the repo's git history (docs/EFEKTY.md, Konfiguracja w repo).
+const MAX_BYTES = 2 * 1024 * 1024;
 const MAX_SECONDS = 10;
 
 /** Length of an audio file, measured by the browser before the upload. */
@@ -28,10 +30,78 @@ function duration(file: File): Promise<number> {
   });
 }
 
-function Upload({ d }: { d: EffectsData }) {
+/** A file the browser can read, waiting for its name. */
+interface Picked {
+  file: File;
+  seconds: number;
+  url: string;
+}
+
+const EXT: Record<string, string> = { 'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav', 'audio/ogg': 'ogg' };
+const extOf = (f: File) => EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'mp3';
+
+/**
+ * Asks for the name before the upload: the name also becomes the file name in the repo, which a later rename keeps
+ * (docs/EFEKTY.md, Konfiguracja w repo).
+ */
+function NameNewSound({ d, picked, wide, onClose }: { d: EffectsData; picked: Picked; wide: boolean; onClose: () => void }) {
+  const [name, setName] = useState(() => picked.file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40));
   const [busy, setBusy] = useState(false);
-  const upload = async (file: File) => {
-    if (file.size > MAX_BYTES) return toast({ text: 'File is larger than 5 MB', kind: 'error' });
+  // The name from the file is a guess: selected, so typing replaces it.
+  const field = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    field.current?.focus();
+    field.current?.select();
+  }, []);
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const taken = d.sounds.some(s => s.name.toLowerCase() === clean.toLowerCase());
+  const upload = async () => {
+    if (!clean || busy) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/sounds?name=${encodeURIComponent(clean)}&duration=${Math.ceil(picked.seconds * 1000)}`, {
+        method: 'POST', headers: { 'content-type': picked.file.type.startsWith('audio/') ? picked.file.type : 'application/octet-stream' }, body: picked.file,
+      });
+      if (!r.ok) {
+        toast({ text: ((await r.json().catch(() => ({}))) as { error?: string }).error ?? 'Upload failed', kind: 'error' });
+        return;
+      }
+      toast({ text: `Added “${clean}”` });
+      d.reload();
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet title="Name the new sound" wide={wide} onClose={onClose}>
+      <div className="fx-variant">
+        <button className="icon-btn" aria-label="Play the new sound" onClick={() => playFile(picked.url, d.settings.volume / 100)}>{Icon.play(16)}</button>
+        <span className="grow">{picked.file.name}</span>
+        <span className="muted">{picked.seconds.toFixed(1)} s</span>
+      </div>
+      <label className="section">
+        <span className="caps">Name</span>
+        <input ref={field} className="field" maxLength={40} value={name} placeholder="e.g. Crowd roar"
+          onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && upload()} />
+      </label>
+      <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+        {clean ? <>File in the repo: <b>effects/sounds/{slug(clean)}.{extOf(picked.file)}</b>. Renaming later keeps this file name.</> : 'Give it a name people will find.'}
+        {taken && ' A sound with this name already exists.'}
+      </p>
+      <div className="chip-row" style={{ justifyContent: 'flex-end' }}>
+        <button className="btn" onClick={onClose}>Cancel</button>
+        <button className="btn primary" disabled={!clean || busy} onClick={upload}>{busy ? 'Uploading…' : 'Add sound'}</button>
+      </div>
+    </Sheet>
+  );
+}
+
+function Upload({ d, wide }: { d: EffectsData; wide: boolean }) {
+  const [picked, setPicked] = useState<Picked | null>(null);
+  useEffect(() => () => { if (picked) URL.revokeObjectURL(picked.url); }, [picked]);
+  const pick = async (file: File) => {
+    if (file.size > MAX_BYTES) return toast({ text: 'File is larger than 2 MB', kind: 'error' });
     let seconds: number;
     try {
       seconds = await duration(file);
@@ -39,26 +109,18 @@ function Upload({ d }: { d: EffectsData }) {
       return toast({ text: 'This browser cannot read that file. Use mp3, wav or ogg.', kind: 'error' });
     }
     if (!(seconds > 0) || seconds > MAX_SECONDS) return toast({ text: 'Sound is longer than 10 s', kind: 'error' });
-    setBusy(true);
-    const name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 40) || 'Sound';
-    try {
-      const r = await fetch(`/api/sounds?name=${encodeURIComponent(name)}&duration=${Math.ceil(seconds * 1000)}`, {
-        method: 'POST', headers: { 'content-type': file.type.startsWith('audio/') ? file.type : 'application/octet-stream' }, body: file,
-      });
-      if (!r.ok) toast({ text: ((await r.json().catch(() => ({}))) as { error?: string }).error ?? 'Upload failed', kind: 'error' });
-      else toast({ text: `Added “${name}”` });
-    } finally {
-      setBusy(false);
-      d.reload();
-    }
+    setPicked({ file, seconds, url: URL.createObjectURL(file) });
   };
   return (
-    <label className="fx-upload">
-      <span className="fx-upload-icon">{busy ? '…' : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>}</span>
-      <span className="grow"><b>{busy ? 'Uploading…' : 'Upload a sound'}</b><span className="muted">mp3, wav or ogg · up to 5 MB and 10 s</span></span>
-      <input type="file" accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg" hidden disabled={busy}
-        onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void upload(f); }} />
-    </label>
+    <>
+      <label className="fx-upload">
+        <span className="fx-upload-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg></span>
+        <span className="grow"><b>Upload a sound</b><span className="muted">mp3, wav or ogg · up to 2 MB and 10 s</span></span>
+        <input type="file" accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg" hidden
+          onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f); }} />
+      </label>
+      {picked && <NameNewSound d={d} picked={picked} wide={wide} onClose={() => setPicked(null)} />}
+    </>
   );
 }
 
@@ -118,15 +180,22 @@ function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu: () => vo
 }
 
 export function SoundsTab({ d, wide }: { d: EffectsData; wide: boolean }) {
-  const [menu, setMenu] = useState<number | null>(null);
+  const [menu, setMenu] = useState<string | null>(null);
+  const [q, setQ] = useState('');
   const open = d.sounds.find(s => s.id === menu);
+  const shown = d.sounds.filter(s => matchesQuery(q, s.name, s.file));
   return (
     <div className="fx-col">
       {wide && <h2 className="fx-h">Sounds</h2>}
-      <Upload d={d} />
-      <div className="option-row"><span className="caps">Library · {d.sounds.length} {d.sounds.length === 1 ? 'sound' : 'sounds'}</span><span className="muted">▶ plays on this device</span></div>
+      <Upload d={d} wide={wide} />
+      <div className="option-row">
+        <span className="caps">Library · {q ? `${shown.length} of ${d.sounds.length}` : d.sounds.length} {d.sounds.length === 1 ? 'sound' : 'sounds'}</span>
+        <span className="muted">▶ plays on this device</span>
+      </div>
+      {d.sounds.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search sounds" />}
       {d.sounds.length === 0 && <p className="muted" style={{ margin: 0 }}>No sounds yet. Rules pick their sounds from here.</p>}
-      {d.sounds.map(s => <SoundRow key={s.id} d={d} s={s} onMenu={() => setMenu(s.id)} />)}
+      {d.sounds.length > 0 && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
+      {shown.map(s => <SoundRow key={s.id} d={d} s={s} onMenu={() => setMenu(s.id)} />)}
       {open && <SoundMenu key={open.id} d={d} s={open} wide={wide} onClose={() => setMenu(null)} />}
     </div>
   );

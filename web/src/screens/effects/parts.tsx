@@ -19,6 +19,25 @@ export const Chevron = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
 );
 
+/** Lower case without accents, so “papiez” finds “Papież”. */
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase();
+
+/** Every word of the query appears in one of the texts, in any order. */
+export function matchesQuery(q: string, ...texts: string[]): boolean {
+  const hay = fold(texts.join(' '));
+  return fold(q).split(/\s+/).filter(Boolean).every(w => hay.includes(w));
+}
+
+export function SearchField({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <label className="fx-search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+      <input type="search" aria-label={placeholder} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} />
+      {value && <button aria-label="Clear search" onClick={() => onChange('')}>{Icon.close(16)}</button>}
+    </label>
+  );
+}
+
 /** A preset's colour; a hollow ring when the preset has none. */
 export const Dot = ({ color, size = 12 }: { color: string | null | undefined; size?: number }) => (
   <span className={`fx-dot ${color ? '' : 'none'}`} style={{ width: size, height: size, background: color ?? undefined }} aria-hidden="true" />

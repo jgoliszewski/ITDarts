@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { EffectsResponse } from '../../../../server/effects/routes.ts';
 import type { WledPreset } from '../../../../server/effects/wled.ts';
 import { toast } from '../../components/ui.tsx';
+import { useSnapshot } from '../../net.ts';
 
 /** JSON call with the server's error as a toast; null on failure. */
 export async function call<T = unknown>(method: string, url: string, body?: unknown): Promise<T | null> {
@@ -46,7 +47,9 @@ export function useEffectsData(): EffectsData | null {
   const reload = useCallback(() => {
     void call<EffectsResponse>('GET', '/api/effects').then(d => d && setData(d));
   }, []);
-  useEffect(reload, [reload]);
+  // The server counts every change, including a file changed by git pull; fetch again when it moves.
+  const rev = useSnapshot().state?.effects.rev;
+  useEffect(reload, [reload, rev]);
 
   // Presets come from the controller each time the address changes.
   const address = data?.settings.wled.address ?? '';
@@ -66,7 +69,7 @@ export function useEffectsData(): EffectsData | null {
   return data && { ...data, presets, reload };
 }
 
-export const presetOf = (d: EffectsData, id: number | null) => (id === null ? null : d.presets.list?.find(p => p.id === id) ?? null);
+export const presetOf = (d: EffectsData, id: number | null | undefined) => (id == null ? null : d.presets.list?.find(p => p.id === id) ?? null);
 export const presetName = (d: EffectsData, id: number) => presetOf(d, id)?.name ?? `Preset ${id}`;
 
 // ---------- navigation with a guard for unsaved changes ----------
@@ -77,14 +80,13 @@ export const TABS: [Tab, string][] = [['rules', 'Rules'], ['sounds', 'Sounds'], 
 export interface Route {
   tab: Tab;
   /** In Rules: a rule id, 'new', or null for the list. */
-  rule: number | 'new' | null;
+  rule: string | null;
 }
 
 export function parseRoute(path: string): Route {
   const [, , tab, sub] = path.split('/');
   const t = (TABS.some(([k]) => k === tab) ? tab : 'rules') as Tab;
-  const rule = t !== 'rules' || !sub ? null : sub === 'new' ? 'new' : Number(sub) || null;
-  return { tab: t, rule };
+  return { tab: t, rule: t === 'rules' && sub ? sub : null };
 }
 
 /** The editor registers this while it holds unsaved changes. */

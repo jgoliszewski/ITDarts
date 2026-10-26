@@ -221,7 +221,7 @@ export class Hub {
       urls: this.urls,
       showQr: this.showQr,
       howTo: this.howTo,
-      effects: (({ sounds, leds, volume, swoosh }) => ({ sounds, leds, volume, swoosh }))(this.effects.store.settings()),
+      effects: { ...(({ sounds, leds, volume, swoosh }) => ({ sounds, leds, volume, swoosh }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
   }
 
@@ -391,8 +391,8 @@ export class Hub {
   backup() {
     try {
       const dirs = [`${this.cfg.dataDir}/backups`, ...(this.cfg.extraBackupDir ? [this.cfg.extraBackupDir] : [])];
+      // Effects live in the repo; git keeps their history (docs/EFEKTY.md).
       this.db.backup(dirs);
-      this.effects.store.backupSounds(dirs);
     } catch (e) {
       console.error('Backup failed', e);
     }

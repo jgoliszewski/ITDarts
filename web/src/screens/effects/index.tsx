@@ -26,11 +26,11 @@ function count(d: EffectsData, t: Tab): string {
   return '';
 }
 
-function Content({ d, tab, rule, wide }: { d: EffectsData; tab: Tab; rule: number | 'new' | null; wide: boolean }) {
+function Content({ d, tab, rule, wide }: { d: EffectsData; tab: Tab; rule: string | null; wide: boolean }) {
   if (tab === 'sounds') return <SoundsTab d={d} wide={wide} />;
   if (tab === 'leds') return <LedsTab d={d} wide={wide} />;
   if (tab === 'playback') return <PlaybackTab d={d} wide={wide} />;
-  const found = typeof rule === 'number' ? d.rules.find(r => r.id === rule) ?? null : null;
+  const found = d.rules.find(r => r.id === rule) ?? null;
   if (!wide) {
     if (rule === 'new') return <RuleEditor key="new" d={d} rule={null} wide={false} />;
     if (found) return <RuleEditor key={found.id} d={d} rule={found} wide={false} />;
@@ -54,6 +54,10 @@ export function EffectsPage() {
   const st = d && status(d);
   const pill = st && (
     <button className="fx-status" onClick={() => go('/effects/playback')}><span className={`dot ${st.ok ? 'green' : 'amber'}`} />{st.text}</button>
+  );
+  // A broken effects file (e.g. git conflict markers after a pull): the last good version stays in use.
+  const fileError = d?.file.error && (
+    <div className="banner" role="alert">{d.file.path} has an error, so ITDarts keeps the last good version. {d.file.error}</div>
   );
   const discard = asking && (
     <Dialog title="Discard changes?" onClose={() => discardAnswer(false)} actions={<>
@@ -81,14 +85,14 @@ export function EffectsPage() {
           <div className="spacer" />
           {pill}
         </nav>
-        <main className={`fx-main ${tab === 'rules' ? '' : 'narrow'}`}><Content d={d} tab={tab} rule={rule} wide /></main>
+        <main className={`fx-main ${tab === 'rules' ? '' : 'narrow'}`}>{fileError}<Content d={d} tab={tab} rule={rule} wide /></main>
         {discard}
       </div>
     );
   }
 
   // Phone: the rule editor takes the whole screen, with its own Cancel and Save.
-  if (tab === 'rules' && rule !== null) return <div className="fx-phone"><Content d={d} tab={tab} rule={rule} wide={false} />{discard}</div>;
+  if (tab === 'rules' && rule !== null) return <div className="fx-phone">{fileError}<Content d={d} tab={tab} rule={rule} wide={false} />{discard}</div>;
   return (
     <div className="fx-phone">
       <header className="fx-head">
@@ -99,7 +103,7 @@ export function EffectsPage() {
       <nav className="seg fx-tabs" aria-label="Effects sections">
         {TABS.map(([t, label]) => <button key={t} aria-pressed={t === tab} onClick={() => go(`/effects/${t}`)}>{label}</button>)}
       </nav>
-      <main className="fx-body"><Content d={d} tab={tab} rule={rule} wide={false} /></main>
+      <main className="fx-body">{fileError}<Content d={d} tab={tab} rule={rule} wide={false} /></main>
       {tab === 'rules' && (
         <div className="fx-bottom">
           <button className="btn primary block" onClick={() => go('/effects/rules/new')}>{Icon.plus()}New rule</button>

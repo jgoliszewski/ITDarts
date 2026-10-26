@@ -7,7 +7,7 @@ import { Dialog, Icon } from '../../components/ui.tsx';
 import { playFile } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call, go, presetName, presetOf, setDirtyCheck, tryLed } from './api.ts';
-import { Chevron, CondPicker, Dot, PatternPicker, PresetPicker, Seg, Sheet, Stepper, Switch } from './parts.tsx';
+import { Chevron, CondPicker, Dot, PatternPicker, PresetPicker, SearchField, Seg, Sheet, Stepper, Switch, matchesQuery } from './parts.tsx';
 
 // ---------- groups ----------
 
@@ -21,7 +21,8 @@ const groupOf = (t: Trigger): Group =>
 const best = (r: Rule) => r.triggers.reduce((a, b) => (priority(b) < priority(a) ? b : a));
 
 function groupRules(rules: Rule[]): { group: Group; title: string; rules: Rule[] }[] {
-  const sorted = [...rules].sort((a, b) => priority(best(a)) - priority(best(b)) || a.id - b.id);
+  // A stable sort: equal priorities keep the file's order, oldest first.
+  const sorted = [...rules].sort((a, b) => priority(best(a)) - priority(best(b)));
   return GROUP_TITLES
     .map(([group, title]) => ({ group, title, rules: sorted.filter(r => groupOf(best(r)) === group) }))
     .filter(g => g.rules.length > 0);
@@ -32,7 +33,7 @@ export const firstRule = (rules: Rule[]): Rule | null => groupRules(rules)[0]?.r
 
 const whenText = (r: { triggers: Trigger[] }) => r.triggers.map(triggerLabel).join(' · ');
 
-function soundsText(d: EffectsData, ids: number[]) {
+function soundsText(d: EffectsData, ids: string[]) {
   const names = ids.map(id => d.sounds.find(s => s.id === id)?.name).filter(Boolean);
   return names.length === 0 ? null : names.length === 1 ? names[0] : `${names[0]} +${names.length - 1}`;
 }
@@ -42,7 +43,7 @@ const toggled = (r: Rule): RuleInput => ({ name: r.name, enabled: !r.enabled, tr
 
 // ---------- list ----------
 
-export function RuleList({ d, selected, wide }: { d: EffectsData; selected: number | 'new' | null; wide: boolean }) {
+export function RuleList({ d, selected, wide }: { d: EffectsData; selected: string | null; wide: boolean }) {
   const groups = groupRules(d.rules);
   return (
     <div className="fx-rules">
@@ -194,6 +195,30 @@ function TriggerParams({ t, onChange }: { t: Trigger; onChange: (t: Trigger) => 
   }
 }
 
+/** Library sounds not in the rule yet, with a search for long libraries. */
+function SoundPicker({ d, wide, taken, onPick, onClose }: { d: EffectsData; wide: boolean; taken: string[]; onPick: (id: string) => void; onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const free = d.sounds.filter(s => !taken.includes(s.id));
+  const shown = free.filter(s => matchesQuery(q, s.name, s.file));
+  return (
+    <Sheet title="Add a sound" wide={wide} onClose={onClose}>
+      {d.sounds.length === 0 && <p className="muted" style={{ margin: 0 }}>The library is empty. Upload sounds in the Sounds tab.</p>}
+      {free.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search sounds" />}
+      {free.length > 0 && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
+      <div className="fx-list">
+        {shown.map(s => (
+          <div key={s.id} className="fx-pick">
+            <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playFile(`/sounds/${s.file}`, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
+            <button className="fx-pick-main" onClick={() => { onPick(s.id); onClose(); }}>
+              <span className="grow">{s.name}</span><span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
+            </button>
+          </div>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
 // ---------- editor ----------
 
 const EMPTY: RuleInput = { name: '', enabled: true, triggers: [], sounds: [], led: null };
@@ -215,14 +240,14 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
 
   const list = '/effects/rules';
   const save = async () => {
-    const res = rule ? await call('PUT', `/api/effects/rules/${rule.id}`, r) : await call<{ id: number }>('POST', '/api/effects/rules', r);
+    const res = rule ? await call('PUT', `/api/effects/rules/${rule.id}`, r) : await call<{ id: string }>('POST', '/api/effects/rules', r);
     if (!res) return;
     setSaved(r);
     setDirtyCheck(null);
     d.reload();
     // The phone goes back to the list; the laptop stays on the rule.
     if (!wide) go(list);
-    else if (!rule) go(`/effects/rules/${(res as { id: number }).id}`, true);
+    else if (!rule) go(`/effects/rules/${(res as { id: string }).id}`, true);
   };
   const remove = async () => {
     setAskDelete(false);
@@ -317,21 +342,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
       {off.length > 0 && <p className="muted" style={{ margin: 0, fontSize: 13 }}>{off.join(' and ')} {off.length > 1 ? 'are' : 'is'} off on the pilot; Test plays anyway.</p>}
 
       {sheet === 'trigger' && <TriggerPicker wide={wide} onClose={() => setSheet(null)} onPick={t => { set({ triggers: [...r.triggers, t] }); setChip(r.triggers.length); }} />}
-      {sheet === 'sound' && (
-        <Sheet title="Add a sound" wide={wide} onClose={() => setSheet(null)}>
-          {d.sounds.length === 0 && <p className="muted" style={{ margin: 0 }}>The library is empty. Upload sounds in the Sounds tab.</p>}
-          <div className="fx-list">
-            {d.sounds.filter(s => !r.sounds.includes(s.id)).map(s => (
-              <div key={s.id} className="fx-pick">
-                <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playFile(`/sounds/${s.file}`, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
-                <button className="fx-pick-main" onClick={() => { set({ sounds: [...r.sounds, s.id] }); setSheet(null); }}>
-                  <span className="grow">{s.name}</span><span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        </Sheet>
-      )}
+      {sheet === 'sound' && <SoundPicker d={d} wide={wide} taken={r.sounds} onClose={() => setSheet(null)} onPick={id => set({ sounds: [...r.sounds, id] })} />}
       {sheet === 'preset' && (
         <PresetPicker d={d} wide={wide} value={r.led?.preset ?? null} none={r.led ? 'No LEDs' : null} onClose={() => setSheet(null)}
           onPick={id => set({ led: id === null ? null : { preset: id, seconds: r.led?.seconds ?? 1 } })} />

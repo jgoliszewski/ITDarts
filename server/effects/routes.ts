@@ -1,16 +1,18 @@
 // REST for the “Effects” page: open to everyone in the LAN, no pilot needed (docs/EFEKTY.md).
 import { createReadStream, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { UserError } from '../db.ts';
 import type { Effects } from './index.ts';
-import { MAX_SOUND_BYTES } from './store.ts';
+import { MAX_SOUND_BYTES, SOUND_FILE } from './store.ts';
 
 export interface EffectsResponse {
   settings: ReturnType<Effects['store']['settings']>;
   rules: ReturnType<Effects['store']['rules']>;
   sounds: ReturnType<Effects['store']['sounds']>;
   wledError: { text: string; at: number } | null;
+  /** The effects file in the repo, and why it was not taken when it is broken (the last good version is in use). */
+  file: { path: string; error: string | null };
 }
 
 const MIME: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' };
@@ -35,6 +37,7 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
 
   app.get('/api/effects', async (): Promise<EffectsResponse> => ({
     settings: store.settings(), rules: store.rules(), sounds: store.sounds(), wledError: fx.wled.error,
+    file: { path: relative(process.cwd(), store.file) || store.file, error: store.error },
   }));
 
   app.put('/api/effects/settings', async (req, reply) => guard(reply, () => {
@@ -43,8 +46,8 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
   }));
 
   app.post('/api/effects/rules', async (req, reply) => guard(reply, () => ({ id: store.createRule(req.body) })));
-  app.put<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.updateRule(Number(req.params.id), req.body)));
-  app.delete<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.deleteRule(Number(req.params.id))));
+  app.put<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.updateRule(req.params.id, req.body)));
+  app.delete<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.deleteRule(req.params.id)));
   // Not a change, so no broadcast: only plays.
   app.post('/api/effects/test', async (req, reply) => {
     try {
@@ -61,14 +64,15 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
     const body = req.body;
     return guard(reply, () => ({ id: store.addSound(body, req.query.name, Number(req.query.duration)) }));
   });
-  app.put<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.updateSound(Number(req.params.id), req.body)));
-  app.delete<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.deleteSound(Number(req.params.id))));
+  app.put<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.updateSound(req.params.id, req.body)));
+  app.delete<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.deleteSound(req.params.id)));
 
   app.get<{ Params: { file: string } }>('/sounds/:file', async (req, reply) => {
-    const m = req.params.file.match(/^[\w-]+\.(mp3|wav|ogg)$/);
+    const m = req.params.file.match(SOUND_FILE);
     const path = m && join(store.soundsDir, req.params.file);
     if (!m || !path || !existsSync(path)) return reply.code(404).send({ error: 'Not found' });
-    return reply.type(MIME[m[1]]).header('cache-control', 'public, max-age=31536000, immutable').send(createReadStream(path));
+    // Readable names can come back with other content (deleted, uploaded again, or changed by git), so always revalidate.
+    return reply.type(MIME[m[1]]).header('cache-control', 'no-cache').send(createReadStream(path));
   });
 
   app.get('/api/wled/info', async (_req, reply) => {

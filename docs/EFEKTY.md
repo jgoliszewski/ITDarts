@@ -63,10 +63,10 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 
 - Gra tylko w przeglądarce kiosku na laptopie. Edge dostaje flagę `--autoplay-policy=no-user-gesture-required`. Telefony milczą.
 - **Biblioteka dźwięków** to wspólna lista plików. Reguły wybierają z niej, a jeden plik może służyć wielu regułom.
-  - Upload z UI, także z telefonu: mp3, wav lub ogg, do 5 MB i 10 s.
+  - Upload z UI, także z telefonu: mp3, wav lub ogg, do 2 MB i 10 s (pierwotnie 5 MB, zmienione przy przeniesieniu do repo).
   - Przy każdym pliku jest odsłuch, zmiana nazwy i suwak głośności, bo pliki z różnych źródeł mają różny poziom.
   - Pliku używanego przez regułę nie da się usunąć.
-  - Pliki leżą w `data/sounds/`, opis w SQLite. Backup obejmuje oba.
+  - Pliki i ich opis leżą w repo, w `effects/` ([Konfiguracja w repo](#konfiguracja-w-repo)). Wcześniej były w `data/sounds/` i SQLite.
 - Gotową darmową paczkę dźwięków efektów szukamy razem z paczką callera w [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
 
@@ -79,6 +79,23 @@ Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, ż
 - Syntetyzowany w przeglądarce kiosku (WebAudio, krótki szum z opadającym filtrem), więc nie potrzebuje pliku ani licencji.
 - Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów.
 - Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany swoosh na stronie efektów.
+
+## Konfiguracja w repo
+
+Grilling z 2026-10-26: konfiguracja wyklikana w domu ma działać też w pracy.
+
+- **Do repo trafiają:** reguły, Biblioteka dźwięków (pliki, nazwy, głośności), stany bazowe ledów, głośność efektów i przełącznik swoosha.
+- **Lokalnie zostają:** adres WLED oraz przełączniki Sounds i LEDs z Pilota. Leżą w SQLite, w tabeli `settings`.
+- Reguły i stany bazowe wskazują presety WLED po numerze, więc działają tak samo tylko na kontrolerach z tymi samymi numerami presetów.
+- **Miejsce:** `effects/effects.json` i `effects/sounds/` w katalogu głównym repo. Ścieżkę zmienia `effectsDir` w `config.json`.
+- **Źródło prawdy:** plik w repo. Serwer czyta go na starcie i zapisuje od razu przy każdej zmianie na stronie efektów. Commit, push i pull robimy ręcznie, aplikacja nie dotyka gita.
+- **Zmiana pliku przy działającym serwerze**, np. po `git pull`: serwer pilnuje pliku i przeładowuje go na żywo. Uszkodzony plik, np. ze znacznikami konfliktu, nie wchodzi. Zostaje ostatnia dobra wersja, a strona efektów pokazuje czerwony baner z błędem.
+- **Identyfikatory:** reguła ma krótki losowy identyfikator (np. `r7f3a`), żeby reguły dodane osobno w domu i w pracy się nie zderzyły. Dźwięk jest wskazywany nazwą pliku.
+- **Pliki dźwięków** dostają czytelną nazwę z nazwy przy uploadzie (`crowd-roar.mp3`, przy powtórce `crowd-roar-2.mp3`). Zmiana nazwy na stronie nie zmienia pliku.
+- **Limit uploadu** to 2 MB, a nie 5 MB, bo każdy plik zostaje w historii gita. Długość nadal do 10 s.
+- **JSON pod gita:** stała kolejność kluczy, reguły w kolejności dodania, wcięcia, nowa linia na końcu. Zmiana jednej reguły zmienia tylko jej blok.
+- **Przeniesienie danych:** przy pierwszym starcie bez pliku serwer przenosi reguły, dźwięki i ustawienia z SQLite do `effects/`, a potem usuwa stare tabele.
+- **Backup** obejmuje tylko bazę (mecze, gracze). Kopią efektów jest historia gita.
 
 ## Ledy (WLED)
 
@@ -169,6 +186,8 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 
 **Sounds**
 - Na górze upload. Przy każdym dźwięku są odsłuch, długość, liczba reguł, które go używają, i suwak głośności.
+- **Wyszukiwarka** nad listą i w arkuszu „Add a sound” w edytorze reguły (2026-10-26, gdy dźwięków zrobiło się kilkadziesiąt). Szuka po nazwie i pliku, bez względu na wielkość liter i polskie znaki, a słowa mogą być w dowolnej kolejności.
+- **Nazwa nowego dźwięku** (2026-10-26): po wybraniu pliku, a przed wysłaniem, okno „Name the new sound” z odsłuchem i polem nazwy. Pole ma zaznaczoną nazwę wziętą z pliku, więc wpisywanie ją zastępuje. Pod spodem widać nazwę pliku w repo, bo powstaje z tej nazwy i późniejsza zmiana nazwy jej nie rusza.
 - Zmiana nazwy i usuwanie są w menu „⋯”. Przy użytym dźwięku „Delete” jest wyłączone i wymienia te reguły.
 
 **LEDs**

@@ -114,14 +114,13 @@ export function priority(t: Trigger): number {
 }
 
 export interface RuleLike {
-  id: number;
   enabled: boolean;
   triggers: Trigger[];
 }
 
 /**
  * The one Reguła to play for these changes: the highest priority among triggers that match now and did not match
- * the same slot before. Ties go to the older rule.
+ * the same slot before. Ties go to the rule that comes first, which is the older one.
  */
 export function pickRule<R extends RuleLike>(rules: R[], cs: Change[]): R | null {
   let best: { rule: R; p: number } | null = null;
@@ -130,7 +129,7 @@ export function pickRule<R extends RuleLike>(rules: R[], cs: Change[]): R | null
     for (const t of rule.triggers) {
       if (!cs.some(c => matches(t, c.fact) && !(c.before && matches(t, c.before)))) continue;
       const p = priority(t);
-      if (!best || p < best.p || (p === best.p && rule.id < best.rule.id)) best = { rule, p };
+      if (!best || p < best.p) best = { rule, p };
     }
   }
   return best?.rule ?? null;
@@ -162,6 +161,19 @@ export function isValidTrigger(t: unknown): t is Trigger {
     case 'game':
       return GAME_EVENTS.includes(x.event as GameEvent) && (x.event !== 'marks' || (Number.isInteger(x.marks) && (x.marks as number) >= 5 && (x.marks as number) <= 9));
     default: return ['bust', 'checkout', 'setWon', 'matchWon', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'].includes(x.kind as string);
+  }
+}
+
+/** The same trigger with its keys in one fixed order, so the effects file in the repo diffs cleanly. Takes a valid trigger. */
+export function normalizeTrigger(t: Trigger): Trigger {
+  const p = (d: DartPattern): DartPattern => ({ n: d.n, m: d.m });
+  switch (t.kind) {
+    case 'dart': return { kind: 'dart', dart: p(t.dart) };
+    case 'total': return { kind: 'total', total: t.total, checkout: t.checkout };
+    case 'range': return { kind: 'range', min: t.min, max: t.max, checkout: t.checkout };
+    case 'combo': return { kind: 'combo', darts: t.darts.map(p), ordered: t.ordered, checkout: t.checkout };
+    case 'game': return t.event === 'marks' ? { kind: 'game', event: 'marks', marks: t.marks } : { kind: 'game', event: t.event };
+    default: return { kind: t.kind };
   }
 }
 

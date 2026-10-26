@@ -25,13 +25,22 @@ const app = Fastify({ logger: { level: 'warn' } });
 async function shutdown() {
   browser?.kill();
   board.stop();
+  effectsStore.close();
   await app.close().catch(() => undefined);
   db.close();
   process.exit(0);
 }
 
-const effects = new Effects(new EffectsStore(db, cfg.dataDir), fx => hub.sendFx(fx));
+const effectsStore = new EffectsStore(db, cfg.effectsDir, cfg.dataDir);
+const effects = new Effects(effectsStore, fx => hub.sendFx(fx));
 const hub = new Hub(db, board, cfg, effects, () => void shutdown());
+// After git pull the file changes under a running server: take it, relight the base, refresh open pages.
+effectsStore.onChange = () => {
+  if (effectsStore.error) console.warn(`Effects file not taken: ${effectsStore.error}`);
+  effects.applyBase();
+  hub.broadcast();
+};
+effectsStore.watch();
 
 await app.register(fastifyWebsocket);
 effectsRoutes(app, effects, () => hub.broadcast());
