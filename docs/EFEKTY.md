@@ -63,6 +63,16 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 - Gotową darmową paczkę dźwięków efektów szukamy razem z paczką callera w [#5](https://github.com/jgoliszewski/ITDarts/issues/5).
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
 
+### Wbudowane dźwięki
+
+Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, że kolej następnego.
+
+- **Swoosh przy zmianie gracza:** gra, gdy Tura przechodzi na następnego gracza, czyli po końcu takeoutu, po „Takeout done” i po „Next player”. Gra też przy starcie następnego legu. Nie gra w bull-offie ani po końcu meczu.
+- Jest na sztywno w kodzie, jak animacje. Nie jest Regułą i nie da się go przypisać do innego wyzwalacza.
+- Syntetyzowany w przeglądarce kiosku (WebAudio, krótki szum z opadającym filtrem), więc nie potrzebuje pliku ani licencji.
+- Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów.
+- Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany swoosh na stronie efektów.
+
 ## Ledy (WLED)
 
 - Jeden kontroler WLED, sterowany z serwera przez JSON API, nigdy z przeglądarki.
@@ -83,7 +93,7 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 |---|---|
 | 180 | pełny ekran |
 | 140+ | mniejsza |
-| Bust | czerwony błysk lub drgnięcie w hero |
+| Bust | czerwony błysk lub drgnięcie w hero, „BUST” na karcie tury ([UI.md](UI.md#tura-i-takeout)) |
 | Wygrany leg | wejście ekranu końca legu |
 | Wygrany mecz | konfetti |
 | T20, Bull | błysk kafelka lotki |

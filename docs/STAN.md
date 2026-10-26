@@ -56,9 +56,10 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 ## Następne kroki
 
 1. Testy z tarczą według listy powyżej (`npm run dev`, tarcza z `config.json` albo domyślnie `192.168.1.183:3180`), potem PR `feat/v1` → `main`.
-2. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
-3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
-4. Otwarte issues:
+2. **Z pierwszych testów (121):** karta tury z werdyktem i zamrożonym stanem do końca takeoutu oraz wbudowany swoosh przy zmianie gracza. Ustalenia są w [UI.md](UI.md#tura-i-takeout) i [EFEKTY.md](EFEKTY.md#wbudowane-dźwięki), kod jeszcze nie powstał. Dotyka gier w `games/` i Ekranu wyników, więc robimy to po commicie efektów.
+3. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
+4. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
+5. Otwarte issues:
    - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów;
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
    - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
