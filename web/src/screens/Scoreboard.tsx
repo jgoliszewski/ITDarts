@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { label, value } from '../../../games/darts.ts';
+import type { Verdict } from '../../../games/turns.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
 import { controls, isX01, legTarget } from '../match.ts';
+import { swoosh } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro } from './MiniBoard.tsx';
 
@@ -142,35 +145,53 @@ function StatsCards({ m }: { m: X01Match }) {
   );
 }
 
-function TakeoutOverlay({ s, m }: { s: ClientState; m: LiveMatch }) {
+/** Plays the swoosh on the kiosk when a visit goes to the next player; phones stay silent. */
+function useSwoosh(m: LiveMatch, on: boolean) {
+  const seen = useRef<{ key: string; n: number } | null>(null);
+  useEffect(() => {
+    const prev = seen.current;
+    seen.current = { key: m.key, n: m.turnPass };
+    if (on && prev?.key === m.key && m.turnPass > prev.n) swoosh();
+  }, [m.key, m.turnPass, on]);
+}
+
+/** The finished visit, from its last dart until the takeout ends (docs/UI.md, Tura i takeout). */
+function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onDart: (i: number) => void; canEdit: boolean }) {
   const now = useNow(1000);
   const v = m.view;
+  const takeout = s.board.takeout.active;
   const since = s.board.takeout.since ?? now;
-  const stuck = now - since > STUCK_AFTER_MS;
+  const stuck = takeout && now - since > STUCK_AFTER_MS;
   const darts = v.visit.darts;
-  const x = isX01(m) ? m.view : null;
-  const big = x ? (x.visit.bust ? 'BUST' : String(x.visit.total)) : m.game === 'hol' ? String(m.view.sum ?? 0) : null;
+  const verdict: Verdict | null = isX01(m) ? (m.view.visit.bust ? { text: 'Bust', tone: 'bad' } : null) : m.view.visit.verdict;
+  const big = verdict ? verdict.text : isX01(m) ? String(m.view.visit.total) : m.game === 'hol' ? String(m.view.sum ?? 0) : null;
+  const rest = isX01(m) ? `${m.view.scores[v.current]} left` : verdict ? m.view.hero.caption : `${m.view.hero.caption} ${m.view.hero.big}`;
   return (
     <div className="overlay">
       <div className="overlay-card">
         {darts.length > 0 && (
           <div className="body">
-            <div className="who">{m.roster[v.current].name}{big !== null ? ' scored' : ''}</div>
-            {big !== null && <div className={`bigscore num ${x?.visit.bust ? 'bust' : ''}`}>{big}</div>}
+            <div className="who">{m.roster[v.current].name}{big !== null && !verdict ? ' scored' : ''}</div>
+            {big !== null && <div className={`bigscore num ${verdict ? `verdict ${verdict.tone}` : ''}`}>{big}</div>}
             <div className="chips">
-              {darts.map((d, i) => <span key={i}>{label(d.dart)}</span>)}
+              {darts.map((d, i) => canEdit
+                ? <button key={i} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{label(d.dart)}</button>
+                : <span key={i}>{label(d.dart)}</span>)}
               {[0, 1, 2].slice(darts.length).map(i => <span key={`m${i}`} className="plain">Miss</span>)}
-              <span className="plain">{isX01(m) ? `${m.view.scores[v.current]} left` : `${m.view.hero.caption} ${m.view.hero.big}`}</span>
+              <span className="plain">{rest}</span>
+            </div>
+            {!takeout && <div className="pull">Pull the darts</div>}
+          </div>
+        )}
+        {takeout && (
+          <div className="takeout-band">
+            {Icon.spinner()}
+            <div>
+              <div className="t1">Removing darts</div>
+              <div className="t2">Don't throw yet. Darts thrown before Ready won't count.</div>
             </div>
           </div>
         )}
-        <div className="takeout-band">
-          {Icon.spinner()}
-          <div>
-            <div className="t1">Removing darts</div>
-            <div className="t2">Don't throw yet. Darts thrown before Ready won't count.</div>
-          </div>
-        </div>
         {stuck && <div className="stuck">Board stuck? Use Takeout done on the pilot.</div>}
       </div>
     </div>
@@ -293,6 +314,8 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
   const flash = m.lastFix && Date.now() - m.lastFix.at < 3000 ? m.lastFix.index : null;
   const takeout = s.board.takeout.active;
   const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
+  const finished = v.visit.darts.length > 0 && v.visit.dartsLeft === 0;
+  useSwoosh(m, s.you.isLocal);
 
   return (
     <div className="big">
@@ -330,7 +353,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
       )}
       {m.intro && !isX01(m) ? <RecordIntro m={m} isPilot={isPilot} />
         : (v.phase === 'bulloff' || m.bullTakeout) && <BullOff m={m} isPilot={isPilot} />}
-      {v.phase === 'throwing' && takeout && !m.bullTakeout && <TakeoutOverlay s={s} m={m} />}
+      {v.phase === 'throwing' && (takeout || finished) && !m.bullTakeout && <TurnCard s={s} m={m} onDart={onFix} canEdit={isPilot} />}
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} onNew={onNew} /> : <MiniEnd m={m} isPilot={isPilot} onNew={onNew} />)}
       <HowToOverlay s={s} />

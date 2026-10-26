@@ -34,6 +34,8 @@ function play(t: Turns, players: number, o: O121): State {
   const attempts = Array(players).fill(0), checkouts = Array(players).fill(0);
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
+  /** What the screen keeps until the takeout, while the finished visit is still open. */
+  let held: Pick<State, 'target' | 'remaining' | 'lives' | 'attemptLeft'> | null = null;
   for (const [vi, v] of t.visits.entries()) {
     const start = remaining;
     let bust = false, out = false;
@@ -56,6 +58,7 @@ function play(t: Turns, players: number, o: O121): State {
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
     if (out) fx.push({ slot: `${V}:checkout`, fact: { kind: 'checkout' } });
     else if (used + 1 >= o.visits) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
+    if (!v.closed) held = { target, remaining, lives, attemptLeft: out ? 0 : (o.visits - used - 1) * 3 };
     if (out) {
       attempts[v.player]++;
       // The rest of the attempt's darts are gone; the next target starts with a fresh attempt.
@@ -78,7 +81,8 @@ function play(t: Turns, players: number, o: O121): State {
   const current = !last ? t.starter! : open ? open.player : (last.player + 1) % players;
   const dartsLeft = over ? 0 : open ? left : 3;
   const usedNow = open && left > 0 ? open.darts.length : 0;
-  return { over, current, dartsLeft, goods, fx, target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow, best, attempts, checkouts };
+  const shown = held && !over ? held : { target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow };
+  return { over, current, dartsLeft, goods, fx, ...shown, best, attempts, checkouts };
 }
 
 export interface View121 extends MiniView {
@@ -94,7 +98,7 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
   const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
   const s = play(t, players, o);
   const f = frame(t, s);
-  const route = s.over ? null : checkoutRoute(s.remaining, f.visit.dartsLeft || 3, 'double');
+  const route = f.visit.dartsLeft === 0 ? null : checkoutRoute(s.remaining, f.visit.dartsLeft, 'double');
   return {
     ...f,
     winners: [],

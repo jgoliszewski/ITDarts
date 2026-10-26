@@ -4,7 +4,7 @@ import type { BullDart, BullEvent, BullOffView } from './bulloff.ts';
 import { beforeStart, bullView, undoStart } from './bulloff.ts';
 import type { Coords, Dart } from './darts.ts';
 import { MISS, isValidDart } from './darts.ts';
-import type { Happening } from './effects.ts';
+import type { GameEvent, Happening } from './effects.ts';
 import type { DartRec, LegRecord } from './x01/engine.ts';
 import type { BullOff } from './x01/rules.ts';
 
@@ -47,11 +47,18 @@ export interface Turn {
   fx: Happening[];
 }
 
+/** Headline of a finished visit on the turn card (docs/UI.md, Tura i takeout). */
+export interface Verdict {
+  text: string;
+  tone: 'good' | 'bad';
+}
+
 export interface MiniView {
   phase: 'bulloff' | 'throwing' | 'matchWon';
   current: number;
   bullOff: BullOffView | null;
-  visit: { player: number; darts: DartRec[]; dartsLeft: number; good: boolean[] };
+  /** `verdict` headlines the turn card once the visit is complete. */
+  visit: { player: number; darts: DartRec[]; dartsLeft: number; good: boolean[]; verdict: Verdict | null };
   winners: number[];
   /** Hero on the scoreboard: a big value, a caption above it and a note under the player's name. */
   hero: { big: string; caption: string; note: string };
@@ -167,16 +174,33 @@ export function walk(v: Visit, apply: (d: Dart, i: number) => { good: boolean; e
   return { good, used: ended ? used : v.darts.length, complete, dartsLeft: complete ? 0 : 3 - v.darts.length };
 }
 
+/**
+ * Headline of visit vi from its visit-level Wyzwalacze, or null for a plain visit. Dart-level ones
+ * (a life taken in Killer) are about other players, so they stay off the card.
+ */
+export function verdictOf(fx: Happening[], vi: number): Verdict | null {
+  const mine = fx.filter(h => h.slot.startsWith(`V${vi + 1}:`)).map(h => h.fact);
+  const game = (e: GameEvent) => mine.find(f => f.kind === 'game' && f.event === e);
+  if (mine.some(f => f.kind === 'checkout')) return { text: 'Checkout', tone: 'good' };
+  if (game('attemptFailed')) return { text: 'Life lost', tone: 'bad' };
+  if (mine.some(f => f.kind === 'bust')) return { text: 'Bust', tone: 'bad' };
+  if (game('eliminated')) return { text: 'Out', tone: 'bad' };
+  const marks = game('marks');
+  if (marks?.kind === 'game') return { text: marks.whiteHorse ? 'White Horse' : `${marks.marks} marks`, tone: 'good' };
+  return null;
+}
+
 /** Builds the common part of a view: phase and the visit on screen. */
 export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff'> {
-  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [] }, bullOff: t.bullOff };
+  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [], verdict: null }, bullOff: t.bullOff };
   const last = t.visits.at(-1);
   const shown = last && (!last.closed || s.over) ? last : null;
+  const verdict = shown && s.dartsLeft === 0 ? verdictOf(s.fx, t.visits.length - 1) : null;
   return {
     bullOff: t.bullOff,
     phase: s.over ? 'matchWon' : 'throwing',
     current: s.current,
-    visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [] },
+    visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [], verdict },
   };
 }
 

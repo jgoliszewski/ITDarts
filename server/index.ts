@@ -76,6 +76,8 @@ function openKiosk(url: string) {
   // A separate profile keeps the kiosk window apart from the user's own browser, so closing it is safe.
   browser = spawn(candidates[0], [
     `--kiosk`, url, '--edge-kiosk-type=fullscreen', '--no-first-run', '--disable-pinch', '--overscroll-history-navigation=0',
+    // Sound plays without a click (docs/EFEKTY.md).
+    '--autoplay-policy=no-user-gesture-required',
     `--user-data-dir=${join(cfg.dataDir, 'kiosk-profile')}`,
   ], { stdio: 'ignore' });
   browser.on('exit', () => (browser = null));

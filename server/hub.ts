@@ -29,6 +29,7 @@ interface Live {
   record: RecordInfo | null;
   intro: boolean;
   newRecord: LiveMatch['newRecord'];
+  turnPass: number;
 }
 
 const QR_TIMEOUT_MS = 60_000;
@@ -75,7 +76,7 @@ export class Hub {
     this.urls = lanUrls(cfg.port);
     const rec = db.loadLive();
     if (rec) {
-      this.live = { rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null };
+      this.live = { rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null, turnPass: 0 };
       this.live.newRecord = this.newRecords(this.live);
     }
 
@@ -180,6 +181,7 @@ export class Hub {
         intro: l.intro,
         newRecord: l.newRecord,
         bullTakeout: this.bullOut,
+        turnPass: l.turnPass,
       } as LiveMatch),
       lastMatch: this.db.lastMatch(),
       players: this.db.players(),
@@ -202,7 +204,10 @@ export class Hub {
     if (!GAMES[l.rec.game].isValidEvent(e)) throw new UserError('Invalid input');
     l.rec.events.push(e);
     this.db.appendLive(e);
+    const before = l.view.phase;
     l.view = this.compute(l.rec);
+    // The visit went to the next player, or the next leg started: not the end of the match.
+    if ((e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing') l.turnPass++;
     l.newRecord = this.newRecords(l);
     if (e.t !== 'fix') l.lastFix = null;
     // The first dart closes the record screen and “How to play”.
@@ -288,7 +293,7 @@ export class Hub {
       this.db.appendLive(e);
     }
     const record = this.recordInfo(rec);
-    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null };
+    this.live = { rec, view: this.compute(rec), resumed: false, lastFix: null, record, intro: !!record, newRecord: null, turnPass: 0 };
     this.howTo = null;
     this.bullOut = false;
     if (record) {

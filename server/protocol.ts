@@ -65,6 +65,8 @@ interface LiveBase {
   newRecord: { office: boolean; personal: string[] } | null;
   /** A bull-off dart waits for its takeout; the bull-off screen stays up until then. */
   bullTakeout: boolean;
+  /** Counts visits handed to the next player since the server started; the kiosk plays the swoosh when it goes up. */
+  turnPass: number;
 }
 
 export type LiveMatch = { [G in GameId]: LiveBase & { game: G } & Games[G] }[GameId];

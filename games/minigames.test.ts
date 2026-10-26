@@ -87,11 +87,21 @@ describe('121', () => {
   const o = oneTwentyOne.defaults;
 
   it('moves the target up after a checkout and refills lives', () => {
-    const v = oneTwentyOne.view([d('T20'), d('T17'), d('D5')], 1, o);
+    const v = oneTwentyOne.view([d('T20'), d('T17'), d('D5'), next], 1, o);
     expect(v.target).toBe(122);
     expect(v.remaining).toBe(122);
     expect(v.lives).toBe(3);
     expect(v.attemptLeft).toBe(9);
+  });
+
+  it('keeps the finished visit on screen until it is closed', () => {
+    const out = oneTwentyOne.view([d('T20'), d('T17'), d('D5')], 1, o);
+    expect([out.target, out.remaining, out.attemptLeft, out.checkout]).toEqual([121, 0, 0, null]);
+    expect(out.visit.verdict).toEqual({ text: 'Checkout', tone: 'good' });
+    const failed = oneTwentyOne.view([...visit('S1'), ...visit('S1'), d('S1'), d('S1'), d('S1')], 1, o);
+    expect([failed.target, failed.remaining, failed.lives]).toEqual([121, 116, 3]);
+    expect(failed.visit.verdict).toEqual({ text: 'Life lost', tone: 'bad' });
+    expect(oneTwentyOne.view([d('S1')], 1, o).visit.verdict).toBeNull();
   });
 
   it('loses a life after the visits run out and keeps the target', () => {
@@ -106,6 +116,7 @@ describe('121', () => {
     const v = oneTwentyOne.view([...visit('T20', 'S20'), d('S20'), d('S20')], 1, o);
     expect(v.remaining).toBe(41);
     expect(v.visit.dartsLeft).toBe(0);
+    expect(v.visit.verdict).toEqual({ text: 'Bust', tone: 'bad' });
     const b = oneTwentyOne.view([...visit('T20', 'S20'), d('S20'), d('S20'), next], 1, o);
     expect(b.remaining).toBe(41);
     expect(b.attemptLeft).toBe(3);
@@ -200,6 +211,13 @@ describe('higher or lower', () => {
     expect([v.lo, v.hi]).toEqual([26, 60]);
     v = hol.view([...visit('S20', 'S20', 'S20'), ...visit('S5', 'S5', 'S5')], 3, o);
     expect([v.lo, v.hi]).toEqual([15, 60]);
+  });
+
+  it('keeps the old range until the visit is closed', () => {
+    const v = hol.view([d('S20'), d('S20'), d('S20')], 3, o);
+    expect([v.lo, v.hi, v.sum]).toEqual([26, 45, 60]);
+    expect(v.visit.verdict).toBeNull();
+    expect(hol.view([d('S20'), d('S5'), d('S1')], 3, o).visit.verdict).toEqual({ text: 'Out', tone: 'bad' });
   });
 
   it('a sum on the edge or a miss fails the visit', () => {

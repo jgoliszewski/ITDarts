@@ -22,9 +22,15 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
   - `/stats` ma wybór gry, top 10 per wariant i statystyki gracza w danej grze. Profil X01, winrate i head-to-head liczą tylko X01.
 
 - **Bull-off z tarczy** ([UI.md](UI.md#bull-off-z-tarczy)): odległość z coords, Closest i PDC, remisy, takeout po każdej lotce. Symulator ma klikalną tarczę z prawdziwymi coords.
+- **Karta tury i swoosh** z pierwszych testów ([UI.md](UI.md#tura-i-takeout), [EFEKTY.md](EFEKTY.md#wbudowane-dźwięki)):
+  - Karta pokazuje werdykt („Checkout”, „Bust”, „Life lost”, „Out”, „N marks”) albo wynik Tury od ostatniej lotki do końca takeoutu.
+  - 121 i Higher or Lower trzymają cel, życia i zakres do zamknięcia Tury.
+  - Kiosk gra swoosh z WebAudio przy każdej zmianie gracza (`turnPass` w stanie meczu), a kiosk Edge dostał flagę `--autoplay-policy`.
+  - Przełącznik Sounds i głośność efektów podepnie system efektów; na razie swoosh gra zawsze.
+  - Sprawdzone skryptem z symulatorem: checkout i bust w 121, Tura X01 z „Next player”.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
-  Testy: `npm test` (65), `npm run typecheck`.
+  Testy: `npm test` (88), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -56,10 +62,9 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 ## Następne kroki
 
 1. Testy z tarczą według listy powyżej (`npm run dev`, tarcza z `config.json` albo domyślnie `192.168.1.183:3180`), potem PR `feat/v1` → `main`.
-2. **Z pierwszych testów (121):** karta tury z werdyktem i zamrożonym stanem do końca takeoutu oraz wbudowany swoosh przy zmianie gracza. Ustalenia są w [UI.md](UI.md#tura-i-takeout) i [EFEKTY.md](EFEKTY.md#wbudowane-dźwięki), kod jeszcze nie powstał. Dotyka gier w `games/` i Ekranu wyników, więc robimy to po commicie efektów.
-3. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
-4. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
-5. Otwarte issues:
+2. Implementacja efektów według [EFEKTY.md](EFEKTY.md): strona `/effects`, Biblioteka dźwięków, WLED, animacje, caller. Jeszcze nic nie jest zakodowane.
+3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
+4. Otwarte issues:
    - [#5](https://github.com/jgoliszewski/ITDarts/issues/5): paczka callera i dźwięków efektów;
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
    - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.

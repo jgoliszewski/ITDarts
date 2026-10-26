@@ -32,6 +32,8 @@ function play(t: Turns, players: number, o: HolOptions): State {
   let alive = Array(players).fill(true);
   let queue: number[] = [], pos = 0, failed = new Set<number>(), roundRange = [lo, hi];
   let over = false, left = 3, sum: number | null = null, lastGame: State['lastGame'] = null, winner: number | null = null;
+  /** The range the screen keeps until the takeout, while the finished visit is still open. */
+  let held: [number, number] | null = null;
 
   // A round: everyone still in throws once, in order from this game's starter.
   const newRound = () => {
@@ -58,6 +60,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
     left = w.dartsLeft;
     sum = v.darts.length ? total : null;
     if (!w.complete || over) continue;
+    if (!v.closed) held = [lo, hi];
 
     if (miss || (total >= lo && total <= hi)) {
       failed.add(v.player);
@@ -96,7 +99,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
     over,
     current: open ? open.player : over ? last!.player : queue[pos],
     dartsLeft: over ? 0 : open ? left : 3,
-    goods, fx, lo, hi, sum: open || over ? sum : null, points, out, game, lastGame, winners: winner === null ? [] : [winner],
+    goods, fx, lo: held && !over ? held[0] : lo, hi: held && !over ? held[1] : hi, sum: open || over ? sum : null, points, out, game, lastGame, winners: winner === null ? [] : [winner],
   };
 }
 
