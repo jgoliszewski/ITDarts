@@ -154,7 +154,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
   const [game, setGame] = useState<GameId>(first);
   const [allOptions, setAllOptions] = useState<Partial<Record<GameId, Record<string, unknown>>>>({});
   const [roster, setRoster] = useState<RosterEntry[]>([]);
-  const [adding, setAdding] = useState<null | 'guest' | 'player'>(null);
+  const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [howTo, setHowTo] = useState(false);
@@ -177,24 +177,18 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
     setRoster([...roster, r]);
   };
 
-  const submitName = async () => {
+  const submitGuest = () => {
     const n = name.trim();
     if (!n) return;
-    if (adding === 'guest') {
-      if (roster.some(r => r.name.toLowerCase() === n.toLowerCase())) return toast({ text: `${n} is already in`, kind: 'error' });
-      add({ playerId: null, name: n });
-    } else {
-      const r = await act({ type: 'player', cmd: { action: 'create', name: n } });
-      if (!r.ok || !r.playerId) return;
-      add({ playerId: r.playerId, name: n });
-    }
+    if (roster.some(r => r.name.toLowerCase() === n.toLowerCase())) return toast({ text: `${n} is already in`, kind: 'error' });
+    add({ playerId: null, name: n });
     setName('');
-    setAdding(null);
+    setAdding(false);
   };
 
-  const startAdding = (kind: 'guest' | 'player') => {
-    setAdding(kind);
-    setName(kind === 'guest' ? `Guest ${roster.filter(r => r.playerId === null).length + 1}` : '');
+  const startGuest = () => {
+    setAdding(true);
+    setName(`Guest ${roster.filter(r => r.playerId === null).length + 1}`);
   };
 
   const shuffle = () => {
@@ -262,29 +256,25 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
             <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
           </div>
           <RosterList roster={roster} setRoster={setRoster} />
+          {recent.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
+            </div>
+          )}
           {adding ? (
-            <form className="option-row" onSubmit={e => { e.preventDefault(); void submitName(); }}>
-              <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)}
-                placeholder={adding === 'guest' ? 'Guest name' : 'New player name'} aria-label={adding === 'guest' ? 'Guest name' : 'New player name'} />
-              <button className="btn primary" type="submit">{adding === 'guest' ? 'Add' : 'Create'}</button>
-              <button className="btn" type="button" onClick={() => setAdding(null)}>Cancel</button>
+            <form className="option-row" onSubmit={e => { e.preventDefault(); submitGuest(); }}>
+              <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)} placeholder="Guest name" aria-label="Guest name" />
+              <button className="btn primary" type="submit">Add</button>
+              <button className="btn" type="button" onClick={() => setAdding(false)}>Cancel</button>
             </form>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <button className="btn ghost" onClick={() => startAdding('guest')}>{Icon.plus(18)}Add guest</button>
-              <button className="btn ghost" onClick={() => startAdding('player')}>{Icon.plus(18)}New player</button>
-            </div>
-          )}
-          {adding === 'guest' && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
-          {adding === 'player' && <div className="muted" style={{ fontSize: 13 }}>Creates a profile that collects stats from now on.</div>}
-          {(recent.length > 0 || others.length > 0) && (
             <div className="chip-row">
-              {recent.length > 0 && <span className="muted" style={{ fontSize: 13 }}>Recent</span>}
-              {recent.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
               {others.length > 0 && <span className="muted" style={{ fontSize: 13 }}>{recent.length ? 'Others' : 'Players'}</span>}
               {others.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
+              <button className="chip" onClick={startGuest}>+ Guest</button>
             </div>
           )}
+          {adding && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
         </section>
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>

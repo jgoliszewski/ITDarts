@@ -25,6 +25,8 @@ export type BoardAction = 'reset' | 'start' | 'stop' | 'calibrate' | 'restart';
 
 export interface BoardStatus {
   address: string;
+  /** Playing on the built-in fake board instead of the real one (Panel tarczy). */
+  fake: boolean;
   connected: boolean;
   version: string | null;
   detecting: boolean;
@@ -123,6 +125,7 @@ export type Command =
   | { type: 'closeMatch'; then: 'rematch' | 'lobby' }
   | { type: 'dismissResumed' }
   | { type: 'board'; action: BoardAction }
+  | { type: 'fakeBoard'; on: boolean }
   | { type: 'showQr'; show: boolean }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }

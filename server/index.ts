@@ -8,7 +8,7 @@ import { isGameId } from '../games/index.ts';
 import { Board } from './board.ts';
 import { loadConfig } from './config.ts';
 import { Db } from './db.ts';
-import { Effects } from './effects/index.ts';
+import { CALLER_DIR, Effects } from './effects/index.ts';
 import { effectsRoutes } from './effects/routes.ts';
 import { EffectsStore } from './effects/store.ts';
 import { Hub } from './hub.ts';
@@ -19,11 +19,25 @@ const db = new Db(cfg.dataDir);
 const board = new Board(cfg.board);
 const stats = new Stats(db);
 let browser: ChildProcess | null = null;
+let fakeBoard: ChildProcess | null = null;
+const FAKE_BOARD_PORT = '3180';
+
+/** The switch in Panel tarczy: runs the fake Board Manager next to the server and points the adapter at it. */
+function useFakeBoard(on: boolean) {
+  if (on === board.status.fake) return;
+  fakeBoard?.kill();
+  fakeBoard = null;
+  // If the port is taken (e.g. by npm run dev:fake), that simulator serves instead and this child just exits.
+  if (on) fakeBoard = spawn(process.execPath, ['--import', 'tsx', 'server/fake-board.ts', FAKE_BOARD_PORT], { stdio: 'ignore' });
+  board.status.fake = on;
+  board.setAddress(on ? `localhost:${FAKE_BOARD_PORT}` : cfg.board);
+}
 
 const app = Fastify({ logger: { level: 'warn' } });
 
 async function shutdown() {
   browser?.kill();
+  fakeBoard?.kill();
   board.stop();
   effectsStore.close();
   await app.close().catch(() => undefined);
@@ -33,7 +47,7 @@ async function shutdown() {
 
 const effectsStore = new EffectsStore(db, cfg.effectsDir, cfg.dataDir);
 const effects = new Effects(effectsStore, fx => hub.sendFx(fx));
-const hub = new Hub(db, board, cfg, effects, () => void shutdown());
+const hub = new Hub(db, board, cfg, effects, () => void shutdown(), useFakeBoard);
 // After git pull the file changes under a running server: take it, relight the base, refresh open pages.
 effectsStore.onChange = () => {
   if (effectsStore.error) console.warn(`Effects file not taken: ${effectsStore.error}`);
@@ -68,7 +82,7 @@ app.get<{ Querystring: { a?: string; b?: string; window?: string } }>('/api/stat
 });
 
 // The caller's recordings are part of the app, not of the effects setup (docs/EFEKTY.md#caller).
-await app.register(fastifyStatic, { root: resolve('assets/caller'), prefix: '/caller/', decorateReply: false });
+await app.register(fastifyStatic, { root: resolve(CALLER_DIR), prefix: '/caller/', decorateReply: false });
 
 const webRoot = resolve('dist/web');
 if (existsSync(join(webRoot, 'index.html'))) {

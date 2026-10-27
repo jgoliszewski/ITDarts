@@ -17,5 +17,5 @@ export default defineConfig({
       '/caller': 'http://localhost:3000',
     },
   },
-  test: { root: '.', include: ['games/**/*.test.ts', 'server/**/*.test.ts'] },
+  test: { root: '.', include: ['games/**/*.test.ts', 'server/**/*.test.ts', 'web/src/**/*.test.ts'] },
 });

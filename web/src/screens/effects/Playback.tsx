@@ -4,7 +4,7 @@ import { Icon } from '../../components/ui.tsx';
 import { playCaller, turnSound } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call } from './api.ts';
-import { Switch } from './parts.tsx';
+import { Seg, Switch } from './parts.tsx';
 
 /** A volume slider that saves when let go. */
 function Volume({ label, value, onSave }: { label: string; value: number; onSave: (v: number) => void }) {
@@ -35,8 +35,19 @@ export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
       {wide && <h2 className="fx-h">Playback</h2>}
       <section className="box">
         {row('Sounds', 'Rule sounds and the next player sound, on the laptop only', s.sounds, 'sounds')}
-        {row('Caller', 'The referee in X01: scores, “you require”, game shot. On the laptop only', s.caller, 'caller',
-          () => playCaller(['/caller/you_require.mp3', '/caller/40.mp3'], s.callerVolume / 100))}
+        {row('Caller', 'The referee in X01: scores, “you require”, game shot. On the laptop only', s.caller, 'caller')}
+        <div className="fx-setting" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, paddingBlock: 12 }}>
+          <span className="grow"><b>Caller voice</b><span className="muted">One folder per voice in assets/caller</span></span>
+          <Seg label="Caller voice" value={s.callerVoice} onChange={callerVoice => put({ callerVoice })}
+            options={d.callerVoices.map(v => [v, v[0].toUpperCase() + v.slice(1)] as [string, string])} />
+          <div className="chip-row">
+            {([['180', '180'], ['require_40', 'You require 40'], ['gameshot_l1_n', 'Game shot']] as const).map(([k, label]) => (
+              <button key={k} className="fx-chip play" aria-label={`Play ${label}`} onClick={() => playCaller([`/caller/${s.callerVoice}/${k}.mp3`], s.callerVolume / 100)}>
+                {Icon.play(14)} {label}
+              </button>
+            ))}
+          </div>
+        </div>
         {row('LEDs', 'Off turns the lights off', s.leds, 'leds')}
         {row('Next player sound', 'Built-in marimba arpeggio. Turn it off to use your own sound on Takeout end', s.swoosh, 'swoosh',
           () => turnSound(0.75 * (s.volume / 100)))}

@@ -13,10 +13,10 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 ## Gracze
 
 - **Gracz** (zarejestrowany): profil zakładany wcześniej, wybierany przy starcie meczu. Zbieramy jego statystyki.
-  - Zakładanie na ekranie „Players” w menu Pilota albo przyciskiem „New player” w setupie meczu.
+  - Zakładanie na ekranie „Players” w menu Pilota (tylko tam, setup meczu nie zakłada graczy).
   - Stałe ID i unikalne imię (bez względu na wielkość liter). Zmiana imienia nie rusza historii.
   - Scalanie dwóch profili z potwierdzeniem.
-- **Gość:** „Add guest” w setupie dodaje imię tylko na ten mecz (domyślnie „Guest 1”). Od gości nie zbieramy żadnych statystyk. Gościnnych meczów nie da się podpiąć pod profil założony później.
+- **Gość:** „+ Guest” w setupie dodaje imię tylko na ten mecz (domyślnie „Guest 1”). Od gości nie zbieramy żadnych statystyk. Gościnnych meczów nie da się podpiąć pod profil założony później.
 - **Usuwanie:**
   - archiwizacja ukrywa gracza z list i chipów, statystyki zostają;
   - anonimizacja na życzenie zmienia imię na „Deleted player”;

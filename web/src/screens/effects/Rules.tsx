@@ -1,9 +1,10 @@
 // Rules tab: the list grouped by trigger, and the When → Then editor (docs/EFEKTY.md, Układ strony).
 import { useEffect, useState } from 'react';
 import type { GameEvent, Trigger, TriggerKind } from '../../../../games/effects.ts';
-import { GAME_EVENT_LABELS, SIMPLE_LABELS, priority, triggerLabel } from '../../../../games/effects.ts';
+import { GAME_EVENT_LABELS, MAX_LEFT, SIMPLE_LABELS, priority, triggerLabel } from '../../../../games/effects.ts';
 import type { Rule, RuleInput } from '../../../../server/effects/store.ts';
 import { Dialog, Icon } from '../../components/ui.tsx';
+import { store } from '../../util.ts';
 import { playFile } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call, go, presetName, presetOf, setDirtyCheck, tryLed } from './api.ts';
@@ -11,11 +12,24 @@ import { Chevron, CondPicker, Dot, PatternPicker, PresetPicker, SearchField, Seg
 
 // ---------- groups ----------
 
-type Group = 'play' | 'games' | 'match';
-const GROUP_TITLES: [Group, string][] = [['play', 'Darts, visits and results'], ['games', 'Minigames'], ['match', 'Match and board']];
+type Group = 'results' | 'visits' | 'darts' | 'games' | 'match';
+const GROUP_TITLES: [Group, string][] = [['results', 'Results'], ['visits', 'Visits'], ['darts', 'Darts'], ['games', 'Minigames'], ['match', 'Match and board']];
 
 const groupOf = (t: Trigger): Group =>
-  t.kind === 'game' ? 'games' : ['matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'].includes(t.kind) ? 'match' : 'play';
+  t.kind === 'game' ? 'games'
+  : t.kind === 'dart' || t.kind === 'left' ? 'darts'
+  : t.kind === 'total' || t.kind === 'range' || t.kind === 'combo' ? 'visits'
+  : ['bust', 'checkout', 'setWon', 'matchWon'].includes(t.kind) ? 'results'
+  : 'match';
+
+const COLLAPSED_KEY = 'itdarts.fx.collapsed';
+const loadCollapsed = (): Group[] => {
+  try {
+    return JSON.parse(store.get(COLLAPSED_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
+};
 
 /** A rule's most important trigger decides its group and its place in it. */
 const best = (r: Rule) => r.triggers.reduce((a, b) => (priority(b) < priority(a) ? b : a));
@@ -44,7 +58,15 @@ const toggled = (r: Rule): RuleInput => ({ name: r.name, enabled: !r.enabled, tr
 // ---------- list ----------
 
 export function RuleList({ d, selected, wide }: { d: EffectsData; selected: string | null; wide: boolean }) {
-  const groups = groupRules(d.rules);
+  const [q, setQ] = useState('');
+  // Search by name, triggers and sounds, so “bust” or “papiez” finds the rule.
+  const groups = groupRules(d.rules.filter(r => matchesQuery(q, r.name, whenText(r), ...r.sounds.map(id => d.sounds.find(s => s.id === id)?.name ?? id))));
+  const [collapsed, setCollapsed] = useState(loadCollapsed);
+  const toggle = (g: Group) => {
+    const next = collapsed.includes(g) ? collapsed.filter(x => x !== g) : [...collapsed, g];
+    setCollapsed(next);
+    store.set(COLLAPSED_KEY, JSON.stringify(next));
+  };
   return (
     <div className="fx-rules">
       {wide && (
@@ -53,7 +75,9 @@ export function RuleList({ d, selected, wide }: { d: EffectsData; selected: stri
           <button className="btn primary" onClick={() => go('/effects/rules/new')}>{Icon.plus()}New rule</button>
         </div>
       )}
-      {groups.length === 0 && (
+      {d.rules.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search rules" />}
+      {d.rules.length > 0 && groups.length === 0 && <p className="muted" style={{ margin: 0 }}>No rule matches “{q}”.</p>}
+      {d.rules.length === 0 && (
         <div className="fx-empty">
           <b>No rules yet</b>
           <span>Scoreboard animations work without them. Add a rule to play a sound or light the LEDs on 180, bust, checkout and more.</span>
@@ -61,8 +85,10 @@ export function RuleList({ d, selected, wide }: { d: EffectsData; selected: stri
       )}
       {groups.map(g => (
         <section key={g.group} className="section">
-          <div className="option-row"><span className="caps">{g.title}</span><span className="muted">{g.rules.length} {g.rules.length === 1 ? 'rule' : 'rules'}</span></div>
-          {g.rules.map(r => {
+          <button className={`option-row fx-group ${collapsed.includes(g.group) ? 'shut' : ''}`} aria-expanded={!collapsed.includes(g.group)} onClick={() => toggle(g.group)}>
+            <span className="caps">{g.title}</span><span className="muted">{g.rules.length} {g.rules.length === 1 ? 'rule' : 'rules'}<Chevron /></span>
+          </button>
+          {(q || !collapsed.includes(g.group)) && g.rules.map(r => {
             const sound = soundsText(d, r.sounds);
             const preset = r.led && presetOf(d, r.led.preset);
             return (
@@ -96,6 +122,7 @@ const PICKER: [string, [KindChoice, string, string][]][] = [
     ['total', 'Visit total', 'An exact total, e.g. 180 or 26 (X01)'],
     ['range', 'Visit range', 'A total in a range, e.g. 100+ (X01)'],
     ['combo', 'Combination', 'Three darts, e.g. 1 · 5 · 20 (X01)'],
+    ['left', 'Left on', 'A dart leaves you on a score, e.g. 2 for D1 (X01)'],
     ['bust', 'Bust', 'The visit goes bust (X01, 121)'],
     ['checkout', SIMPLE_LABELS.checkout, 'Checkout or a won leg; a won game in Higher or Lower'],
     ['setWon', 'Set won', 'X01 with sets'],
@@ -133,6 +160,7 @@ function newTrigger(k: KindChoice): Trigger {
     case 'total': return { kind: 'total', total: 180, checkout: 'any' };
     case 'range': return { kind: 'range', min: 100, max: 180, checkout: 'any' };
     case 'combo': return { kind: 'combo', darts: [{ n: 20, m: 3 }, { n: 20, m: 3 }, { n: 20, m: 3 }], ordered: false, checkout: 'any' };
+    case 'left': return { kind: 'left', score: 2 };
     default: return { kind: k } as Trigger;
   }
 }
@@ -188,6 +216,8 @@ function TriggerParams({ t, onChange }: { t: Trigger; onChange: (t: Trigger) => 
           <CondPicker value={t.checkout} onChange={checkout => onChange({ ...t, checkout })} />
         </>
       );
+    case 'left':
+      return <div className="option-row"><span>Score left</span><Stepper label="score left" value={t.score} min={1} max={MAX_LEFT} onChange={score => onChange({ ...t, score })} /></div>;
     case 'game':
       if (t.event !== 'marks') return null;
       return <Seg label="Marks" value={t.marks ?? 5} onChange={marks => onChange({ ...t, marks })} options={[5, 6, 7, 8, 9].map(n => [n, `${n}`] as [number, string])} />;
@@ -289,7 +319,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
           ))}
           <button className="fx-chip add" onClick={() => setSheet('trigger')}>+ Add trigger</button>
         </div>
-        {selected && (selected.kind === 'dart' || selected.kind === 'total' || selected.kind === 'range' || selected.kind === 'combo' || (selected.kind === 'game' && selected.event === 'marks')) && (
+        {selected && (selected.kind === 'dart' || selected.kind === 'total' || selected.kind === 'range' || selected.kind === 'combo' || selected.kind === 'left' || (selected.kind === 'game' && selected.event === 'marks')) && (
           <div className="fx-params">
             <TriggerParams key={r.triggers.indexOf(selected)} t={selected} onChange={t => set({ triggers: r.triggers.map(x => (x === selected ? t : x)) })} />
           </div>

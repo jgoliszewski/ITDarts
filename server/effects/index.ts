@@ -5,6 +5,9 @@ import { pickRule } from '../../games/effects.ts';
 import type { BaseState, EffectsStore, Rule, RuleInput } from './store.ts';
 import { Wled } from './wled.ts';
 
+/** The caller's recordings: one folder per voice, each with the darts-caller keys (docs/EFEKTY.md#caller). */
+export const CALLER_DIR = 'assets/caller';
+
 /** Animations on the scoreboard, hard-coded. */
 export type Anim = '180' | '140' | 'bust' | 'confetti' | 'tile';
 
@@ -40,7 +43,7 @@ export class Effects {
     const rule = pickRule(this.store.rules(), cs);
     const anim = pickRule(ANIMS, cs)?.anim ?? null;
     const s = this.store.settings();
-    const caller = s.caller && lines.length > 0 ? { urls: lines.map(k => `/caller/${k}.mp3`), gain: s.callerVolume / 100 } : null;
+    const caller = s.caller && lines.length > 0 ? { urls: lines.map(k => `/caller/${s.callerVoice}/${k}.mp3`), gain: s.callerVolume / 100 } : null;
     this.play(rule, anim, s.sounds, s.leds, caller);
   }
 

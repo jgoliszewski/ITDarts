@@ -29,10 +29,10 @@ const any = (n: number | null, m: 1 | 2 | 3 | null) => ({ n, m });
 
 describe('X01 occurrences', () => {
   it('fires each fresh dart and the visit once it is complete', () => {
-    expect(kinds(fired(x01, [d('T20')], X01))).toEqual(['dart']);
+    expect(kinds(fired(x01, [d('T20')], X01))).toEqual(['dart', 'left']);
     const third = fired(x01, [d('T20'), d('T20'), d('T20')], X01);
-    expect(kinds(third)).toEqual(['dart', 'visit']);
-    expect(third[1].fact).toMatchObject({ kind: 'visit', total: 180, checkout: false });
+    expect(kinds(third)).toEqual(['dart', 'left', 'visit']);
+    expect(third[2].fact).toMatchObject({ kind: 'visit', total: 180, checkout: false });
     // Next player after a full visit adds nothing new.
     expect(fired(x01, [d('T20'), d('T20'), d('T20'), next], X01)).toEqual([]);
   });
@@ -46,10 +46,24 @@ describe('X01 occurrences', () => {
   it('fires only what a fix created, never the dart itself', () => {
     const log = [d('S20'), d('T20'), d('T20'), fix(0, 'T20')];
     const cs = fired(x01, log, X01);
-    expect(kinds(cs)).toEqual(['visit']);
-    expect(cs[0].before).toMatchObject({ total: 140 });
+    // The fix moves the score each dart left, so those change too.
+    expect(kinds(cs)).toEqual(['left', 'left', 'left', 'visit']);
+    expect(cs[3].before).toMatchObject({ total: 140 });
     expect(pickRule([rule(1, { kind: 'range', min: 100, max: 180, checkout: 'any' })], cs)).toBeNull();
     expect(pickRule([rule(1, { kind: 'range', min: 100, max: 180, checkout: 'any' }), rule(2, { kind: 'total', total: 180, checkout: 'any' })], cs)?.id).toBe(2);
+  });
+
+  it('fires Left on after the dart that leaves the score, also through a fix', () => {
+    const o = { ...X01, startScore: 101 };
+    const leftOn2 = [rule(1, { kind: 'left', score: 2 })];
+    // 101 − 42 = 59, then T19 leaves D1.
+    expect(pickRule(leftOn2, fired(x01, [d('T14'), d('T19')], o))?.id).toBe(1);
+    // A miss on 2 changes nothing, so it does not fire again.
+    expect(fired(x01, [d('T14'), d('T19'), d('S0')], o).filter(c => c.fact.kind === 'left')).toEqual([]);
+    expect(pickRule(leftOn2, fired(x01, [d('T14'), d('S19'), fix(1, 'T19')], o))?.id).toBe(1);
+    // A checkout or a bust leaves nothing.
+    expect(kinds(fired(x01, [d('T14'), d('T19'), d('D1')], o))).not.toContain('left');
+    expect(kinds(fired(x01, [d('T14'), d('T19'), d('S2')], o))).not.toContain('left');
   });
 
   it('fires nothing on undo', () => {
@@ -109,6 +123,8 @@ describe('rule matching', () => {
 
   it('checks stored triggers and words them', () => {
     expect(isValidTrigger({ kind: 'range', min: 140, max: 180, checkout: 'any' })).toBe(true);
+    expect(isValidTrigger({ kind: 'left', score: 2 })).toBe(true);
+    expect(isValidTrigger({ kind: 'left', score: 0 })).toBe(false);
     expect(isValidTrigger({ kind: 'range', min: 140, max: 100, checkout: 'any' })).toBe(false);
     expect(isValidTrigger({ kind: 'dart', dart: { n: 25, m: 3 } })).toBe(false);
     expect(isValidTrigger({ kind: 'game', event: 'marks', marks: 4 })).toBe(false);

@@ -26,6 +26,7 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
   - Karta pokazuje werdykt („Checkout”, „Bust”, „Life lost”, „Out”, „N marks”) albo wynik Tury od ostatniej lotki do końca takeoutu.
   - 121 i Higher or Lower trzymają cel, życia i zakres do zamknięcia Tury.
   - Kiosk gra dźwięk zmiany gracza z WebAudio (`turnPass` w stanie meczu), a kiosk Edge dostał flagę `--autoplay-policy`. Od 2026-10-26 to arpeggio marimby zamiast swoosha.
+  - Od 2026-10-27 minigierki grają też trafienie i pudło (kwinta w górę i w dół): ATC, Full Board i Cricket po każdej lotce, Higher or Lower raz na Turę ([EFEKTY.md](EFEKTY.md#wbudowane-dźwięki)). Logika w `dartCue` (`web/src/match.ts`) z testem. Nie słuchane jeszcze w kiosku.
   - Dźwięk wycisza przełącznik Sounds albo jego własny przełącznik na `/effects`. Głośność bierze z poziomu efektów.
   - Sprawdzone skryptem z symulatorem: checkout i bust w 121, Tura X01 z „Next player”.
 - **Efekty** według [EFEKTY.md](EFEKTY.md):
@@ -44,7 +45,7 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
     - Sprawdzone w przeglądarce na telefonie (375 px) i laptopie (1280 px) z atrapą WLED.
   - **Pilot:** Sounds, Caller i LEDs w menu, trzymane przez serwer.
   - **Caller** według [EFEKTY.md](EFEKTY.md#caller), grilling w [#5](https://github.com/jgoliszewski/ITDarts/issues/5):
-    - głos Ash (OpenAI TTS, EN-GB) z paczki darts-caller, 204 nagrania w `assets/caller/` z opisem pochodzenia w `SOURCE.md`, serwowane pod `/caller/`;
+    - Huw Ware (prawdziwy sędzia, paczka z autodarts.x10.mx) i cztery głosy TTS z paczek darts-caller (Brian, Arthur, Stephen, Ballad; Ash usunięty), po 204 nagrania w `assets/caller/<głos>/` z opisem pochodzenia w `SOURCE.md`, serwowane pod `/caller/<głos>/`; wybór „Caller voice” w Playback, zapis `callerVoice` w `effects.json` (2026-10-27). Nierozstrzygnięte: wszystkie brzmią płasko przy 180, do rozważenia własna generacja TTS z instrukcją stylu sędziego;
     - wywołania liczy `games/x01/caller.ts` z tych samych wystąpień co efekty, a hub dokleja je do wiadomości `fx`. Kiosk gra je po dźwięku efektu (najdłużej 2 s czekania) i jedno po drugim;
     - przełącznik Caller (SQLite) i „Caller volume” (`callerVolume` w `effects/effects.json`) na Pilocie i w Playback;
     - sprawdzone skryptem przez websocket na osobnej instancji z symulatorem tarczy: game on, wynik, „no score” przy buście, poprawka, undo, takeout z „you require”, game shot, następny leg i Caller off. Kiosk pobrał nagrania bez błędów.
@@ -57,7 +58,7 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 
 - **Caller w 121 i nowa karta tury** (2026-10-27, ze zgłoszeń): caller w 121 jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)); karta tury z dużymi kafelkami lotek i stanu we wszystkich grach ([UI.md](UI.md#tura-i-takeout)); w 121 kafelek z lotkami do końca podejścia ([GRY.md](GRY.md#121)). Karta 121 i ATC sprawdzona zrzutem na osobnej instancji. Callera 121 nikt jeszcze nie słyszał w kiosku.
 
-  Testy: `npm test` (114), `npm run typecheck`.
+  Testy: `npm test` (118), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

@@ -94,6 +94,7 @@ export class Hub {
     private cfg: Config,
     private effects: Effects,
     private closeApp: () => void,
+    private useFakeBoard: (on: boolean) => void,
   ) {
     this.urls = lanUrls(cfg.port);
     const rec = db.loadLive();
@@ -347,7 +348,9 @@ export class Hub {
     const game = GAMES[gameId];
     const roster = this.checkRoster(rosterInput);
     if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs at least ${game.minPlayers} players`);
-    const rec: LiveRecord = { key: randomUUID(), game: gameId, options: game.normalizeOptions(options), roster, startedAt: Date.now(), events: [] };
+    // Alone there is nobody to bull off against, whatever the setup says.
+    const opts = { ...game.normalizeOptions(options), ...(roster.length === 1 && { bullOff: 'off' }) };
+    const rec: LiveRecord = { key: randomUUID(), game: gameId, options: opts, roster, startedAt: Date.now(), events: [] };
     this.db.startLive(rec);
     if (gameId === 'killer') {
       const e = { t: 'numbers', numbers: drawNumbers(roster.length) };
@@ -541,6 +544,9 @@ export class Hub {
         } catch (e) {
           throw new UserError(e instanceof Error ? e.message : 'Board Manager did not answer');
         }
+        return {};
+      case 'fakeBoard':
+        this.useFakeBoard(!!cmd.on);
         return {};
       case 'showQr':
         this.showQr = !!cmd.show;

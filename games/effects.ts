@@ -14,6 +14,8 @@ export type Fact =
   | { kind: 'visit'; total: number; darts: Dart[]; checkout: boolean }
   /** A complete 121 visit without a bust, for the caller only: visit totals trigger rules in X01 alone. */
   | { kind: 'calledTotal'; total: number }
+  /** X01: the score a dart left the player on. Only darts that changed the score. */
+  | { kind: 'left'; score: number }
   | { kind: 'bust' }
   /** Checkout or a won leg (a won game in Higher or Lower). */
   | { kind: 'checkout' }
@@ -69,8 +71,9 @@ export type Trigger =
   /** Visit total from min to max, both included. */
   | { kind: 'range'; min: number; max: number; checkout: CheckoutCond }
   | { kind: 'combo'; darts: DartPattern[]; ordered: boolean; checkout: CheckoutCond }
+  | { kind: 'left'; score: number }
   | { kind: 'game'; event: GameEvent; marks?: number }
-  | { kind: Exclude<Fact['kind'], 'dart' | 'visit' | 'calledTotal' | 'game'> };
+  | { kind: Exclude<Fact['kind'], 'dart' | 'visit' | 'calledTotal' | 'left' | 'game'> };
 
 export type TriggerKind = Trigger['kind'];
 
@@ -94,6 +97,7 @@ export function matches(t: Trigger, f: Fact): boolean {
     case 'total': return f.kind === 'visit' && f.total === t.total && checkoutOk(t.checkout, f.checkout);
     case 'range': return f.kind === 'visit' && f.total >= t.min && f.total <= t.max && checkoutOk(t.checkout, f.checkout);
     case 'combo': return f.kind === 'visit' && checkoutOk(t.checkout, f.checkout) && comboMatches(t, f.darts);
+    case 'left': return f.kind === 'left' && f.score === t.score;
     case 'game':
       if (f.kind !== 'game') return false;
       if (t.event === 'whiteHorse') return f.event === 'marks' && !!f.whiteHorse;
@@ -106,7 +110,7 @@ export function matches(t: Trigger, f: Fact): boolean {
 const ORDER = [
   'newRecord', 'matchWon', 'setWon', 'onlyCheckout', 'checkout', 'bust',
   'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
-  'combo', 'total', 'range', 'dart', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
+  'combo', 'total', 'range', 'left', 'dart', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
 ] as const;
 
 /** Lower is more important. */
@@ -150,6 +154,9 @@ const isPattern = (p: unknown): p is DartPattern => {
 };
 
 const isCond = (c: unknown): c is CheckoutCond => c === 'any' || c === 'only' || c === 'no';
+/** The highest X01 start score. */
+export const MAX_LEFT = 901;
+
 const isScore = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 180;
 
 export function isValidTrigger(t: unknown): t is Trigger {
@@ -160,6 +167,7 @@ export function isValidTrigger(t: unknown): t is Trigger {
     case 'total': return isScore(x.total) && isCond(x.checkout);
     case 'range': return isScore(x.min) && isScore(x.max) && (x.min as number) <= (x.max as number) && isCond(x.checkout);
     case 'combo': return Array.isArray(x.darts) && x.darts.length === 3 && x.darts.every(isPattern) && typeof x.ordered === 'boolean' && isCond(x.checkout);
+    case 'left': return Number.isInteger(x.score) && (x.score as number) >= 1 && (x.score as number) <= MAX_LEFT;
     case 'game':
       return GAME_EVENTS.includes(x.event as GameEvent) && (x.event !== 'marks' || (Number.isInteger(x.marks) && (x.marks as number) >= 5 && (x.marks as number) <= 9));
     default: return ['bust', 'checkout', 'setWon', 'matchWon', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'].includes(x.kind as string);
@@ -174,6 +182,7 @@ export function normalizeTrigger(t: Trigger): Trigger {
     case 'total': return { kind: 'total', total: t.total, checkout: t.checkout };
     case 'range': return { kind: 'range', min: t.min, max: t.max, checkout: t.checkout };
     case 'combo': return { kind: 'combo', darts: t.darts.map(p), ordered: t.ordered, checkout: t.checkout };
+    case 'left': return { kind: 'left', score: t.score };
     case 'game': return t.event === 'marks' ? { kind: 'game', event: 'marks', marks: t.marks } : { kind: 'game', event: t.event };
     default: return { kind: t.kind };
   }
@@ -198,7 +207,7 @@ export const GAME_EVENT_LABELS: Record<GameEvent, string> = {
   targetHit: 'Target hit',
 };
 
-export const SIMPLE_LABELS: Record<Exclude<TriggerKind, 'dart' | 'total' | 'range' | 'combo' | 'game'>, string> = {
+export const SIMPLE_LABELS: Record<Exclude<TriggerKind, 'dart' | 'total' | 'range' | 'combo' | 'left' | 'game'>, string> = {
   bust: 'Bust',
   checkout: 'Checkout / leg won',
   setWon: 'Set won',
@@ -219,6 +228,7 @@ export function triggerLabel(t: Trigger): string {
     case 'total': return `${t.total === 0 ? '0 (no score)' : t.total}${condLabel(t.checkout)}`;
     case 'range': return `${t.max >= 180 ? `${t.min}+` : `${t.min}–${t.max}`}${condLabel(t.checkout)}`;
     case 'combo': return `${t.darts.map(patternLabel).join(' · ')}${t.ordered ? ' (in order)' : ''}${condLabel(t.checkout)}`;
+    case 'left': return `Left on ${t.score}`;
     case 'game': return t.event === 'marks' ? `${t.marks} marks in visit` : GAME_EVENT_LABELS[t.event];
     default: return SIMPLE_LABELS[t.kind];
   }

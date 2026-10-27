@@ -7,9 +7,9 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, isX01, legTarget } from '../match.ts';
+import { controls, dartCue, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
-import { turnSound } from '../sound.ts';
+import { hitSound, missSound, turnSound } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint } from './MiniBoard.tsx';
 
@@ -154,6 +154,19 @@ function useTurnSound(m: LiveMatch, on: boolean, volume: number) {
     seen.current = { key: m.key, n: m.turnPass };
     if (on && prev?.key === m.key && m.turnPass > prev.n) turnSound(0.75 * (volume / 100));
   }, [m.key, m.turnPass, on, volume]);
+}
+
+/** Hit and miss sounds in the minigames that have them, at three quarters of the turn sound. */
+function useDartSound(m: LiveMatch, on: boolean, volume: number) {
+  const seen = useRef<{ key: string; n: number } | null>(null);
+  const n = m.view.visit.darts.length;
+  useEffect(() => {
+    const prev = seen.current;
+    seen.current = { key: m.key, n };
+    if (!on || prev?.key !== m.key) return;
+    const cue = dartCue(m, prev.n);
+    if (cue) (cue === 'hit' ? hitSound : missSound)(0.5625 * (volume / 100));
+  }, [m.key, n, on, volume]);
 }
 
 /** The finished visit, from its last dart until the takeout ends (docs/UI.md, Tura i takeout). */
@@ -338,6 +351,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
   const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
   const finished = v.visit.darts.length > 0 && v.visit.dartsLeft === 0;
   useTurnSound(m, s.you.isLocal && s.effects.sounds && s.effects.swoosh, s.effects.volume);
+  useDartSound(m, s.you.isLocal && s.effects.sounds, s.effects.volume);
 
   return (
     <div className="big">

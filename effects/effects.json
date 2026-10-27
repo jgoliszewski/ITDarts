@@ -2,12 +2,14 @@
   "version": 1,
   "settings": {
     "volume": 80,
+    "callerVolume": 70,
+    "callerVoice": "huw",
     "swoosh": true,
     "base": {
       "lobby": 1,
-      "match": 2,
-      "takeout": 3,
-      "offline": 4
+      "match": 1,
+      "takeout": null,
+      "offline": null
     }
   },
   "sounds": [
@@ -25,7 +27,7 @@
     },
     {
       "file": "otoz-nie.mp3",
-      "name": "Papież - Otóż nie",
+      "name": "Sznuk - Otóż nie",
       "volume": 100,
       "durationMs": 1138
     },
@@ -122,7 +124,7 @@
     {
       "file": "cute-uwu.mp3",
       "name": "cute uwu",
-      "volume": 100,
+      "volume": 155,
       "durationMs": 915
     },
     {
@@ -134,7 +136,7 @@
     {
       "file": "co-to-kurwa-jest.mp3",
       "name": "Co to kurwa jest?",
-      "volume": 100,
+      "volume": 85,
       "durationMs": 1784
     },
     {
@@ -160,6 +162,18 @@
       "name": "punch gaming",
       "volume": 100,
       "durationMs": 1533
+    },
+    {
+      "file": "papiez-a-mozna-jak-najbadziej.mp3",
+      "name": "Papież - a mozna jak najbadziej",
+      "volume": 100,
+      "durationMs": 1719
+    },
+    {
+      "file": "6-7.mp3",
+      "name": "6 7",
+      "volume": 15,
+      "durationMs": 1933
     }
   ],
   "rules": [
@@ -273,22 +287,24 @@
           "darts": [
             {
               "n": 20,
-              "m": null
+              "m": 1
             },
             {
               "n": 20,
-              "m": null
+              "m": 1
             },
             {
               "n": 20,
-              "m": null
+              "m": 1
             }
           ],
           "ordered": false,
           "checkout": "any"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "jeszcze-jak.mp3"
+      ],
       "led": null
     },
     {
@@ -297,12 +313,115 @@
       "enabled": true,
       "triggers": [
         {
-          "kind": "total",
-          "total": 26,
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 1,
+              "m": 1
+            },
+            {
+              "n": 5,
+              "m": 1
+            },
+            {
+              "n": 20,
+              "m": 1
+            }
+          ],
+          "ordered": false,
           "checkout": "any"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "papiez-a-mozna-jak-najbadziej.mp3"
+      ],
+      "led": null
+    },
+    {
+      "id": "rmx20",
+      "name": "Missed the 20",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 1,
+              "m": null
+            },
+            {
+              "n": 1,
+              "m": null
+            },
+            {
+              "n": 1,
+              "m": null
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        },
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 1,
+              "m": null
+            },
+            {
+              "n": 1,
+              "m": null
+            },
+            {
+              "n": 5,
+              "m": null
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        },
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 1,
+              "m": null
+            },
+            {
+              "n": 5,
+              "m": null
+            },
+            {
+              "n": 5,
+              "m": null
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        },
+        {
+          "kind": "combo",
+          "darts": [
+            {
+              "n": 5,
+              "m": null
+            },
+            {
+              "n": 5,
+              "m": null
+            },
+            {
+              "n": 5,
+              "m": null
+            }
+          ],
+          "ordered": false,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [
+        "faaah.mp3"
+      ],
       "led": null
     },
     {
@@ -362,7 +481,9 @@
           }
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "piekny-jestes.mp3"
+      ],
       "led": null
     },
     {
@@ -438,6 +559,37 @@
         }
       ],
       "sounds": [],
+      "led": null
+    },
+    {
+      "id": "rdz6u",
+      "name": "67",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "total",
+          "total": 67,
+          "checkout": "any"
+        }
+      ],
+      "sounds": [
+        "6-7.mp3"
+      ],
+      "led": null
+    },
+    {
+      "id": "rlv10",
+      "name": "",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "left",
+          "score": 2
+        }
+      ],
+      "sounds": [
+        "czesio-dziendobry-ztigd8p.mp3"
+      ],
       "led": null
     }
   ]

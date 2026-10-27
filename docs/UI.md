@@ -70,7 +70,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 - **Nowy mecz** to jeden ekran Pilota:
   - kafelki gier;
-  - gracze z kolejnością (przeciąganie, „Shuffle”, chipy ostatnio używanych graczy, „Add guest” i „New player”);
+  - gracze z kolejnością (przeciąganie, „Shuffle”, ostatnio używani gracze jako duże przyciski, reszta graczy i „+ Guest” jako chipy; nowych graczy zakłada się tylko w „Players”);
   - opcje gry z modułu i „Start match”.
 - **Opcje X01:**
   - start score;
@@ -116,6 +116,7 @@ Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzut�
 - **Closest:** wygrywa najmniejsza odległość. **PDC:** to samo, ale trafienie w to samo pole co lider (bull albo 25) to remis.
 - Remis: rzucają ponownie tylko remisujący liderzy, w odwrotnej kolejności. Tak samo przy 3+ graczach.
 - Lotka poza tarczą liczy się po odległości. Lotka bez coords jest ostatnia. Niewykryta lotka: rzuca się jeszcze raz.
+- Przy jednym graczu bull-offu nie ma, nawet gdy opcja jest włączona. Serwer zapisuje wtedy mecz z bull-offem „Off”.
 - Undo zdejmuje ostatnią lotkę bull-offu. Przyciski „X starts” na Pilocie zostają jako ręczne nadpisanie.
 - Ekran pokazuje przybliżonego bulla z ringiem trebli i sektorami, kropki lotek z imionami i przerywany okrąg wokół bulla dla każdej lotki (obszar do pobicia), obok listę od najbliższej z mm i kto rzuca.
 - Po rozstrzygnięciu ekran mówi „X starts”, a pierwszy leg rusza po takeoucie.
@@ -131,6 +132,7 @@ Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzut�
   - Start/stop detekcji;
   - Calibrate, z potwierdzeniem i informacją o około 60 s;
   - Restart Board Managera, z potwierdzeniem.
+- Przełącznik „Fake board”: serwer uruchamia symulator Board Managera na `:3180` i łączy się z nim zamiast z prawdziwą tarczą, a przycisk „Open fake board” otwiera stronę do klikania lotek. Wyłączenie wraca do adresu z `config.json`. Wybór nie przetrwa restartu serwera.
 - Ustawienia kamer i detekcji zostają w Board Managerze (`:3180`).
 
 ## Stany awaryjne

@@ -96,9 +96,10 @@ describe('effects store', () => {
   });
 
   it('keeps the WLED address and pilot switches out of the repo file', () => {
-    store.updateSettings({ volume: 40, callerVolume: 60, sounds: false, caller: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
+    store.updateSettings({ volume: 40, callerVolume: 60, callerVoice: 'arthur', sounds: false, caller: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
+    expect(() => store.updateSettings({ callerVoice: '../x' })).toThrow('caller voice');
     const file = JSON.parse(fileText());
-    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, swoosh: false, base: { lobby: 1, match: null, takeout: null, offline: null } });
+    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, callerVoice: 'arthur', swoosh: false, base: { lobby: 1, match: null, takeout: null, offline: null } });
     expect(fileText()).not.toContain('192.168.1.50');
     expect(store.settings()).toMatchObject({ sounds: false, caller: false, leds: true, wled: { address: '192.168.1.50' } });
   });
@@ -195,12 +196,12 @@ describe('effects service', () => {
   it('sends the caller’s lines with the caller volume, apart from the Sounds switch', () => {
     store.updateSettings({ sounds: false, callerVolume: 50 });
     fx.fire(visit180, ['180']);
-    expect(sent).toEqual([{ sound: null, anim: '180', caller: { urls: ['/caller/180.mp3'], gain: 0.5 } }]);
+    expect(sent).toEqual([{ sound: null, anim: '180', caller: { urls: ['/caller/brian/180.mp3'], gain: 0.5 } }]);
     // Lines alone, without changes, still go out (e.g. “you require” after Next player).
-    fx.fire([], ['you_require', '40']);
-    expect(sent[1].caller!.urls).toEqual(['/caller/you_require.mp3', '/caller/40.mp3']);
+    fx.fire([], ['require_40']);
+    expect(sent[1].caller!.urls).toEqual(['/caller/brian/require_40.mp3']);
     store.updateSettings({ caller: false });
-    fx.fire([], ['you_require', '40']);
+    fx.fire([], ['require_40']);
     expect(sent).toHaveLength(2);
   });
 

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../darts.ts';
 import { changes } from '../effects.ts';
@@ -31,7 +31,7 @@ function atStart(o = opts(), players = 2): string[] {
 describe('caller', () => {
   it('says game on when the match starts, and you require when the start score is a finish', () => {
     expect(atStart()).toEqual(['gameon']);
-    expect(atStart(opts({ startScore: 170 }))).toEqual(['gameon', 'you_require', '170']);
+    expect(atStart(opts({ startScore: 170 }))).toEqual(['gameon', 'require_170']);
   });
 
   it('says game on after the bull-off, not before', () => {
@@ -47,7 +47,7 @@ describe('caller', () => {
   });
 
   it('calls a short visit on Next player, then the next player’s you require', () => {
-    expect(said([d('S20'), d('S20'), next], opts({ startScore: 101 }))).toEqual(['40', 'you_require', '101']);
+    expect(said([d('S20'), d('S20'), next], opts({ startScore: 101 }))).toEqual(['40', 'require_101']);
   });
 
   it('says no score for a visit of 0 and for a bust', () => {
@@ -59,17 +59,17 @@ describe('caller', () => {
   it('says you require only when the checkout hint has a route', () => {
     // 169 is a bogey number with double out.
     expect(said([d('T20'), d('T20'), d('T20'), next], opts({ startScore: 349 }), 1)).toEqual([]);
-    expect(said([d('T20'), d('T20'), d('T20'), next], opts({ startScore: 350 }), 1)).toEqual(['you_require', '170']);
+    expect(said([d('T20'), d('T20'), d('T20'), next], opts({ startScore: 350 }), 1)).toEqual(['require_170']);
     // Double in: no route before the first double, so 100 stays silent; straight in leaves 40, a finish.
     expect(said([d('S20'), d('S20'), d('S20'), next], opts({ startScore: 100, checkIn: 'double' }), 1)).toEqual([]);
-    expect(said([d('S20'), d('S20'), d('S20'), next], opts({ startScore: 100 }), 1)).toEqual(['you_require', '40']);
+    expect(said([d('S20'), d('S20'), d('S20'), next], opts({ startScore: 100 }), 1)).toEqual(['require_40']);
   });
 
   it('says game shot with the leg number instead of the score, and match shot at the end', () => {
     expect(said([d('D20')], opts({ startScore: 40 }))).toEqual(['gameshot_l1_n']);
     const o = opts({ startScore: 40, matchMode: { kind: 'legs', firstTo: 2 } });
     // The next leg starts from 40 again, which is a finish.
-    expect(said([d('D20'), next], o)).toEqual(['gameon', 'you_require', '40']);
+    expect(said([d('D20'), next], o)).toEqual(['gameon', 'require_40']);
     // Player 2 starts the second leg and takes it: one leg each.
     expect(said([d('D20'), next, d('D20')], o)).toEqual(['gameshot_l2_n']);
     expect(said([d('D20'), next, d('D20')], o, 1)).toEqual(['matchshot']);
@@ -96,8 +96,10 @@ describe('caller', () => {
     expect(said([...log, { t: 'undo' }])).toEqual([]);
   });
 
-  it('has a recording for every line', () => {
-    const missing = CALLER_KEYS.filter(k => !existsSync(`assets/caller/${k}.mp3`));
+  it('has a recording for every line in every voice', () => {
+    const voices = readdirSync('assets/caller', { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+    expect(voices).toContain('huw');
+    const missing = voices.flatMap(v => CALLER_KEYS.filter(k => !existsSync(`assets/caller/${v}/${k}.mp3`)).map(k => `${v}/${k}`));
     expect(missing).toEqual([]);
   });
 });

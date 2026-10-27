@@ -113,3 +113,23 @@ export function turnSound(volume = 0.6) {
   [C5, E5, G5].forEach((f, i) => marimba(a, t + i * 0.075, f, volume));
   effectEnd = Math.max(effectEnd, t + 2 * 0.075 + 0.28);
 }
+
+const C4 = 261.63, G4 = 392.0;
+
+/** A counted dart in the minigames with hit sounds: a fifth up, C5 G5 (docs/EFEKTY.md, Wbudowane dźwięki). */
+export function hitSound(volume = 0.45) {
+  const a = audio();
+  if (!a) return;
+  const t = a.currentTime + 0.01;
+  marimba(a, t, C5, volume);
+  marimba(a, t + 0.06, G5, volume);
+}
+
+/** A dart that did not count: the mirror of the hit, G4 C4. */
+export function missSound(volume = 0.45) {
+  const a = audio();
+  if (!a) return;
+  const t = a.currentTime + 0.01;
+  marimba(a, t, G4, volume);
+  marimba(a, t + 0.06, C4, volume);
+}

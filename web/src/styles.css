@@ -479,6 +479,10 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 
 .fx-rules { display: flex; flex-direction: column; gap: 22px; }
 .fx-rules .caps, .fx-col .caps { font-size: 13px; }
+.fx-group { width: 100%; text-align: left; }
+.fx-group .muted { display: flex; align-items: center; gap: 6px; }
+.fx-group svg { transition: transform 0.15s; }
+.fx-group.shut svg { transform: rotate(-90deg); }
 .fx-col .option-row .muted, .fx-rules .option-row .muted { white-space: nowrap; }
 .fx-empty { border-radius: 20px; border: 1px dashed #3A3A40; padding: 22px; display: flex; flex-direction: column; gap: 6px; color: var(--soft); }
 .fx-empty b { color: var(--text); font-size: 17px; }
@@ -508,6 +512,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-chip button + button { padding: 0 10px 0 4px; color: var(--muted); }
 .fx-chip.on { border: 2px solid var(--accent); }
 .fx-chip.add { padding: 0 16px; border-style: dashed; background: transparent; color: var(--soft); font-weight: 600; }
+.fx-chip.play { padding: 0 16px 0 12px; gap: 6px; color: var(--accent); cursor: pointer; }
 .fx-params { border-radius: 16px; background: var(--bg, #0A0A0B); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .fx-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .fx-slots button { min-height: 56px; border-radius: 14px; border: 1px solid var(--line); font-size: 12px; color: var(--muted); }

@@ -22,6 +22,8 @@ export interface EffectsSettings {
   volume: number;
   /** Caller volume in % (repo). */
   callerVolume: number;
+  /** The caller's voice: a folder in assets/caller/ (repo). */
+  callerVoice: string;
   /** The built-in turn sound (first a swoosh, now a marimba arpeggio); off for those who put their own sound on “Takeout end” (repo). */
   swoosh: boolean;
   wled: {
@@ -61,7 +63,7 @@ export type RuleInput = Omit<Rule, 'id'>;
 /** What effects/effects.json holds. Keys are written in this order. */
 interface EffectsFile {
   version: 1;
-  settings: { volume: number; callerVolume: number; swoosh: boolean; base: Record<BaseState, number | null> };
+  settings: { volume: number; callerVolume: number; callerVoice: string; swoosh: boolean; base: Record<BaseState, number | null> };
   sounds: { file: string; name: string; volume: number; durationMs: number }[];
   rules: Rule[];
 }
@@ -78,10 +80,11 @@ export const MAX_SOUND_BYTES = 2 * 1024 * 1024;
 export const MAX_SOUND_MS = 10_000;
 export const SOUND_FILE = /^[a-z0-9][a-z0-9-]*\.(mp3|wav|ogg)$/;
 const RULE_ID = /^[a-z0-9]{1,16}$/;
+export const CALLER_VOICE = /^[a-z0-9-]{1,32}$/;
 
 const EMPTY: EffectsFile = {
   version: 1,
-  settings: { volume: 80, callerVolume: 80, swoosh: true, base: { lobby: null, match: null, takeout: null, offline: null } },
+  settings: { volume: 80, callerVolume: 80, callerVoice: 'brian', swoosh: true, base: { lobby: null, match: null, takeout: null, offline: null } },
   sounds: [],
   rules: [],
 };
@@ -152,6 +155,7 @@ export function parseEffectsFile(text: string): EffectsFile {
   where('settings', () => {
     if ('volume' in s) settings.volume = int(s.volume, 0, 100) ?? fail('volume is 0–100');
     if ('callerVolume' in s) settings.callerVolume = int(s.callerVolume, 0, 100) ?? fail('callerVolume is 0–100');
+    if ('callerVoice' in s) settings.callerVoice = typeof s.callerVoice === 'string' && CALLER_VOICE.test(s.callerVoice) ? s.callerVoice : fail('callerVoice is a folder name in assets/caller, like brian');
     if ('swoosh' in s) settings.swoosh = s.swoosh === true;
     const base = (s.base ?? {}) as Record<string, unknown>;
     for (const b of BASE_STATES) settings.base[b] = checkPreset(base[b]);
@@ -180,7 +184,7 @@ export function parseEffectsFile(text: string): EffectsFile {
 export function formatEffectsFile(f: EffectsFile): string {
   const out: EffectsFile = {
     version: 1,
-    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, swoosh: f.settings.swoosh, base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
+    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, swoosh: f.settings.swoosh, base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
     sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs })),
     rules: f.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, triggers: r.triggers.map(normalizeTrigger), sounds: r.sounds, led: r.led && { preset: r.led.preset, seconds: r.led.seconds } })),
   };
@@ -277,7 +281,7 @@ export class EffectsStore {
     const l = this.local();
     const s = this.data.settings;
     return {
-      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, swoosh: s.swoosh,
+      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice, swoosh: s.swoosh,
       wled: { address: l.address, base: { ...s.base } },
     };
   }
@@ -293,6 +297,7 @@ export class EffectsStore {
     if ('swoosh' in p) s.swoosh = !!p.swoosh;
     if ('volume' in p) s.volume = int(p.volume, 0, 100) ?? fail('Volume is 0–100');
     if ('callerVolume' in p) s.callerVolume = int(p.callerVolume, 0, 100) ?? fail('Caller volume is 0–100');
+    if ('callerVoice' in p) s.callerVoice = typeof p.callerVoice === 'string' && CALLER_VOICE.test(p.callerVoice) ? p.callerVoice : fail('Pick a caller voice from the list');
     if (p.wled && typeof p.wled === 'object') {
       const w = p.wled as Record<string, unknown>;
       if ('address' in w) {

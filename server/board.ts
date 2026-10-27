@@ -43,10 +43,10 @@ export class Board extends EventEmitter<BoardEvents> {
   private stopped = false;
   private timer: NodeJS.Timeout | null = null;
 
-  constructor(readonly address: string) {
+  constructor(public address: string) {
     super();
     this.status = {
-      address, connected: false, version: null, detecting: true, lastEvent: null,
+      address, fake: false, connected: false, version: null, detecting: true, lastEvent: null,
       takeout: { active: false, since: null }, busy: null,
     };
   }
@@ -60,6 +60,17 @@ export class Board extends EventEmitter<BoardEvents> {
     this.stopped = true;
     if (this.timer) clearTimeout(this.timer);
     this.ws?.close();
+  }
+
+  /** Drops the current connection and connects to another Board Manager. */
+  setAddress(address: string) {
+    const ws = this.ws;
+    this.ws = null; // its onclose is then ignored
+    ws?.close();
+    this.address = address;
+    Object.assign(this.status, { address, connected: false, version: null, takeout: { active: false, since: null }, busy: null });
+    this.event(`Switched to ${address}`);
+    this.start();
   }
 
   private connect() {
@@ -140,7 +151,11 @@ export class Board extends EventEmitter<BoardEvents> {
       this.event(`Throw detected · ${t.segment?.name ?? ''}`.trim());
       this.emit('throw', dart, coords);
     }
-    if (/manual reset/i.test(ev)) this.event('Manual reset');
+    // Reset clears the board, also from Board Manager's own page, so a takeout it never finished ends here.
+    if (/manual reset/i.test(ev)) {
+      this.status.takeout = { active: false, since: null };
+      this.event('Manual reset');
+    }
   }
 
   /** Ends a stuck takeout by hand: resets Board Manager without firing takeoutFinished. */

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BoardAction, ClientState } from '../../../server/protocol.ts';
 import { Dialog, Icon, act } from '../components/ui.tsx';
 import { ago, useNow } from '../util.ts';
+import { Switch } from './effects/parts.tsx';
 import { boardPill } from './Scoreboard.tsx';
 
 const CONFIRM: Partial<Record<BoardAction, { title: string; text: string; go: string }>> = {
@@ -38,6 +39,16 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
           <span className="muted">Last event</span><span>{b.lastEvent ? `${b.lastEvent.text} · ${ago(b.lastEvent.at, now)}` : '–'}</span>
           {b.busy && <><span className="muted">Working</span><span>{b.busy.action === 'calibrate' ? 'Calibrating' : 'Restarting'} · {ago(b.busy.since, now).replace(' ago', '')}</span></>}
         </div>
+      </section>
+      <section className="box">
+        <div className="option-row">
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800 }}>Fake board</div>
+            <div style={{ fontSize: 12, color: 'var(--muted2)' }}>Click darts in a browser instead of throwing</div>
+          </div>
+          <Switch on={b.fake} label="Fake board" onChange={on => void act({ type: 'fakeBoard', on })} />
+        </div>
+        {b.fake && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${location.hostname}:${b.address.split(':')[1]}/`} target="_blank" rel="noreferrer">Open fake board</a>}
       </section>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
         {actions.map(x => (

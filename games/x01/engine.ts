@@ -56,6 +56,8 @@ export interface VisitResult {
   dartsCount: number;
   /** Darts that still take effect (nothing after a bust or a checkout). */
   live: number;
+  /** Score left after each live dart, or null when the dart did not change it. */
+  left: (number | null)[];
 }
 
 export interface LegResult {
@@ -79,6 +81,7 @@ export function analyzeLeg(leg: LegRec, players: number, o: X01Options): LegResu
     let bust = false;
     let checkoutAt = -1;
     let live = 0;
+    const left: (number | null)[] = [];
     for (const [i, rec] of v.darts.entries()) {
       if (bust || checkoutAt >= 0) break;
       const r = scoreDart(remaining, inn, rec.dart, o);
@@ -89,13 +92,14 @@ export function analyzeLeg(leg: LegRec, players: number, o: X01Options): LegResu
         remaining -= r.scored;
         if (r.checkout) checkoutAt = i;
       }
+      left.push(r.scored > 0 && !r.checkout ? remaining : null);
     }
     if (bust) remaining = start;
     scores[v.player] = remaining;
     checkedIn[v.player] = inn;
     if (checkoutAt >= 0) winner = v.player;
     const dartsCount = checkoutAt >= 0 ? checkoutAt + 1 : v.closed ? 3 : v.darts.length;
-    return { player: v.player, darts: v.darts, start, scored: bust ? 0 : start - remaining, bust, checkoutAt, closed: v.closed, dartsCount, live };
+    return { player: v.player, darts: v.darts, start, scored: bust ? 0 : start - remaining, bust, checkoutAt, closed: v.closed, dartsCount, live, left };
   });
   return { set: leg.set, starter: leg.starter, visits, scores, winner };
 }
@@ -381,7 +385,12 @@ export function happenings(raw: Raw, players: number, o: X01Options): Happening[
       const V = `${L}V${vi + 1}`;
       // Misses filled in by Next player are no throws.
       const thrown = v.darts.length - raw.legs[li].visits[vi].filled;
-      v.darts.slice(0, Math.min(thrown, v.live)).forEach((d, di) => out.push({ slot: `${V}D${di + 1}`, fact: { kind: 'dart', dart: d.dart } }));
+      v.darts.slice(0, Math.min(thrown, v.live)).forEach((d, di) => {
+        out.push({ slot: `${V}D${di + 1}`, fact: { kind: 'dart', dart: d.dart } });
+        const left = v.left[di];
+        // A bust later in the visit does not take back what this dart left.
+        if (left !== null) out.push({ slot: `${V}D${di + 1}:left`, fact: { kind: 'left', score: left } });
+      });
       if (!(v.closed || v.bust || v.checkoutAt >= 0 || v.darts.length >= 3)) return;
       out.push({
         slot: V,

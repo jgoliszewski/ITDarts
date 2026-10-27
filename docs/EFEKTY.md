@@ -14,6 +14,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 | Suma tury | 180, 26, 0 („no score”) | X01 |
 | Próg lub przedział tury | 100+, 140+, 100–170 | X01 |
 | Kombinacja | 1-5-20, T20 · T20 · Bull | X01 |
+| Zostajesz na („Left on”) | 2, czyli D1 | X01 |
 | Bust | | X01 |
 | Checkout / wygrany leg | | wszystkie |
 | Wygrany set, wygrany mecz | | wszystkie |
@@ -25,6 +26,12 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 - **Warunek checkoutu** przy wyzwalaczach tury (suma, próg, kombinacja): „Any”, „Only checkout” albo „No checkout”.
   - Ton+ finish to przedział 100–170 z „Only checkout”.
   - Big Fish to suma 170 z „Only checkout”, bo 170 da się zamknąć tylko jako T20 · T20 · Bull.
+- **„Left on N”** (2026-10-27): lotka zostawia gracza na N, np. 59, T19 i zostaje D1.
+  - Gra od razu po tej lotce, a nie po końcu tury.
+  - Liczy się tylko lotka, która zmieniła wynik. Pudło na 2 nie gra drugi raz. Bust ani checkout nic nie zostawiają.
+  - Bust późniejszą lotką w tej samej turze nie cofa efektu, który już zagrał.
+  - Poprawka odpala „Left on”, jak wynik tury: S19 → T19 na 59 daje „Left on 2”.
+  - N od 1 do 901, bez warunku checkoutu.
 - **Minigierki** mają własne wyzwalacze, np. trafiony cel w Around the Clock albo „New record”. Lista jest w [GRY.md](GRY.md). Reguła działa w każdej grze, w której jej wyzwalacz ma sens.
 
 ## Reguły
@@ -45,7 +52,8 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   6. kombinacja;
   7. dokładna suma tury;
   8. próg lub przedział tury;
-  9. lotka.
+  9. „Left on” (2026-10-27). Po trzeciej lotce przegrywa więc z regułą tury, ale po pierwszej i drugiej gra zawsze;
+  10. lotka.
 
   Reguła z kilkoma wyzwalaczami dostaje priorytet najbardziej konkretnego dopasowanego wyzwalacza.
 - **Wyzwalacze spoza tej listy** dostały miejsce przy implementacji (2026-10-26), bo grilling ich nie ustawił:
@@ -99,6 +107,12 @@ Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, ż
 - Syntetyzowany w przeglądarce kiosku (WebAudio), więc nie potrzebuje pliku ani licencji.
 - Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów. W Playback jest jego odsłuch.
 - Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany dźwięk na stronie efektów. Jego przełącznik ma w `effects.json` klucz `swoosh`, zostawiony po pierwszej wersji.
+- **Trafienie i pudło w minigierkach** (2026-10-27, wybrane z kilku propozycji): ta sama marimba. Trafienie to kwinta w górę (C5, potem G5 po 60 ms), pudło to kwinta w dół (G4, potem C4).
+  - ATC, Full Board i Cricket grają po każdej lotce. Trafienie to lotka, która się liczy: cel w ATC, nowy sektor w Full Board, co najmniej jeden znacznik w Cricket.
+  - Higher or Lower gra raz na Turę, gdy jest rozstrzygnięta: trafienie, gdy Tura się udała, pudło przy „Out”. Lotka poza tarczą rozstrzyga od razu.
+  - X01, 121 i Killer milczą: tam pojedyncza lotka nie jest ani dobra, ani zła, a w X01 mówi caller.
+  - Poprawka i Undo nie grają. Lotka rzucona po Undo gra znowu.
+  - Głośność to trzy czwarte dźwięku zmiany gracza. Wycisza go przełącznik Sounds; własnego przełącznika nie ma.
 
 ## Konfiguracja w repo
 
@@ -168,12 +182,14 @@ Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/
 - **Kolejność:** najpierw dźwięk efektu, potem caller. Caller czeka na koniec efektu, ale najdłużej 2 s. Kolejne wywołania czekają na poprzednie, np. wynik, a po takeoucie „you require” następnego gracza.
 - Bez imion graczy, pojedynczych lotek, bull-offa i zapowiedzi legów.
 - **Sterowanie:** przełącznik Caller na Pilocie, niezależny od Sounds, domyślnie włączony, trzymany per laptop w SQLite. Suwak głośności callera jest na stronie efektów, a jego wartość leży w repo obok głośności efektów. Gra tylko w kiosku, jak reszta dźwięków.
-- **Głos:** Ash z OpenAI TTS, EN-GB, z paczki darts-caller `openai/en-GB-ash-MALE-v2.zip` (`https://darts-downloads.peschi.org/soundfiles/openai/en-GB-ash-MALE-v2.zip`). Wybrany z około 90 głosów (paczki darts-caller, Edge, Kokoro i Piper).
-  - Nagrania leżą w repo w `assets/caller/` jako część aplikacji, a serwer podaje je pod `/caller/<plik>`. Wyciągnięte jednorazowo, 1:1, bez obróbki. W repo nie ma skryptu ani uploadu.
-  - Nazwy plików w konwencji darts-caller: `1.mp3`–`180.mp3`, `you_require.mp3`, `gameon.mp3`, `busted.mp3` (z nagraniem „no score”), `gameshot_l1_n.mp3`–`gameshot_l20_n.mp3`, `matchshot.mp3`. Inną paczkę darts-caller da się więc podłożyć bez mapowania.
-  - `assets/caller/SOURCE.md` mówi, z której paczki i którego wiersza CSV pochodzi każdy plik.
+- **Głos:** do wyboru na stronie efektów (2026-10-27), bo Ash po pierwszych meczach okazał się słaby, a prawdziwych sędziów z kompletem zdań nie ma: paczki z autodarts.x10.mx (Russ Bray, George Noble, Paul Hinks, Shorty) mają tylko wyniki 0–180 i „gameshot”, bez „game on”, „you require” i numeru legu. Wyjątek to paczka Huwa Ware’a z tego hosta (`hw`): ma `require_1`–`require_180`, czyli całe „you require N”, oraz `game_on`. Głosy, po jednym folderze w `assets/caller/<głos>/`: `huw` (prawdziwy sędzia PDC), `brian` i `arthur` (Amazon Polly, EN-GB), `stephen` (Amazon Polly, EN-US), `ballad` (OpenAI, EN-GB). Ash (OpenAI, EN-GB, pierwotny wybór z około 90 głosów) wyleciał tego samego dnia.
+  - Wybrany głos to `callerVoice` w `effects/effects.json`, obok głośności, domyślnie `brian`; w Playback to przełącznik segmentowy z folderów w `assets/caller/` i przycisk odsłuchu („game on”, 180, „you require 40”) tym głosem. Serwer podaje nagrania pod `/caller/<głos>/<plik>`. Wyciągnięte jednorazowo, 1:1, bez obróbki. W repo nie ma skryptu ani uploadu.
+  - Paczki Amazon Polly i Huw nie mają numeru legu, więc u nich każdy `gameshot_lN_n` to to samo „Game shot!” (u Huwa także `matchshot`). Warianty `!`–`!!!!!` w paczce Briana brzmią tak samo, zostaje `!`.
+  - „You require N” to jeden plik `require_N.mp3`, jak u Huwa. Głosom TTS te pliki powstały ze sklejenia ramek MP3 „You require” i wyniku (bez ffmpeg), opis w ich `SOURCE.md`.
+  - Nazwy plików w konwencji darts-caller: `1.mp3`–`180.mp3` (bez wyników niemożliwych trzema lotkami: 163, 166, 169, 172, 173, 175, 176, 178, 179), `gameon.mp3`, `busted.mp3` (z nagraniem „no score”), `gameshot_l1_n.mp3`–`gameshot_l20_n.mp3`, `matchshot.mp3`, a poza konwencją `require_1.mp3`–`require_180.mp3`.
+  - `assets/caller/<głos>/SOURCE.md` mówi, z której paczki i którego wiersza CSV pochodzi każdy plik.
   - Paczka nie ma licencji. Akceptujemy to, bo repo jest prywatne i nagrań nie publikujemy.
-  - Brak pliku oznacza ciszę przy tym wywołaniu. Test pilnuje, że każdy potrzebny plik jest w `assets/caller/`.
+  - Brak pliku oznacza ciszę przy tym wywołaniu. Test pilnuje, że każdy głos ma każdy potrzebny plik.
 
 ## Strona „Effects”
 
@@ -197,7 +213,9 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 - **Laptop (od 1100 px):** zakładki z boku, a pod nimi ten sam status. W Rules obok listy jest edytor zaznaczonej reguły. Na start zaznaczona jest pierwsza reguła, a przy pustej liście edytor od razu tworzy nową. Sounds, LEDs i Playback to jedna kolumna do 720 px.
 
 **Rules**
-- Reguły są w grupach „Darts, visits and results”, „Minigames” i „Match and board”. Reguła trafia do grupy swojego najważniejszego wyzwalacza.
+- Reguły są w grupach „Results” (bust, checkout, set, mecz), „Visits” (suma, przedział, kombinacja), „Darts” (lotka, „Left on”), „Minigames” i „Match and board”. Reguła trafia do grupy swojego najważniejszego wyzwalacza.
+- Grupy się zwijają stuknięciem w nagłówek (2026-10-27, gdy reguł zrobiło się dużo). Zwinięte grupy pamięta przeglądarka. Na start wszystkie są rozwinięte.
+- **Wyszukiwarka** nad listą reguł (2026-10-27) szuka po nazwie, wyzwalaczach i nazwach dźwięków, tak jak w Sounds. Przy wpisanym zapytaniu trafienia widać też w zwiniętych grupach.
 - W grupie kolejność idzie według priorytetu, a przy remisie od najstarszej.
 - Wiersz pokazuje nazwę (bez nazwy: wyzwalacze), wyzwalacze, dźwięk, kolor i nazwę presetu ledów oraz przełącznik. Stuknięcie otwiera edytor. Na liście nie ma „Test” ani usuwania.
 - Pusta lista: „No rules yet. Scoreboard animations work without them.” i „New rule”. Bez szablonów.

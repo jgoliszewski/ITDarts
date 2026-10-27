@@ -1,9 +1,9 @@
 // REST for the “Effects” page: open to everyone in the LAN, no pilot needed (docs/EFEKTY.md).
-import { createReadStream, existsSync } from 'node:fs';
+import { createReadStream, existsSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { UserError } from '../db.ts';
-import type { Effects } from './index.ts';
+import { CALLER_DIR, type Effects } from './index.ts';
 import { MAX_SOUND_BYTES, SOUND_FILE } from './store.ts';
 
 export interface EffectsResponse {
@@ -13,6 +13,13 @@ export interface EffectsResponse {
   wledError: { text: string; at: number } | null;
   /** The effects file in the repo, and why it was not taken when it is broken (the last good version is in use). */
   file: { path: string; error: string | null };
+  /** Folders in assets/caller/, the choices for the caller's voice. */
+  callerVoices: string[];
+}
+
+/** The voices on disk, so a folder added in git shows up without a restart. */
+export function callerVoices(): string[] {
+  return readdirSync(CALLER_DIR, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort();
 }
 
 const MIME: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg' };
@@ -38,6 +45,7 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
   app.get('/api/effects', async (): Promise<EffectsResponse> => ({
     settings: store.settings(), rules: store.rules(), sounds: store.sounds(), wledError: fx.wled.error,
     file: { path: relative(process.cwd(), store.file) || store.file, error: store.error },
+    callerVoices: callerVoices(),
   }));
 
   app.put('/api/effects/settings', async (req, reply) => guard(reply, () => {
