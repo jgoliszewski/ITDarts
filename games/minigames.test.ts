@@ -243,6 +243,13 @@ describe('higher or lower', () => {
     expect(miss.visit.dartsLeft).toBe(0);
   });
 
+  it('counts T1 as zero, so a visit can go below the range', () => {
+    const v = hol.view(visit('T1', 'T1', 'S5'), 3, o);
+    expect([v.lo, v.hi]).toEqual([5, 45]);
+    expect(hol.view([d('T1')], 3, o).hero.big).toBe('0');
+    expect(hol.view([], 3, o).hero.big).toBe('0');
+  });
+
   it('voids a round where everyone fails', () => {
     const all = hol.view([...visit('S10', 'S10', 'S10'), ...visit('S10', 'S10', 'S10')], 2, o);
     expect(all.rows.map(r => r.out)).toEqual([false, false]);

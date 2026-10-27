@@ -247,9 +247,9 @@ export interface PlayerMatchStats {
   legAvg: number | null;
   matchAvg: number | null;
   bestVisit: number;
+  c60: number;
+  c80: number;
   c100: number;
-  c140: number;
-  c180: number;
   /** Last closed visits, oldest first; null marks a bust. */
   lastVisits: (number | null)[];
 }
@@ -277,7 +277,7 @@ export interface X01View {
 const avg = (points: number, darts: number) => (darts > 0 ? Math.round((points / darts) * 3 * 100) / 100 : null);
 
 function playerStats(results: LegResult[], p: number): PlayerMatchStats {
-  let points = 0, darts = 0, legPoints = 0, legDarts = 0, best = 0, c100 = 0, c140 = 0, c180 = 0;
+  let points = 0, darts = 0, legPoints = 0, legDarts = 0, best = 0, c60 = 0, c80 = 0, c100 = 0;
   const visits: (number | null)[] = [];
   results.forEach((r, i) => {
     for (const v of r.visits) {
@@ -290,13 +290,13 @@ function playerStats(results: LegResult[], p: number): PlayerMatchStats {
       }
       if (!v.closed && v.checkoutAt < 0) continue;
       best = Math.max(best, v.scored);
-      if (v.scored === 180) c180++;
-      else if (v.scored >= 140) c140++;
-      else if (v.scored >= 100) c100++;
+      if (v.scored >= 100) c100++;
+      else if (v.scored >= 80) c80++;
+      else if (v.scored >= 60) c60++;
       visits.push(v.bust ? null : v.scored);
     }
   });
-  return { legAvg: avg(legPoints, legDarts), matchAvg: avg(points, darts), bestVisit: best, c100, c140, c180, lastVisits: visits.slice(-6) };
+  return { legAvg: avg(legPoints, legDarts), matchAvg: avg(points, darts), bestVisit: best, c60, c80, c100, lastVisits: visits.slice(-6) };
 }
 
 export function view(raw: Raw, players: number, o: X01Options): X01View {

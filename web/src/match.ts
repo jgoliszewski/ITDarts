@@ -1,5 +1,7 @@
 // What the pilot can do right now, shared by the laptop bar and the phone pilot.
 import type { Dart } from '../../games/darts.ts';
+import { value } from '../../games/darts.ts';
+import { holValue } from '../../games/hol.ts';
 import type { ClientState, Command, LiveMatch } from '../../server/protocol.ts';
 
 export type X01Match = Extract<LiveMatch, { game: 'x01' }>;
@@ -50,6 +52,9 @@ export const endsNormally = (m: LiveMatch) =>
   m.view.phase === 'matchWon' || (isX01(m) && m.view.phase === 'legWon' && m.options.matchMode.kind === 'off');
 
 export const visitDarts = (m: LiveMatch): Dart[] => m.view.visit.darts.map(d => d.dart);
+
+/** Points a dart shows on its tile; in Higher or Lower T1 is worth zero. */
+export const dartValue = (m: LiveMatch, d: Dart): number => (m.game === 'hol' ? holValue(d) : value(d));
 
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {

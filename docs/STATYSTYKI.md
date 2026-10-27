@@ -41,7 +41,7 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 | Checkout % | Udane checkouty ÷ lotki rzucone przy wyniku do skończenia jedną lotką. |
 | Najwyższy checkout | Największy wynik zamknięty jedną turą. |
 | Najkrótszy leg | Najmniej lotek w wygranym legu. |
-| 100+, 140+, 180 | Liczba tur z co najmniej taką sumą. |
+| 60+, 80+, 100+ | Liczba tur w przedziałach 60–79, 80–99 i od 100 w górę, każda tura liczy się raz. Od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura. Liczone z zapisanych tur, więc dotyczy też starszych meczów. |
 | Winrate, head-to-head | Wygrane ÷ mecze według zasad wyżej. |
 
 Definicji średniej until 170 nie znaleźliśmy w żadnym oficjalnym źródle. Przyjęliśmy najczęstszy podział legu na fazę punktowania i fazę checkoutu, bez cięcia tury w połowie.

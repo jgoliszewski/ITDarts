@@ -7,7 +7,7 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartCue, isX01, legTarget } from '../match.ts';
+import { controls, dartCue, dartValue, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { hitSound, missSound, turnSound } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
@@ -126,7 +126,7 @@ function StatsCards({ m }: { m: X01Match }) {
   while (visits.length < 6) visits.push(undefined as unknown as number);
   const tiles: [string, string][] = [
     ['Leg avg', fmtAvg(st.legAvg)], ['Match avg', fmtAvg(st.matchAvg)], ['Best visit', st.bestVisit ? String(st.bestVisit) : '–'],
-    ['100+', String(st.c100)], ['140+', String(st.c140)], ['180', String(st.c180)],
+    ['60+', String(st.c60)], ['80+', String(st.c80)], ['100+', String(st.c100)],
   ];
   return (
     <>
@@ -201,7 +201,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                 const d = darts[i];
                 if (!d) return <div key={i} className="dart-tile empty" />;
                 // Minigames lead with the field hit, as on their screen; X01 with the points.
-                const [top, sub] = good ? [label(d.dart), value(d.dart)] : [value(d.dart), label(d.dart)];
+                const [top, sub] = good ? [label(d.dart), dartValue(m, d.dart)] : [value(d.dart), label(d.dart)];
                 const tile = <><span className="num">{top}</span><span className="lbl">{sub}</span></>;
                 // Games counted in hits colour each dart green or red; scoring games dim the darts that did nothing.
                 const cls = `dart-tile ${!good ? '' : scored === null ? (good[i] ? 'hit' : 'miss') : good[i] ? '' : 'dead'}`;

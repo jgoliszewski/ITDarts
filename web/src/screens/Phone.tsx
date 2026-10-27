@@ -1,11 +1,11 @@
-import { label, value } from '../../../games/darts.ts';
+import { label } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
 import { LIVES } from '../../../games/121.ts';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, isX01, shortDescription, winnersOf } from '../match.ts';
+import { controls, dartValue, isX01, shortDescription, winnersOf } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -72,7 +72,7 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
             ? <button key={i} className="p-dart empty" onClick={() => onDart(i)}><span className="lbl">+ Add dart</span></button>
             : <div key={i} className="p-dart empty" />;
         }
-        const inner = <><span className="num">{value(d.dart)}</span><span className="lbl">{label(d.dart)}</span></>;
+        const inner = <><span className="num">{dartValue(m, d.dart)}</span><span className="lbl">{label(d.dart)}</span></>;
         // In minigames a dart that did nothing is dimmed.
         const dead = !isX01(m) && !m.view.visit.good[i] ? 'dead' : '';
         return editable

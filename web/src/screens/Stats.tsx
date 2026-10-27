@@ -90,9 +90,9 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
             <Stat l="Checkout %" v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`} />
             <Stat l="Highest checkout" v={fmtNum(x.highestCheckout)} />
             <Stat l="Best leg" v={fmtNum(x.bestLeg)} s="darts" />
+            <Stat l="60+" v={String(x.c60)} />
+            <Stat l="80+" v={String(x.c80)} />
             <Stat l="100+" v={String(x.c100)} />
-            <Stat l="140+" v={String(x.c140)} />
-            <Stat l="180" v={String(x.c180)} />
             <Stat l="Legs" v={`${x.legsWon}/${x.legs}`} s="won / played" />
             <Stat l="Winrate" v={data.results.winrate === null ? '–' : `${data.results.winrate}%`} s={`${data.results.won} of ${data.results.played} matches`} />
             <Stat l="Darts" v={String(x.darts)} />

@@ -65,7 +65,16 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
   - karta tury w grach liczonych trafieniami ma zielone i czerwone kafelki ([UI.md](UI.md#tura-i-takeout)).
   - Sprawdzone zrzutami z symulatorem w 1920×1080. Nikt jeszcze nie widział tego na ekranie w biurze.
 
-  Testy: `npm test` (125), `npm run typecheck`.
+- **Kropki legów na Ekranie wyników X01** (2026-10-27, ze zgłoszenia): trochę większe, a w aktywnym wierszu niewygrane legi są jaśniejsze ([UI.md](UI.md#ekran-wyników)). Sprawdzone zrzutem z symulatorem w meczu na sety.
+
+- **Liczniki tur 60+, 80+, 100+** (2026-10-27) zamiast 100+, 140+, 180 na karcie meczu i na `/stats` ([STATYSTYKI.md](STATYSTYKI.md)). Efekty i animacje 140+ i 180 zostają bez zmian.
+
+- **Okno poprawki i nowy mecz na laptopie** (2026-10-27): „Fix dart” bez przewijania, z czerwonym „Cancel” w nagłówku i tarczą na całą wysokość; „New match” w trzech kolumnach bez przewijania ([UI.md](UI.md#start-i-koniec-meczu)). Sprawdzone pomiarem w przeglądarce od 1280×720 do 1920×1080 i na telefonie.
+
+- **Higher or Lower** (2026-10-27): T1 liczy się jako zero, a przed pierwszą lotką hero pokazuje 0 zamiast kreski, która wyglądała jak biały prostokąt ([GRY.md](GRY.md#higher-or-lower)).
+- **New match** (2026-10-27): podpowiedzi „i” w dymku, opcje dla 2+ graczy od razu, przyciski graczy nad listą kolejności, check-out Single / Double / Master ([GRY.md](GRY.md#setup-na-pilocie), [UI.md](UI.md#start-i-koniec-meczu)).
+
+  Testy: `npm test` (127), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

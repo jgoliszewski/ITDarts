@@ -1,4 +1,5 @@
 // Higher or Lower: throw a visit outside the forbidden range, which grows with every success (docs/GRY.md). Pure, no I/O.
+import type { Dart } from './darts.ts';
 import { value } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
@@ -11,6 +12,9 @@ export interface HolOptions {
 }
 
 export const START_RANGE = [26, 45] as const;
+
+/** A dart's points here: T1 always counts as zero, so a visit can drop below the range's bottom (docs/GRY.md). */
+export const holValue = (d: Dart) => (d.n === 1 && d.m === 3 ? 0 : value(d));
 
 interface State extends Turn {
   lo: number;
@@ -53,7 +57,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
         miss = true;
         return { good: false, end: true };
       }
-      total += value(d);
+      total += holValue(d);
       return { good: true };
     });
     goods.push(w.good);
@@ -118,7 +122,7 @@ function view(events: TurnEvent[], players: number, o: HolOptions): HolView {
   return {
     ...frame(t, s),
     winners: s.winners,
-    hero: { big: s.sum === null ? '–' : String(s.sum), caption: `Range ${s.lo}–${s.hi}`, note: `Above ${s.hi} or below ${s.lo}` },
+    hero: { big: String(s.sum ?? 0), caption: `Range ${s.lo}–${s.hi}`, note: `Above ${s.hi} or below ${s.lo}` },
     rows: s.points.map((p, i) => ({ value: String(p), meta: s.out[i] ? 'Out' : plural(p, 'point'), out: s.out[i] })),
     result: s.winners.length ? `Points ${[...s.points].sort((a, b) => b - a).join('–')}` : '',
     scores: s.points.map(() => null),
@@ -154,7 +158,7 @@ export const hol: GameModule<HolOptions, HolView> = {
   howTo: {
     goal: 'Stay in the game longest: every visit must land outside the forbidden range.',
     turn: 'Three darts per visit; what counts is their sum. The range starts at 26–45.',
-    counts: 'Above the range moves its top up to your sum; below moves its bottom down. A sum equal to an edge is inside. Any dart outside the scoring area fails the visit.',
+    counts: 'Above the range moves its top up to your sum; below moves its bottom down. A sum equal to an edge is inside. T1 always counts as zero. Any dart outside the scoring area fails the visit.',
     win: 'A failed visit puts you out at once. If everyone still in fails in the same round, that round does not count. The last player in wins the game; first to the set number of games wins the match.',
   },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),

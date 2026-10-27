@@ -102,7 +102,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .hero-top svg { width: calc(26 * var(--u)); height: calc(26 * var(--u)); flex-shrink: 0; }
 .hero-name { font-size: calc(48 * var(--u)); font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pips { display: flex; gap: calc(8 * var(--u)); align-items: center; }
-.pip { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%; background: #2E2E33; }
+.pip { width: calc(22 * var(--u)); height: calc(22 * var(--u)); border-radius: 50%; background: #2E2E33; }
 .pip.on { background: var(--accent); }
 .hero-left { font-size: calc(22 * var(--u)); color: var(--muted); white-space: nowrap; }
 .hero-score-row { display: flex; align-items: flex-end; gap: calc(40 * var(--u)); }
@@ -137,7 +137,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .prow.compact .name { font-size: calc(26 * var(--u)); }
 .prow .meta { display: flex; align-items: center; gap: calc(6 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; color: var(--muted2); }
 .prow.active .meta { color: var(--accent-ink); }
-.prow .pip { width: calc(12 * var(--u)); height: calc(12 * var(--u)); }
+.prow .pip { width: calc(15 * var(--u)); height: calc(15 * var(--u)); }
+.prow.active .pip { background: rgba(17, 17, 17, 0.22); }
 .prow.active .pip.on { background: #111; }
 .prow .score { font-size: calc(88 * var(--u)); line-height: 1; }
 .prow.compact .score { font-size: calc(72 * var(--u)); }
@@ -302,12 +303,18 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .mult-row button[aria-pressed='true'] { background: var(--text); color: #111; border-color: var(--text); }
 .wide-fix { position: fixed; z-index: 50; inset: 40px; background: var(--sheet); border-radius: 36px; padding: 40px; display: grid; grid-template-columns: minmax(380px, 520px) minmax(0, 1fr); gap: 40px; }
 .wide-fix .left { display: flex; flex-direction: column; gap: 16px; min-height: 0; overflow: auto; }
-.wide-fix .board-wrap { display: flex; align-items: center; justify-content: center; min-height: 0; }
+.wide-fix .board-wrap { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; }
 .wide-fix .board-wrap svg { max-width: 100%; max-height: 100%; }
-.wide-fix .key { height: 76px; }
+/* The hint sits in the card's bottom padding so the board keeps the full height. */
+.wide-fix .board-wrap p { position: absolute; left: 0; right: 0; bottom: -30px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Keys shrink on short laptop screens so the left column never scrolls. */
+.wide-fix .key { height: clamp(52px, 8.4vh, 76px); }
 .wide-fix .key b { font-size: 24px; }
 .wide-fix .key small { font-size: 14px; }
-.wide-fix .key.sm { height: 60px; }
+.wide-fix .key.sm { height: clamp(44px, 6.6vh, 60px); }
+.wide-fix .sheet-head { align-items: center; gap: 16px; }
+.wide-fix .sheet-head > span { margin-right: auto; }
+.wide-fix .sheet-head .btn { height: 48px; padding: 0 24px; font-size: 17px; }
 .wide-fix .sheet-head b { font-size: 28px; }
 .wide-fix .sheet-head span { font-size: 18px; }
 .wide-fix .seg button { height: 48px; font-size: 17px; }
@@ -352,6 +359,31 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .center-msg p { margin: 0; color: var(--muted); }
 
 /* ---------- minigames ---------- */
+/* New match: one column on the phone; on the laptop (1100 px+) game, options and players side by side, no scrolling. */
+.match-setup { max-width: 640px; }
+.steppers { display: flex; flex-direction: column; gap: 16px; }
+/* Steppers in New match are as tall as the switches next to them. */
+.match-setup .stepper button { width: 40px; height: 40px; }
+.match-setup .stepper span { width: 40px; font-size: 26px; }
+.setup-options { gap: 16px; }
+@media (min-width: 1100px) {
+  .match-setup { max-width: 1600px; height: 100vh; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 40px; padding: 0 40px 24px; }
+  .match-setup .phone-header { grid-column: 1 / -1; padding: 0; }
+  .match-setup .phone-body { display: contents; }
+  .match-setup .setup-games, .match-setup .setup-options, .match-setup .setup-players { min-height: 0; overflow: auto; }
+  .match-setup .setup-games { grid-column: 1; grid-row: 2 / 4; }
+  /* Options never scroll: the info bubble may hang over the column edge. */
+  .match-setup .setup-options { grid-column: 2; grid-row: 2 / 4; gap: 12px; overflow: visible; }
+  .match-setup .setup-players { grid-column: 3; grid-row: 2; }
+  .match-setup .p-actions { grid-column: 3; grid-row: 3; position: static; padding: 16px 0 0; background: none; }
+  .match-setup .setup-options .section { gap: 6px; }
+  .match-setup .list-row { min-height: 48px; }
+  .match-setup .steppers.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .match-setup .steppers.two .option-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .match-setup .steppers.two .muted { display: none; }
+  .match-setup .seg button, .match-setup .stepper button { height: clamp(34px, 5.5vh, 40px); }
+  .match-setup .stepper button { width: clamp(34px, 5.5vh, 40px); }
+}
 .game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .game-tile { text-align: left; min-height: 92px; border-radius: 18px; background: var(--card); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
 .game-tile b { font-size: 17px; font-weight: 800; }
@@ -361,10 +393,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .game-tile.on span, .game-tile.on small { color: var(--accent-ink); }
 .howto-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px 0 8px; border-radius: 9999px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 16px; white-space: nowrap; }
 .howto-btn .q { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
-.opt-label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }
+.opt-label { position: relative; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }
 .info-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 800; font-style: italic; font-family: Georgia, serif; }
 .info-btn.on { background: var(--text); color: #111; border-color: var(--text); }
-.info-text { flex-basis: 100%; font-size: 13px; color: var(--muted); line-height: 1.4; }
+/* Floats under the label, over the options below, so opening it never moves the layout. */
+.info-bubble { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; max-width: 360px; padding: 10px 12px; border-radius: 12px; background: var(--raised); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 13px; font-weight: 500; color: var(--soft); line-height: 1.4; }
 .howto-screen { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow: auto; }
 .howto { display: flex; flex-direction: column; gap: 18px; }
 .howto h3 { margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }

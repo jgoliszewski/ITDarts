@@ -19,7 +19,15 @@ describe('scoring', () => {
     expect(v.scores).toEqual([321, 501]);
     expect(v.current).toBe(1);
     expect(v.stats[0].lastVisits).toEqual([180]);
-    expect(v.stats[0].c180).toBe(1);
+    expect(v.stats[0].c100).toBe(1);
+  });
+
+  it('counts visits of 60–79, 80–99 and 100 or more once each', () => {
+    const miss = visit('S1');
+    const mine = [visit('T20', 'S1'), visit('T20', 'S19'), visit('T20', 'S20'), visit('T20', 'S20', 'S20'), visit('T19', 'S1', 'S1')];
+    const v = run(mine.flatMap(x => [...x, ...miss]));
+    expect(v.stats[0].lastVisits).toEqual([61, 79, 80, 100, 59]);
+    expect([v.stats[0].c60, v.stats[0].c80, v.stats[0].c100]).toEqual([2, 1, 1]);
   });
 
   it('fills missing darts with misses when the visit ends', () => {
@@ -215,7 +223,6 @@ describe('history stats', () => {
     expect(s.checkoutPct).toBe(33.3);
     expect(s.highestCheckout).toBe(12);
     expect(s.bestLeg).toBe(11);
-    expect(s.c180).toBe(2);
-    expect(s.c100).toBe(1);
+    expect([s.c60, s.c80, s.c100]).toEqual([0, 0, 3]); // 180, 180 and 129
   });
 });

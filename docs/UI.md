@@ -32,9 +32,10 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
   - W 121 na ostatniej turze próby nie ma „Setup”, bo cel i tak wraca do początku.
 - **Lista graczy:** stała kolejność rzucania. Aktywny gracz ma pomarańczowy wiersz. W wierszu: imię, legi, średnia z meczu i wynik.
+- **Kropki legów** (od 2026-10-27, ze zgłoszenia o nieczytelnym wyniku): trochę większe niż na początku. W pomarańczowym wierszu aktywnego gracza niewygrany leg jest jaśniejszą kropką, żeby nie zlewał się z wygranym. Liczby setów i legów obok kropek próbowaliśmy i odrzuciliśmy.
 - **Statystyki, tylko przy 2 graczach:**
   - karta z 6 ostatnimi wizytami aktywnego gracza;
-  - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 100+, 140+, 180.
+  - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 60+, 80+, 100+ (od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura).
   - Przy 3+ graczach zostaje sama lista. Bez first 9, checkout % i liczby lotek w legu.
 - **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
@@ -63,6 +64,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - Zakładka „All” to przełącznik Single/Double/Triple i liczby 1–20.
   - Pod obiema zakładkami są Miss, 25 i Bull.
   - Na laptopie obok zakładek jest zawsze widoczna duża tarcza z pogrubionymi pierścieniami. Małe białe kropki bez numerów (od 2026-10-27) pokazują, gdzie system odczytał lotki. Przy implementacji zamiast trzeciej zakładki, bo na dużym ekranie mieści się obok.
+  - Na laptopie lewa kolumna nie przewija się (od 2026-10-27): czerwony „Cancel” jest w nagłówku obok „read as”, podpowiedź o stuknięciu w tarczę jest jedną linią w dolnym marginesie okna, żeby tarcza miała całą wysokość, a klawisze zmniejszają się na niskich ekranach. Sprawdzone do 1280×720.
 - Poprawić da się każdą lotkę w bieżącej turze, czyli przed takeoutem. Starsze tury tylko przez Undo.
 - Wybór od razu podmienia rzut. Poprawiona lotka jest krótko podświetlona, także na Ekranie wyników.
 
@@ -70,11 +72,12 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 - **Nowy mecz** to jeden ekran Pilota:
   - kafelki gier;
-  - gracze z kolejnością (przeciąganie, „Shuffle”, ostatnio używani gracze jako duże przyciski, reszta graczy i „+ Guest” jako chipy; nowych graczy zakłada się tylko w „Players”);
+  - gracze z kolejnością (przeciąganie, „Shuffle”, ostatnio używani gracze jako duże przyciski, reszta graczy i „+ Guest” jako chipy; nowych graczy zakłada się tylko w „Players”). Od 2026-10-27 przyciski graczy są nad listą kolejności, więc dodawanie nie spycha ich w dół. Dodany gracz znika z przycisków, a pozostali przesuwają się na jego miejsce;
   - opcje gry z modułu i „Start match”.
+  - Na laptopie (od 1100 px, od 2026-10-27) to trzy kolumny bez przewijania: gry, opcje, gracze z „Start match” pod nimi. Wiersze graczy i odstępy w opcjach są tam niższe, a przy setach „First to” i „Legs per set” stoją obok siebie, żeby 8 graczy i mecz na sety zmieściły się od 1280×720 (sprawdzone też przy 1513×690, czyli laptop ze skalowaniem 125%). Na telefonie jedna kolumna jak dotąd.
 - **Opcje X01:**
-  - start score;
-  - check-in i check-out;
+  - start score: 201, 301 albo 501 (od 2026-10-27 zamiast 701);
+  - check-in i check-out (w kolejności Single, Double, Master; domyślnie Double);
   - match mode: Off, Legs lub Sets, z „First to N”;
   - bull-off: Off, „Closest to bull” lub zasady PDC.
 - **Gracze i goście:** opisani w [STATYSTYKI.md](STATYSTYKI.md).

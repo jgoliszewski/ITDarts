@@ -31,16 +31,16 @@ export interface X01Stats {
   checkoutAttempts: number;
   highestCheckout: number | null;
   bestLeg: number | null;
+  c60: number;
+  c80: number;
   c100: number;
-  c140: number;
-  c180: number;
 }
 
 const avg = (points: number, darts: number) => (darts > 0 ? Math.round((points / darts) * 300) / 100 : null);
 
 export function x01Stats(visits: StatVisit[]): X01Stats {
   let points = 0, darts = 0, p9 = 0, d9 = 0, p170 = 0, d170 = 0;
-  let hits = 0, attempts = 0, highest: number | null = null, c100 = 0, c140 = 0, c180 = 0;
+  let hits = 0, attempts = 0, highest: number | null = null, c60 = 0, c80 = 0, c100 = 0;
   const legDarts = new Map<number, number>();
   const won = new Set<number>();
 
@@ -56,9 +56,9 @@ export function x01Stats(visits: StatVisit[]): X01Stats {
       p170 += v.scored;
       d170 += v.dartsCount;
     }
-    if (v.scored === 180) c180++;
-    else if (v.scored >= 140) c140++;
-    else if (v.scored >= 100) c100++;
+    if (v.scored >= 100) c100++;
+    else if (v.scored >= 80) c80++;
+    else if (v.scored >= 60) c60++;
     legDarts.set(v.legId, (legDarts.get(v.legId) ?? 0) + v.dartsCount);
 
     if (!v.legFinished) continue;
@@ -91,8 +91,8 @@ export function x01Stats(visits: StatVisit[]): X01Stats {
     checkoutAttempts: attempts,
     highestCheckout: highest,
     bestLeg,
+    c60,
+    c80,
     c100,
-    c140,
-    c180,
   };
 }

@@ -1,12 +1,12 @@
 // Scoreboard parts for the minigames: hero, player list, game widgets, record screen and end screen.
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
-import { label, value } from '../../../games/darts.ts';
+import { label } from '../../../games/darts.ts';
 import { SECTORS } from '../../../games/race.ts';
 import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
 import type { MiniMatch } from '../match.ts';
-import { winnersOf } from '../match.ts';
+import { dartValue, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
 /** Range bar for Higher or Lower: 0–180 with the forbidden range in red and the visit sum. */
@@ -107,7 +107,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
               ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
               : <div key={i} className="dart-tile empty" />;
           }
-          const tile = <><span className="num">{label(d.dart)}</span><span className="lbl">{value(d.dart)}</span></>;
+          const tile = <><span className="num">{label(d.dart)}</span><span className="lbl">{dartValue(m, d.dart)}</span></>;
           const cls = `dart-tile ${visit.good[i] ? '' : 'dead'} ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>

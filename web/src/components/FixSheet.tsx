@@ -93,6 +93,8 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
     <div className="sheet-head">
       <b>{title}</b>
       <span>{adding ? who : <>read as <b style={{ color: 'var(--text)', fontSize: 14 }}>{label(target.dart!)}</b></>}</span>
+      {/* On the wide screen Cancel sits in the header so the keypad fits without scrolling. */}
+      {wide && <button className="btn danger" onClick={onClose}>Cancel</button>}
     </div>
   );
   const tabs = (
@@ -112,14 +114,10 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
             {head}
             {tabs}
             {pad}
-            <div className="spacer" />
-            <p className="muted" style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>
-              Or tap the board where the dart really landed. White markers show this visit. Tap outside the board for a miss.
-            </p>
-            <button className="btn block" style={{ height: 60 }} onClick={onClose}>Cancel</button>
           </div>
           <div className="board-wrap">
             <Dartboard marks={visit} selected={target.dart} onPick={onPick} size={900} />
+            <p className="muted">Or tap where the dart really landed, outside the board for a miss.</p>
           </div>
         </div>
       </>

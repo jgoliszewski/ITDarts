@@ -24,7 +24,8 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
-- **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
+- **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
+- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op, Bull-off) są widoczne od razu, zanim ktoś zostanie dodany (od 2026-10-27). Bez graczy „Start match” jest wyszarzony.
 
 ### Opis gry („How to play”)
 
@@ -132,12 +133,13 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
   - Suma poniżej dolnej granicy przesuwa dolną granicę na tę sumę (rzucone 15 daje zakres 15–60).
   - Suma równa granicy jest w zakresie, czyli przegrywa.
   - Zakres tylko rośnie.
+- **T1 liczy się zawsze jako zero** (od 2026-10-27), więc da się zejść poniżej 3. Nie jest pudłem: tura dalej trwa. Kafelek lotki pokazuje 0.
 - **Pudło** (lotka poza punktowanym polem, także odbita) to nieudana tura bez względu na sumę.
 - **Nieudana tura** od razu eliminuje, bez żyć. Zakres po eliminacji zostaje.
 - **Wszyscy odpadają w jednej rundzie:** jeśli w tej samej rundzie odpadną wszyscy pozostali, runda się nie liczy. Zakres wraca do stanu sprzed rundy i wszyscy grają dalej.
 - **Gra** kończy się, gdy zostaje jeden gracz, i daje mu punkt.
 - **Opcja „First to”** 1–5, domyślnie 1. Kolejna gra startuje z zakresem 26–45 i wszystkimi graczami, a zaczyna następny w kolejności. Mecz wygrywa ten, kto pierwszy zdobędzie N punktów.
-- **Ekran wyników:** hero pokazuje dużą sumę Tury na skali z czerwonym zakresem i kafelki lotek. Lista graczy pokazuje punkty, a wyeliminowani w bieżącej grze są wyszarzeni.
+- **Ekran wyników:** hero pokazuje dużą sumę Tury (przed pierwszą lotką 0) na skali z czerwonym zakresem i kafelki lotek. Lista graczy pokazuje punkty, a wyeliminowani w bieżącej grze są wyszarzeni.
 - **Wyzwalacze:** „Player eliminated”, „Game won”, „Match won”.
 - **Statystyki:** wygrane. Bez rekordu.
 - **Znany przypadek brzegowy:** gdy zakres dojdzie do 180 na górze i 3 na dole, nikt nie da rady go ominąć. Nie obsługujemy tego osobno, bo to praktycznie niemożliwe. Taką grę kończy „End match”.

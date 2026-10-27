@@ -9,7 +9,7 @@ import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
-const ROW = 64; // row height + gap, for dragging
+const GAP = 8; // between roster rows
 const LAST_GAME_KEY = 'itdarts.lastGame';
 // X01 keeps its original key so saved options survive.
 const optionsKey = (g: GameId) => (g === 'x01' ? 'itdarts.x01Options' : `itdarts.options.${g}`);
@@ -48,11 +48,14 @@ function Stepper({ value, min, max, onChange, label }: { value: number; min: num
 function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (r: RosterEntry[]) => void }) {
   const [drag, setDrag] = useState<{ from: number; dy: number } | null>(null);
   const start = useRef(0);
+  // Row height + gap, measured on grab: rows are lower on the laptop.
+  const row = useRef(64);
+  const ROW = row.current;
   const target = drag ? Math.max(0, Math.min(roster.length - 1, drag.from + Math.round(drag.dy / ROW))) : -1;
 
   const order = roster.map((_, i) => i);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
       {order.map(i => {
         const r = roster[i];
         let shift = 0;
@@ -69,7 +72,12 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
             <button className="icon-btn" style={{ background: 'transparent', color: 'var(--muted2)' }} aria-label={`Remove ${r.name}`}
               onClick={() => setRoster(roster.filter((_, j) => j !== i))}>{Icon.close(18)}</button>
             <span aria-label="Drag to reorder" role="button" style={{ color: '#5A5A60', display: 'flex', padding: '12px 8px', touchAction: 'none', cursor: 'grab' }}
-              onPointerDown={e => { (e.target as Element).setPointerCapture(e.pointerId); start.current = e.clientY; setDrag({ from: i, dy: 0 }); }}
+              onPointerDown={e => {
+                (e.target as Element).setPointerCapture(e.pointerId);
+                start.current = e.clientY;
+                row.current = (e.currentTarget.closest('.list-row') as HTMLElement).offsetHeight + GAP;
+                setDrag({ from: i, dy: 0 });
+              }}
               onPointerMove={e => drag && drag.from === i && setDrag({ from: i, dy: e.clientY - start.current })}
               onPointerUp={() => {
                 if (!drag) return;
@@ -100,28 +108,31 @@ function X01Section({ options, setOptions }: { options: X01Options; setOptions: 
   return (
     <>
       <div className="section"><Label def={x01Def('startScore')} text="Start score" />
-        <Seg value={options.startScore} options={[[301, '301'], [501, '501'], [701, '701']]} onChange={v => setOptions({ ...options, startScore: v })} />
+        <Seg value={options.startScore} options={[[201, '201'], [301, '301'], [501, '501']]} onChange={v => setOptions({ ...options, startScore: v })} />
       </div>
       <div className="section"><Label def={x01Def('checkIn')} text="Check-in" />
         <Seg value={options.checkIn} options={[['straight', 'Straight'], ['double', 'Double']]} onChange={v => setOptions({ ...options, checkIn: v })} />
       </div>
       <div className="section"><Label def={x01Def('checkOut')} text="Check-out" />
-        <Seg value={options.checkOut} options={[['double', 'Double'], ['single', 'Single'], ['master', 'Master']]} onChange={v => setOptions({ ...options, checkOut: v })} />
+        <Seg value={options.checkOut} options={[['single', 'Single'], ['double', 'Double'], ['master', 'Master']]} onChange={v => setOptions({ ...options, checkOut: v })} />
       </div>
       <div className="section"><Label def={x01Def('Match mode')} text="Match mode" />
         <Seg value={mm.kind} options={[['off', 'Off'], ['legs', 'Legs'], ['sets', 'Sets']]}
           onChange={k => setOptions({ ...options, matchMode: k === 'off' ? { kind: 'off' } : k === 'legs' ? { kind: 'legs', firstTo: 3 } : { kind: 'sets', firstTo: 2, legsPerSet: 3 } })} />
       </div>
+      {/* With sets the two steppers sit side by side on the laptop, so the options fit without scrolling. */}
       {mm.kind !== 'off' && (
-        <div className="option-row">
-          <div><b style={{ fontSize: 15 }}>First to</b><div className="muted" style={{ fontSize: 13 }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
-          <Stepper label={mm.kind} value={mm.firstTo} min={1} max={mm.kind === 'legs' ? 21 : 11} onChange={v => setOptions({ ...options, matchMode: { ...mm, firstTo: v } })} />
-        </div>
-      )}
-      {mm.kind === 'sets' && (
-        <div className="option-row">
-          <div><b style={{ fontSize: 15 }}>Legs per set</b><div className="muted" style={{ fontSize: 13 }}>first to this many legs wins a set</div></div>
-          <Stepper label="legs per set" value={mm.legsPerSet} min={1} max={7} onChange={v => setOptions({ ...options, matchMode: { ...mm, legsPerSet: v } })} />
+        <div className={`steppers ${mm.kind === 'sets' ? 'two' : ''}`}>
+          <div className="option-row">
+            <div><b style={{ fontSize: 15 }}>First to</b><div className="muted" style={{ fontSize: 13 }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
+            <Stepper label={mm.kind} value={mm.firstTo} min={1} max={mm.kind === 'legs' ? 21 : 11} onChange={v => setOptions({ ...options, matchMode: { ...mm, firstTo: v } })} />
+          </div>
+          {mm.kind === 'sets' && (
+            <div className="option-row">
+              <div><b style={{ fontSize: 15 }}>Legs per set</b><div className="muted" style={{ fontSize: 13 }}>first to this many legs wins a set</div></div>
+              <Stepper label="legs per set" value={mm.legsPerSet} min={1} max={7} onChange={v => setOptions({ ...options, matchMode: { ...mm, legsPerSet: v } })} />
+            </div>
+          )}
         </div>
       )}
       {mm.kind === 'off' && <div className="muted" style={{ fontSize: 13 }}>After each leg you choose: next leg or end the match.</div>}
@@ -134,7 +145,8 @@ function X01Section({ options, setOptions }: { options: X01Options; setOptions: 
 
 /** Minigame options straight from the module's definitions. */
 function MiniSection({ game, options, players, setOptions }: { game: GameId; options: Record<string, unknown>; players: number; setOptions: (o: Record<string, unknown>) => void }) {
-  const defs = GAMES[game].options.filter(d => d.key && (!d.when || d.when(options, players)));
+  // Options meant for 2+ players (Mode, Co-op, Bull-off) show before anyone is added, so the screen doesn't jump.
+  const defs = GAMES[game].options.filter(d => d.key && (!d.when || d.when(options, Math.max(players, 2))));
   return (
     <>
       {defs.map(d => (
@@ -218,13 +230,13 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
     : null;
 
   return (
-    <div className="phone" style={{ maxWidth: 640 }}>
+    <div className="phone match-setup">
       <header className="phone-header">
         <button className="icon-btn" style={{ background: 'transparent' }} aria-label="Back" onClick={onClose}>{Icon.back(22)}</button>
         <h1>New match</h1>
       </header>
       <div className="phone-body" style={{ gap: 24 }}>
-        <section className="section">
+        <section className="section setup-games">
           <div className="caps">Game</div>
           <div className="game-grid">
             {tiles.map(id => {
@@ -240,7 +252,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
           </div>
         </section>
 
-        <section className="section" style={{ gap: 16 }}>
+        <section className="section setup-options">
           <div className="option-row">
             <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{g.name}</h2>
             <HowToButton onClick={() => setHowTo(true)} />
@@ -250,12 +262,11 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
             : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
         </section>
 
-        <section className="section">
+        <section className="section setup-players">
           <div className="option-row">
             <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
             <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
           </div>
-          <RosterList roster={roster} setRoster={setRoster} />
           {recent.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
@@ -275,6 +286,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
             </div>
           )}
           {adding && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
+          <RosterList roster={roster} setRoster={setRoster} />
         </section>
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>

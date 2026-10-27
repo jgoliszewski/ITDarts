@@ -12,7 +12,7 @@ export * from './engine.ts';
 export * from './rules.ts';
 export * from './stats.ts';
 
-const START_SCORES = [101, 170, 301, 501, 701, 901];
+const START_SCORES = [101, 170, 201, 301, 501, 701, 901];
 
 /** Accepts options from the pilot, falling back to defaults for anything malformed. */
 export function normalizeOptions(input: unknown): X01Options {
@@ -42,13 +42,13 @@ export function isValidEvent(e: X01Event): boolean {
 }
 
 export const X01_OPTIONS: OptionDef<X01Options>[] = [
-  { key: 'startScore', label: 'Start score', info: 'Points everyone starts from.', choices: [[301, '301'], [501, '501'], [701, '701']] },
+  { key: 'startScore', label: 'Start score', info: 'Points everyone starts from.', choices: [[201, '201'], [301, '301'], [501, '501']] },
   { key: 'checkIn', label: 'Check-in', info: 'Double: your score starts counting with your first double.', choices: [['straight', 'Straight'], ['double', 'Double']] },
   {
     key: 'checkOut',
     label: 'Check-out',
-    info: 'How the last dart must land: on a double, on anything, or on a double or treble (Master).',
-    choices: [['double', 'Double'], ['single', 'Single'], ['master', 'Master']],
+    info: 'How the last dart must land: on anything (Single), on a double, or on a double or treble (Master).',
+    choices: [['single', 'Single'], ['double', 'Double'], ['master', 'Master']],
   },
   { label: 'Match mode', info: 'Off: play leg after leg until you end it. Legs or Sets: first to N wins the match.', choices: [] },
   BULL_OFF as OptionDef<X01Options>,
