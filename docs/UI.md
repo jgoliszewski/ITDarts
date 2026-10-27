@@ -97,7 +97,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku obok QR (na telefonie: status tarczy w nagłówku). New match, Players i Stats to przyciski na ekranie głównym.
 
 - **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
-- **Bez meczu:** Close app, czyli wyjście z kiosku.
+- **Bez meczu:** Close app, czyli wyjście z kiosku, z potwierdzeniem. Tylko na laptopie przy tarczy.
 - **Na telefonie** dochodzi Show QR, bo nagłówek telefonu nie ma przycisku QR.
 - **Bez kontroli:** Take control i Stats.
 - **Report a bug:** w każdym menu, także bez kontroli ([Zgłaszanie błędów](#zgłaszanie-błędów)).
