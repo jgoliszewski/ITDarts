@@ -7,6 +7,7 @@ import { Db } from '../db.ts';
 import type { Fx } from './index.ts';
 import { Effects } from './index.ts';
 import { slug } from './slug.ts';
+import { BASE_RULES, builtinId } from './builtin.ts';
 import { EffectsStore, formatEffectsFile, parseEffectsFile, soundType } from './store.ts';
 import { presetColor } from './wled.ts';
 
@@ -23,7 +24,8 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'itdarts-fx-'));
   fxDir = join(dir, 'effects');
   db = new Db(dir);
-  store = new EffectsStore(db, fxDir, dir);
+  // Without the base rules, so the tests start from an empty list; they get their own test below.
+  store = new EffectsStore(db, fxDir, dir, []);
 });
 afterEach(() => {
   store.close();
@@ -99,7 +101,7 @@ describe('effects store', () => {
     store.updateSettings({ volume: 40, callerVolume: 60, callerVoice: 'arthur', sounds: false, caller: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
     expect(() => store.updateSettings({ callerVoice: '../x' })).toThrow('caller voice');
     const file = JSON.parse(fileText());
-    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, callerVoice: 'arthur', swoosh: false, base: { lobby: 1, match: null, takeout: null, offline: null } });
+    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, callerVoice: 'arthur', swoosh: false, builtinVolume: {}, base: { lobby: 1, match: null, takeout: null, offline: null } });
     expect(fileText()).not.toContain('192.168.1.50');
     expect(store.settings()).toMatchObject({ sounds: false, caller: false, leds: true, wled: { address: '192.168.1.50' } });
   });
@@ -137,12 +139,54 @@ describe('effects store', () => {
       INSERT INTO effect_rules VALUES (1, 'Ton 80', 1, '[{"kind":"total","total":180,"checkout":"any"}]', '[7]', 10, 2, 0);
       INSERT OR REPLACE INTO settings (key, value) VALUES ('effects', '{"sounds":false,"leds":true,"volume":55,"swoosh":true,"wled":{"address":"10.0.0.9","base":{"lobby":1}}}');
     `);
-    store = new EffectsStore(db, fxDir, dir);
-    expect(store.sounds()).toMatchObject([{ id: 'ph-intro.wav', name: 'PH Intro', volume: 120, usedBy: 1 }]);
+    store = new EffectsStore(db, fxDir, dir, []);
+    expect(store.sounds().filter(s => !s.builtin)).toMatchObject([{ id: 'ph-intro.wav', name: 'PH Intro', volume: 120, usedBy: 1 }]);
     expect(store.rules()).toMatchObject([{ name: 'Ton 80', sounds: ['ph-intro.wav'], led: { preset: 10, seconds: 2 } }]);
     expect(existsSync(join(fxDir, 'sounds', 'ph-intro.wav'))).toBe(true);
     expect(store.settings()).toMatchObject({ sounds: false, volume: 55, wled: { address: '10.0.0.9', base: { lobby: 1 } } });
     expect(db.sql.prepare("SELECT name FROM sqlite_master WHERE name IN ('sounds', 'effect_rules')").all()).toEqual([]);
+  });
+
+  it('keeps every base rule in the file, takes over older starter rules, and refuses to delete them', () => {
+    // An older starter set: one rule by an alias without a sound, one by name with a file of its own.
+    const file = store.addSound(WAV, 'Piękny jesteś', 900);
+    store.createRule({ name: 'Ton+ finish', triggers: [{ kind: 'range', min: 100, max: 167, checkout: 'only' }] });
+    store.createRule({ name: 'bullseye', triggers: [{ kind: 'dart', dart: { n: 25, m: 2 } }], sounds: [file] });
+    store.createRule({ name: 'Mine', triggers: [t180] });
+    store.close();
+    store = new EffectsStore(db, fxDir, dir);
+    expect(store.rules()).toHaveLength(BASE_RULES.length + 1);
+    expect(store.rules().find(r => r.id === 'b-high-finish')).toMatchObject({ name: 'Ton+ finish', triggers: [{ kind: 'range', min: 100, max: 167, checkout: 'only' }], sounds: [builtinId('high-finish')], base: { name: 'High finish', sounds: [builtinId('high-finish')] } });
+    expect(store.rules().find(r => r.id === 'b-bullseye')).toMatchObject({ name: 'bullseye', sounds: [file] });
+    expect(store.rules().find(r => r.id === 'b-180')).toMatchObject({ name: '180', enabled: true, sounds: [builtinId('180')], led: null });
+    expect(store.rules().find(r => r.name === 'Mine')!.base).toBeUndefined();
+    expect(() => store.deleteRule('b-180')).toThrow('cannot be deleted');
+    store.updateRule('b-180', { name: 'Mine', enabled: false, triggers: [t180], sounds: [] });
+    expect(store.rules().find(r => r.id === 'b-180')).toMatchObject({ name: 'Mine', enabled: false, sounds: [] });
+
+    // A pulled file without a base rule gets it back.
+    const pulled = JSON.parse(fileText());
+    pulled.rules = pulled.rules.filter((r: { id: string }) => r.id !== 'b-bust');
+    writeFileSync(store.file, JSON.stringify(pulled));
+    store.load();
+    expect(store.rules().find(r => r.id === 'b-bust')).toMatchObject({ sounds: [builtinId('bust')] });
+    expect(JSON.parse(fileText()).rules.some((r: { id: string }) => r.id === 'b-bust')).toBe(true);
+  });
+
+  it('lists the built-in sounds, keeps their volumes in the file and lets rules use them', () => {
+    const sounds = store.sounds();
+    expect(sounds[0]).toMatchObject({ id: builtinId('treble-15'), file: '', builtin: { key: 'treble-15' }, volume: 100, usedBy: 0 });
+    expect(() => store.createRule({ triggers: [t180], sounds: ['builtin:nope'] })).toThrow('Unknown sound');
+    store.createRule({ triggers: [t180], sounds: [builtinId('180')] });
+    expect(store.sound(builtinId('180'))!.usedBy).toBe(1);
+    store.updateSound(builtinId('180'), { volume: 50 });
+    expect(store.sound(builtinId('180'))!.volume).toBe(50);
+    expect(JSON.parse(fileText()).settings.builtinVolume).toEqual({ '180': 50 });
+    store.updateSound(builtinId('180'), { volume: 100 });
+    expect(JSON.parse(fileText()).settings.builtinVolume).toEqual({});
+    expect(() => store.updateSound(builtinId('180'), { name: 'x' })).toThrow('keeps its name');
+    expect(() => store.deleteSound(builtinId('180'))).toThrow('cannot be deleted');
+    expect(() => parseEffectsFile(JSON.stringify({ version: 1, settings: { builtinVolume: { nope: 50 } } }))).toThrow('no built-in sound');
   });
 
   it('reads a preset colour from its first segment', () => {
@@ -182,15 +226,22 @@ describe('effects service', () => {
     expect(sent).toEqual([{ sound: { url: `/sounds/${store.sound(s)!.file}`, gain: 0.75 }, anim: '180', caller: null }]);
   });
 
+  it('sends a built-in sound as its id, with both volumes', () => {
+    store.updateSound(builtinId('180'), { volume: 50 });
+    store.createRule({ triggers: [t180], sounds: [builtinId('180')] });
+    fx.fire(visit180);
+    expect(sent[0].sound).toEqual({ url: 'builtin:180', gain: 0.4 });
+  });
+
   it('keeps quiet with Sounds off but still animates, and Test ignores the switch', () => {
     const s = store.addSound(MP3, 'x', 500);
     store.createRule({ triggers: [t180], sounds: [s] });
     store.updateSettings({ sounds: false });
     fx.fire(visit180);
     expect(sent).toEqual([{ sound: null, anim: '180', caller: null }]);
-    // Test plays an unsaved rule too.
-    fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }));
-    expect(sent[1].sound).not.toBeNull();
+    // Test hands the sound of an unsaved rule back to the page instead of the kiosk.
+    expect(fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }))).toMatchObject({ url: `/sounds/${s}` });
+    expect(sent).toHaveLength(1);
   });
 
   it('sends the caller’s lines with the caller volume, apart from the Sounds switch', () => {

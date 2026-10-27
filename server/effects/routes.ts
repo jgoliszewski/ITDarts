@@ -56,11 +56,10 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
   app.post('/api/effects/rules', async (req, reply) => guard(reply, () => ({ id: store.createRule(req.body) })));
   app.put<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.updateRule(req.params.id, req.body)));
   app.delete<{ Params: { id: string } }>('/api/effects/rules/:id', async (req, reply) => guard(reply, () => store.deleteRule(req.params.id)));
-  // Not a change, so no broadcast: only plays.
+  // Not a change, so no broadcast: the LEDs play here, the sound goes back to the page.
   app.post('/api/effects/test', async (req, reply) => {
     try {
-      fx.test(store.checkRule(req.body));
-      return { ok: true };
+      return { sound: fx.test(store.checkRule(req.body)) };
     } catch (e) {
       if (e instanceof UserError) return reply.code(400).send({ error: e.message });
       throw e;

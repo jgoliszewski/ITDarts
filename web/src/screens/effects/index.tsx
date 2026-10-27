@@ -19,9 +19,10 @@ function status(d: EffectsData): { ok: boolean; text: string } {
   return { ok: true, text: 'Sounds · LEDs on' };
 }
 
+/** Sounds counts the files; the built-in ones are always there. */
 function count(d: EffectsData, t: Tab): string {
   if (t === 'rules') return String(d.rules.length);
-  if (t === 'sounds') return String(d.sounds.length);
+  if (t === 'sounds') return String(d.sounds.filter(x => !x.builtin).length);
   if (t === 'leds') return d.presets.list ? `${d.presets.list.length} presets` : '';
   return '';
 }

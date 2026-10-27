@@ -5,6 +5,7 @@
     "callerVolume": 70,
     "callerVoice": "huw",
     "swoosh": true,
+    "builtinVolume": {},
     "base": {
       "lobby": 1,
       "match": 1,
@@ -178,7 +179,7 @@
   ],
   "rules": [
     {
-      "id": "rq2m6",
+      "id": "b-180",
       "name": "180",
       "enabled": true,
       "triggers": [
@@ -207,11 +208,13 @@
           "checkout": "any"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:180"
+      ],
       "led": null
     },
     {
-      "id": "ra9rw",
+      "id": "b-big-fish",
       "name": "Big Fish",
       "enabled": true,
       "triggers": [
@@ -221,11 +224,13 @@
           "checkout": "only"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:big-fish"
+      ],
       "led": null
     },
     {
-      "id": "r50bk",
+      "id": "b-high-finish",
       "name": "Ton+ finish",
       "enabled": true,
       "triggers": [
@@ -236,11 +241,13 @@
           "checkout": "only"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:high-finish"
+      ],
       "led": null
     },
     {
-      "id": "rfvmg",
+      "id": "b-madhouse",
       "name": "Madhouse",
       "enabled": true,
       "triggers": [
@@ -250,11 +257,13 @@
           "checkout": "only"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:madhouse"
+      ],
       "led": null
     },
     {
-      "id": "r5u2t",
+      "id": "b-checkout",
       "name": "Checkout",
       "enabled": true,
       "triggers": [
@@ -262,11 +271,13 @@
           "kind": "checkout"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:leg-won"
+      ],
       "led": null
     },
     {
-      "id": "r7bi2",
+      "id": "b-bust",
       "name": "Bust",
       "enabled": true,
       "triggers": [
@@ -274,11 +285,13 @@
           "kind": "bust"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:bust"
+      ],
       "led": null
     },
     {
-      "id": "r65kl",
+      "id": "b-clean-20s",
       "name": "Clean 20s",
       "enabled": true,
       "triggers": [
@@ -308,7 +321,7 @@
       "led": null
     },
     {
-      "id": "rqprb",
+      "id": "b-bed-and-breakfast",
       "name": "Bed and breakfast",
       "enabled": true,
       "triggers": [
@@ -425,7 +438,7 @@
       "led": null
     },
     {
-      "id": "ryf40",
+      "id": "b-ton-40",
       "name": "Ton 40",
       "enabled": true,
       "triggers": [
@@ -436,11 +449,13 @@
           "checkout": "any"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:ton-40"
+      ],
       "led": null
     },
     {
-      "id": "ryeqx",
+      "id": "b-ton",
       "name": "Ton",
       "enabled": true,
       "triggers": [
@@ -451,11 +466,13 @@
           "checkout": "any"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:ton"
+      ],
       "led": null
     },
     {
-      "id": "rx5ln",
+      "id": "b-no-score",
       "name": "No score",
       "enabled": true,
       "triggers": [
@@ -465,11 +482,13 @@
           "checkout": "no"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:no-score"
+      ],
       "led": null
     },
     {
-      "id": "rk2d2",
+      "id": "b-bullseye",
       "name": "Bullseye",
       "enabled": true,
       "triggers": [
@@ -487,7 +506,7 @@
       "led": null
     },
     {
-      "id": "r09al",
+      "id": "b-match-won",
       "name": "Match won",
       "enabled": true,
       "triggers": [
@@ -495,11 +514,13 @@
           "kind": "matchWon"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:match-won"
+      ],
       "led": null
     },
     {
-      "id": "rspo5",
+      "id": "b-set-won",
       "name": "Set won",
       "enabled": true,
       "triggers": [
@@ -507,11 +528,13 @@
           "kind": "setWon"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:set-won"
+      ],
       "led": null
     },
     {
-      "id": "rjspe",
+      "id": "b-game-on",
       "name": "Game on",
       "enabled": true,
       "triggers": [
@@ -519,11 +542,13 @@
           "kind": "matchStart"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:game-on"
+      ],
       "led": null
     },
     {
-      "id": "r4fle",
+      "id": "b-new-record",
       "name": "New record",
       "enabled": true,
       "triggers": [
@@ -532,11 +557,13 @@
           "event": "newRecord"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:new-record"
+      ],
       "led": null
     },
     {
-      "id": "r1l1a",
+      "id": "b-white-horse",
       "name": "White Horse",
       "enabled": true,
       "triggers": [
@@ -545,11 +572,13 @@
           "event": "whiteHorse"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:white-horse"
+      ],
       "led": null
     },
     {
-      "id": "ru0o0",
+      "id": "b-player-out",
       "name": "Player out",
       "enabled": true,
       "triggers": [
@@ -558,7 +587,9 @@
           "event": "eliminated"
         }
       ],
-      "sounds": [],
+      "sounds": [
+        "builtin:player-out"
+      ],
       "led": null
     },
     {
@@ -589,6 +620,114 @@
       ],
       "sounds": [
         "czesio-dziendobry-ztigd8p.mp3"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-15",
+      "name": "Treble 15",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 15,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-15"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-16",
+      "name": "Treble 16",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 16,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-16"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-17",
+      "name": "Treble 17",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 17,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-17"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-18",
+      "name": "Treble 18",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 18,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-18"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-19",
+      "name": "Treble 19",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 19,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-19"
+      ],
+      "led": null
+    },
+    {
+      "id": "b-treble-20",
+      "name": "Treble 20",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "dart",
+          "dart": {
+            "n": 20,
+            "m": 3
+          }
+        }
+      ],
+      "sounds": [
+        "builtin:treble-20"
       ],
       "led": null
     }

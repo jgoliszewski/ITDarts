@@ -9,6 +9,8 @@ import { isValidTrigger, normalizeTrigger } from '../../games/effects.ts';
 import type { Db } from '../db.ts';
 import { UserError } from '../db.ts';
 import { slug } from './slug.ts';
+import type { BaseRule } from './builtin.ts';
+import { BASE_RULES, BUILTIN_SOUNDS, builtinId, builtinKey, isBuiltinSound } from './builtin.ts';
 
 export type BaseState = 'lobby' | 'match' | 'takeout' | 'offline';
 export const BASE_STATES: BaseState[] = ['lobby', 'match', 'takeout', 'offline'];
@@ -26,6 +28,8 @@ export interface EffectsSettings {
   callerVoice: string;
   /** The built-in turn sound (first a swoosh, now a marimba arpeggio); off for those who put their own sound on “Takeout end” (repo). */
   swoosh: boolean;
+  /** Volume of a built-in sound in %, by key, only where it is not 100 (repo). */
+  builtinVolume: Record<string, number>;
   wled: {
     /** host or host:port; empty when there is no controller (this laptop). */
     address: string;
@@ -35,10 +39,13 @@ export interface EffectsSettings {
 }
 
 export interface Sound {
-  /** The file name in effects/sounds/, served at /sounds/<file>; rules point at it. */
+  /** The file name in effects/sounds/, served at /sounds/<file>, or `builtin:<key>` for a sound the kiosk synthesizes; rules point at it. */
   id: string;
   name: string;
+  /** Empty for a built-in sound. */
   file: string;
+  /** The key of a built-in sound, with what it was made for; its volume is the only thing to change. */
+  builtin: { key: string; info: string } | null;
   /** 0–200 %: files from different sources differ in loudness. */
   volume: number;
   durationMs: number;
@@ -56,14 +63,16 @@ export interface Rule {
   sounds: string[];
   /** WLED preset and how long it plays. */
   led: { preset: number; seconds: number } | null;
+  /** What “Reset to default” brings back; only on a base rule (builtin.ts). */
+  base?: { name: string; triggers: Trigger[]; sounds: string[] };
 }
 
-export type RuleInput = Omit<Rule, 'id'>;
+export type RuleInput = Omit<Rule, 'id' | 'base'>;
 
 /** What effects/effects.json holds. Keys are written in this order. */
 interface EffectsFile {
   version: 1;
-  settings: { volume: number; callerVolume: number; callerVoice: string; swoosh: boolean; base: Record<BaseState, number | null> };
+  settings: { volume: number; callerVolume: number; callerVoice: string; swoosh: boolean; builtinVolume: Record<string, number>; base: Record<BaseState, number | null> };
   sounds: { file: string; name: string; volume: number; durationMs: number }[];
   rules: Rule[];
 }
@@ -79,12 +88,12 @@ interface LocalSettings {
 export const MAX_SOUND_BYTES = 2 * 1024 * 1024;
 export const MAX_SOUND_MS = 10_000;
 export const SOUND_FILE = /^[a-z0-9][a-z0-9-]*\.(mp3|wav|ogg)$/;
-const RULE_ID = /^[a-z0-9]{1,16}$/;
+const RULE_ID = /^[a-z0-9][a-z0-9-]{0,23}$/;
 export const CALLER_VOICE = /^[a-z0-9-]{1,32}$/;
 
 const EMPTY: EffectsFile = {
   version: 1,
-  settings: { volume: 80, callerVolume: 80, callerVoice: 'brian', swoosh: true, base: { lobby: null, match: null, takeout: null, offline: null } },
+  settings: { volume: 80, callerVolume: 80, callerVoice: 'brian', swoosh: true, builtinVolume: {}, base: { lobby: null, match: null, takeout: null, offline: null } },
   sounds: [],
   rules: [],
 };
@@ -115,14 +124,14 @@ function checkPreset(v: unknown): number | null {
   return v === null || v === undefined ? null : int(v, 1, 250) ?? fail('Preset is 1–250');
 }
 
-/** A rule's body, checked; `sounds` must name files in the library. */
+/** A rule's body, checked; `sounds` must name files in the library or built-in sounds. */
 function checkRuleBody(input: unknown, files: Set<string>): RuleInput {
   const r = (input ?? {}) as Record<string, unknown>;
   const name = typeof r.name === 'string' ? r.name.trim().slice(0, 40) : '';
   if (!Array.isArray(r.triggers) || r.triggers.length === 0) fail('Pick at least one trigger');
   if (!r.triggers.every(isValidTrigger)) fail('Invalid trigger');
   const sounds = Array.isArray(r.sounds) ? [...new Set(r.sounds)] : [];
-  if (!sounds.every(f => typeof f === 'string' && files.has(f))) fail('Unknown sound');
+  if (!sounds.every(f => typeof f === 'string' && (files.has(f) || isBuiltinSound(f)))) fail('Unknown sound');
   let led: Rule['led'] = null;
   if (r.led && typeof r.led === 'object') {
     const l = r.led as Record<string, unknown>;
@@ -157,6 +166,10 @@ export function parseEffectsFile(text: string): EffectsFile {
     if ('callerVolume' in s) settings.callerVolume = int(s.callerVolume, 0, 100) ?? fail('callerVolume is 0–100');
     if ('callerVoice' in s) settings.callerVoice = typeof s.callerVoice === 'string' && CALLER_VOICE.test(s.callerVoice) ? s.callerVoice : fail('callerVoice is a folder name in assets/caller, like brian');
     if ('swoosh' in s) settings.swoosh = s.swoosh === true;
+    for (const [k, v] of Object.entries((s.builtinVolume ?? {}) as Record<string, unknown>)) {
+      if (!isBuiltinSound(builtinId(k))) fail(`builtinVolume: no built-in sound "${k}"`);
+      settings.builtinVolume[k] = int(v, 0, 200) ?? fail(`builtinVolume.${k} is 0–200`);
+    }
     const base = (s.base ?? {}) as Record<string, unknown>;
     for (const b of BASE_STATES) settings.base[b] = checkPreset(base[b]);
   });
@@ -184,7 +197,7 @@ export function parseEffectsFile(text: string): EffectsFile {
 export function formatEffectsFile(f: EffectsFile): string {
   const out: EffectsFile = {
     version: 1,
-    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, swoosh: f.settings.swoosh, base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
+    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, swoosh: f.settings.swoosh, builtinVolume: Object.fromEntries(Object.entries(f.settings.builtinVolume).filter(([, v]) => v !== 100).sort()), base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
     sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs })),
     rules: f.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, triggers: r.triggers.map(normalizeTrigger), sounds: r.sounds, led: r.led && { preset: r.led.preset, seconds: r.led.seconds } })),
   };
@@ -205,16 +218,38 @@ export class EffectsStore {
   private watcher: FSWatcher | null = null;
   private timer: NodeJS.Timeout | null = null;
 
-  constructor(private db: Db, readonly dir: string, dataDir: string) {
+  /** `baseRules` is a parameter for the tests; the app always has BASE_RULES. */
+  constructor(private db: Db, readonly dir: string, dataDir: string, private baseRules: BaseRule[] = BASE_RULES) {
     this.file = join(dir, 'effects.json');
     this.soundsDir = join(dir, 'sounds');
     mkdirSync(this.soundsDir, { recursive: true });
     const moved = !existsSync(this.file);
     if (moved) {
       this.data = this.fromDb(dataDir);
+      this.ensureBase();
       this.save();
     } else this.load();
     this.dropOldTables(moved);
+  }
+
+  /**
+   * Every base rule is in the file (docs/EFEKTY.md, Reguły bazowe). A missing one is added with its default sound; an
+   * older starter rule with the same name (or an alias) becomes it and keeps what it has, apart from an empty sound list,
+   * which gets the default. Saves when anything changed.
+   */
+  private ensureBase() {
+    let changed = false;
+    for (const b of this.baseRules) {
+      if (this.data.rules.some(r => r.id === b.id)) continue;
+      const names = [b.name, ...(b.aliases ?? [])].map(n => n.toLowerCase());
+      const old = this.data.rules.find(r => !this.baseRules.some(x => x.id === r.id) && names.includes(r.name.trim().toLowerCase()));
+      if (old) {
+        old.id = b.id;
+        if (old.sounds.length === 0) old.sounds = [b.sound];
+      } else this.data.rules.push({ id: b.id, name: b.name, enabled: true, triggers: b.triggers.map(normalizeTrigger), sounds: [b.sound], led: null });
+      changed = true;
+    }
+    if (changed) this.save();
   }
 
   // ---------- the file ----------
@@ -233,6 +268,7 @@ export class EffectsStore {
       this.data = parseEffectsFile(text);
       this.written = text;
       this.error = null;
+      this.ensureBase();
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e);
     }
@@ -282,6 +318,7 @@ export class EffectsStore {
     const s = this.data.settings;
     return {
       sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice, swoosh: s.swoosh,
+      builtinVolume: { ...s.builtinVolume },
       wled: { address: l.address, base: { ...s.base } },
     };
   }
@@ -322,7 +359,10 @@ export class EffectsStore {
   // ---------- rules ----------
 
   rules(): Rule[] {
-    return structuredClone(this.data.rules);
+    return this.data.rules.map(r => {
+      const b = this.baseRules.find(x => x.id === r.id);
+      return structuredClone(b ? { ...r, base: { name: b.name, triggers: b.triggers.map(normalizeTrigger), sounds: [b.sound] } } : r);
+    });
   }
 
   /** Checks a rule from the page; also used by “Test whole rule”, which plays a rule that is not saved. */
@@ -352,6 +392,7 @@ export class EffectsStore {
   }
 
   deleteRule(id: string) {
+    if (this.baseRules.some(b => b.id === id)) fail('A built-in rule cannot be deleted. Switch it off instead');
     const before = this.data.rules.length;
     this.data.rules = this.data.rules.filter(r => r.id !== id);
     if (this.data.rules.length !== before) this.save();
@@ -359,11 +400,16 @@ export class EffectsStore {
 
   // ---------- sound library ----------
 
+  /** Built-in sounds first, in their own order, then the files by name. */
   sounds(): Sound[] {
-    const used = (file: string) => this.data.rules.filter(r => r.sounds.includes(file)).length;
-    return this.data.sounds
-      .map(s => ({ id: s.file, name: s.name, file: s.file, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
+    const used = (id: string) => this.data.rules.filter(r => r.sounds.includes(id)).length;
+    const builtin: Sound[] = BUILTIN_SOUNDS.map(b => ({
+      id: builtinId(b.key), name: b.name, file: '', builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? 100, durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
+    }));
+    const files: Sound[] = this.data.sounds
+      .map(s => ({ id: s.file, name: s.name, file: s.file, builtin: null, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }) || a.file.localeCompare(b.file));
+    return [...builtin, ...files];
   }
 
   sound(id: string): Sound | null {
@@ -394,6 +440,14 @@ export class EffectsStore {
 
   updateSound(id: string, patch: unknown) {
     const p = (patch ?? {}) as Record<string, unknown>;
+    const key = builtinKey(id);
+    if (key !== null) {
+      if (!isBuiltinSound(id)) fail('No such sound');
+      if ('name' in p) fail('A built-in sound keeps its name');
+      if ('volume' in p) this.data.settings.builtinVolume[key] = int(p.volume, 0, 200) ?? fail('Volume is 0–200 %');
+      this.save();
+      return;
+    }
     const s = this.data.sounds.find(x => x.file === id) ?? fail('No such sound');
     if ('name' in p) s.name = cleanSoundName(p.name);
     if ('volume' in p) s.volume = int(p.volume, 0, 200) ?? fail('Volume is 0–200 %');
@@ -401,6 +455,7 @@ export class EffectsStore {
   }
 
   deleteSound(id: string) {
+    if (builtinKey(id) !== null) fail('A built-in sound cannot be deleted');
     const s = this.sound(id);
     if (!s) return;
     if (s.usedBy > 0) fail(`Used by ${s.usedBy === 1 ? 'a rule' : `${s.usedBy} rules`}`);

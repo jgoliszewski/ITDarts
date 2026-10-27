@@ -5,7 +5,7 @@ import { GAME_EVENT_LABELS, MAX_LEFT, SIMPLE_LABELS, priority, triggerLabel } fr
 import type { Rule, RuleInput } from '../../../../server/effects/store.ts';
 import { Dialog, Icon } from '../../components/ui.tsx';
 import { store } from '../../util.ts';
-import { playFile } from '../../sound.ts';
+import { playSound } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call, go, presetName, presetOf, setDirtyCheck, tryLed } from './api.ts';
 import { Chevron, CondPicker, Dot, PatternPicker, PresetPicker, SearchField, Seg, Sheet, Stepper, Switch, matchesQuery } from './parts.tsx';
@@ -239,7 +239,7 @@ function SoundPicker({ d, wide, taken, onPick, onClose }: { d: EffectsData; wide
       <div className="fx-list">
         {shown.map(s => (
           <div key={s.id} className="fx-pick">
-            <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playFile(`/sounds/${s.file}`, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
+            <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
             <button className="fx-pick-main" onClick={() => { onPick(s.id); onClose(); }}>
               <span className="grow">{s.name}</span><span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
             </button>
@@ -289,6 +289,9 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
     }
   };
 
+  // A base rule (docs/EFEKTY.md, Reguły bazowe): no Delete, and Reset brings back its name, triggers and sound.
+  const base = rule?.base;
+  const changed = base && JSON.stringify([r.name, r.enabled, r.triggers, r.sounds]) !== JSON.stringify([base.name, true, base.triggers, base.sounds]);
   const selected = r.triggers[Math.min(chip, r.triggers.length - 1)];
   const preset = r.led && presetOf(d, r.led.preset);
   const off = [!d.settings.sounds && r.sounds.length ? 'Sounds' : null, !d.settings.leds && r.led ? 'LEDs' : null].filter(Boolean);
@@ -299,7 +302,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
       {!wide && (
         <header className="fx-editor-head">
           <button className="btn ghost" onClick={() => go(list)}>Cancel</button>
-          <b>{rule ? 'Edit rule' : 'New rule'}</b>
+          <b>{rule ? (rule.base ? 'Built-in rule' : 'Edit rule') : 'New rule'}</b>
           <button className="btn primary" style={{ height: 40 }} onClick={save} disabled={!isDirty && !!rule}>Save</button>
         </header>
       )}
@@ -337,7 +340,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
             if (!s) return null;
             return (
               <div key={id} className="fx-variant">
-                <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playFile(`/sounds/${s.file}`, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
+                <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
                 <span className="grow">{s.name}</span>
                 <span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
                 <button className="icon-btn" aria-label={`Remove ${s.name}`} onClick={() => set({ sounds: r.sounds.filter(x => x !== id) })}>{Icon.close(16)}</button>
@@ -365,12 +368,13 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
       </section>
 
       <div className="fx-actions">
-        {rule && <button className="btn danger" onClick={() => setAskDelete(true)}>Delete</button>}
+        {rule && !base && <button className="btn danger" onClick={() => setAskDelete(true)}>Delete</button>}
+        {changed && <button className="btn" onClick={() => { set({ name: base.name, enabled: true, triggers: base.triggers, sounds: base.sounds }); setChip(0); }}>Reset to default</button>}
         <span className="spacer" />
-        <button className="btn" disabled={!canTest} onClick={() => call('POST', '/api/effects/test', r)}>{Icon.play(16)}Test whole rule</button>
+        <button className="btn" disabled={!canTest} onClick={() => call<{ sound: { url: string; gain: number } | null }>('POST', '/api/effects/test', r).then(res => res?.sound && playSound(res.sound.url, res.sound.gain))}>{Icon.play(16)}Test whole rule</button>
         {wide && <button className="btn primary" onClick={save} disabled={!isDirty && !!rule}>Save</button>}
       </div>
-      {off.length > 0 && <p className="muted" style={{ margin: 0, fontSize: 13 }}>{off.join(' and ')} {off.length > 1 ? 'are' : 'is'} off on the pilot; Test plays anyway.</p>}
+      <p className="muted" style={{ margin: 0, fontSize: 13 }}>Test plays the sound on this device and the LEDs on the controller{off.length > 0 ? `, although ${off.join(' and ')} ${off.length > 1 ? 'are' : 'is'} off on the pilot` : ''}.</p>
 
       {sheet === 'trigger' && <TriggerPicker wide={wide} onClose={() => setSheet(null)} onPick={t => { set({ triggers: [...r.triggers, t] }); setChip(r.triggers.length); }} />}
       {sheet === 'sound' && <SoundPicker d={d} wide={wide} taken={r.sounds} onClose={() => setSheet(null)} onPick={id => set({ sounds: [...r.sounds, id] })} />}

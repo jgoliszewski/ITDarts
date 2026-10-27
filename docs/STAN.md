@@ -40,7 +40,7 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
   - **Strona `/effects`** w układzie z grillingu ([EFEKTY.md](EFEKTY.md#układ-strony)), kod w `web/src/screens/effects/`:
     - zakładki Rules, Sounds, LEDs i Playback z własnymi adresami, na laptopie (od 1100 px) z boku, z listą reguł i edytorem obok;
     - edytor „When → Then” z chipami wyzwalaczy, arkuszem dodawania i „Discard changes?”, także przy przycisku wstecz;
-    - „Test whole rule” gra niezapisaną regułę (`POST /api/effects/test`);
+    - „Test whole rule” gra niezapisaną regułę (`POST /api/effects/test`): dźwięk na urządzeniu, które kliknęło, ledy na kontrolerze (od 2026-10-27);
     - presety mają kolor z `presets.json`, a każdy da się wypróbować przez „Try” (`POST /api/wled/preview`).
     - Sprawdzone w przeglądarce na telefonie (375 px) i laptopie (1280 px) z atrapą WLED.
   - **Pilot:** Sounds, Caller i LEDs w menu, trzymane przez serwer.
@@ -58,7 +58,9 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 
 - **Caller w 121 i nowa karta tury** (2026-10-27, ze zgłoszeń): caller w 121 jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)); karta tury z dużymi kafelkami lotek i stanu we wszystkich grach ([UI.md](UI.md#tura-i-takeout)); w 121 kafelek z lotkami do końca podejścia ([GRY.md](GRY.md#121)). Karta 121 i ATC sprawdzona zrzutem na osobnej instancji. Callera 121 nikt jeszcze nie słyszał w kiosku.
 
-  Testy: `npm test` (118), `npm run typecheck`.
+- **Reguły bazowe i dźwięki wbudowane** (2026-10-27, grilling w sesji, [EFEKTY.md](EFEKTY.md#dźwięk)): 27 dźwięków syntezowanych w kiosku (`server/effects/builtin.ts`, `web/src/sound.ts`), sekcja „Built-in” w Sounds, 24 reguły bazowe ze stałymi id `b-…` (w tym Treble 15–20), „Reset to default” i brak „Delete” w edytorze. `effects.json` przepisany: starsze reguły startowe dostały stałe id i domyślne dźwięki, a własne pliki zostały jako nadpisania. Sprawdzone testami, zrzutami `/effects` i odsłuchem w headless Chromium bez błędów. Nikt jeszcze nie słyszał ich w kiosku ani w meczu.
+
+  Testy: `npm test` (123), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -72,6 +74,7 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
 - [ ] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.
+- [ ] Dźwięki wbudowane w meczu: głośność względem plików i callera, czy Treble po każdej trójce nie męczy w X01, czy 180 i Match won nie przesterowują na głośnikach.
 - [ ] Przeniesienie konfiguracji: push z domu, pull w pracy przy działającym serwerze. Stany bazowe wskazują presety atrapy (1–4), więc w pracy trzeba je raz ustawić pod prawdziwy kontroler.
 
 ## Do sprawdzenia z prawdziwą tarczą

@@ -2,11 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Sound } from '../../../../server/effects/store.ts';
 import { Dialog, Icon, toast } from '../../components/ui.tsx';
-import { playFile } from '../../sound.ts';
+import { playFile, playSound } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call } from './api.ts';
 import { slug } from '../../../../server/effects/slug.ts';
-import { SearchField, Sheet, matchesQuery } from './parts.tsx';
+import { Chevron, SearchField, Sheet, matchesQuery } from './parts.tsx';
 
 // Each file stays in the repo's git history (docs/EFEKTY.md, Konfiguracja w repo).
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -155,21 +155,25 @@ function SoundMenu({ d, s, wide, onClose }: { d: EffectsData; s: Sound; wide: bo
   );
 }
 
-function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu: () => void }) {
+/** A library sound, or a built-in one (docs/EFEKTY.md, Dźwięki wbudowane): the same row without the “⋯” menu. */
+function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu?: () => void }) {
   const [volume, setVolume] = useState(s.volume);
   useEffect(() => setVolume(s.volume), [s.volume]);
   const commit = () => volume !== s.volume && call('PUT', `/api/sounds/${s.id}`, { volume }).then(d.reload);
+  const used = s.usedBy ? `used by ${s.usedBy} ${s.usedBy === 1 ? 'rule' : 'rules'}` : 'not used yet';
   return (
     <div className="fx-sound">
       <div className="fx-sound-top">
-        <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playFile(`/sounds/${s.file}`, (d.settings.volume / 100) * (volume / 100))}>{Icon.play(18)}</button>
+        <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (volume / 100))}>{Icon.play(18)}</button>
         <span className="grow">
           <b>{s.name}</b>
-          <span className="muted">{(s.durationMs / 1000).toFixed(1)} s · {s.usedBy ? `used by ${s.usedBy} ${s.usedBy === 1 ? 'rule' : 'rules'}` : 'not used yet'}</span>
+          <span className="muted">{s.builtin ? `${s.builtin.info} · ${used}` : `${(s.durationMs / 1000).toFixed(1)} s · ${used}`}</span>
         </span>
-        <button className="icon-btn" aria-label={`More for ${s.name}`} onClick={onMenu}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
-        </button>
+        {onMenu && (
+          <button className="icon-btn" aria-label={`More for ${s.name}`} onClick={onMenu}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
+          </button>
+        )}
       </div>
       <label className="fx-volume">
         <span>Volume {volume}%</span>
@@ -182,21 +186,31 @@ function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu: () => vo
 export function SoundsTab({ d, wide }: { d: EffectsData; wide: boolean }) {
   const [menu, setMenu] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  const open = d.sounds.find(s => s.id === menu);
-  const shown = d.sounds.filter(s => matchesQuery(q, s.name, s.file));
+  const [builtinOpen, setBuiltinOpen] = useState(false);
+  const files = d.sounds.filter(s => !s.builtin);
+  const builtin = d.sounds.filter(s => s.builtin);
+  const open = files.find(s => s.id === menu);
+  const shown = files.filter(s => matchesQuery(q, s.name, s.file));
+  const shownBuiltin = builtin.filter(s => matchesQuery(q, s.name, s.builtin!.info));
   return (
     <div className="fx-col">
       {wide && <h2 className="fx-h">Sounds</h2>}
       <Upload d={d} wide={wide} />
+      <SearchField value={q} onChange={setQ} placeholder="Search sounds" />
       <div className="option-row">
-        <span className="caps">Library · {q ? `${shown.length} of ${d.sounds.length}` : d.sounds.length} {d.sounds.length === 1 ? 'sound' : 'sounds'}</span>
+        <span className="caps">Library · {q ? `${shown.length} of ${files.length}` : files.length} {files.length === 1 ? 'sound' : 'sounds'}</span>
         <span className="muted">▶ plays on this device</span>
       </div>
-      {d.sounds.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search sounds" />}
-      {d.sounds.length === 0 && <p className="muted" style={{ margin: 0 }}>No sounds yet. Rules pick their sounds from here.</p>}
-      {d.sounds.length > 0 && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
+      {files.length === 0 && <p className="muted" style={{ margin: 0 }}>No files yet. Rules pick their sounds from here and from the built-in ones below.</p>}
+      {files.length > 0 && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
       {shown.map(s => <SoundRow key={s.id} d={d} s={s} onMenu={() => setMenu(s.id)} />)}
       {open && <SoundMenu key={open.id} d={d} s={open} wide={wide} onClose={() => setMenu(null)} />}
+      <button className="option-row fx-group" aria-expanded={builtinOpen || !!q} onClick={() => setBuiltinOpen(!builtinOpen)}>
+        <span className="caps">Built-in · {builtin.length} sounds</span>
+        <span className="muted">made by the kiosk, no files<Chevron /></span>
+      </button>
+      {(builtinOpen || q) && shownBuiltin.map(s => <SoundRow key={s.id} d={d} s={s} />)}
+      {(builtinOpen || q) && shownBuiltin.length === 0 && <p className="muted" style={{ margin: 0 }}>No built-in sound matches “{q}”.</p>}
     </div>
   );
 }

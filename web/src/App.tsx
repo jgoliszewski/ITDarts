@@ -7,7 +7,7 @@ import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
 import { endsNormally, isX01, visitDarts } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
-import { playCaller, playFile } from './sound.ts';
+import { playCaller, playSound } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -118,7 +118,7 @@ function Main({ s }: { s: ClientState }) {
   isLocal.current = s.you.isLocal;
   useEffect(() => onFx(fx => {
     if (!isLocal.current) return;
-    const effect = fx.sound ? playFile(fx.sound.url, fx.sound.gain) : undefined;
+    const effect = fx.sound ? playSound(fx.sound.url, fx.sound.gain) : undefined;
     if (fx.caller) playCaller(fx.caller.urls, fx.caller.gain, effect);
   }), []);
 

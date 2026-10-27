@@ -113,8 +113,16 @@ Jeden lub więcej Wyzwalaczy z przypisanym dźwiękiem i presetem ledów, wyklik
 _Avoid_: efekt (w tym znaczeniu), akcja
 
 **Biblioteka dźwięków**:
-Wspólna lista wgranych plików dźwiękowych, z której Reguły wybierają dźwięki.
+Wspólna lista wgranych plików dźwiękowych i Dźwięków wbudowanych, z której Reguły wybierają dźwięki.
 _Avoid_: sound pack, paczka
+
+**Dźwięk wbudowany**:
+Dźwięk syntezowany w kiosku (marimba, dzwonki, kalimba), bez pliku, w kodzie. W UI „Built-in”. Nie da się go usunąć ani przemianować, tylko ściszyć.
+_Avoid_: default sound, preset dźwięku
+
+**Reguła bazowa**:
+Reguła z listy w kodzie, zawsze obecna w `effects.json`, z Dźwiękiem wbudowanym jako domyślnym. Da się ją wyłączyć i nadpisać, a „Reset to default” przywraca definicję. W UI „Built-in rule”.
+_Avoid_: default, szablon, reguła systemowa
 
 **Caller**:
 Głos sędziego w X01: „game on”, wynik tury, „no score”, „you require” i game shot. Zaszyty w kodzie, z nagraniami w `assets/caller/`; da się go tylko włączyć lub wyłączyć i ściszyć.

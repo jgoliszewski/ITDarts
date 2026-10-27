@@ -62,7 +62,15 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - start meczu, start legu, takeout i tarcza są na samym końcu.
   - Przy remisie priorytetów gra starsza reguła.
 - **„Dowolna liczba”** w lotce i kombinacji to 1–20, bez bulla i pudła. Bull i 25 wybiera się osobno.
-- **Zestaw startowy** (2026-10-26), zapisany w `effects/effects.json`, bez dźwięków. Kolejność ma znaczenie, bo przy remisie priorytetów gra reguła wcześniejsza:
+- **Reguły bazowe** (grilling 2026-10-27): zestaw startowy z 2026-10-26 stał się listą w kodzie (`BASE_RULES` w `server/effects/builtin.ts`), każda reguła z dźwiękiem wbudowanym jako domyślnym.
+  - Mają stałe id `b-…`, więc ta sama reguła w domu i w pracy to jedna reguła. Serwer przy każdym wczytaniu pliku dopisuje brakujące, a nowa reguła bazowa to zmiana w kodzie.
+  - Nie da się ich usunąć (API odmawia), da się wyłączyć i edytować jak każdą: nazwę, wyzwalacze, dźwięki (także dołożyć własne pliki jako warianty) i ledy. W edytorze zamiast „Delete” jest nagłówek „Built-in rule”.
+  - „Reset to default” pojawia się, gdy nazwa, wyzwalacze, dźwięki albo przełącznik różnią się od definicji, i przywraca je; ledów nie rusza, bo to preset konkretnego kontrolera. Działa jak edycja: zapis przez „Save”.
+  - Zakładki „Default” nie ma: reguły bazowe są na liście Rules razem z własnymi, bo o remisie priorytetów decyduje kolejność w pliku, a bazowe są w nim wcześniej, więc wygrywają z własną regułą na to samo. Kto chce własne 180, edytuje bazowe albo je wyłącza.
+  - Przejście ze starego zestawu: reguła o tej samej nazwie (albo aliasie, „Ton+ finish” → High finish) dostała stałe id i zachowała, co miała. Pusta lista dźwięków dostała domyślny, a przypisany plik został jako nadpisanie (tak zostały Bullseye, Clean 20s i Bed and breakfast). Reguły spoza listy („Missed the 20”, „67”) zostały własnymi.
+  - Do zestawu doszło sześć reguł Treble 15…Treble 20 (lotka T15…T20), każda z własnym stopniem drabinki. Bull to istniejąca reguła Bullseye (50). Reguł na Takeout start/end i Board online/offline nie ma: odrzucone w grillingu.
+  - Zmiana gracza, Hit i Miss zostają poza regułami, na sztywno, bo nie mają wyzwalaczy; wrócimy do tego, gdy reszta zadziała.
+- **Zestaw startowy** (2026-10-26), zapisany w `effects/effects.json`, bez dźwięków (od 2026-10-27 to reguły bazowe powyżej). Kolejność ma znaczenie, bo przy remisie priorytetów gra reguła wcześniejsza:
   - 180 (suma 180, a do tego kombinacja T20 · T20 · T20, żeby przy 180 wygrywała z „Clean 20s”);
   - Big Fish (170 z checkoutem);
   - High finish (100–170 z checkoutem);
@@ -95,6 +103,18 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - Pliku używanego przez regułę nie da się usunąć.
   - Pliki i ich opis leżą w repo, w `effects/` ([Konfiguracja w repo](#konfiguracja-w-repo)). Wcześniej były w `data/sounds/` i SQLite.
 - Dźwięki efektów wgrywamy sami do Biblioteki. Osobnej darmowej paczki pod darta nie szukamy (#5).
+- **Dźwięki wbudowane** (grilling 2026-10-27, w tej sesji, bez issue): sekcja „Built-in” w zakładce Sounds, pod plikami, zwijana. Syntezowane w kiosku (WebAudio) jak marimba zmiany gracza, więc bez plików i licencji. Lista i nazwy są w kodzie (`server/effects/builtin.ts`), synteza w `web/src/sound.ts`.
+  - Każdy ma odsłuch, opis i suwak głośności. Nie da się go usunąć ani przemianować.
+  - Reguła wskazuje go w tym samym polu co plik, napisem `builtin:<klucz>`, np. `builtin:ton`. Głośności inne niż 100 leżą w `effects.json` w `settings.builtinVolume`.
+  - Kiosk dostaje `builtin:<klucz>` zamiast adresu pliku i gra go z `sound.ts`. Caller czeka na jego długość z listy.
+  - Wybrane 2026-10-27 z dwóch stron z propozycjami (bez padów, bo brzmiały nieprzyjemnie; tylko marimba, dzwonki, kalimba, gong, szum), rodzinami, żeby drabinki brzmiały jak „więcej tego samego”:
+    - Treble 15–20: iskra marimby (arpeggio C E G C i dzwonek), transponowana po pentatonice C D E G A C, więc T20 jest najwyżej;
+    - Ton, Ton 40, 180: bieg marimby o trzech, czterech i siedmiu nutach, od Ton 40 z dzwonkiem, w 180 z trzema;
+    - Leg won, Set won, Match won: akordy marimby uderzane od dołu („strum”): C, potem G → C, potem C F G C z dzwonkami;
+    - High finish i Big fish: ta sama kadencja G → C z dzwonkami, w Big fish po narastającym szumie i z gongiem;
+    - Bull: niska marimba w oktawach i dzwonek; Bust: trzy tony w dół i niski zjazd; No score: zjazd i stuknięcie; Madhouse: niska molowa marimba i wysoki dzwonek; Game on: trzy stopnie w górę i dzwonek; Clean 20s: trzy uderzenia i dzwonek; Bed and breakfast: kalimba pół tonu w dół; New record: dzwonki w górę; White Horse: galop marimby; Player out: niska molowa marimba i zjazd;
+    - Next player, Hit i Miss to dotychczasowe dźwięki, dostępne też jako wpisy.
+  - Strony z propozycjami nie ma w repo. Strojenie to liczby w `sound.ts`.
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
 
 ### Wbudowane dźwięki
@@ -102,7 +122,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, że kolej następnego.
 
 - **Dźwięk zmiany gracza:** gra, gdy Tura przechodzi na następnego gracza, czyli po końcu takeoutu, po „Takeout done” i po „Next player”. Gra też przy starcie następnego legu. Nie gra w bull-offie ani po końcu meczu.
-- To arpeggio marimby: C5, E5, G5 co 75 ms. Wybrane 2026-10-26 z kilkunastu propozycji w miejsce pierwszego swoosha (szum z opadającym filtrem), który brzmiał za ostro.
+- To arpeggio marimby: C5, E5, G5 co 75 ms. Wybrane 2026-10-26 z kilkunastu propozycji w miejsce pierwszego swoosha (szum z opadającym filtrem), który brzmiał za ostro. Od 2026-10-27 ta marimba (sine plus krótka czwarta harmoniczna) jest podstawą wszystkich dźwięków wbudowanych (sekcja [Dźwięk](#dźwięk)).
 - Jest na sztywno w kodzie, jak animacje. Nie jest Regułą i nie da się go przypisać do innego wyzwalacza.
 - Syntetyzowany w przeglądarce kiosku (WebAudio), więc nie potrzebuje pliku ani licencji.
 - Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów. W Playback jest jego odsłuch.
@@ -196,7 +216,7 @@ Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/
 - Wejście z menu Pilota, adres `/effects`. Działa na telefonie i na laptopie, dla każdego w LAN, bez logowania.
 - Zmiany działają od razu, bez restartu, i są trzymane w SQLite.
 - Zawartość:
-  - reguły, każda z przyciskiem „Test”, który odpala dźwięk i ledy bez rzucania;
+  - reguły, każda z przyciskiem „Test”, który odpala dźwięk (na tym urządzeniu) i ledy bez rzucania;
   - Biblioteka dźwięków;
   - WLED: adres, test połączenia, presety pobierane z kontrolera z wyborem po nazwie, stany bazowe;
   - caller: przełącznik i głośność.
@@ -226,14 +246,15 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 - Blok „When”: wyzwalacze jako chipy, a parametry zaznaczonego chipu pod nimi. „+ Add trigger” otwiera arkusz z wyzwalaczami w grupach, z krótkim opisem.
 - Blok „Then”: warianty dźwięku z odsłuchem i „+ Add a variant from the library” oraz preset ledów z czasem i „Try”.
 - Zapis tylko przez „Save”, bo reguła w połowie edycji mogłaby zagrać w trakcie meczu. Wyjście albo przejście do innej reguły z niezapisanymi zmianami pyta „Discard changes?”.
-- „Test whole rule” gra to, co widać w edytorze, także bez zapisu. Gra też przy wyłączonych przełącznikach, a wtedy obok jest krótka informacja o tym.
-- „Delete” jest tylko w edytorze, z potwierdzeniem.
+- „Test whole rule” gra to, co widać w edytorze, także bez zapisu. Dźwięk gra na urządzeniu, na którym kliknięto (od 2026-10-27; wcześniej szedł do kiosku, który mógł być zamknięty, i wtedy była cisza), ledy na kontrolerze. Gra też przy wyłączonych przełącznikach, a pod przyciskiem jest o tym krótka informacja.
+- „Delete” jest tylko w edytorze, z potwierdzeniem. Reguła bazowa go nie ma: nagłówek mówi „Built-in rule”, a obok „Test whole rule” pojawia się „Reset to default”, gdy coś różni się od definicji (2026-10-27).
 
 **Sounds**
 - Na górze upload. Przy każdym dźwięku są odsłuch, długość, liczba reguł, które go używają, i suwak głośności.
 - **Wyszukiwarka** nad listą i w arkuszu „Add a sound” w edytorze reguły (2026-10-26, gdy dźwięków zrobiło się kilkadziesiąt). Szuka po nazwie i pliku, bez względu na wielkość liter i polskie znaki, a słowa mogą być w dowolnej kolejności.
 - **Nazwa nowego dźwięku** (2026-10-26): po wybraniu pliku, a przed wysłaniem, okno „Name the new sound” z odsłuchem i polem nazwy. Pole ma zaznaczoną nazwę wziętą z pliku, więc wpisywanie ją zastępuje. Pod spodem widać nazwę pliku w repo, bo powstaje z tej nazwy i późniejsza zmiana nazwy jej nie rusza.
 - Zmiana nazwy i usuwanie są w menu „⋯”. Przy użytym dźwięku „Delete” jest wyłączone i wymienia te reguły.
+- **Built-in** (2026-10-27): zwijana sekcja pod Biblioteką z dźwiękami wbudowanymi. Wiersz jak przy pliku (odsłuch, opis zamiast długości, liczba reguł, głośność), bez menu „⋯”. Wyszukiwarka szuka też w niej, po nazwie i opisie, i wtedy ją rozwija. Licznik przy zakładce liczy tylko pliki.
 
 **LEDs**
 - Status połączenia z adresem i wersją WLED. „Change” zmienia adres, a bez adresu od razu widać pole adresu.

@@ -11,7 +11,10 @@ export const CALLER_DIR = 'assets/caller';
 /** Animations on the scoreboard, hard-coded. */
 export type Anim = '180' | '140' | 'bust' | 'confetti' | 'tile';
 
-/** What the kiosk browser plays; `gain` already includes the effects volume. The caller's files play in order, after the sound. */
+/**
+ * What the kiosk browser plays; `gain` already includes the effects volume. `url` is a file under /sounds/ or
+ * `builtin:<key>`, which the kiosk synthesizes. The caller's files play in order, after the sound.
+ */
 export interface Fx {
   sound: { url: string; gain: number } | null;
   anim: Anim | null;
@@ -47,9 +50,17 @@ export class Effects {
     this.play(rule, anim, s.sounds, s.leds, caller);
   }
 
-  /** “Test whole rule”: plays what the editor shows, saved or not, even with the pilot switches off. */
-  test(rule: RuleInput) {
-    this.play({ ...rule, id: 'test' }, null, true, true, null);
+  /**
+   * “Test whole rule”: lights the LEDs of what the editor shows, saved or not, even with the switch off, and hands back
+   * the sound for the page to play on the device that asked (the kiosk may not be open).
+   */
+  test(rule: RuleInput): Fx['sound'] {
+    const r = { ...rule, id: 'test' };
+    if (r.led) {
+      this.wled.effect(r.led.preset, r.led.seconds, this.basePreset());
+      this.ledUntil = Date.now() + r.led.seconds * 1000;
+    }
+    return this.pickSound(r);
   }
 
   /** “Try” on the effects page: one preset for a while, then back to the base, even with the LEDs switch off. */
@@ -75,7 +86,7 @@ export class Effects {
     const options = rule.sounds.map(id => lib.find(s => s.id === id)).filter(s => !!s);
     if (options.length === 0) return null;
     const s = options[Math.floor(Math.random() * options.length)];
-    return { url: `/sounds/${s.file}`, gain: (this.store.settings().volume / 100) * (s.volume / 100) };
+    return { url: s.builtin ? s.id : `/sounds/${s.file}`, gain: (this.store.settings().volume / 100) * (s.volume / 100) };
   }
 
   private basePreset(): number | null {
