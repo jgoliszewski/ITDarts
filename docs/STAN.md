@@ -53,7 +53,9 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 - **Zgłaszanie błędów** ([UI.md](UI.md#zgłaszanie-błędów)): „Report a bug” w każdym menu zapisuje `bugs/<czas>.json` z kontekstem i logiem meczu. Sprawdzone skryptem przez websocket: zapis i odrzucenie pustego opisu. Dialogu nikt jeszcze nie klikał.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
-  Testy: `npm test` (107), `npm run typecheck`.
+- **Podpowiedzi Checkout i Setup** ([UI.md](UI.md#ekran-wyników)), 2026-10-27, ze zgłoszenia: trasy z tabeli PDC (z kontynuacją zaplanowanej trasy w turze), a poza tabelą optymalna strategia (oczekiwana liczba lotek z modelem pudeł), aktualizowana po każdej lotce, z „Setup”, gdy checkoutu nie ma. Działa w X01 i 121. Sprawdzone testami, jeszcze nie oglądane na ekranie.
+
+  Testy: `npm test` (111), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

@@ -31,6 +31,12 @@ export function Hearts({ lives }: { lives: number }) {
   );
 }
 
+/** Checkout route, or setup darts for the next visit when no checkout is on. */
+export function RouteHint({ checkout, setup }: { checkout: string | null; setup: string | null }) {
+  if (!checkout && !setup) return null;
+  return <div className={`hero-checkout ${checkout ? '' : 'setup'}`}><div className="caps">{checkout ? 'Checkout' : 'Setup'}</div><div className="num">{checkout ?? setup}</div></div>;
+}
+
 export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
@@ -50,7 +56,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
           <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>
         </div>
         {m.game === 'fullboard' && <SectorMap cleared={m.view.cleared[v.current]} />}
-        {m.game === '121' && m.view.checkout && <div className="hero-checkout"><div className="caps">Checkout</div><div className="num">{m.view.checkout}</div></div>}
+        {m.game === '121' && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
       </div>
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
       <div className="hero-note">{v.hero.note}</div>

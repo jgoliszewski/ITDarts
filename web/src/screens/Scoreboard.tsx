@@ -11,7 +11,7 @@ import { controls, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { turnSound } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
-import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro } from './MiniBoard.tsx';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -65,7 +65,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
       <div className="hero-score-row">
         <div className="hero-score num">{v.scores[p]}</div>
         {visit.bust ? <div className="hero-bust num">BUST</div>
-          : v.checkout ? <div className="hero-checkout"><div className="caps">Checkout</div><div className="num">{v.checkout}</div></div> : null}
+          : <RouteHint checkout={v.checkout} setup={v.setup} />}
       </div>
       <div className="hero-darts">
         {[0, 1, 2].map(i => {

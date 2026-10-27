@@ -27,7 +27,10 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 - **Układ:** hero aktywnego gracza po lewej, lista wszystkich graczy po prawej. Działa dla 2–8 graczy bez zmiany układu.
 - **Hero:** imię, wygrane legi, ogromny wynik, liczba lotek do końca tury i 3 kafelki lotek. Kafelek pokazuje dużą wartość i mały segment (60 / T20). Puste miejsca są obrysowane.
-- **Checkout:** przy wyniku do 170 obok wyniku jest ścieżka dla liczby lotek, które zostały w turze (np. „T19 · D12”).
+- **Checkout:** gdy da się skończyć leg lotkami, które zostały w turze, obok wyniku jest ścieżka (np. „T19 · D12”). Gdy się nie da (bogey, za mało lotek, pudło w trakcie), jest „Setup”: lotki, które najlepiej ustawiają checkout pod następną turę (np. „T20 · S14”). Samo punktowanie w T20 daleko od końca nie ma podpowiedzi.
+  - Przy double out trasy są z tabeli checkoutów PDC (41–170). Dopóki lotki trafiają w zaplanowaną trasę, podpowiedź ją kontynuuje (130: T20, dalej „T20 · D5”, a nie trasa z tabeli dla 70). Po zejściu z planu bierze trasę z tabeli dla nowego wyniku, jeśli mieści się w lotkach, które zostały.
+  - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
+  - W 121 na ostatniej turze próby nie ma „Setup”, bo cel i tak wraca do początku.
 - **Lista graczy:** stała kolejność rzucania. Aktywny gracz ma pomarańczowy wiersz. W wierszu: imię, legi, średnia z meczu i wynik.
 - **Statystyki, tylko przy 2 graczach:**
   - karta z 6 ostatnimi wizytami aktywnego gracza;

@@ -57,8 +57,12 @@ Ręczne zakończenie Takeoutu z Pilota, gdy Board Manager nie zgłosi jego końc
 _Avoid_: next (w tym znaczeniu)
 
 **Checkout**:
-Rzut kończący leg zgodnie z regułą check-out gry. Też podpowiadana ścieżka przy wyniku do 170.
+Rzut kończący leg zgodnie z regułą check-out gry. Też podpowiadana ścieżka, gdy lotki w turze mogą skończyć leg.
 _Avoid_: finisz
+
+**Setup**:
+Podpowiadane lotki, gdy w tej turze nie da się zrobić Checkoutu: ustawiają wynik pod Checkout w następnej turze.
+_Avoid_: ustawka, leave
 
 **Match mode**:
 Ustawienie X01: mecz do N wygranych legów albo setów. Wyłączony oznacza, że po każdym legu gracze decydują, czy grać dalej.

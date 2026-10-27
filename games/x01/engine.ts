@@ -4,7 +4,7 @@ import { beforeStart, bullView, undoStart } from '../bulloff.ts';
 import type { Coords, Dart } from '../darts.ts';
 import { MISS } from '../darts.ts';
 import type { Happening } from '../effects.ts';
-import { checkoutRoute, formatRoute } from './checkout.ts';
+import { hintLines } from './checkout.ts';
 import type { X01Options } from './rules.ts';
 import { scoreDart } from './rules.ts';
 
@@ -260,7 +260,10 @@ export interface X01View {
   sets: number[];
   checkedIn: boolean[];
   visit: { player: number; darts: DartRec[]; total: number; bust: boolean; checkout: boolean; dartsLeft: number };
+  /** Checkout route for the darts left, or null. */
   checkout: string | null;
+  /** Setup darts for the next visit when no checkout is on, or null. */
+  setup: string | null;
   lastLeg: { winner: number; checkout: Dart; darts: number; avg: number | null } | null;
   matchWinner: number | null;
   stats: PlayerMatchStats[];
@@ -300,7 +303,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
       scores: Array(players).fill(o.startScore), legs: Array(players).fill(0), sets: Array(players).fill(0),
       checkedIn: Array(players).fill(o.checkIn === 'straight'),
       visit: { player: 0, darts: [], total: 0, bust: false, checkout: false, dartsLeft: 3 },
-      checkout: null, lastLeg: null, matchWinner: null, stats,
+      checkout: null, setup: null, lastLeg: null, matchWinner: null, stats,
       bullOff: bullView(raw.bull, players, o.bullOff),
     };
   }
@@ -335,7 +338,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
   }
 
   const remaining = cur.scores[current];
-  const route = cur.winner === null && checkedIn[current] ? checkoutRoute(remaining, dartsLeft, o.checkOut) : null;
+  const hints = cur.winner === null && checkedIn[current] ? hintLines(remaining, dartsLeft, o.checkOut, total, visitDarts.slice(0, openVisit?.live ?? 0).map(d => d.dart)) : { checkout: null, setup: null };
   const legNo = o.matchMode.kind === 'sets' ? results.filter(r => r.set === cur.set).length : results.length;
 
   return {
@@ -355,7 +358,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
       checkout: (openVisit?.checkoutAt ?? -1) >= 0,
       dartsLeft,
     },
-    checkout: route ? formatRoute(route) : null,
+    ...hints,
     lastLeg,
     matchWinner: t.matchWinner,
     stats: Array.from({ length: players }, (_, p) => playerStats(results, p)),

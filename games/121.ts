@@ -1,5 +1,5 @@
 // 121: check out a target within a few visits, then the next one up (docs/GRY.md). Solo or co-op. Pure, no I/O.
-import { checkoutRoute, formatRoute } from './x01/checkout.ts';
+import { hintLines } from './x01/checkout.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
@@ -24,20 +24,22 @@ interface State extends Turn {
   best: number | null;
   attempts: number[];
   checkouts: number[];
+  /** Points scored so far in the open visit. */
+  scored: number;
 }
 
 const RULE = { checkIn: 'straight', checkOut: 'double' } as const;
 
 function play(t: Turns, players: number, o: O121): State {
   let target = START_TARGET, remaining = target, lives = LIVES, used = 0, best: number | null = null;
-  let over = false, left = 3;
+  let over = false, left = 3, visitStart = remaining;
   const attempts = Array(players).fill(0), checkouts = Array(players).fill(0);
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
   /** What the screen keeps until the takeout, while the finished visit is still open. */
   let held: Pick<State, 'target' | 'remaining' | 'lives' | 'attemptLeft'> | null = null;
   for (const [vi, v] of t.visits.entries()) {
-    const start = remaining;
+    const start = (visitStart = remaining);
     let bust = false, out = false;
     const w = walk(v, d => {
       if (over) return { good: false, end: true };
@@ -82,7 +84,7 @@ function play(t: Turns, players: number, o: O121): State {
   const dartsLeft = over ? 0 : open ? left : 3;
   const usedNow = open && left > 0 ? open.darts.length : 0;
   const shown = held && !over ? held : { target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow };
-  return { over, current, dartsLeft, goods, fx, ...shown, best, attempts, checkouts };
+  return { over, current, dartsLeft, goods, fx, ...shown, best, attempts, checkouts, scored: open && left > 0 ? visitStart - remaining : 0 };
 }
 
 export interface View121 extends MiniView {
@@ -91,6 +93,7 @@ export interface View121 extends MiniView {
   lives: number;
   attemptLeft: number;
   checkout: string | null;
+  setup: string | null;
   coop: boolean;
 }
 
@@ -98,7 +101,9 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
   const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));
   const s = play(t, players, o);
   const f = frame(t, s);
-  const route = f.visit.dartsLeft === 0 ? null : checkoutRoute(s.remaining, f.visit.dartsLeft, 'double');
+  const hints = f.visit.dartsLeft === 0 ? { checkout: null, setup: null } : hintLines(s.remaining, f.visit.dartsLeft, 'double', s.scored, f.visit.darts.map(d => d.dart));
+  // A setup on the attempt's last visit leads nowhere: the target starts over.
+  if (s.attemptLeft <= f.visit.dartsLeft) hints.setup = null;
   return {
     ...f,
     winners: [],
@@ -111,7 +116,7 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
     remaining: s.remaining,
     lives: s.lives,
     attemptLeft: s.attemptLeft,
-    checkout: route ? formatRoute(route) : null,
+    ...hints,
     coop: players > 1,
   };
 }

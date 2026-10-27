@@ -54,8 +54,9 @@ function Players({ m }: { m: LiveMatch }) {
 
 function checkoutHint(m: LiveMatch): string | null {
   if (m.view.phase !== 'throwing') return null;
-  const route = isX01(m) || m.game === '121' ? m.view.checkout : null;
-  return route ? `Checkout ${route}` : null;
+  if (!isX01(m) && m.game !== '121') return null;
+  const { checkout, setup } = m.view;
+  return checkout ? `Checkout ${checkout}` : setup ? `Setup ${setup}` : null;
 }
 
 function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDart: (i: number) => void }) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../darts.ts';
 import type { X01Event, X01Options } from './index.ts';
-import { checkoutRoute, compact, formatRoute, replay, view, x01Stats } from './index.ts';
+import { compact, formatRoute, hint, hintLines, replay, view, x01Stats } from './index.ts';
 
 const opts = (o: Partial<X01Options> = {}): X01Options => ({
   startScore: 501, checkIn: 'straight', checkOut: 'double', matchMode: { kind: 'legs', firstTo: 2 }, bullOff: 'off', ...o,
@@ -149,22 +149,48 @@ describe('bull-off', () => {
   });
 });
 
-describe('checkout routes', () => {
-  const r = (n: number, darts = 3) => {
-    const route = checkoutRoute(n, darts, 'double');
-    return route ? formatRoute(route) : null;
+describe('hints', () => {
+  const r = (n: number, darts = 3, scored = 0) => {
+    const h = hint(n, darts, 'double', scored)!;
+    return (h.finish ? '' : 'setup ') + formatRoute(h.darts);
   };
   it('suggests standard finishes', () => {
     expect(r(170)).toBe('T20 · T20 · Bull');
     expect(r(100)).toBe('T20 · D20');
     expect(r(40)).toBe('D20');
-    expect(r(50)).toBe('Bull');
+    expect(r(50)).toBe('S10 · D20');
+    expect(r(50, 1)).toBe('Bull');
     expect(r(60)).toBe('S20 · D20');
+    expect(r(141)).toBe('T20 · T19 · D12');
   });
-  it('has no route for bogey numbers or too few darts', () => {
-    for (const n of [169, 168, 166, 165, 163, 162, 159]) expect(r(n)).toBeNull();
-    expect(r(100, 1)).toBeNull();
-    expect(r(171)).toBeNull();
+  it('never sets up a double with a double', () => {
+    expect(r(62)).toBe('T10 · D16');
+    for (let n = 41; n <= 170; n++) {
+      const h = hint(n, 3, 'double')!;
+      expect(h.darts.slice(0, -1).some(x => x.m === 2 && x.n !== 25), `${n}: ${formatRoute(h.darts)}`).toBe(false);
+    }
+  });
+  it('sets up the next visit when no checkout is on', () => {
+    for (const n of [169, 168, 166, 165, 163, 162, 159]) expect(r(n)).toMatch(/^setup /);
+    expect(r(100, 1)).toBe('setup T20');
+    expect(r(35, 1)).toMatch(/^setup S/); // a single that leaves a double
+  });
+  it('shows setup darts only when they are more than plain T20s', () => {
+    expect(hintLines(501, 3, 'double')).toEqual({ checkout: null, setup: null });
+    expect(hintLines(169, 3, 'double').setup).toMatch(/^T20 · /);
+  });
+  it('updates after each dart of the visit', () => {
+    const v = run([d('T20'), d('S1')], opts({ startScore: 141 }));
+    expect(v.scores[0]).toBe(80);
+    expect(v.checkout).toBeNull();
+    expect(v.setup).not.toBeNull();
+    expect(run([d('T20')], opts({ startScore: 141 })).checkout).toBe('T19 · D12');
+  });
+  it('follows the PDC chart and carries on its route while the darts hit', () => {
+    for (const [n, route] of [[130, 'T20 · T20 · D5'], [52, 'S12 · D20'], [132, 'Bull · Bull · D16']] as const) expect(r(n)).toBe(route);
+    expect(run([d('T20')], opts({ startScore: 130 })).checkout).toBe('T20 · D5'); // not the chart route for 70
+    expect(run([d('S20')], opts({ startScore: 130 })).checkout).toBe('T20 · Bull'); // off the plan, 110 in two darts
+    expect(run([d('T20'), d('S20')], opts({ startScore: 130 })).checkout).toBe('Bull');
   });
 });
 
