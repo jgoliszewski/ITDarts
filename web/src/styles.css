@@ -119,6 +119,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .dart-tile.empty { background: transparent; border: 2px dashed #2E2E33; color: var(--muted2); }
 .dart-tile.empty .lbl { font-weight: 600; }
 .dart-tile.dead { background: var(--raised); color: var(--muted); }
+.dart-tile.hit { background: var(--green); color: var(--on-accent); }
+.dart-tile.miss { background: var(--red); color: var(--on-accent); }
 .dart-tile.flash { animation: flash 1.6s ease-out; }
 @keyframes flash { 0%, 40% { box-shadow: 0 0 0 calc(8 * var(--u)) var(--green); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .this-turn { margin-left: calc(16 * var(--u)); display: flex; flex-direction: column; justify-content: center; }
@@ -395,7 +397,19 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .attempt-pips span { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%; background: var(--accent); }
 .attempt-pips span.used { background: transparent; box-shadow: inset 0 0 0 2px var(--muted2); }
 .hero-note { font-size: calc(30 * var(--u)); color: var(--soft); font-weight: 600; }
-.sector-map { width: calc(340 * var(--u)); height: calc(340 * var(--u)); margin-left: auto; flex-shrink: 0; }
+/* ATC and Full Board: the board takes the right half of the hero, darts and target on the left. */
+.board-main.with-board { grid-template-columns: minmax(0, 1fr) calc(480 * var(--u)); }
+.hero.with-board { display: grid; grid-template-columns: minmax(calc(460 * var(--u)), 1fr) auto; grid-template-rows: auto 1fr auto auto; column-gap: calc(40 * var(--u)); row-gap: calc(24 * var(--u)); }
+.hero.with-board > :not(.target-board) { grid-column: 1; }
+.hero.with-board .hero-score-row { align-self: center; }
+.hero.with-board .mini-big .num { font-size: calc(280 * var(--u)); }
+.hero.with-board .mini-big .num.long { font-size: calc(200 * var(--u)); }
+.mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
+.hero.with-board .dart-tile { flex: 1; width: auto; height: calc(130 * var(--u)); }
+.hero.with-board .dart-tile .num { font-size: calc(76 * var(--u)); }
+.target-board { grid-column: 2; grid-row: 1 / -1; align-self: center; height: 100%; max-height: calc(780 * var(--u)); aspect-ratio: 1; }
+.tb-outline { fill: none; stroke: #F58224; stroke-width: 6; stroke-linejoin: round; stroke-dasharray: 18 6; animation: tb-march 1.2s linear infinite; }
+@keyframes tb-march { to { stroke-dashoffset: -48; } }
 .hol-scale { position: relative; height: calc(56 * var(--u)); margin: calc(8 * var(--u)) 0 calc(24 * var(--u)); }
 .hol-scale .track { position: absolute; left: 0; right: 0; top: calc(16 * var(--u)); height: calc(16 * var(--u)); border-radius: 9999px; background: var(--raised); }
 .hol-scale .range { position: absolute; top: calc(16 * var(--u)); height: calc(16 * var(--u)); border-radius: 9999px; background: var(--red); }

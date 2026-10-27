@@ -64,7 +64,13 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
   - „Co-op”.
 - **Trafienie:** w „Any” każdy segment celu, a bull to 25 albo 50. W „Doubles” tylko D, w „Trebles” tylko T, a bull w obu tylko 50.
 - **Koniec:** gdy ktoś zaliczy bulla, dogrywamy rundę, żeby wszyscy mieli tyle samo Tur. Wygrywa najmniej lotek. Przy tej samej liczbie lotek wygrywają wszyscy remisujący. Pozostali są sklasyfikowani według postępu.
-- **Ekran wyników:** hero pokazuje imię, duży aktualny cel i kafelki lotek z trafieniem lub pudłem. Lista graczy pokazuje postęp („7 / 21”) i cel.
+- **Ekran wyników:** hero pokazuje imię, duży aktualny cel i kafelki lotek z trafieniem lub pudłem. Prawą połowę hero zajmuje duża tarcza w kolorach tarczy do wklikiwania lotek (od 2026-10-27, ze zgłoszenia):
+  - proporcje są bliskie prawdziwym, tylko treble, double, 25 i bull są trochę szersze, żeby było je widać;
+  - aktualny cel zachowuje swoje kolory i ma pomarańczowy, przerywany obwód, który biegnie dookoła. W „Doubles” i „Trebles” obwód obejmuje tylko jego pierścień. Numer celu wygląda jak pozostałe;
+  - zaliczone cele są zakreskowane na szaro, a ich numery przygaszone (wariant O z makiet);
+  - lotki z bieżącej Tury są małymi kropkami w białej obwódce, zielonymi przy trafieniu i czerwonymi przy pudle. Kropka leży na środku swojego pola, więc single nigdy nie wypada na trebla (test w `web/src/components/Dartboard.test.ts`).
+
+  Lista graczy pokazuje postęp („7 / 21”) i cel.
 - **Wyzwalacze:** „Target hit”, „Game won”.
 - **Statystyki:** hit rate. Rekordem jest najmniej lotek do końca, osobno dla każdej kombinacji Target × Multiplier skips. „Order” nie tworzy osobnego wariantu.
 
@@ -73,7 +79,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 - **Cele:** każdy sektor 1–20 i bull, w dowolnej kolejności. Jedno trafienie zalicza sektor, mnożnik nic nie daje.
 - **Opcje:** „Target” jak w ATC (w „Doubles” i „Trebles” bull tylko 50), „Co-op”.
 - **Koniec:** jak w ATC.
-- **Ekran wyników:** hero pokazuje grafikę tarczy aktywnego gracza z zaliczonymi sektorami na pomarańczowo i licznik „13 / 21”. Lista graczy pokazuje licznik.
+- **Ekran wyników:** hero pokazuje dużą tarczę aktywnego gracza na prawej połowie, jak w ATC: zaliczone sektory są zakreskowane, a lotki z bieżącej Tury są kropkami. Po lewej jest licznik „13 / 21” i kafelki lotek. Lista graczy pokazuje licznik.
 - **Wyzwalacze:** „Sector cleared”, „Board cleared” (wygrana).
 - **Statystyki:** rekordem jest najmniej lotek do końca, osobno dla każdego „Target”.
 

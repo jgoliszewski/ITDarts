@@ -4,6 +4,10 @@ import { BOARD_ORDER } from '../../../games/darts.ts';
 // Rings drawn fatter than real ones so a finger can hit doubles and trebles (UI.md).
 // bull, outer bull, treble in, treble out, double in, double out
 const R = [20, 46, 168, 220, 290, 340];
+// Near real proportions for boards that are only looked at; trebles, doubles and the bulls a bit wider so they read on the big screen.
+export const SHOWN = [16, 36, 188, 214, 314, 340];
+/** Radius of a dart's dot. Dots sit in the middle of their field, so a single never shows on a treble. */
+export const DOT = 7;
 
 export const pt = (r: number, deg: number) => [r * Math.sin((deg * Math.PI) / 180), -r * Math.cos((deg * Math.PI) / 180)] as const;
 
@@ -13,11 +17,12 @@ export function arc(r1: number, r2: number, a1: number, a2: number) {
   return `M${f(x1)} ${f(y1)}A${r2} ${r2} 0 0 1 ${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}A${r1} ${r1} 0 0 0 ${f(x4)} ${f(y4)}Z`;
 }
 
-function where(d: Dart, i: number): readonly [number, number] {
+/** Where the i-th dart of a visit is drawn: the middle of its field, nudged by i so darts in one field don't overlap. */
+export function dartSpot(d: Dart, i: number, rings = R): readonly [number, number] {
   if (d.n === 0) return pt(368, 200 + i * 14);
-  if (d.n === 25) return d.m === 2 ? [i * 8 - 8, 0] : pt((R[0] + R[1]) / 2, 90 + i * 40);
+  if (d.n === 25) return d.m === 2 ? [i * 8 - 8, 0] : pt((rings[0] + rings[1]) / 2, 90 + i * 40);
   const a = BOARD_ORDER.indexOf(d.n) * 18 + (i - 1) * 4;
-  const r = d.m === 3 ? (R[2] + R[3]) / 2 : d.m === 2 ? (R[4] + R[5]) / 2 : (R[3] + R[4]) / 2;
+  const r = d.m === 3 ? (rings[2] + rings[3]) / 2 : d.m === 2 ? (rings[4] + rings[5]) / 2 : (rings[3] + rings[4]) / 2;
   return pt(r, a);
 }
 
@@ -43,31 +48,64 @@ export function Dartboard({ marks, selected, onPick, size = 760 }: { marks: Dart
       <circle className="hit" cx="0" cy="0" r={R[1]} fill={isSel(25, 1) ? '#F58224' : '#1F8A52'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 1 })} />
       <circle className="hit" cx="0" cy="0" r={R[0]} fill={isSel(25, 2) ? '#F58224' : '#B8322F'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 2 })} />
       {marks.map((d, i) => {
-        const [x, y] = where(d, i);
-        return (
-          <g key={i} pointerEvents="none">
-            <circle cx={x} cy={y} r="16" fill="#FFFFFF" stroke="#0A0A0B" strokeWidth="3" />
-            <text x={x} y={y} fill="#0A0A0B" fontSize="18" fontWeight="800" textAnchor="middle" dominantBaseline="central">{i + 1}</text>
-          </g>
-        );
+        const [x, y] = dartSpot(d, i);
+        return <circle key={i} pointerEvents="none" cx={x} cy={y} r={DOT} fill="#FFFFFF" stroke="#0A0A0B" strokeWidth="2" />;
       })}
     </svg>
   );
 }
 
-/** Read-only board for Full Board: cleared sectors (and the bull) in orange. */
-export function SectorMap({ cleared }: { cleared: number[] }) {
+// The input board's colours (Dartboard above). Cleared targets are hatched grey; the target keeps its colours
+// and gets a dashed orange outline that runs around it.
+const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 'url(#tb-hatch)', HIT_DOT = '#3CCB7F', MISS_DOT = '#FF5A5F';
+
+/**
+ * Read-only board for ATC and Full Board (docs/GRY.md, mockup O): cleared targets hatched, the target outlined
+ * (only its ring with Doubles or Trebles) and this visit's darts as dots, green for a hit, red otherwise.
+ */
+export function TargetBoard({ cleared, target, ring, darts, label }: {
+  cleared: number[];
+  target: number | null;
+  /** The ring that counts on the target: null for any segment, 2 doubles, 3 trebles. */
+  ring: 2 | 3 | null;
+  darts: { dart: Dart; good: boolean }[];
+  label: string;
+}) {
+  const S = SHOWN;
   const done = new Set(cleared);
+  const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
+  const tk = target === null || target === 25 ? -1 : BOARD_ORDER.indexOf(target);
+  const [o1, o2] = ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
+  // Only the bullseye counts for the bull with Doubles or Trebles.
+  const outline = target === null ? null
+    : target === 25 ? <circle className="tb-outline" cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
+    : <path className="tb-outline" d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
   return (
-    <svg className="sector-map" viewBox="-380 -380 760 760" role="img" aria-label={`${cleared.length} of 21 sectors cleared`}>
+    <svg className="target-board" viewBox="-380 -380 760 760" role="img" aria-label={label}>
+      <defs>
+        <pattern id="tb-hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="14" height="14" fill="#26262A" />
+          <rect width="5" height="14" fill="#4A4A50" />
+        </pattern>
+      </defs>
+      <circle cx="0" cy="0" r="380" fill="#141416" />
       {BOARD_ORDER.map((n, k) => {
-        const [x, y] = pt(362, k * 18);
-        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#F58224' : '#8E8E94'} fontSize="34" fontWeight="800" textAnchor="middle" dominantBaseline="central">{n}</text>;
+        const [x, y] = pt(360, k * 18);
+        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
       })}
-      {BOARD_ORDER.map((n, k) => (
-        <path key={n} d={arc(R[1], R[5], k * 18 - 9, k * 18 + 9)} fill={done.has(n) ? '#F58224' : k % 2 ? '#3A3A40' : '#232327'} stroke="#0A0A0B" strokeWidth="4" />
-      ))}
-      <circle cx="0" cy="0" r={R[1]} fill={done.has(25) ? '#F58224' : '#3A3A40'} stroke="#0A0A0B" strokeWidth="4" />
+      {BOARD_ORDER.map((n, k) => {
+        const parts: [number, number, 1 | 2 | 3][] = [[S[1], S[2], 1], [S[2], S[3], 3], [S[3], S[4], 1], [S[4], S[5], 2]];
+        return parts.map(([r1, r2, m], j) => (
+          <path key={`${n}-${j}`} d={arc(r1, r2, k * 18 - 9, k * 18 + 9)} fill={paint(n, m === 1 ? SINGLE[k % 2] : RING[k % 2])} stroke="#0A0A0B" strokeWidth="2" />
+        ));
+      })}
+      <circle cx="0" cy="0" r={S[1]} fill={paint(25, RING[1])} stroke="#0A0A0B" strokeWidth="2" />
+      <circle cx="0" cy="0" r={S[0]} fill={paint(25, RING[0])} stroke="#0A0A0B" strokeWidth="2" />
+      {outline}
+      {darts.map(({ dart, good }, i) => {
+        const [x, y] = dartSpot(dart, i, S);
+        return <circle key={i} cx={x} cy={y} r={DOT} fill={good ? HIT_DOT : MISS_DOT} stroke="#FFFFFF" strokeWidth="3" />;
+      })}
     </svg>
   );
 }

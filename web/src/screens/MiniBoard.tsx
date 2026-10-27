@@ -2,8 +2,9 @@
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label, value } from '../../../games/darts.ts';
+import { SECTORS } from '../../../games/race.ts';
 import { Icon, act } from '../components/ui.tsx';
-import { SectorMap } from '../components/Dartboard.tsx';
+import { TargetBoard } from '../components/Dartboard.tsx';
 import type { MiniMatch } from '../match.ts';
 import { winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
@@ -54,12 +55,30 @@ function AttemptTile({ left, of }: { left: number; of: number }) {
   );
 }
 
+/** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
+export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: 'atc' | 'fullboard' }> => m.game === 'atc' || m.game === 'fullboard';
+
+function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' }> }) {
+  const v = m.view;
+  const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i] }));
+  const ring = m.options.target === 'doubles' ? 2 : m.options.target === 'trebles' ? 3 : null;
+  if (m.game === 'fullboard') {
+    const cleared = m.view.cleared[v.current];
+    return <TargetBoard cleared={cleared} target={null} ring={ring} darts={darts} label={`${cleared.length} of ${SECTORS.length} sectors cleared`} />;
+  }
+  const { targets, progress } = m.view;
+  const i = progress[v.current];
+  const target = i < targets.length ? targets[i] : null;
+  return <TargetBoard cleared={targets.slice(0, i)} target={target} ring={ring} darts={darts} label={target === null ? 'All targets cleared' : `Target ${v.hero.big}`} />;
+}
+
 export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
   const left = visit.dartsLeft === 0 && visit.darts.length ? 'Pull the darts' : `${visit.dartsLeft} ${visit.dartsLeft === 1 ? 'dart' : 'darts'} left`;
+  const board = hasBoard(m);
   return (
-    <section className="hero">
+    <section className={`hero ${board ? 'with-board' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>
@@ -70,11 +89,13 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
       <div className="hero-score-row">
         <div className="mini-big">
           <div className="caps">{v.hero.caption}</div>
-          <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>
+          {m.game === 'fullboard'
+            ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
+            : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
-        {m.game === 'fullboard' && <SectorMap cleared={m.view.cleared[v.current]} />}
         {m.game === '121' && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
       </div>
+      {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
       {v.hero.note && <div className="hero-note">{v.hero.note}</div>}
       <div className="hero-darts">

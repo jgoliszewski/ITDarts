@@ -60,7 +60,12 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 
 - **Reguły bazowe i dźwięki wbudowane** (2026-10-27, grilling w sesji, [EFEKTY.md](EFEKTY.md#dźwięk)): 27 dźwięków syntezowanych w kiosku (`server/effects/builtin.ts`, `web/src/sound.ts`), sekcja „Built-in” w Sounds, 24 reguły bazowe ze stałymi id `b-…` (w tym Treble 15–20), „Reset to default” i brak „Delete” w edytorze. `effects.json` przepisany: starsze reguły startowe dostały stałe id i domyślne dźwięki, a własne pliki zostały jako nadpisania. Sprawdzone testami, zrzutami `/effects` i odsłuchem w headless Chromium bez błędów. Nikt jeszcze nie słyszał ich w kiosku ani w meczu.
 
-  Testy: `npm test` (123), `npm run typecheck`.
+- **Tarcza w ATC i Full Board** (2026-10-27, ze zgłoszenia):
+  - duża tarcza w kolorach tarczy do wklikiwania lotek, z lekko poszerzonymi treble, double i bullami, na prawej połowie hero (`TargetBoard` w `web/src/components/Dartboard.tsx`): aktualny cel ATC z pomarańczowym, biegnącym, przerywanym obwodem, zaliczone cele zakreskowane, kropki lotek z Tury ([GRY.md](GRY.md#around-the-clock-atc)). Test pilnuje, że każda kropka leży w swoim polu;
+  - karta tury w grach liczonych trafieniami ma zielone i czerwone kafelki ([UI.md](UI.md#tura-i-takeout)).
+  - Sprawdzone zrzutami z symulatorem w 1920×1080. Nikt jeszcze nie widział tego na ekranie w biurze.
+
+  Testy: `npm test` (125), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

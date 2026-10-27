@@ -11,7 +11,7 @@ import { controls, dartCue, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { hitSound, missSound, turnSound } from '../sound.ts';
 import { fmtAvg, useNow } from '../util.ts';
-import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint } from './MiniBoard.tsx';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -203,7 +203,8 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                 // Minigames lead with the field hit, as on their screen; X01 with the points.
                 const [top, sub] = good ? [label(d.dart), value(d.dart)] : [value(d.dart), label(d.dart)];
                 const tile = <><span className="num">{top}</span><span className="lbl">{sub}</span></>;
-                const cls = `dart-tile ${good && !good[i] ? 'dead' : ''}`;
+                // Games counted in hits colour each dart green or red; scoring games dim the darts that did nothing.
+                const cls = `dart-tile ${!good ? '' : scored === null ? (good[i] ? 'hit' : 'miss') : good[i] ? '' : 'dead'}`;
                 return canEdit
                   ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
                   : <div key={i} className={cls}>{tile}</div>;
@@ -357,7 +358,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
     <div className="big">
       <BigHeader s={s} sub={m.description} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
-      <main className="board-main">
+      <main className={`board-main ${!isX01(m) && hasBoard(m) ? 'with-board' : ''}`}>
         {isX01(m) ? (
           <>
             <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
