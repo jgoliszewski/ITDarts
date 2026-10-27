@@ -30,7 +30,7 @@ function usePath(): string {
   return path;
 }
 
-function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr') => void }) {
+function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr' | 'bug') => void }) {
   const pilot = s.you.isPilot;
   const item = (label: string, run: () => void, danger = false) => (
     <button key={label} className={`btn block ${danger ? 'danger' : ''}`} style={{ justifyContent: 'flex-start', height: 56 }} onClick={() => { onClose(); run(); }}>{label}</button>
@@ -72,9 +72,31 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
             {s.you.isLocal && item('Close app', () => void act({ type: 'closeApp' }), true)}
           </>
         )}
+        {item('Report a bug', () => open('bug'))}
         <button className="btn ghost block" style={{ marginTop: 8 }} onClick={onClose}>Close</button>
       </div>
     </>
+  );
+}
+
+function BugDialog({ where, onClose }: { where: string; onClose: () => void }) {
+  const [text, setText] = useState('');
+  const send = async () => {
+    const r = await act({ type: 'report', text, where, userAgent: navigator.userAgent });
+    if (r.ok) {
+      toast({ text: 'Bug reported. Thanks!' });
+      onClose();
+    }
+  };
+  return (
+    <Dialog title="Report a bug" onClose={onClose} actions={<>
+      <button className="btn" onClick={onClose}>Cancel</button>
+      <button className="btn primary" disabled={!text.trim()} onClick={() => void send()}>Send</button>
+    </>}>
+      <p>What went wrong? The match so far is saved with the report.</p>
+      <textarea className="field" autoFocus rows={5} maxLength={4000} value={text} onChange={e => setText(e.target.value)} aria-label="Bug description"
+        style={{ height: 'auto', padding: '12px 16px', resize: 'vertical' }} />
+    </Dialog>
   );
 }
 
@@ -85,6 +107,7 @@ function Main({ s }: { s: ClientState }) {
   const [fix, setFix] = useState<FixTarget | null>(null);
   const [endAsk, setEndAsk] = useState<null | 'end' | 'new'>(null);
   const [localQr, setLocalQr] = useState(false);
+  const [bug, setBug] = useState(false);
   const wasPilot = useRef(s.you.isPilot);
   const resumedShown = useRef(false);
   const m = s.match;
@@ -144,8 +167,9 @@ function Main({ s }: { s: ClientState }) {
     if (r.ok && then === 'new') setScreen('setup');
   };
 
-  const openFromMenu = (what: 'new' | 'end' | Screen | 'qr') => {
+  const openFromMenu = (what: 'new' | 'end' | Screen | 'qr' | 'bug') => {
     if (what === 'new' || what === 'end') askEnd(what);
+    else if (what === 'bug') setBug(true);
     else if (what === 'qr') {
       if (s.you.isPilot) void act({ type: 'showQr', show: true });
       else setLocalQr(true);
@@ -173,6 +197,7 @@ function Main({ s }: { s: ClientState }) {
           <p>The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely.</p>
         </Dialog>
       )}
+      {bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}
       {sheet}
     </>
   );

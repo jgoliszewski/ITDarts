@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
+Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -50,6 +50,7 @@ Stan na 2026-10-26. Aktualizuj przy każdym większym kroku.
     - sprawdzone skryptem przez websocket na osobnej instancji z symulatorem tarczy: game on, wynik, „no score” przy buście, poprawka, undo, takeout z „you require”, game shot, następny leg i Caller off. Kiosk pobrał nagrania bez błędów.
   - **Animacje:** 180, 140+, bust, konfetti, błysk kafelka T20 i Bull, wejście ekranu końca legu.
   - **Sprawdzone** skryptem przez websocket z symulatorem tarczy i atrapą WLED (`npm run fake-wled`): reguły 180 i T20, Poprawka S20 ↔ T20, Undo, Sounds off, powrót WLED do stanu bazowego. Do tego zrzuty strony `/effects`, edytora, menu i animacji.
+- **Zgłaszanie błędów** ([UI.md](UI.md#zgłaszanie-błędów)): „Report a bug” w każdym menu zapisuje `bugs/<czas>.json` z kontekstem i logiem meczu. Sprawdzone skryptem przez websocket: zapis i odrzucenie pustego opisu. Dialogu nikt jeszcze nie klikał.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
   Testy: `npm test` (107), `npm run typecheck`.

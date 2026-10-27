@@ -95,6 +95,7 @@ Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikon
 - **Bez meczu:** Close app, czyli wyjście z kiosku.
 - **Na telefonie** dochodzi Show QR, bo nagłówek telefonu nie ma przycisku QR.
 - **Bez kontroli:** Take control i Stats.
+- **Report a bug:** w każdym menu, także bez kontroli ([Zgłaszanie błędów](#zgłaszanie-błędów)).
 - **Efekty:** w menu meczu i ogólnym są przełączniki Sounds, Caller i LEDs. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Układ strony z zakładkami opisuje [EFEKTY.md](EFEKTY.md#układ-strony), a makiety to A1–A4 i C.
 
 ## Players
@@ -131,6 +132,15 @@ Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzut�
 
 - **Brak tarczy:** oba ekrany pokazują baner „Brak tarczy, wpisuj rzuty ręcznie”, a Pilot przełącza się na klawiaturę z zakładki „All” jako główne wejście. Gdy tarcza wraca, baner znika.
 - **Wznowienie po restarcie:** mecz wraca od razu na oba ekrany. Pilot pokazuje dyskretne „Mecz wznowiony” z opcją zakończenia.
+
+## Zgłaszanie błędów
+
+Błędy wychodzą w trakcie gry, a naprawiamy je hurtowo później, z Claude.
+
+- „Report a bug” w menu otwiera dialog z polem opisu. Zgłosić może każdy: Pilot, widz na telefonie i kiosk.
+- Serwer zapisuje zgłoszenie jako plik `bugs/<czas>.json`, pod gitem, tak samo jak `effects/`. W pracy robisz commit i push, a przy naprawie pull.
+- Do opisu serwer dokleja: czas, commit aplikacji (z „-dirty”, gdy działały lokalne zmiany), urządzenie (nazwa, kiosk, Pilot), ekran, user agent i cały rekord trwającego meczu z logiem zdarzeń. Z logu da się odtworzyć mecz w teście.
+- Naprawione zgłoszenie usuwa commit z poprawką. W `bugs/` leżą więc tylko otwarte, a historia zostaje w gicie.
 
 ## Poza zakresem
 

@@ -1,6 +1,9 @@
 // The single source of truth: live match, pilot, board status. Browsers only send commands and get state.
+import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
+import { join, resolve } from 'node:path';
 import type { WebSocket } from 'ws';
 import { isValidDart } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
@@ -40,6 +43,16 @@ interface Live {
 
 const QR_TIMEOUT_MS = 60_000;
 const INTRO_MS = 4_000;
+const BUGS_DIR = resolve('bugs');
+/** The app's version in a bug report; "-dirty" when local changes were running. */
+const COMMIT = (() => {
+  try {
+    const head = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    return execSync('git status --porcelain --untracked-files=no', { encoding: 'utf8' }).trim() ? `${head}-dirty` : head;
+  } catch {
+    return null;
+  }
+})();
 
 // Phones reach the laptop over Wi-Fi, so typical LAN ranges go first. VPNs (Tailscale's 100.64/10) and
 // link-local addresses are unreachable from the phone and get dropped.
@@ -405,6 +418,22 @@ export class Hub {
     }
   }
 
+  /** One file per bug report in bugs/, under git; the fix commit deletes it (docs/UI.md#zgłaszanie-błędów). */
+  private report(client: Client, cmd: Extract<Command, { type: 'report' }>) {
+    const text = String(cmd.text ?? '').trim().slice(0, 4000);
+    if (!text) throw new UserError('Describe the bug first');
+    const at = new Date().toISOString();
+    mkdirSync(BUGS_DIR, { recursive: true });
+    writeFileSync(join(BUGS_DIR, `${at.replace(/[:.]/g, '-')}.json`), JSON.stringify({
+      text, at, commit: COMMIT,
+      device: { name: client.deviceName, isLocal: client.isLocal, isPilot: this.pilot?.clientId === client.clientId },
+      where: String(cmd.where ?? '').slice(0, 200),
+      userAgent: String(cmd.userAgent ?? '').slice(0, 300),
+      // The event log replays the match, so a test can rebuild the exact moment.
+      match: this.live?.rec ?? null,
+    }, null, 2) + '\n');
+  }
+
   private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[]) {
     // The next player in order starts, so no bull-off.
     const rotated = [...roster.slice(1), roster[0]];
@@ -426,6 +455,11 @@ export class Hub {
   private async run(client: Client, cmd: Command): Promise<{ playerId?: number }> {
     if (cmd.type === 'takeControl') {
       this.pilot = { clientId: client.clientId, deviceName: client.deviceName };
+      return {};
+    }
+    // Anyone who sees a bug can report it, not only the Pilot.
+    if (cmd.type === 'report') {
+      this.report(client, cmd);
       return {};
     }
     if (this.pilot?.clientId !== client.clientId) throw new UserError('Take control first');

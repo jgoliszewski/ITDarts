@@ -126,7 +126,8 @@ export type Command =
   | { type: 'showQr'; show: boolean }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
-  | { type: 'closeApp' };
+  | { type: 'closeApp' }
+  | { type: 'report'; text: string; where: string; userAgent: string };
 
 export type ClientMessage =
   | { type: 'hello'; clientId: string; deviceName: string }
