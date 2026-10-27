@@ -83,6 +83,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 - **Podejście:** zaczynasz od celu 121. Na checkout z double masz 3 albo 4 Tury (9 lub 12 lotek).
   - Bust działa jak w X01: wynik wraca do stanu sprzed Tury, a podejście trwa, dopóki są lotki.
   - Checkout przed końcem lotek kończy podejście, a reszta lotek przepada.
+  - W ostatniej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, np. jedna lotka przy nieparzystej reszcie (od 2026-10-27, ze zgłoszenia).
   - W Co-op lotki podejścia rozkładają się na kolejnych graczy.
 - **Sukces:** cel rośnie o 1. **Porażka:** cel zostaje i tracisz życie.
 - **Życia:** zawsze 3. Gra kończy się po utracie ostatniego.

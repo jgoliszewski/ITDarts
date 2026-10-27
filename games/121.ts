@@ -1,5 +1,5 @@
 // 121: check out a target within a few visits, then the next one up (docs/GRY.md). Solo or co-op. Pure, no I/O.
-import { hintLines } from './x01/checkout.ts';
+import { hint, hintLines } from './x01/checkout.ts';
 import type { Change, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
@@ -41,7 +41,8 @@ function play(t: Turns, players: number, o: O121): State {
   for (const [vi, v] of t.visits.entries()) {
     const start = (visitStart = remaining);
     let bust = false, out = false;
-    const w = walk(v, d => {
+    const lastVisit = used + 1 >= o.visits;
+    const w = walk(v, (d, i) => {
       if (over) return { good: false, end: true };
       const r = scoreDart(remaining, true, d, RULE);
       if (r.bust) {
@@ -50,7 +51,9 @@ function play(t: Turns, players: number, o: O121): State {
       }
       remaining -= r.scored;
       if (r.checkout) out = true;
-      return { good: r.scored > 0, end: r.checkout };
+      // On the attempt's last visit, stop once the darts left can't check out (e.g. one dart on an odd score).
+      const hopeless = lastVisit && !r.checkout && i < 2 && !hint(remaining, 2 - i, 'double')?.finish;
+      return { good: r.scored > 0, end: r.checkout || hopeless };
     });
     if (bust) remaining = start;
     goods.push(w.good);
@@ -60,7 +63,7 @@ function play(t: Turns, players: number, o: O121): State {
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
     else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: start - remaining } });
     if (out) fx.push({ slot: `${V}:checkout`, fact: { kind: 'checkout' } });
-    else if (used + 1 >= o.visits) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
+    else if (lastVisit) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
     if (!v.closed) held = { target, remaining, lives, attemptLeft: out ? 0 : (o.visits - used - 1) * 3 };
     if (out) {
       attempts[v.player]++;

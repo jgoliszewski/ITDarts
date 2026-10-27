@@ -99,8 +99,8 @@ describe('121', () => {
     const out = oneTwentyOne.view([d('T20'), d('T17'), d('D5')], 1, o);
     expect([out.target, out.remaining, out.attemptLeft, out.checkout]).toEqual([121, 0, 0, null]);
     expect(out.visit.verdict).toEqual({ text: 'Checkout', tone: 'good' });
-    const failed = oneTwentyOne.view([...visit('S1'), ...visit('S1'), d('S1'), d('S1'), d('S1')], 1, o);
-    expect([failed.target, failed.remaining, failed.lives]).toEqual([121, 116, 3]);
+    const failed = oneTwentyOne.view([...visit('S1'), ...visit('S1'), d('S1')], 1, o);
+    expect([failed.target, failed.remaining, failed.lives]).toEqual([121, 118, 3]);
     expect(failed.visit.verdict).toEqual({ text: 'Life lost', tone: 'bad' });
     expect(oneTwentyOne.view([d('S1')], 1, o).visit.verdict).toBeNull();
   });
@@ -128,6 +128,21 @@ describe('121', () => {
     const v = oneTwentyOne.view([d('T20'), d('T17'), d('D5'), next, ...fail], 1, { ...o, refill: false });
     expect(v.phase).toBe('matchWon');
     expect(v.scores).toEqual([121]);
+  });
+
+  it('ends the last visit once the darts left cannot check out', () => {
+    const log = [...visit('S20', 'S20', 'S20'), ...visit('S20', 'S20', 'S1'), d('D5')];
+    expect(oneTwentyOne.view(log, 1, o).visit.dartsLeft).toBe(2);
+    // 5 left with one dart: no double finishes an odd score.
+    const v = oneTwentyOne.view([...log, d('S5')], 1, o);
+    expect([v.remaining, v.visit.dartsLeft, v.visit.verdict?.text]).toEqual([5, 0, 'Life lost']);
+    expect(oneTwentyOne.view([...log, d('S5'), next], 1, o).lives).toBe(2);
+  });
+
+  it('ends the hopeless last visit from the bug report (co-op, 4 visits)', () => {
+    const log = [...visit('D20', 'S19', 'S15'), ...visit('S7', 'S1', 'S8'), ...visit('S15', 'MISS', 'MISS'), d('MISS'), d('S11')];
+    const v = oneTwentyOne.view(log, 2, { ...o, visits: 4 });
+    expect([v.remaining, v.visit.dartsLeft, v.visit.verdict?.text]).toEqual([5, 0, 'Life lost']);
   });
 
   it('plays co-op with two players on one attempt', () => {
