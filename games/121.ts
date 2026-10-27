@@ -1,6 +1,6 @@
 // 121: check out a target within a few visits, then the next one up (docs/GRY.md). Solo or co-op. Pure, no I/O.
 import { hintLines } from './x01/checkout.ts';
-import type { Happening } from './effects.ts';
+import type { Change, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
@@ -58,6 +58,7 @@ function play(t: Turns, players: number, o: O121): State {
     if (!w.complete || over) continue;
     const V = `V${vi + 1}`;
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
+    else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: start - remaining } });
     if (out) fx.push({ slot: `${V}:checkout`, fact: { kind: 'checkout' } });
     else if (used + 1 >= o.visits) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
     if (!v.closed) held = { target, remaining, lives, attemptLeft: out ? 0 : (o.visits - used - 1) * 3 };
@@ -92,6 +93,8 @@ export interface View121 extends MiniView {
   remaining: number;
   lives: number;
   attemptLeft: number;
+  /** Darts in a whole attempt. */
+  attemptDarts: number;
   checkout: string | null;
   setup: string | null;
   coop: boolean;
@@ -107,7 +110,7 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
   return {
     ...f,
     winners: [],
-    hero: { big: String(s.remaining), caption: `Target ${s.target}`, note: `${s.attemptLeft} darts left in this attempt` },
+    hero: { big: String(s.remaining), caption: `Target ${s.target}`, note: '' },
     rows: s.checkouts.map((c, i) => ({ value: String(c), meta: `${plural(c, 'checkout')} · ${plural(s.attempts[i], 'attempt')}`, out: false })),
     result: s.best === null ? 'No target checked out' : `Highest target ${s.best}`,
     scores: s.checkouts.map(() => s.best),
@@ -116,9 +119,24 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
     remaining: s.remaining,
     lives: s.lives,
     attemptLeft: s.attemptLeft,
+    attemptDarts: o.visits * 3,
     ...hints,
     coop: players > 1,
   };
+}
+
+/** The caller in 121 (docs/EFEKTY.md#caller): like X01, but a checkout is called as its score, with no game shot. */
+export function callerLines121(cs: Change[], view: View121, turnStart: boolean): string[] {
+  const out: string[] = [];
+  if (cs.some(c => c.fact.kind === 'legStart' && !c.before)) out.push('gameon');
+  for (const { fact } of cs) {
+    if (fact.kind === 'calledTotal') out.push(fact.total > 0 ? String(fact.total) : 'busted');
+    if (fact.kind === 'bust') out.push('busted');
+  }
+  if (turnStart && view.phase === 'throwing' && view.visit.darts.length === 0 && view.checkout !== null) {
+    out.push('you_require', String(view.remaining));
+  }
+  return out;
 }
 
 const OPTIONS: OptionDef<O121>[] = [

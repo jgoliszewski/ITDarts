@@ -8,6 +8,8 @@ import type { WebSocket } from 'ws';
 import { isValidDart } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
 import { GAMES, MAX_PLAYERS, isGameId } from '../games/index.ts';
+import type { View121 } from '../games/121.ts';
+import { callerLines121 } from '../games/121.ts';
 import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { MiniView } from '../games/turns.ts';
@@ -272,9 +274,10 @@ export class Hub {
     this.effects.fire(cs, this.caller(l, cs, e.t === 'next' || e.t === 'nextLeg' || e.t === 'start'));
   }
 
-  /** The caller speaks in X01 only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01 and 121 only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
-    return l.rec.game === 'x01' ? callerLines(cs, l.view as X01View, turnStart) : [];
+    if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
+    return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
   private endIntro() {

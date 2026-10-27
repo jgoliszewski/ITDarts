@@ -55,7 +55,9 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
 
 - **Podpowiedzi Checkout i Setup** ([UI.md](UI.md#ekran-wyników)), 2026-10-27, ze zgłoszenia: trasy z tabeli PDC (z kontynuacją zaplanowanej trasy w turze), a poza tabelą optymalna strategia (oczekiwana liczba lotek z modelem pudeł), aktualizowana po każdej lotce, z „Setup”, gdy checkoutu nie ma. Działa w X01 i 121. Sprawdzone testami, jeszcze nie oglądane na ekranie.
 
-  Testy: `npm test` (111), `npm run typecheck`.
+- **Caller w 121 i nowa karta tury** (2026-10-27, ze zgłoszeń): caller w 121 jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)); karta tury z dużymi kafelkami lotek i stanu we wszystkich grach ([UI.md](UI.md#tura-i-takeout)); w 121 kafelek z lotkami do końca podejścia ([GRY.md](GRY.md#121)). Karta 121 i ATC sprawdzona zrzutem na osobnej instancji. Callera 121 nikt jeszcze nie słyszał w kiosku.
+
+  Testy: `npm test` (114), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

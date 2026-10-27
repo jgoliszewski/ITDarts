@@ -37,6 +37,23 @@ export function RouteHint({ checkout, setup }: { checkout: string | null; setup:
   return <div className={`hero-checkout ${checkout ? '' : 'setup'}`}><div className="caps">{checkout ? 'Checkout' : 'Setup'}</div><div className="num">{checkout ?? setup}</div></div>;
 }
 
+/** 121: darts left in the attempt, as a number and one pip per dart, grouped by visit. */
+function AttemptTile({ left, of }: { left: number; of: number }) {
+  return (
+    <div className="attempt-tile">
+      <div className="caps">Darts left in attempt</div>
+      <div className="row">
+        <div className="num">{left}</div>
+        <div className="attempt-pips">
+          {Array.from({ length: of / 3 }, (_, v) => (
+            <div key={v}>{[0, 1, 2].map(i => <span key={i} className={v * 3 + i < of - left ? 'used' : ''} />)}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
@@ -59,7 +76,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         {m.game === '121' && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
       </div>
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
-      <div className="hero-note">{v.hero.note}</div>
+      {v.hero.note && <div className="hero-note">{v.hero.note}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
           const d = visit.darts[i];
@@ -75,6 +92,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
         })}
+        {m.game === '121' && <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} />}
       </div>
     </section>
   );

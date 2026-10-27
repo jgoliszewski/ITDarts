@@ -89,7 +89,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 - **Opcje:**
   - „Visits per target”: 3 (domyślnie) albo 4;
   - „Refill lives on checkout”, domyślnie włączone: sukces przywraca 3 życia. Wyłączone oznacza 3 życia na całą grę.
-- **Ekran wyników:** hero pokazuje cel, ile zostało do zamknięcia, „Darts left” w podejściu, życia i podpowiedź checkoutu z X01. Caller milczy, bo mówi tylko w X01 (#5).
+- **Ekran wyników:** hero pokazuje cel, ile zostało do zamknięcia, życia i podpowiedź checkoutu z X01. Lotki do końca podejścia są kafelkiem obok lotek Tury: duża liczba i kropka na każdą lotkę, po trzy na Turę, zużyte puste (od 2026-10-27, ze zgłoszenia). Caller mówi jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
 - **Wyzwalacze:** „Checkout” i „Bust” (istnieją), „Attempt failed”.
 - **Statystyki:** skuteczność podejść w %. Rekordem jest najwyższy zaliczony cel, osobno dla każdej kombinacji Visits × Refill, solo albo Co-op.
 

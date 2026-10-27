@@ -12,6 +12,8 @@ export type Fact =
   | { kind: 'dart'; dart: Dart }
   /** A complete X01 visit without a bust. `darts` are the ones that took effect. */
   | { kind: 'visit'; total: number; darts: Dart[]; checkout: boolean }
+  /** A complete 121 visit without a bust, for the caller only: visit totals trigger rules in X01 alone. */
+  | { kind: 'calledTotal'; total: number }
   | { kind: 'bust' }
   /** Checkout or a won leg (a won game in Higher or Lower). */
   | { kind: 'checkout' }
@@ -68,7 +70,7 @@ export type Trigger =
   | { kind: 'range'; min: number; max: number; checkout: CheckoutCond }
   | { kind: 'combo'; darts: DartPattern[]; ordered: boolean; checkout: CheckoutCond }
   | { kind: 'game'; event: GameEvent; marks?: number }
-  | { kind: Exclude<Fact['kind'], 'dart' | 'visit' | 'game'> };
+  | { kind: Exclude<Fact['kind'], 'dart' | 'visit' | 'calledTotal' | 'game'> };
 
 export type TriggerKind = Trigger['kind'];
 

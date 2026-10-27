@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { oneTwentyOne } from './121.ts';
+import { callerLines121, oneTwentyOne } from './121.ts';
+import { changes } from './effects.ts';
 import { cricket } from './cricket.ts';
 import { parseDart } from './darts.ts';
 import { hol } from './hol.ts';
@@ -240,5 +241,30 @@ describe('higher or lower', () => {
     expect(v.points).toEqual([1, 0]);
     expect([v.lo, v.hi]).toEqual([26, 45]);
     expect(v.current).toBe(1); // the next game starts with the next player
+  });
+});
+
+describe('121 caller', () => {
+  const o = { ...oneTwentyOne.defaults };
+  const said = (log: TurnEvent[]) => {
+    const last = log.at(-1)!;
+    const cause = last.t === 'fix' ? 'fix' : last.t === 'undo' ? 'undo' : 'other';
+    const cs = changes(oneTwentyOne.happenings(log.slice(0, -1), 1, o), oneTwentyOne.happenings(log, 1, o), cause);
+    return callerLines121(cs, oneTwentyOne.view(log, 1, o), last.t === 'next' || last.t === 'start');
+  };
+
+  it('calls the visit, no score on a bust, and you require at the next visit', () => {
+    expect(said([d('T20'), d('S20'), d('S1')])).toEqual(['81']);
+    expect(said([...visit('T20', 'S20', 'S1')])).toEqual(['you_require', '40']);
+    expect(said([...visit('T20', 'S20', 'S1'), d('S20'), d('S19')])).toEqual(['busted']);
+  });
+
+  it('calls a checkout as its score and the new target at the next visit', () => {
+    expect(said([d('T20'), d('T17'), d('D5')])).toEqual(['121']);
+    expect(said(visit('T20', 'T17', 'D5'))).toEqual(['you_require', '122']);
+  });
+
+  it('calls a fixed visit again', () => {
+    expect(said([d('T20'), d('S20'), d('S1'), { t: 'fix', index: 2, dart: parseDart('S5')! }])).toEqual(['85']);
   });
 });

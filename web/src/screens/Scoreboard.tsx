@@ -164,23 +164,42 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
   const since = s.board.takeout.since ?? now;
   const stuck = takeout && now - since > STUCK_AFTER_MS;
   const darts = v.visit.darts;
+  const good = isX01(m) ? null : m.view.visit.good;
   const verdict: Verdict | null = isX01(m) ? (m.view.visit.bust ? { text: 'Bust', tone: 'bad' } : null) : m.view.visit.verdict;
-  const big = verdict ? verdict.text : isX01(m) ? String(m.view.visit.total) : m.game === 'hol' ? String(m.view.sum ?? 0) : null;
-  const rest = isX01(m) ? `${m.view.scores[v.current]} left` : verdict ? m.view.hero.caption : `${m.view.hero.caption} ${m.view.hero.big}`;
+  const hits = good?.filter(Boolean).length ?? 0;
+  const scored = isX01(m) ? m.view.visit.total
+    : m.game === 'hol' ? m.view.sum ?? 0
+    : m.game === '121' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
+  const big = verdict ? verdict.text : scored !== null ? String(scored) : `${hits} ${hits === 1 ? 'hit' : 'hits'}`;
+  const stats: [string, string][] = isX01(m) ? [['Left', String(m.view.scores[v.current])]]
+    : m.game === '121' ? [['Target', String(m.view.target)], ['Left', String(m.view.remaining)], ['Darts in attempt', String(m.view.attemptLeft)]]
+    : m.game === 'hol' ? [['Range', `${m.view.lo}–${m.view.hi}`]]
+    : [[m.view.hero.caption, m.view.hero.big]];
+  const note = isX01(m) || m.game === '121' || m.game === 'hol' ? null : m.view.hero.note;
   return (
     <div className="overlay">
       <div className="overlay-card">
         {darts.length > 0 && (
           <div className="body">
-            <div className="who">{m.roster[v.current].name}{big !== null && !verdict ? ' scored' : ''}</div>
-            {big !== null && <div className={`bigscore num ${verdict ? `verdict ${verdict.tone}` : ''}`}>{big}</div>}
-            <div className="chips">
-              {darts.map((d, i) => canEdit
-                ? <button key={i} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{label(d.dart)}</button>
-                : <span key={i}>{label(d.dart)}</span>)}
-              {[0, 1, 2].slice(darts.length).map(i => <span key={`m${i}`} className="plain">Miss</span>)}
-              <span className="plain">{rest}</span>
+            <div className="who">{m.roster[v.current].name}{scored !== null && !verdict ? ' scored' : ''}</div>
+            <div className={`bigscore num ${verdict ? `verdict ${verdict.tone}` : scored === null ? 'verdict' : ''}`}>{big}</div>
+            <div className="card-darts">
+              {[0, 1, 2].map(i => {
+                const d = darts[i];
+                if (!d) return <div key={i} className="dart-tile empty" />;
+                // Minigames lead with the field hit, as on their screen; X01 with the points.
+                const [top, sub] = good ? [label(d.dart), value(d.dart)] : [value(d.dart), label(d.dart)];
+                const tile = <><span className="num">{top}</span><span className="lbl">{sub}</span></>;
+                const cls = `dart-tile ${good && !good[i] ? 'dead' : ''}`;
+                return canEdit
+                  ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
+                  : <div key={i} className={cls}>{tile}</div>;
+              })}
             </div>
+            <div className="card-stats">
+              {stats.map(([k, val]) => <div key={k}><div className="caps">{k}</div><div className="num">{val}</div></div>)}
+            </div>
+            {note && <div className="card-note">{note}</div>}
             {!takeout && <div className="pull">Pull the darts</div>}
           </div>
         )}
