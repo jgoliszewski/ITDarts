@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type { BoardAction, ClientState } from '../../../server/protocol.ts';
 import { DOT, TargetBoard, coordsSpot } from '../components/Dartboard.tsx';
@@ -22,7 +23,7 @@ function prettyRaw(raw: string) {
 }
 
 /** Darts here do not reach the match: see whether the board reacts and what it sends (docs/UI.md, Panel tarczy). */
-function BoardTest({ s, now }: { s: ClientState; now: number }) {
+function BoardTest({ s, now, controls }: { s: ClientState; now: number; controls: ReactNode }) {
   const b = s.board;
   const darts = b.log.filter(e => e.coords && e.at >= s.boardTest!).reverse();
   const row = (k: string, v: string) => <><span className="muted">{k}</span><span>{v}</span></>;
@@ -52,8 +53,10 @@ function BoardTest({ s, now }: { s: ClientState; now: number }) {
           {row('Detection', b.detecting ? 'On' : 'Off')}
           {row('Takeout', b.takeout.active ? `In progress · ${ago(b.takeout.since!, now).replace(' ago', '')}` : 'No')}
           {row('Last frame', b.frameAt ? ago(b.frameAt, now) : 'Nothing yet')}
+          {b.busy && row('Working', `${b.busy.action === 'calibrate' ? 'Calibrating' : 'Restarting'} · ${ago(b.busy.since, now).replace(' ago', '')}`)}
         </div>
       </section>
+      {controls}
       <section className="box bt-events">
         <div className="caps" style={{ fontSize: 13 }}>Events</div>
         {b.log.length ? (
@@ -101,7 +104,28 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
     onClose();
   };
 
-  const body = testing ? <BoardTest s={s} now={now} /> : (
+  // The same buttons in the panel and in Test board, lower in the test so the events keep their room.
+  const controls = (
+    <div className="board-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+      {actions.map(x => (
+        <button key={x.a} disabled={disabled} onClick={() => (CONFIRM[x.a] ? setConfirm(x.a) : run(x.a))}
+          style={{ height: testing ? 64 : 96, borderRadius: 22, background: x.danger ? 'var(--red-bg)' : 'var(--card2)', color: x.danger ? 'var(--red-soft)' : 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
+          <span style={{ fontSize: 17, fontWeight: 800 }}>{x.title}</span>
+          <span style={{ fontSize: 12, color: x.danger ? '#C9A3A5' : 'var(--muted2)' }}>{x.sub}</span>
+        </button>
+      ))}
+    </div>
+  );
+  const dialog = confirm && CONFIRM[confirm] && (
+    <Dialog title={CONFIRM[confirm]!.title} onClose={() => setConfirm(null)} actions={<>
+      <button className="btn" onClick={() => setConfirm(null)}>Cancel</button>
+      <button className={`btn ${confirm === 'restart' ? 'danger' : 'primary'}`} onClick={() => run(confirm)}>{CONFIRM[confirm]!.go}</button>
+    </>}>
+      <p>{CONFIRM[confirm]!.text}</p>
+    </Dialog>
+  );
+
+  const body = testing ? <><BoardTest s={s} now={now} controls={controls} />{dialog}</> : (
     <>
       <section className="box">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 20, fontWeight: 800 }}><span className={`dot ${pill.dot}`} />{status}</div>
@@ -123,15 +147,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
         </div>
         {b.fake && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${location.hostname}:${b.address.split(':')[1]}/`} target="_blank" rel="noreferrer">Open fake board</a>}
       </section>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-        {actions.map(x => (
-          <button key={x.a} disabled={disabled} onClick={() => (CONFIRM[x.a] ? setConfirm(x.a) : run(x.a))}
-            style={{ height: 96, borderRadius: 22, background: x.danger ? 'var(--red-bg)' : 'var(--card2)', color: x.danger ? 'var(--red-soft)' : 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
-            <span style={{ fontSize: 17, fontWeight: 800 }}>{x.title}</span>
-            <span style={{ fontSize: 12, color: x.danger ? '#C9A3A5' : 'var(--muted2)' }}>{x.sub}</span>
-          </button>
-        ))}
-      </div>
+      {controls}
       {!wide && (
         <section className="box">
           <div className="caps" style={{ fontSize: 13 }}>This device</div>
@@ -140,14 +156,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
         </section>
       )}
       <div style={{ marginTop: 'auto', fontSize: 13, color: 'var(--muted2)' }}>Camera and detection settings stay in Board Manager (:{b.address.split(':')[1] ?? '3180'}).</div>
-      {confirm && CONFIRM[confirm] && (
-        <Dialog title={CONFIRM[confirm]!.title} onClose={() => setConfirm(null)} actions={<>
-          <button className="btn" onClick={() => setConfirm(null)}>Cancel</button>
-          <button className={`btn ${confirm === 'restart' ? 'danger' : 'primary'}`} onClick={() => run(confirm)}>{CONFIRM[confirm]!.go}</button>
-        </>}>
-          <p>{CONFIRM[confirm]!.text}</p>
-        </Dialog>
-      )}
+      {dialog}
     </>
   );
 
