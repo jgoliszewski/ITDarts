@@ -1,7 +1,7 @@
 // Messages between the server and browsers. Imported by web/ as types only.
 import type { O121, View121 } from '../games/121.ts';
 import type { CricketOptions, CricketView } from '../games/cricket.ts';
-import type { Dart } from '../games/darts.ts';
+import type { Coords, Dart } from '../games/darts.ts';
 import type { Fx } from './effects/index.ts';
 import type { MatchReport, PlayerHeat } from '../games/report.ts';
 import type { HolOptions, HolView } from '../games/hol.ts';
@@ -32,6 +32,11 @@ export interface BoardStatus {
   version: string | null;
   detecting: boolean;
   lastEvent: { text: string; at: number } | null;
+  /** The last events, newest first, with the dart's position for throws (Panel tarczy, Test board). */
+  log: { text: string; at: number; coords?: Coords }[];
+  /** When Board Manager last sent anything, and what. */
+  frameAt: number | null;
+  raw: string | null;
   takeout: { active: boolean; since: number | null };
   busy: { action: BoardAction; since: number } | null;
 }
@@ -98,6 +103,8 @@ export interface ClientState {
   recentPlayerIds: number[];
   urls: string[];
   showQr: boolean;
+  /** Test board is open since then: darts and takeouts do not reach the match. */
+  boardTest: number | null;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
   /** Pilot switches, the effects volume (0–100) and the built-in turn sound switch (`swoosh`, its first name). `rev` changes with every effects change. */
@@ -130,6 +137,7 @@ export type Command =
   | { type: 'dismissResumed' }
   | { type: 'board'; action: BoardAction }
   | { type: 'fakeBoard'; on: boolean }
+  | { type: 'boardTest'; on: boolean }
   | { type: 'showQr'; show: boolean }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }

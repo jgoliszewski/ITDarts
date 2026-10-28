@@ -23,6 +23,7 @@ interface BmState {
 }
 
 const RECONNECT_MS = 2000;
+const LOG_SIZE = 30;
 
 export function toDart(t: BmThrow): Dart {
   const n = t.segment?.number ?? 0;
@@ -46,7 +47,7 @@ export class Board extends EventEmitter<BoardEvents> {
   constructor(public address: string) {
     super();
     this.status = {
-      address, fake: false, connected: false, version: null, detecting: true, lastEvent: null,
+      address, fake: false, connected: false, version: null, detecting: true, lastEvent: null, log: [], frameAt: null, raw: null,
       takeout: { active: false, since: null }, busy: null,
     };
   }
@@ -102,7 +103,14 @@ export class Board extends EventEmitter<BoardEvents> {
     ws.onerror = () => ws.close();
     ws.onmessage = msg => {
       try {
-        const m = JSON.parse(String(msg.data)) as { type?: string; data?: BmState };
+        const raw = String(msg.data);
+        this.status.frameAt = Date.now();
+        // Same frame again only moves frameAt: no broadcast for it.
+        if (raw.slice(0, 2000) !== this.status.raw) {
+          this.status.raw = raw.slice(0, 2000);
+          this.emit('status');
+        }
+        const m = JSON.parse(raw) as { type?: string; data?: BmState };
         if (m.type === 'state' && m.data) this.onState(m.data);
       } catch {
         // ignore malformed frames
@@ -116,15 +124,19 @@ export class Board extends EventEmitter<BoardEvents> {
     this.timer = setTimeout(() => this.connect(), RECONNECT_MS);
   }
 
-  private event(text: string) {
-    this.status.lastEvent = { text, at: Date.now() };
+  private event(text: string, coords?: Coords) {
+    const at = Date.now();
+    this.status.lastEvent = { text, at };
+    this.status.log = [{ text, at, ...(coords && { coords }) }, ...this.status.log].slice(0, LOG_SIZE);
     this.emit('status');
   }
 
   private onState(s: BmState) {
     const throws = s.throws ?? [];
+    const detecting = this.status.detecting;
     if (typeof s.running === 'boolean') this.status.detecting = s.running;
     else if (typeof s.status === 'string' && /stop/i.test(s.status)) this.status.detecting = false;
+    if (this.status.detecting !== detecting) this.event(this.status.detecting ? 'Detection started' : 'Detection stopped');
 
     const ev = s.event ?? '';
     if (/takeout started/i.test(ev) && !this.status.takeout.active) {
@@ -148,7 +160,7 @@ export class Board extends EventEmitter<BoardEvents> {
       const t = throws[this.processed];
       const dart = toDart(t);
       const coords = t.coords && Number.isFinite(t.coords.x) && Number.isFinite(t.coords.y) ? { x: t.coords.x, y: t.coords.y } : undefined;
-      this.event(`Throw detected · ${t.segment?.name ?? ''}`.trim());
+      this.event(`Throw detected · ${t.segment?.name ?? ''}`.trim(), coords);
       this.emit('throw', dart, coords);
     }
     // Reset clears the board, also from Board Manager's own page, so a takeout it never finished ends here.
@@ -211,6 +223,9 @@ export class Board extends EventEmitter<BoardEvents> {
       if (a === 'stop') this.status.detecting = false;
       if (a === 'reset') this.processed = 0;
       this.event({ reset: 'Reset', start: 'Detection started', stop: 'Detection stopped', calibrate: 'Calibrated', restart: 'Restarting' }[a]);
+    } catch (e) {
+      this.event(`${a[0].toUpperCase()}${a.slice(1)} failed: ${e instanceof Error ? e.message : e}`);
+      throw e;
     } finally {
       if (slow) {
         this.status.busy = null;

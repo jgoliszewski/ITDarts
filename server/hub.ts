@@ -46,6 +46,8 @@ interface Live {
 }
 
 const QR_TIMEOUT_MS = 60_000;
+/** A forgotten Test board would swallow every dart of the match. */
+const TEST_TIMEOUT_MS = 10 * 60_000;
 const INTRO_MS = 4_000;
 const BUGS_DIR = resolve('bugs');
 /** The app's version in a bug report; "-dirty" when local changes were running. */
@@ -84,6 +86,8 @@ export class Hub {
   private live: Live | null = null;
   private showQr = false;
   private qrTimer: NodeJS.Timeout | null = null;
+  private boardTest: number | null = null;
+  private testTimer: NodeJS.Timeout | null = null;
   private introTimer: NodeJS.Timeout | null = null;
   private howTo: ClientState['howTo'] = null;
   /** The summary of the match just saved, up until the pilot moves on (docs/UI.md, Podsumowanie meczu). Lost on restart. */
@@ -125,7 +129,7 @@ export class Hub {
     });
     board.on('throw', (dart, coords) => {
       const v = this.live?.view;
-      if (!v || this.bullOut) return;
+      if (!v || this.bullOut || this.boardTest) return;
       if (v.phase === 'bulloff') {
         this.bullOut = true;
         this.apply({ t: 'bull', dart, coords, at: Date.now() });
@@ -136,9 +140,11 @@ export class Hub {
     });
     board.on('takeoutStarted', () => {
       this.broadcast();
+      if (this.boardTest) return;
       this.hubFx({ kind: 'takeoutStart' });
     });
     board.on('takeoutFinished', () => {
+      if (this.boardTest) return this.broadcast();
       this.hubFx({ kind: 'takeoutEnd' });
       if (this.bullOut) {
         this.bullOut = false;
@@ -242,6 +248,7 @@ export class Hub {
       recentPlayerIds: this.db.recentPlayerIds(),
       urls: this.urls,
       showQr: this.showQr,
+      boardTest: this.boardTest,
       howTo: this.howTo,
       effects: { ...(({ sounds, caller, leds, volume, swoosh }) => ({ sounds, caller, leds, volume, swoosh }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
@@ -563,6 +570,11 @@ export class Hub {
         return {};
       case 'fakeBoard':
         this.useFakeBoard(!!cmd.on);
+        return {};
+      case 'boardTest':
+        this.boardTest = cmd.on ? Date.now() : null;
+        if (this.testTimer) clearTimeout(this.testTimer);
+        if (cmd.on) this.testTimer = setTimeout(() => ((this.boardTest = null), this.broadcast()), TEST_TIMEOUT_MS);
         return {};
       case 'showQr':
         this.showQr = !!cmd.show;

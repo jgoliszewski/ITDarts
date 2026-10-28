@@ -57,6 +57,8 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
   - heatmapa w stylu Autodarts z linią między dwoma graczami (`web/src/components/Heatmap.tsx`) w podsumowaniu, w profilu gracza i na `/stats/compare`; dane z `GET /api/stats/heat`;
   - „Distance walked” = Tury × 2 × `ocheMeters` (domyślnie 2,37 m);
   - sprawdzone skryptem z symulatorem tarczy (mecz wygrany i przerwany z gośćmi) i zrzutami: 1920×1080, 1600×900, telefon 375 px, `/stats/compare`. Przeciągania linii i przycisku „Summary” nikt jeszcze nie klikał.
+- **Test board** w panelu tarczy (2026-10-28, grilling ze zgłoszenia, [UI.md](UI.md#panel-tarczy)): log 30 zdarzeń z coords, ostatnia ramka Board Managera, lotki i takeouty w teście omijają mecz (`boardTest` w stanie, sam gaśnie po 10 min). Sprawdzone skryptem z symulatorem i zrzutami (1600×900, 375 px); na prawdziwej tarczy jeszcze nie.
+- **Kalibracja** najpierw włącza detekcję, bo Board Manager odrzuca ją przy zatrzymanej; błędy akcji pokazują tekst od Board Managera. Nie sprawdzone na prawdziwej tarczy.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
 - **Podpowiedzi Checkout i Setup** ([UI.md](UI.md#ekran-wyników)), 2026-10-27, ze zgłoszenia: trasy z tabeli PDC (z kontynuacją zaplanowanej trasy w turze), a poza tabelą optymalna strategia (oczekiwana liczba lotek z modelem pudeł), aktualizowana po każdej lotce, z „Setup”, gdy checkoutu nie ma. Działa w X01 i 121. Sprawdzone testami, jeszcze nie oglądane na ekranie.

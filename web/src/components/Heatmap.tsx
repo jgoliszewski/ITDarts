@@ -1,4 +1,4 @@
-import type { PointerEvent } from 'react';
+import type { PointerEvent, ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { BOARD_ORDER } from '../../../games/darts.ts';
 import type { PlayerHeat } from '../../../games/report.ts';
@@ -53,6 +53,14 @@ function wedge(r1: number, r2: number, i: number) {
   const a1 = Math.PI / 2 - ((i * 18 - 9) * Math.PI) / 180, a2 = Math.PI / 2 - ((i * 18 + 9) * Math.PI) / 180;
   const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1);
   return `M${x1} ${y1}A${r2 * S} ${r2 * S} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1 * S} ${r1 * S} 0 0 0 ${x4} ${y4}Z`;
+}
+
+/** Board coords (1 = 170 mm, y up) in the 600×600 board drawing. */
+export const onBoard = (x: number, y: number) => [C + x * S, C - y * S] as const;
+
+/** The bare board, with marks drawn over it (Test board). */
+export function BoardView({ children }: { children?: ReactNode }) {
+  return <svg viewBox={`0 0 ${W} ${W}`}><Board />{children}</svg>;
 }
 
 function Board() {
