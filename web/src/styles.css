@@ -97,6 +97,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .big .banner { font-size: calc(20 * var(--u)); padding: calc(10 * var(--u)); }
 
 .board-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) calc(620 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)); }
+/* X01 with 3–4 players: a wider list with full-size rows, then the match stats (docs/UI.md). */
+.board-main.wide-side { grid-template-columns: minmax(0, 1fr) calc(760 * var(--u)); }
+.board-main.wide-side .prow { padding: calc(16 * var(--u)) calc(28 * var(--u)); }
 .hero { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(48 * var(--u)) calc(56 * var(--u)); display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .hero-top { display: flex; align-items: center; gap: calc(20 * var(--u)); }
 .hero-top svg { width: calc(26 * var(--u)); height: calc(26 * var(--u)); flex-shrink: 0; }
@@ -130,28 +133,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .side { display: flex; flex-direction: column; gap: calc(24 * var(--u)); min-height: 0; }
 .plist { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(12 * var(--u)); display: flex; flex-direction: column; gap: calc(8 * var(--u)); min-height: 0; overflow: hidden; }
 .prow { display: flex; align-items: center; gap: calc(16 * var(--u)); padding: calc(24 * var(--u)) calc(28 * var(--u)); border-radius: calc(26 * var(--u)); background: var(--card2); }
-.prow.compact { padding: calc(10 * var(--u)) calc(24 * var(--u)); }
-.prow.compact .info { gap: calc(6 * var(--u)); }
+.prow.compact { padding: calc(14 * var(--u)) calc(24 * var(--u)); }
 .prow.active { background: var(--accent); color: var(--on-accent); }
 .prow .info { display: flex; flex-direction: column; gap: calc(10 * var(--u)); flex: 1; min-width: 0; }
 .prow .name { font-size: calc(30 * var(--u)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.prow.compact .name { font-size: calc(24 * var(--u)); }
+.prow.compact .name { font-size: calc(26 * var(--u)); }
 .prow .meta { display: flex; align-items: center; gap: calc(6 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; color: var(--muted2); }
 .prow.active .meta { color: var(--accent-ink); }
 .prow .pip { width: calc(15 * var(--u)); height: calc(15 * var(--u)); }
 .prow.active .pip { background: rgba(17, 17, 17, 0.22); }
 .prow.active .pip.on { background: #111; }
 .prow .score { font-size: calc(88 * var(--u)); line-height: 1; }
-.prow.compact .score { font-size: calc(64 * var(--u)); }
+.prow.compact .score { font-size: calc(72 * var(--u)); }
 .card { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(28 * var(--u)) calc(32 * var(--u)); display: flex; flex-direction: column; gap: calc(16 * var(--u)); }
 .card .caps { font-size: calc(18 * var(--u)); }
 .visits { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: calc(10 * var(--u)); }
 .visits div { height: calc(72 * var(--u)); border-radius: calc(18 * var(--u)); background: var(--tile); display: flex; align-items: center; justify-content: center; font-size: calc(40 * var(--u)); color: var(--soft); }
 .visits div.bust { color: var(--red); font-size: calc(26 * var(--u)); }
 .visits div.none { background: transparent; border: 2px dashed #26262A; }
-/* 3–4 X01 players: the stats cards squeeze under the longer list (docs/UI.md). */
-.side:has(.prow.compact) .card { padding: calc(20 * var(--u)) calc(28 * var(--u)); gap: calc(12 * var(--u)); }
-.side:has(.prow.compact) .visits div { height: calc(56 * var(--u)); font-size: calc(32 * var(--u)); }
 .mstats { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(12 * var(--u)); }
 .mstats div { border-radius: calc(20 * var(--u)); background: var(--tile); padding: calc(14 * var(--u)) calc(18 * var(--u)); display: flex; flex-direction: column; justify-content: center; }
 .mstats .l { font-size: calc(16 * var(--u)); color: var(--muted); font-weight: 600; }

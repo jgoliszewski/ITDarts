@@ -36,7 +36,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 - **Statystyki, do 4 graczy** (od 2026-10-28, ze zgłoszenia; wcześniej tylko przy 2):
   - karta z 6 ostatnimi wizytami aktywnego gracza;
   - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 60+, 80+, 100+ (od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura).
-  - Przy 3–4 graczach wiersze listy i karta wizyt są niższe, żeby wszystko zmieściło się nad paskiem. Przy 5+ graczach zostaje sama lista. Bez first 9, checkout % i liczby lotek w legu.
+  - Przy 3–4 graczach bez karty ostatnich wizyt, a lista jest szersza (760 zamiast 620) i ma pełnowymiarowe wiersze. Przy 5+ graczach zostaje sama lista, w wersji kompaktowej. Bez first 9, checkout % i liczby lotek w legu.
 - **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
 - **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).

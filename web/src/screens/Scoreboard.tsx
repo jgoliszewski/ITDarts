@@ -93,7 +93,8 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
 
 function PlayerList({ m }: { m: X01Match }) {
   const v = m.view;
-  const compact = m.roster.length > 2;
+  // Up to 4 players the rows stay full size; the stats cards make room for them.
+  const compact = m.roster.length > 4;
   const target = legTarget(m);
   const sets = m.options.matchMode.kind === 'sets';
   return (
@@ -130,12 +131,12 @@ function StatsCards({ m }: { m: X01Match }) {
   ];
   return (
     <>
-      <div className="card">
+      {m.roster.length <= 2 && <div className="card">
         <div className="caps">{name} · Last visits</div>
         <div className="visits">
           {visits.map((x, i) => x === undefined ? <div key={i} className="none" /> : x === null ? <div key={i} className="bust num">BUST</div> : <div key={i} className="num">{x}</div>)}
         </div>
-      </div>
+      </div>}
       <div className="card" style={{ flex: 1, minHeight: 0 }}>
         <div className="caps">{name} · This match</div>
         <div className="mstats">
@@ -357,7 +358,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: 
     <div className="big">
       <BigHeader s={s} sub={m.description} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
-      <main className={`board-main ${!isX01(m) && hasBoard(m) ? 'with-board' : ''}`}>
+      <main className={`board-main ${!isX01(m) && hasBoard(m) ? 'with-board' : ''} ${isX01(m) && m.roster.length > 2 && m.roster.length <= 4 ? 'wide-side' : ''}`}>
         {isX01(m) ? (
           <>
             <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
