@@ -39,6 +39,8 @@ export class Board extends EventEmitter<BoardEvents> {
   private processed = 0;
   /** After (re)connecting, the first state only sets the baseline: darts already counted are not replayed. */
   private synced = false;
+  /** `processed` is still right after a reconnect; only the first connection to a board has to ask the hub. */
+  private known = false;
   /** How many of the darts sitting in the board ITDarts already has (set by the hub). */
   countedOnBoard: () => number = () => Infinity;
   private stopped = false;
@@ -69,6 +71,7 @@ export class Board extends EventEmitter<BoardEvents> {
     this.ws = null; // its onclose is then ignored
     ws?.close();
     this.address = address;
+    this.known = false;
     Object.assign(this.status, { address, connected: false, version: null, takeout: { active: false, since: null }, busy: null });
     this.event(`Switched to ${address}`);
     this.start();
@@ -86,7 +89,6 @@ export class Board extends EventEmitter<BoardEvents> {
     this.ws = ws;
     ws.onopen = () => {
       this.status.connected = true;
-      this.processed = 0;
       this.synced = false;
       this.event('Connected');
       void this.fetchVersion();
@@ -153,7 +155,10 @@ export class Board extends EventEmitter<BoardEvents> {
     }
     if (!this.synced) {
       this.synced = true;
-      this.processed = Math.min(throws.length, this.countedOnBoard());
+      // The hub only knows the current visit, so darts left in the board after "Next player" would come back.
+      // ponytail: a takeout during the disconnect is invisible here; new darts up to the old count are then skipped.
+      this.processed = Math.min(throws.length, this.known ? this.processed : this.countedOnBoard());
+      this.known = true;
     }
     if (throws.length < this.processed) this.processed = throws.length; // board was reset
     for (; this.processed < throws.length; this.processed++) {

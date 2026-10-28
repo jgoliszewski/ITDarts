@@ -138,18 +138,18 @@ export class Stats {
     const won = results.filter(r => r.won).length;
 
     const recent = (this.db.sql.prepare(`
-      SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.position,
+      SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.won,
         (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
         (SELECT GROUP_CONCAT(COALESCE(p2.name, o.guest_name), ', ') FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
           WHERE o.match_id = m.id AND o.position != mp.position) AS opponents,
         (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position) o) AS score
       FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE mp.player_id = ? ORDER BY m.ended_at DESC LIMIT 10`).all(playerId) as
-      { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; position: number; players: number; opponents: string | null; score: string }[])
+      { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; won: number; players: number; opponents: string | null; score: string }[])
       .filter(r => r.game in GAMES)
       .map(r => {
         const game = GAMES[r.game];
-        const result = r.status === 'ended' ? 'saved' : r.winner_position === null ? 'played' : r.winner_position === r.position ? 'won' : 'lost';
+        const result = r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost';
         return {
           id: r.id,
           endedAt: r.ended_at,
@@ -211,7 +211,7 @@ export class Stats {
     if (!legLimit(w) && since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
     // Leg windows mean "the last N matches" here: these games have one leg per match.
     const rows = this.db.sql.prepare(`
-      SELECT mp.stats, m.status, m.winner_position = mp.position AS won, m.variant FROM matches m JOIN match_players mp ON mp.match_id = m.id
+      SELECT mp.stats, m.status, mp.won, m.variant FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE ${where.join(' AND ')} ORDER BY m.ended_at DESC ${legLimit(w) ? `LIMIT ${legLimit(w)}` : ''}`).all(...args) as
       { stats: string | null; status: string; won: number | null; variant: string | null }[];
     const totals: Record<string, number> = {};

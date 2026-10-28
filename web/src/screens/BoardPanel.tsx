@@ -110,8 +110,8 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
       {actions.map(x => (
         <button key={x.a} disabled={disabled} onClick={() => (CONFIRM[x.a] ? setConfirm(x.a) : run(x.a))}
           style={{ height: testing ? 64 : 96, borderRadius: 22, background: x.danger ? 'var(--red-bg)' : 'var(--card2)', color: x.danger ? 'var(--red-soft)' : 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
-          <span style={{ fontSize: 17, fontWeight: 800 }}>{x.title}</span>
-          <span style={{ fontSize: 12, color: x.danger ? '#C9A3A5' : 'var(--muted2)' }}>{x.sub}</span>
+          <span className="ba-title">{x.title}</span>
+          <span className="ba-sub" style={{ color: x.danger ? '#C9A3A5' : 'var(--muted2)' }}>{x.sub}</span>
         </button>
       ))}
     </div>

@@ -30,7 +30,7 @@ function save(roster: RosterEntry[], events: X01Event[], status: 'finished' | 'e
   const v = x01.view(events, roster.length, OPTS);
   return db.saveMatch({
     game: 'x01', options: OPTS, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status,
-    winner: v.matchWinner, sets: v.sets, legs: x01.compact(events, roster.length, OPTS),
+    winners: v.matchWinner === null ? [] : [v.matchWinner], sets: v.sets, legs: x01.compact(events, roster.length, OPTS),
   });
 }
 
@@ -112,7 +112,7 @@ describe('minigames', () => {
     const v = atc.view(events as never, roster.length, o);
     return db.saveMatch({
       game: 'atc', options: o, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status: 'finished',
-      winner: v.winners.length === 1 ? v.winners[0] : null, sets: [], legs: atc.compact(events as never, roster.length, o),
+      winners: v.winners, sets: [], legs: atc.compact(events as never, roster.length, o),
       variant: atc.record!.variant(o, roster.length)!.key, scores: v.scores, stats: v.stats,
     });
   };
@@ -129,6 +129,17 @@ describe('minigames', () => {
     expect(db.lastMatch()).toMatchObject({ game: 'atc', players: [{ name: 'Anna', value: '9 darts' }] });
     expect(new Stats(db).game(a, 'atc', 'all')).toMatchObject({ played: 2, totals: { darts: 17, hits: 16 } });
     expect(new Stats(db).records('atc')[0]).toMatchObject({ label: 'ATC · Any · Skips' });
+  });
+
+  it('counts a tie as a win for everyone tied', () => {
+    const a = db.createPlayer('Anna'), b = db.createPlayer('Bob');
+    // Both finish in 8 darts: Anna's three Turns, then Bob's.
+    const turns = (p: string[]) => [p.slice(0, 3), p.slice(3, 6), p.slice(6)];
+    const [a1, a2, a3] = turns(fast), [b1, b2, b3] = turns(fast);
+    saveAtc([{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }], atcEvents(...a1, ...b1, ...a2, ...b2, ...a3, 'Miss', ...b3));
+    expect(db.lastMatch()!.players.map(p => p.winner)).toEqual([true, true]);
+    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
+    expect(new Stats(db).player(a, 'all')!.recent[0].result).toBe('won');
   });
 
   it('does not count minigames in the X01 stats', () => {

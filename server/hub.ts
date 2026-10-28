@@ -399,16 +399,16 @@ export class Hub {
     const game = GAMES[rec.game];
     const n = rec.roster.length;
     let status: 'finished' | 'ended' = 'ended';
-    let winner: number | null = null;
+    let winners: number[] = [];
     if (view.phase === 'matchWon') {
       status = 'finished';
-      winner = 'winners' in view ? (view.winners.length === 1 ? view.winners[0] : null) : view.matchWinner;
+      winners = 'winners' in view ? view.winners : view.matchWinner === null ? [] : [view.matchWinner];
     } else if (view.phase === 'legWon' && rec.game === 'x01' && rec.options.matchMode.kind === 'off') {
       // Without match mode, ending after a leg is the normal end; most legs wins.
       status = 'finished';
       const legs = (view as X01View).legs;
       const best = Math.max(...legs);
-      winner = legs.filter(x => x === best).length === 1 ? legs.indexOf(best) : null;
+      winners = legs.filter(x => x === best).length === 1 ? [legs.indexOf(best)] : [];
     }
     if (status === 'finished' || save) {
       const mini = 'winners' in view ? view : null;
@@ -422,7 +422,7 @@ export class Hub {
       }
       this.db.saveMatch({
         game: rec.game, options: rec.options, roster: rec.roster, startedAt: rec.startedAt, endedAt: Date.now(),
-        status, winner, sets: 'sets' in view ? view.sets : [], legs,
+        status, winners, sets: 'sets' in view ? view.sets : [], legs,
         legsWon: rec.game === 'hol' ? (view as HolView).points : undefined,
         variant: scores ? this.variant(rec)!.key : null,
         scores: scores ?? undefined,

@@ -115,6 +115,11 @@ const MIGRATIONS = [
     created_at INTEGER NOT NULL
   );
   `,
+  // Ties in ATC and Full Board have several winners (docs/GRY.md), which winner_position cannot hold.
+  `
+  ALTER TABLE match_players ADD COLUMN won INTEGER NOT NULL DEFAULT 0;
+  UPDATE match_players SET won = 1 WHERE (match_id, position) IN (SELECT id, winner_position FROM matches);
+  `,
 ];
 
 // Options and events are whatever the game module takes; the module checks them.
@@ -134,7 +139,8 @@ export interface SaveMatch {
   startedAt: number;
   endedAt: number;
   status: 'finished' | 'ended';
-  winner: number | null;
+  /** Everyone who won; several on a tie. */
+  winners: number[];
   sets: number[];
   legs: LegRecord[];
   /** Legs won per player; counted from `legs` when missing. Higher or Lower stores its games here. */
@@ -283,16 +289,18 @@ export class Db {
 
   saveMatch(s: SaveMatch): number {
     const registered = s.roster.every(r => r.playerId !== null);
-    const counts = s.status === 'finished' && s.winner !== null && s.roster.length >= 2 && registered;
+    const winner = s.winners.length === 1 ? s.winners[0] : null;
+    const counts = s.status === 'finished' && winner !== null && s.roster.length >= 2 && registered;
     const legsWon = s.legsWon ?? s.roster.map((_, i) => s.legs.filter(l => l.winner === i).length);
     return this.tx(() => {
       const matchId = Number(this.sql.prepare(
         'INSERT INTO matches (game, options, started_at, ended_at, status, winner_position, counts_results, variant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      ).run(s.game, JSON.stringify(s.options), s.startedAt, s.endedAt, s.status, s.winner, counts ? 1 : 0, s.variant ?? null).lastInsertRowid);
+      ).run(s.game, JSON.stringify(s.options), s.startedAt, s.endedAt, s.status, winner, counts ? 1 : 0, s.variant ?? null).lastInsertRowid);
       const mp = this.sql.prepare(
-        'INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won, score, stats) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        'INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won, score, stats, won) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
       s.roster.forEach((r, i) => mp.run(matchId, i, r.playerId, r.playerId === null ? r.name : null, legsWon[i], s.sets[i] ?? 0,
-        r.playerId === null ? null : (s.scores?.[i] ?? null), s.stats?.[i] ? JSON.stringify(s.stats[i]) : null));
+        r.playerId === null ? null : (s.scores?.[i] ?? null), s.stats?.[i] ? JSON.stringify(s.stats[i]) : null,
+        s.winners.includes(i) ? 1 : 0));
       const legIns = this.sql.prepare('INSERT INTO legs (match_id, set_no, leg_no, starter_position, winner_position) VALUES (?, ?, ?, ?, ?)');
       const visitIns = this.sql.prepare(
         'INSERT INTO visits (leg_id, player_id, visit_no, score_before, scored, bust, checkout, darts_count, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -327,18 +335,18 @@ export class Db {
     if (!m || !(m.game in GAMES)) return null;
     const game = GAMES[m.game];
     const players = this.sql.prepare(`
-      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.legs_won, mp.sets_won, mp.score,
+      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.won, mp.legs_won, mp.sets_won, mp.score,
         (SELECT SUM(v.scored) * 3.0 / NULLIF(SUM(v.darts_count), 0) FROM visits v JOIN legs l ON l.id = v.leg_id
           WHERE l.match_id = mp.match_id AND v.player_id = mp.player_id) AS avg
       FROM match_players mp LEFT JOIN players p ON p.id = mp.player_id
-      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; legs_won: number; sets_won: number; score: number | null; avg: number | null }[];
+      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; avg: number | null }[];
     const x01 = m.game === 'x01';
     const sets = players.some(p => p.sets_won > 0);
     const value = (p: (typeof players)[number]) =>
       x01 ? String(sets ? p.sets_won : p.legs_won)
       : p.score !== null && game.record ? game.record.format(p.score)
       : m.game === 'hol' ? String(p.legs_won)
-      : m.winner_position === p.position ? 'Won' : '';
+      : p.won ? 'Won' : '';
     const last = this.sql.prepare(`
       SELECT d.n, d.m FROM legs l JOIN visits v ON v.leg_id = l.id AND v.checkout = 1
       JOIN darts d ON d.visit_id = v.id WHERE l.match_id = ? ORDER BY l.id DESC, d.idx DESC LIMIT 1`).get(m.id) as { n: number; m: 1 | 2 | 3 } | undefined;
@@ -352,7 +360,7 @@ export class Db {
         name: p.name,
         value: value(p),
         avg: !x01 || p.avg === null ? null : Math.round(p.avg * 100) / 100,
-        winner: m.winner_position === p.position,
+        winner: !!p.won,
       })),
       checkout: x01 && last ? label(last) : null,
     };

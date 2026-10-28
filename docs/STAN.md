@@ -82,7 +82,12 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 - **Higher or Lower** (2026-10-27): T1 liczy się jako zero, a przed pierwszą lotką hero pokazuje 0 zamiast kreski, która wyglądała jak biały prostokąt ([GRY.md](GRY.md#higher-or-lower)).
 - **New match** (2026-10-27): podpowiedzi „i” w dymku, opcje dla 2+ graczy od razu, przyciski graczy nad listą kolejności, check-out Single / Double / Master ([GRY.md](GRY.md#setup-na-pilocie), [UI.md](UI.md#start-i-koniec-meczu)).
 
-  Testy: `npm test` (127), `npm run typecheck`.
+- **Poprawki ze „Znanych problemów”** (2026-10-28):
+  - remis w ATC i Full Board daje wygraną wszystkim remisującym: migracja 4 dodaje `match_players.won`, z niego liczą „Won” w ostatnim meczu, historia gracza i statystyki minigierki. `winner_position` zostaje tylko dla jednego zwycięzcy;
+  - po „Next player” przed takeoutem i ponownym połączeniu z Board Managerem stare lotki nie wpadają następnemu graczowi: `Board` pamięta przetworzone lotki przez reconnect, hub pyta tylko przy pierwszym połączeniu (test w `server/board.test.ts`);
+  - większe napisy na przyciskach Board panelu na laptopie. Nie oglądane jeszcze na ekranie.
+
+  Testy: `npm test` (134), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -116,11 +121,8 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 
 - W `npm run dev` Vite łączy się z serwerem z localhost, więc serwer bierze każdą przeglądarkę, także telefon, za kiosk. Dźwięki reguł grają wtedy też na telefonie. W `npm start` i w kiosku tego problemu nie ma.
 - Kiosk trzyma zdekodowane dźwięki po nazwie pliku. Gdy dźwięk zostanie usunięty i w jego miejsce wgrany inny o tej samej nazwie, kiosk gra stary aż do przeładowania strony.
-- Remis w ATC i Full Board zapisuje mecz bez zwycięzcy, więc nie wchodzi do winrate.
 - W Co-op 121 podejście liczy się graczowi, który je zakończył: checkoutem albo ostatnią Turą.
-
-- Gdy Pilot wciśnie „Next player” przed takeoutem, a Board Manager rozłączy się i połączy, zanim lotki zostaną wyjęte, stare lotki mogą wpaść następnemu graczowi.
-- Na szerokim ekranie przyciski w Board panelu mogłyby mieć większe czcionki.
+- Gdy takeout i nowe lotki zdarzą się w czasie rozłączenia z Board Managerem, nowe lotki do liczby lotek sprzed rozłączenia przepadną (trzeba je wpisać ręcznie).
 
 ## Następne kroki
 
