@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BoardAction, ClientState } from '../../../server/protocol.ts';
-import { BoardView, onBoard } from '../components/Heatmap.tsx';
+import { DOT, TargetBoard, coordsSpot } from '../components/Dartboard.tsx';
 import { Dialog, Icon, act } from '../components/ui.tsx';
 import { ago, useNow } from '../util.ts';
 import { Switch } from './effects/parts.tsx';
@@ -26,8 +26,21 @@ function BoardTest({ s, now }: { s: ClientState; now: number }) {
   const b = s.board;
   const darts = b.log.filter(e => e.coords && e.at >= s.boardTest!).reverse();
   const row = (k: string, v: string) => <><span className="muted">{k}</span><span>{v}</span></>;
+  const board = (
+    <div className="bt-board">
+      <TargetBoard cleared={[]} target={null} ring={null} darts={[]} label="Darts thrown in the test">
+        {darts.map((e, i) => {
+          const [x, y] = coordsSpot(e.coords!.x, e.coords!.y);
+          const last = i === darts.length - 1;
+          return <circle key={e.at + ':' + i} cx={x} cy={y} r={last ? DOT + 3 : DOT} fill={last ? '#F58224' : '#FFFFFF'} stroke="#0A0A0B" strokeWidth="2" />;
+        })}
+      </TargetBoard>
+    </div>
+  );
   return (
-    <>
+    <div className="board-test">
+      {board}
+      <div className="bt-side">
       <section className="box">
         <div className="option-row">
           <div style={{ fontSize: 20, fontWeight: 800 }}>Test board</div>
@@ -41,15 +54,7 @@ function BoardTest({ s, now }: { s: ClientState; now: number }) {
           {row('Last frame', b.frameAt ? ago(b.frameAt, now) : 'Nothing yet')}
         </div>
       </section>
-      <div className="board-test">
-        <BoardView>
-          {darts.map((e, i) => {
-            const [x, y] = onBoard(e.coords!.x, e.coords!.y);
-            return <circle key={e.at + ':' + i} cx={x} cy={y} r={i === darts.length - 1 ? 11 : 8} fill={i === darts.length - 1 ? '#ffe14d' : '#16b2c9'} stroke="#000" strokeWidth={2} />;
-          })}
-        </BoardView>
-      </div>
-      <section className="box">
+      <section className="box bt-events">
         <div className="caps" style={{ fontSize: 13 }}>Events</div>
         {b.log.length ? (
           <ol className="board-log">
@@ -66,7 +71,8 @@ function BoardTest({ s, now }: { s: ClientState; now: number }) {
           <pre className="board-raw">{b.raw ? prettyRaw(b.raw) : 'Nothing received yet'}</pre>
         </details>
       </section>
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -145,6 +151,8 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
     </>
   );
 
+  // A full screen on the laptop: the board as big as it fits, events beside it, nothing to scroll.
+  if (wide && testing) return <div className="board-test-full">{body}</div>;
   if (wide) {
     return (
       <>

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
 
@@ -24,6 +25,20 @@ export function dartSpot(d: Dart, i: number, rings = R): readonly [number, numbe
   const a = BOARD_ORDER.indexOf(d.n) * 18 + (i - 1) * 4;
   const r = d.m === 3 ? (rings[2] + rings[3]) / 2 : d.m === 2 ? (rings[4] + rings[5]) / 2 : (rings[3] + rings[4]) / 2;
   return pt(r, a);
+}
+
+// Ring edges in board units (1 = 170 mm) and where SHOWN draws them.
+const REAL = [0, 6.35 / 170, 15.9 / 170, 99 / 170, 107 / 170, 162 / 170, 1];
+const DRAWN = [0, ...SHOWN];
+
+/** Where Board Manager's coords (1 = 170 mm, y up) fall on a SHOWN board: same angle, radius stretched ring by ring, so a dot always sits in its own field. */
+export function coordsSpot(x: number, y: number): readonly [number, number] {
+  const d = Math.hypot(x, y);
+  // Past the double the last ring's scale carries on.
+  const f = REAL.findIndex(r => r >= d), i = f < 0 ? REAL.length - 1 : Math.max(1, f);
+  const k = (d - REAL[i - 1]) / (REAL[i] - REAL[i - 1]);
+  const r = DRAWN[i - 1] + k * (DRAWN[i] - DRAWN[i - 1]);
+  return d ? [(x / d) * r, (-y / d) * r] : [0, 0];
 }
 
 export function Dartboard({ marks, selected, onPick, size = 760 }: { marks: Dart[]; selected: Dart | null; onPick: (d: Dart) => void; size?: number }) {
@@ -63,13 +78,15 @@ const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 
  * Read-only board for ATC and Full Board (docs/GRY.md, mockup O): cleared targets hatched, the target outlined
  * (only its ring with Doubles or Trebles) and this visit's darts as dots, green for a hit, red otherwise.
  */
-export function TargetBoard({ cleared, target, ring, darts, label }: {
+export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   cleared: number[];
   target: number | null;
   /** The ring that counts on the target: null for any segment, 2 doubles, 3 trebles. */
   ring: 2 | 3 | null;
   darts: { dart: Dart; good: boolean }[];
   label: string;
+  /** Drawn over the board (Test board). */
+  children?: ReactNode;
 }) {
   const S = SHOWN;
   const done = new Set(cleared);
@@ -106,6 +123,7 @@ export function TargetBoard({ cleared, target, ring, darts, label }: {
         const [x, y] = dartSpot(dart, i, S);
         return <circle key={i} cx={x} cy={y} r={DOT} fill={good ? HIT_DOT : MISS_DOT} stroke="#FFFFFF" strokeWidth="3" />;
       })}
+      {children}
     </svg>
   );
 }

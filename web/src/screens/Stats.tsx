@@ -5,7 +5,7 @@ import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, Play
 import type { Row } from '../components/Compare.tsx';
 import { CompareTable, fmtKm, gameRows, gameStats, playerColor, x01Rows } from '../components/Compare.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
-import { Icon, Logo } from '../components/ui.tsx';
+import { Dropdown, Icon, Logo } from '../components/ui.tsx';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
 const ME_KEY = 'itdarts.me';
@@ -179,7 +179,7 @@ function PlayerHeat({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWin
 
 const COMPARE_KEY = 'itdarts.compare';
 
-/** Stats of 2–4 players side by side, rows as in the profile of the game (docs/STATYSTYKI.md, Prezentacja). */
+/** Stats of two players side by side, rows as in the profile of the game (docs/STATYSTYKI.md, Prezentacja). */
 function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
   const [data, setData] = useState<{ stats: (PlayerStatsResponse | GameStatsResponse)[]; heat: HeatResponse } | null>(null);
   const key = ids.join(',');
@@ -224,25 +224,26 @@ function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWi
 function ComparePage() {
   const { w, setW, game, setGame } = useStatsPrefs();
   const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
-  const [ids, setIdsState] = useState<number[]>(() => (store.get(COMPARE_KEY) ?? '').split(',').map(Number).filter(n => n > 0).slice(0, 4));
+  const [ids, setIdsState] = useState<number[]>(() => (store.get(COMPARE_KEY) ?? '').split(',').map(Number).filter(n => n > 0).slice(0, 2));
   const setIds = (v: number[]) => { setIdsState(v); store.set(COMPARE_KEY, v.join(',')); };
-  const known = list ? ids.filter(id => list.some(p => p.id === id)) : ids;
-  const toggle = (id: number) => setIds(known.includes(id) ? known.filter(x => x !== id) : known.length < 4 ? [...known, id] : known);
+  // Always two: the remembered pair, topped up with the first players on the list.
+  const pair = list ? [...ids.filter(id => list.some(p => p.id === id)), ...list.map(p => p.id).filter(id => !ids.includes(id))].slice(0, 2) : [];
+  const pick = (side: number, id: number) => setIds(side ? [pair[0], id] : [id, pair[1]]);
+  const picker = (side: number) => (
+    <Dropdown value={pair[side]} color={playerColor(side)} onChange={id => pick(side, id)}
+      options={list!.filter(p => p.id !== pair[1 - side]).map(p => ({ value: p.id, label: p.name }))} />
+  );
   return (
     <>
       <GamePicker game={game} setGame={setGame} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="chip-row">
-          {list?.map(p => {
-            const at = known.indexOf(p.id);
-            return (
-              <button key={p.id} className={`chip ${at >= 0 ? 'on' : ''}`} onClick={() => toggle(p.id)}
-                style={at >= 0 ? { background: playerColor(at), borderColor: playerColor(at), color: '#111' } : undefined}>{p.name}</button>
-            );
-          })}
-        </div>
         <WindowPicker value={w} onChange={setW} />
-        {known.length < 2 ? <p className="muted" style={{ margin: 0 }}>Pick 2 to 4 players.</p> : <CompareData ids={known} game={game} w={w} />}
+        {!list ? <p className="muted">Loading…</p> : pair.length < 2 ? <p className="muted" style={{ margin: 0 }}>Comparing needs two players.</p> : (
+          <>
+            <div className="heat-picks compare-picks">{picker(0)}<span className="vs">VS</span>{picker(1)}</div>
+            <CompareData ids={pair} game={game} w={w} />
+          </>
+        )}
       </div>
     </>
   );

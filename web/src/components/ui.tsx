@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import QRCode from 'qrcode';
 import type { ClientState, Command } from '../../../server/protocol.ts';
 import type { Result } from '../net.ts';
@@ -21,10 +21,49 @@ export const Icon = {
   play: (s?: number) => <svg width={s ?? 20} height={s ?? 20} viewBox="0 0 24 24" fill="#F58224" aria-hidden="true"><path d="M6 4l14 8-14 8z" /></svg>,
   grip: (s?: number) => <svg width={s ?? 18} height={s ?? 18} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>,
   plus: (s?: number) => svg(<path d="M12 5v14M5 12h14" />, s),
+  down: (s?: number) => svg(<path d="m6 9 6 6 6-6" />, s),
   spinner: () => (
     <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><circle cx="24" cy="24" r="20" stroke="#4A3F22" strokeWidth="5" /><path d="M24 4a20 20 0 0 1 20 20" stroke="#F5B83D" strokeWidth="5" strokeLinecap="round" /></svg>
   ),
 };
+
+/** A dropdown in the app's own style: a button with a colour mark, opening a list. Closes on a pick, a click outside or Escape. */
+export function Dropdown<T extends string | number>({ value, options, color, onChange }: {
+  value: T;
+  options: { value: T; label: string }[];
+  color: string;
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const out = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    addEventListener('pointerdown', out);
+    addEventListener('keydown', esc);
+    return () => { removeEventListener('pointerdown', out); removeEventListener('keydown', esc); };
+  }, [open]);
+  return (
+    <div className="pick" ref={ref}>
+      <button className={`pick-btn ${open ? 'open' : ''}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <i style={{ background: color }} />
+        <span>{options.find(o => o.value === value)?.label ?? '–'}</span>
+        {Icon.down(18)}
+      </button>
+      {open && (
+        <ul className="pick-list" role="listbox">
+          {options.map(o => (
+            <li key={o.value} role="option" aria-selected={o.value === value} className={o.value === value ? 'on' : ''}
+              onClick={() => { setOpen(false); if (o.value !== value) onChange(o.value); }}>
+              {o.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export const Logo = () => <div className="logo"><span className="dot accent" />ITDarts</div>;
 

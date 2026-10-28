@@ -64,7 +64,7 @@ Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lot
 - Telefon pamięta wybór „to ja” i otwiera się od razu na tym profilu.
 - **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), pod nią „Distance walked” w km.
 - **Porównanie graczy** na `/stats/compare`, wejście przyciskiem „Compare” na liście graczy:
-  - wybór 2–4 zarejestrowanych graczy (chipy), gry i okna;
+  - dokładnie dwóch zarejestrowanych graczy, wybieranych w dwóch polach „X VS Y” pod oknem czasu (od 2026-10-28; wcześniej chipy 2–4), plus gra i okno;
   - tabela z kolumną na gracza i wierszami jak w profilu tej gry, z podświetloną najlepszą wartością;
   - pod nią heatmapa z linią i dystans w km. Head-to-head zostaje w profilu.
 - **Distance walked:** każda Tura to przejście do tarczy i z powrotem, czyli 2 × odległość od linii do tarczy (`ocheMeters` w `config.json`, domyślnie 2,37 m). Bull-off się nie liczy.

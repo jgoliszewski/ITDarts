@@ -93,17 +93,17 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
 - Pełny ekran zamiast lobby na dużym ekranie i w telefonach, aż Pilot wybierze „Rematch” (zaczyna następny w kolejności), „New match” albo „Back to lobby”. Bez kontroli widać podsumowanie bez przycisków. Serwer trzyma je w pamięci, restart wraca do lobby.
 - Od góry:
   - nagłówek: „MATCH WON” i zwycięzca z wynikiem w legach albo setach, w minigrach wynik gry, a po przerwaniu „MATCH ENDED”;
-  - tabela porównania: kolumna na gracza w jego kolorze, wiersze ze statystykami meczu, najlepsza wartość w wierszu podświetlona. X01: średnia, pierwsze 9, checkout %, najwyższy checkout, najkrótszy leg, 60+, 80+, 100+, lotki. Minigry: liczby z modułu gry, jak w profilu na `/stats`. Ostatni wiersz to „Distance walked” w metrach;
+  - porównanie w stylu Autodarts: przy dwóch graczach nazwa statystyki pośrodku, wartości po bokach, a pod nimi paski od środka na zewnątrz w kolorach graczy, długie według udziału w sumie (przy „lower” według odwrotności). Najlepsza wartość jest w pigułce koloru gracza. Przy 3–4 graczach każdy ma kolumnę z wartością i paskiem. Szerokość jest ograniczona (560 px przy dwóch), żeby liczby były blisko siebie. X01: średnia, pierwsze 9, checkout %, najwyższy checkout, najkrótszy leg, 60+, 80+, 100+, lotki. Minigry: liczby z modułu gry, jak w profilu na `/stats`. Ostatni wiersz to „Distance walked” w metrach;
   - [heatmapa](#heatmapa) graczy z tego meczu.
 - Goście mają pełną kolumnę i heatmapę, bo podsumowanie liczy się z meczu, a nie z historii.
-- Na telefonie tabela przewija się w poziomie, heatmapa jest pod nią, a przyciski są przypięte na dole.
+- Na telefonie heatmapa jest pod porównaniem, a przyciski są przypięte na dole.
 - **Kolory graczy** według miejsca w meczu albo w porównaniu: 1 różowy, 2 turkusowy, 3 pomarańczowy, 4 zielony, dalej od nowa. Profil gracza ich nie zapisuje.
 
 ## Heatmapa
 
-- Wygląd jak w Autodarts: tarcza w klasycznych kolorach z szarymi drutami i numerami, obręcz w kolorze gracza. Każda lotka to mała plamka, pojedyncza zielonożółta z niebieską poświatą, a nakładające się przechodzą w żółć i czerwień.
-- Rysuje tylko lotki z coords. Lotki poprawione albo dopisane ręcznie podaje dopisek „N darts without position”, a bez żadnych coords zamiast tarczy jest „No positions recorded”. Lotek z bull-offu nie ma.
-- **Dwóch graczy:** jedna tarcza z pionową linią, którą przeciąga się palcem albo myszą. Na lewo od linii są lotki pierwszego gracza, na prawo drugiego, a połówki obręczy mają ich kolory. Przy 3–4 graczach pod tarczą są dwa pola wyboru, domyślnie dwaj pierwsi.
+- Tarcza jak wszystkie inne w aplikacji (ta z ATC i Full Board, od 2026-10-28). Plamki jak w Autodarts: pojedyncza lotka zielonożółta z niebieską poświatą, a nakładające się przechodzą w żółć i czerwień. Coords są przeliczane pierścień po pierścieniu na poszerzone pola tej tarczy.
+- Rysuje tylko lotki z coords; lotki poprawione albo dopisane ręcznie po prostu nie występują. Bez żadnych coords zamiast tarczy jest „No positions recorded”. Lotek z bull-offu nie ma.
+- **Dwóch graczy:** jedna tarcza z pionową linią, którą przeciąga się palcem albo myszą. Na lewo od linii są lotki pierwszego gracza, na prawo drugiego, a przy linii u góry wiszą ich imiona w ich kolorach. Przy 3–4 graczach nad tarczą, wyśrodkowane, są dwa pola wyboru, domyślnie dwaj pierwsi.
 - **Jeden gracz** (solo, profil gracza): tarcza bez linii.
 
 ## Lobby i QR
@@ -157,7 +157,7 @@ Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzut�
   - Restart Board Managera, z potwierdzeniem.
 - Przełącznik „Fake board”: serwer uruchamia symulator Board Managera na `:3180` i łączy się z nim zamiast z prawdziwą tarczą, a przycisk „Open fake board” otwiera stronę do klikania lotek. Wyłączenie wraca do adresu z `config.json`. Wybór nie przetrwa restartu serwera.
 - Ustawienia kamer i detekcji zostają w Board Managerze (`:3180`).
-- **Test board** (od 2026-10-28): przycisk w panelu podmienia jego zawartość na widok testu. Widać w nim stan (połączenie, detekcja, takeout, czas od ostatniej ramki z Board Managera), tarczę z kropkami lotek rzuconych w teście, listę ostatnich 30 zdarzeń z godziną i coords oraz zwijane „Raw” z ostatnią ramką JSON.
+- **Test board** (od 2026-10-28): przycisk w panelu otwiera widok testu: na laptopie na cały ekran (tarcza po lewej, stan i zdarzenia po prawej, bez przewijania strony), na telefonie zamiast panelu. Widać w nim stan (połączenie, detekcja, takeout, czas od ostatniej ramki z Board Managera), tarczę z kropkami lotek rzuconych w teście, listę ostatnich 30 zdarzeń z godziną i coords oraz zwijane „Raw” z ostatnią ramką JSON.
   - W trakcie testu lotki i takeouty nie trafiają do meczu. Koniec testu nie resetuje tarczy, a lotki wyciągnięte w teście się nie liczą.
   - Test kończy się przyciskiem „Done”, zamknięciem panelu albo sam po 10 minutach, żeby zapomniany test nie połykał lotek w meczu.
   - Serwer zawsze trzyma ostatnie 30 zdarzeń, więc po otwarciu testu widać też, co działo się przed chwilą. Błędy akcji (np. kalibracji) też trafiają do listy.

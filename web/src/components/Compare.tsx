@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
 import { fmtAvg, fmtNum } from '../util.ts';
@@ -66,29 +67,46 @@ function bestOf(r: Row): Set<number> {
   return new Set(r.nums.flatMap((n, i) => (n === best ? [i] : [])));
 }
 
-/** Players side by side: a column per player in their colour, the best value of each row lit. */
+/** How full a value's bar is: its share of all players' values, like Autodarts; for 'lower' rows the share of 1/value. */
+function fill(r: Row, i: number): number | null {
+  const v = r.nums?.[i];
+  if (!r.better || v == null) return null;
+  const score = (n: number) => (r.better === 'lower' ? (n > 0 ? 1 / n : 0) : n);
+  const sum = r.nums!.reduce<number>((t, n) => t + (n === null ? 0 : score(n)), 0);
+  return sum > 0 ? score(v) / sum : 0;
+}
+
+/**
+ * Players side by side like Autodarts: per row the label in the middle, values on the sides with the best one
+ * in a pill of its player's colour, and bars under them. Two players mirror around the middle; more get a column each.
+ */
 export function CompareTable({ names, rows }: { names: string[]; rows: Row[] }) {
+  const two = names.length === 2;
+  const value = (r: Row, best: Set<number>, i: number) => (
+    <span className={`cmp-val ${best.has(i) ? 'best' : ''}`} style={best.has(i) ? { background: playerColor(i) } : undefined}>{r.values[i]}</span>
+  );
+  const bar = (r: Row, i: number) => {
+    const f = fill(r, i);
+    return <div className="cmp-track">{f !== null && <i style={{ width: `${f * 100}%`, background: playerColor(i) }} />}</div>;
+  };
   return (
-    <div className="compare-scroll">
-      <table className="compare">
-        <thead>
-          <tr>
-            <th />
-            {names.map((n, i) => <th key={i} style={{ color: playerColor(i), borderColor: playerColor(i) }}>{n}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r => {
-            const best = bestOf(r);
-            return (
-              <tr key={r.label}>
-                <th>{r.label}</th>
-                {r.values.map((v, i) => <td key={i} className={best.has(i) ? 'best' : ''}>{v}</td>)}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
+      <div className="cmp-names">{names.map((n, i) => <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
+      {rows.map(r => {
+        const best = bestOf(r);
+        const bars = !!r.better && !!r.nums;
+        return two ? (
+          <div key={r.label} className="cmp-row">
+            <div className="cmp-line">{value(r, best, 0)}<span className="cmp-label">{r.label}</span>{value(r, best, 1)}</div>
+            {bars && <div className="cmp-bars">{bar(r, 0)}{bar(r, 1)}</div>}
+          </div>
+        ) : (
+          <div key={r.label} className="cmp-row">
+            <span className="cmp-label">{r.label}</span>
+            <div className="cmp-cols">{names.map((_, i) => <div key={i}>{value(r, best, i)}{bars && bar(r, i)}</div>)}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }

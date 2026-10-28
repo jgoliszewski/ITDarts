@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
-import { DOT, SHOWN, dartSpot } from './Dartboard.tsx';
+import { DOT, SHOWN, coordsSpot, dartSpot } from './Dartboard.tsx';
 
 // The scoreboard board widens trebles, doubles and the bulls, so check every dot still sits wholly in its own field.
 describe('dart dots on the scoreboard board', () => {
@@ -27,5 +27,18 @@ describe('dart dots on the scoreboard board', () => {
       expect(r25 + DOT).toBeLessThanOrEqual(SHOWN[1]);
       expect(Math.hypot(...dartSpot(bull, i, SHOWN)) + DOT).toBeLessThanOrEqual(SHOWN[0]);
     }
+  });
+});
+
+describe('Board Manager coords on the scoreboard board', () => {
+  it('keeps the ring and the angle', () => {
+    const r = (x: number, y: number) => Math.hypot(...coordsSpot(x, y));
+    expect(r(0, 103 / 170)).toBeCloseTo((SHOWN[2] + SHOWN[3]) / 2); // middle of the treble
+    expect(r(166 / 170, 0)).toBeCloseTo((SHOWN[4] + SHOWN[5]) / 2); // middle of the double
+    expect(r(0, 3 / 170)).toBeLessThan(SHOWN[0]); // bullseye
+    expect(r(0, 1.1)).toBeGreaterThan(SHOWN[5]); // outside
+    const [x, y] = coordsSpot(0, 0.6);
+    expect(x).toBeCloseTo(0);
+    expect(y).toBeLessThan(0); // up on the screen
   });
 });
