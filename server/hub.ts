@@ -82,7 +82,8 @@ const beats = (better: 'lower' | 'higher', v: number, best: number) => (better =
 
 export class Hub {
   private clients = new Map<WebSocket, Client>();
-  private pilot: { clientId: string; deviceName: string } | null = null;
+  /** A local Pilot is every browser on the laptop, whatever its profile; a phone is the Pilot only by its clientId. */
+  private pilot: Client = { clientId: '', deviceName: 'Laptop', isLocal: true };
   private live: Live | null = null;
   private showQr = false;
   private qrTimer: NodeJS.Timeout | null = null;
@@ -173,7 +174,6 @@ export class Hub {
       if (msg.type === 'hello') {
         const deviceName = String(msg.deviceName || (isLocal ? 'Laptop' : 'Phone')).slice(0, 40);
         this.clients.set(ws, { clientId: String(msg.clientId).slice(0, 64), deviceName, isLocal });
-        if (!this.pilot && isLocal) this.pilot = { clientId: String(msg.clientId), deviceName };
         this.broadcast();
       } else if (msg.type === 'cmd') {
         const client = this.clients.get(ws);
@@ -194,6 +194,10 @@ export class Hub {
     });
   }
 
+  private isPilot(c: Client) {
+    return this.pilot.isLocal ? c.isLocal : this.pilot.clientId === c.clientId;
+  }
+
   private send(ws: WebSocket, msg: ServerMessage) {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
   }
@@ -203,7 +207,7 @@ export class Hub {
     for (const [ws, c] of this.clients) {
       this.send(ws, {
         type: 'state',
-        state: { ...base, you: { clientId: c.clientId, isPilot: this.pilot?.clientId === c.clientId, isLocal: c.isLocal } },
+        state: { ...base, you: { clientId: c.clientId, isPilot: this.isPilot(c), isLocal: c.isLocal } },
       });
     }
     const b = this.board.status;
@@ -221,10 +225,10 @@ export class Hub {
   }
 
   private baseState(): Omit<ClientState, 'you'> {
-    const pilotConnected = !!this.pilot && [...this.clients.values()].some(c => c.clientId === this.pilot!.clientId);
+    const pilotConnected = [...this.clients.values()].some(c => this.isPilot(c));
     const l = this.live;
     return {
-      pilot: this.pilot ? { ...this.pilot, connected: pilotConnected } : null,
+      pilot: { clientId: this.pilot.clientId, deviceName: this.pilot.deviceName, connected: pilotConnected },
       board: this.board.status,
       match: l && ({
         key: l.rec.key,
@@ -452,7 +456,7 @@ export class Hub {
     mkdirSync(BUGS_DIR, { recursive: true });
     writeFileSync(join(BUGS_DIR, `${at.replace(/[:.]/g, '-')}.json`), JSON.stringify({
       text, at, commit: COMMIT,
-      device: { name: client.deviceName, isLocal: client.isLocal, isPilot: this.pilot?.clientId === client.clientId },
+      device: { name: client.deviceName, isLocal: client.isLocal, isPilot: this.isPilot(client) },
       where: String(cmd.where ?? '').slice(0, 200),
       userAgent: String(cmd.userAgent ?? '').slice(0, 300),
       // The event log replays the match, so a test can rebuild the exact moment.
@@ -480,7 +484,7 @@ export class Hub {
 
   private async run(client: Client, cmd: Command): Promise<{ playerId?: number }> {
     if (cmd.type === 'takeControl') {
-      this.pilot = { clientId: client.clientId, deviceName: client.deviceName };
+      this.pilot = { ...client };
       return {};
     }
     // Anyone who sees a bug can report it, not only the Pilot.
@@ -488,7 +492,7 @@ export class Hub {
       this.report(client, cmd);
       return {};
     }
-    if (this.pilot?.clientId !== client.clientId) throw new UserError('Take control first');
+    if (!this.isPilot(client)) throw new UserError('Take control first');
     const v = this.live?.view;
 
     switch (cmd.type) {
