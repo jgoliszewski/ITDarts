@@ -33,7 +33,7 @@ export const BUILTIN_SOUNDS: BuiltinSound[] = [
   { key: 'set-won', name: 'Set won', info: 'Strummed G → C with two bells', durationMs: 1700 },
   { key: 'match-won', name: 'Match won', info: 'Strummed C F G C with marimba and bells', durationMs: 2900 },
   { key: 'bust', name: 'Bust', info: 'Three soft notes down and a low womp', durationMs: 700 },
-  { key: 'no-score', name: 'No score', info: 'A slide down and a knock', durationMs: 500 },
+  { key: 'no-score', name: 'No score', info: 'Three soft notes down and a low womp, a step under Bust', durationMs: 700 },
   { key: 'madhouse', name: 'Madhouse', info: 'Low minor marimba and a high bell', durationMs: 1400 },
   { key: 'game-on', name: 'Game on', info: 'Three marimba steps up and a bell', durationMs: 1200 },
   { key: 'clean-20s', name: 'Clean 20s', info: 'Three marimba taps and a bell', durationMs: 1200 },

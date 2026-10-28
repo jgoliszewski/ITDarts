@@ -112,7 +112,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
     - Ton, Ton 40, 180: bieg marimby o trzech, czterech i siedmiu nutach, od Ton 40 z dzwonkiem, w 180 z trzema;
     - Leg won, Set won, Match won: akordy marimby uderzane od dołu („strum”): C, potem G → C, potem C F G C z dzwonkami;
     - High finish i Big fish: ta sama kadencja G → C z dzwonkami, w Big fish po narastającym szumie i z gongiem;
-    - Bull: niska marimba w oktawach i dzwonek; Bust: trzy tony w dół i niski zjazd; No score: zjazd i stuknięcie; Madhouse: niska molowa marimba i wysoki dzwonek; Game on: trzy stopnie w górę i dzwonek; Clean 20s: trzy uderzenia i dzwonek; Bed and breakfast: kalimba pół tonu w dół; New record: dzwonki w górę; White Horse: galop marimby; Player out: niska molowa marimba i zjazd;
+    - Bull: niska marimba w oktawach i dzwonek; Bust: trzy tony w dół i niski zjazd; No score: trzy tony w dół i niski zjazd, niżej niż Bust; Madhouse: niska molowa marimba i wysoki dzwonek; Game on: trzy stopnie w górę i dzwonek; Clean 20s: trzy uderzenia i dzwonek; Bed and breakfast: kalimba pół tonu w dół; New record: dzwonki w górę; White Horse: galop marimby; Player out: niska molowa marimba i zjazd;
     - Next player, Hit i Miss to dotychczasowe dźwięki, dostępne też jako wpisy.
   - Strony z propozycjami nie ma w repo. Strojenie to liczby w `sound.ts`.
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.

@@ -191,12 +191,6 @@ function noise(a: AudioContext, t: number, dur: number, type: BiquadFilterType, 
   s.stop(t + dur + 0.05);
 }
 
-/** A soft knock on wood: low-passed noise and a dropping sine. */
-function knock(a: AudioContext, t: number, volume: number) {
-  noise(a, t, 0.08, 'lowpass', 900, 200, 0.5 * volume);
-  tone(a, t, 150, 0.12, 0.4 * volume, 0.002, { glide: 70 });
-}
-
 /** A gong: inharmonic partials with a long decay. */
 function gong(a: AudioContext, t: number, freq: number, volume: number, dur: number, space = 0.5) {
   [[1, 0.38], [1.48, 0.2], [2.37, 0.14], [3.1, 0.09], [4.2, 0.05]].forEach(([r, p], i) => tone(a, t, freq * r, dur * (1 - i * 0.12), volume * p, 0.004, { space }));
@@ -279,8 +273,8 @@ const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> =
     tone(a, t + 0.1, 180, 0.5, v * 0.3, 0.02, { space: 0.2, glide: 90 });
   },
   'no-score': (a, t, v) => {
-    tone(a, t, 440, 0.3, v * 0.22, 0.01, { type: 'triangle', space: 0.15, glide: 220 });
-    knock(a, t + 0.3, v * 0.9);
+    seq(t, [C5, Ab4, 349.23], 0.11, (t, f) => tone(a, t, f, 0.35, v * 0.22, 0.01, { type: 'triangle', space: 0.25 }));
+    tone(a, t + 0.08, 160, 0.45, v * 0.3, 0.02, { space: 0.2, glide: 80 });
   },
   madhouse: (a, t, v) => {
     marimba(a, t, C4, v * 1.1, 0.3);
