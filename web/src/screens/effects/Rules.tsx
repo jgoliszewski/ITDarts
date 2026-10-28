@@ -42,9 +42,6 @@ function groupRules(rules: Rule[]): { group: Group; title: string; rules: Rule[]
     .filter(g => g.rules.length > 0);
 }
 
-/** The rule at the top of the list, as the list orders them. */
-export const firstRule = (rules: Rule[]): Rule | null => groupRules(rules)[0]?.rules[0] ?? null;
-
 const whenText = (r: { triggers: Trigger[] }) => r.triggers.map(triggerLabel).join(' · ');
 
 function soundsText(d: EffectsData, ids: string[]) {
@@ -55,9 +52,14 @@ function soundsText(d: EffectsData, ids: string[]) {
 /** The rule as the server takes it, with the switch flipped. */
 const toggled = (r: Rule): RuleInput => ({ name: r.name, enabled: !r.enabled, triggers: r.triggers, sounds: r.sounds, led: r.led });
 
+/** Plays the sound here and the LEDs on the controller, even with the rule switched off. */
+const testRule = (r: RuleInput) =>
+  call<{ sound: { url: string; gain: number } | null }>('POST', '/api/effects/test', r).then(res => res?.sound && playSound(res.sound.url, res.sound.gain));
+
 // ---------- list ----------
 
-export function RuleList({ d, selected, wide }: { d: EffectsData; selected: string | null; wide: boolean }) {
+/** All rules as tiles over the whole width; a tap opens the rule over the whole screen. */
+export function RuleList({ d, wide }: { d: EffectsData; wide: boolean }) {
   const [q, setQ] = useState('');
   // Search by name, triggers and sounds, so “bust” or “papiez” finds the rule.
   const groups = groupRules(d.rules.filter(r => matchesQuery(q, r.name, whenText(r), ...r.sounds.map(id => d.sounds.find(s => s.id === id)?.name ?? id))));
@@ -69,13 +71,11 @@ export function RuleList({ d, selected, wide }: { d: EffectsData; selected: stri
   };
   return (
     <div className="fx-rules">
-      {wide && (
-        <div className="option-row">
-          <h2 className="fx-h">Rules</h2>
-          <button className="btn primary" onClick={() => go('/effects/rules/new')}>{Icon.plus()}New rule</button>
-        </div>
-      )}
-      {d.rules.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search rules" />}
+      <div className="fx-rules-head">
+        {wide && <h2 className="fx-h">Rules</h2>}
+        {d.rules.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search rules" />}
+        {wide && <button className="btn primary" onClick={() => go('/effects/rules/new')}>{Icon.plus()}New rule</button>}
+      </div>
       {d.rules.length > 0 && groups.length === 0 && <p className="muted" style={{ margin: 0 }}>No rule matches “{q}”.</p>}
       {d.rules.length === 0 && (
         <div className="fx-empty">
@@ -88,24 +88,31 @@ export function RuleList({ d, selected, wide }: { d: EffectsData; selected: stri
           <button className={`option-row fx-group ${collapsed.includes(g.group) ? 'shut' : ''}`} aria-expanded={!collapsed.includes(g.group)} onClick={() => toggle(g.group)}>
             <span className="caps">{g.title}</span><span className="muted">{g.rules.length} {g.rules.length === 1 ? 'rule' : 'rules'}<Chevron /></span>
           </button>
-          {(q || !collapsed.includes(g.group)) && g.rules.map(r => {
-            const sound = soundsText(d, r.sounds);
-            const preset = r.led && presetOf(d, r.led.preset);
-            return (
-              <div key={r.id} className={`fx-row ${r.enabled ? '' : 'off'} ${selected === r.id ? 'on' : ''}`}>
-                <button className="fx-row-main" onClick={() => go(`/effects/rules/${r.id}`)}>
-                  <b>{r.name || whenText(r)}</b>
-                  {r.name && <span className="muted">{whenText(r)}</span>}
-                  <span className="fx-what">
-                    {sound && <span>♪ {sound}</span>}
-                    {r.led && <span><Dot color={preset?.color} size={10} />{presetName(d, r.led.preset)} · {r.led.seconds} s</span>}
-                    {!sound && !r.led && <span className="fx-todo">No sound yet · tap to pick one</span>}
-                  </span>
-                </button>
-                <Switch on={r.enabled} label={`${r.name || whenText(r)} on`} onChange={() => call('PUT', `/api/effects/rules/${r.id}`, toggled(r)).then(d.reload)} />
-              </div>
-            );
-          })}
+          {(q || !collapsed.includes(g.group)) && (
+            <div className="fx-rule-grid">
+              {g.rules.map(r => {
+                const sound = soundsText(d, r.sounds);
+                const preset = r.led && presetOf(d, r.led.preset);
+                return (
+                  <div key={r.id} className={`fx-rule ${r.enabled ? '' : 'off'}`}>
+                    <button className="fx-rule-main" onClick={() => go(`/effects/rules/${r.id}`)}>
+                      <b>{r.name || whenText(r)}</b>
+                      {r.name && <span className="muted">{whenText(r)}</span>}
+                      <span className="fx-what">
+                        {sound && <span>♪ {sound}</span>}
+                        {r.led && <span><Dot color={preset?.color} size={10} />{presetName(d, r.led.preset)} · {r.led.seconds} s</span>}
+                        {!sound && !r.led && <span className="fx-todo">No sound yet</span>}
+                      </span>
+                    </button>
+                    <div className="fx-rule-side">
+                      <Switch on={r.enabled} label={`${r.name || whenText(r)} on`} onChange={() => call('PUT', `/api/effects/rules/${r.id}`, toggled(r)).then(d.reload)} />
+                      <button className="icon-btn" aria-label={`Test ${r.name || whenText(r)}`} disabled={!sound && !r.led} onClick={() => testRule(r)}>{Icon.play(16)}</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -279,16 +286,14 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
     setSaved(r);
     setDirtyCheck(null);
     d.reload();
-    // The phone goes back to the list; the laptop stays on the rule.
-    if (!wide) go(list);
-    else if (!rule) go(`/effects/rules/${(res as { id: string }).id}`, true);
+    go(list);
   };
   const remove = async () => {
     setAskDelete(false);
     if (rule && (await call('DELETE', `/api/effects/rules/${rule.id}`))) {
       setDirtyCheck(null);
       d.reload();
-      go(list, wide);
+      go(list);
     }
   };
 
@@ -301,14 +306,12 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
   const canTest = r.triggers.length > 0 && (r.sounds.length > 0 || !!r.led);
 
   return (
-    <div className="fx-editor">
-      {!wide && (
-        <header className="fx-editor-head">
-          <button className="btn ghost" onClick={() => go(list)}>Cancel</button>
-          <b>{rule ? (rule.base ? 'Built-in rule' : 'Edit rule') : 'New rule'}</b>
-          <button className="btn primary" style={{ height: 40 }} onClick={save} disabled={!isDirty && !!rule}>Save</button>
-        </header>
-      )}
+    <div className={`fx-editor ${wide ? 'wide' : ''}`}>
+      <header className="fx-editor-head">
+        <button className="btn ghost" onClick={() => go(list)}>Cancel</button>
+        <b>{rule ? (rule.base ? 'Built-in rule' : 'Edit rule') : 'New rule'}</b>
+        <button className="btn primary" onClick={save} disabled={!isDirty && !!rule}>Save</button>
+      </header>
       <div className="fx-name">
         <input className="field" aria-label="Rule name" placeholder="Name (optional), e.g. Big Fish" value={r.name} maxLength={40} onChange={e => set({ name: e.target.value })} />
         <Switch on={r.enabled} label="Rule on" onChange={enabled => set({ enabled })} />
@@ -363,7 +366,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
               </div>
               <div className="option-row">
                 <span>For</span>
-                <Stepper label="seconds" unit=" s" value={r.led.seconds} min={0.5} max={60} step={0.5} onChange={seconds => set({ led: { ...r.led!, seconds } })} />
+                <Stepper label="seconds" unit=" s" value={r.led.seconds} min={0.1} max={60} step={0.1} onChange={seconds => set({ led: { ...r.led!, seconds } })} />
               </div>
             </>
           ) : <button className="fx-add" onClick={() => setSheet('preset')}>+ Light the LEDs</button>}
@@ -374,8 +377,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
         {rule && !base && <button className="btn danger" onClick={() => setAskDelete(true)}>Delete</button>}
         {changed && <button className="btn" onClick={() => { set({ name: base.name, enabled: true, triggers: base.triggers, sounds: base.sounds, led: base.led }); setChip(0); }}>Reset to default</button>}
         <span className="spacer" />
-        <button className="btn" disabled={!canTest} onClick={() => call<{ sound: { url: string; gain: number } | null }>('POST', '/api/effects/test', r).then(res => res?.sound && playSound(res.sound.url, res.sound.gain))}>{Icon.play(16)}Test whole rule</button>
-        {wide && <button className="btn primary" onClick={save} disabled={!isDirty && !!rule}>Save</button>}
+        <button className="btn" disabled={!canTest} onClick={() => testRule(r)}>{Icon.play(16)}Test whole rule</button>
       </div>
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>Test plays the sound on this device and the LEDs on the controller{off.length > 0 ? `, although ${off.join(' and ')} ${off.length > 1 ? 'are' : 'is'} off on the pilot` : ''}.</p>
 
@@ -393,6 +395,20 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
           <p>{r.name || whenText(r) || 'This rule'} stops playing. Its sounds stay in the library.</p>
         </Dialog>
       )}
+    </div>
+  );
+}
+
+/** The editor over the whole screen. Escape closes it, unless a picker or dialog is open on top. */
+export function RuleModal({ d, rule, wide }: { d: EffectsData; rule: Rule | null; wide: boolean }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.scrim') && go('/effects/rules');
+    addEventListener('keydown', k);
+    return () => removeEventListener('keydown', k);
+  }, []);
+  return (
+    <div className="fx-modal" role="dialog" aria-modal="true" aria-label={rule ? rule.name || whenText(rule) : 'New rule'}>
+      <div className="fx-modal-body"><RuleEditor d={d} rule={rule} wide={wide} /></div>
     </div>
   );
 }

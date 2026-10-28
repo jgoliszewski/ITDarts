@@ -5,7 +5,7 @@ import type { EffectsData, Tab } from './api.ts';
 import { TABS, discardAnswer, go, parseRoute, useEffectsData, useNav } from './api.ts';
 import { LedsTab } from './Leds.tsx';
 import { PlaybackTab } from './Playback.tsx';
-import { RuleEditor, RuleList, firstRule } from './Rules.tsx';
+import { RuleList, RuleModal } from './Rules.tsx';
 import { SoundsTab } from './Sounds.tsx';
 
 /** Green when sounds and LEDs are on and WLED answers; amber otherwise. */
@@ -31,19 +31,13 @@ function Content({ d, tab, rule, wide }: { d: EffectsData; tab: Tab; rule: strin
   if (tab === 'sounds') return <SoundsTab d={d} wide={wide} />;
   if (tab === 'leds') return <LedsTab d={d} wide={wide} />;
   if (tab === 'playback') return <PlaybackTab d={d} wide={wide} />;
+  // The tiles stay underneath; the chosen rule opens over the whole screen.
   const found = d.rules.find(r => r.id === rule) ?? null;
-  if (!wide) {
-    if (rule === 'new') return <RuleEditor key="new" d={d} rule={null} wide={false} />;
-    if (found) return <RuleEditor key={found.id} d={d} rule={found} wide={false} />;
-    return <RuleList d={d} selected={null} wide={false} />;
-  }
-  // Laptop: the list and, next to it, the chosen rule; the first one when none is chosen, a new one when there are none.
-  const shown = rule === 'new' ? null : found ?? firstRule(d.rules);
   return (
-    <div className="fx-split">
-      <RuleList d={d} selected={rule === 'new' ? 'new' : shown?.id ?? 'new'} wide />
-      <div className="fx-pane"><RuleEditor key={shown?.id ?? 'new'} d={d} rule={shown} wide /></div>
-    </div>
+    <>
+      <RuleList d={d} wide={wide} />
+      {(rule === 'new' || found) && <RuleModal key={found?.id ?? 'new'} d={d} rule={found} wide={wide} />}
+    </>
   );
 }
 
@@ -92,8 +86,6 @@ export function EffectsPage() {
     );
   }
 
-  // Phone: the rule editor takes the whole screen, with its own Cancel and Save.
-  if (tab === 'rules' && rule !== null) return <div className="fx-phone">{fileError}<Content d={d} tab={tab} rule={rule} wide={false} />{discard}</div>;
   return (
     <div className="fx-phone">
       <header className="fx-head">

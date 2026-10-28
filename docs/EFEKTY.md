@@ -276,18 +276,19 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 
 - **Zakładki:** Rules, Sounds, LEDs i Playback, każda z własnym adresem (`/effects/rules`, `/effects/sounds`, `/effects/leds`, `/effects/playback`). `/effects` otwiera Rules.
 - **Telefon (poniżej 1100 px):** zakładki na górze, a w nagłówku pigułka statusu. Kropka jest zielona, gdy Sounds i LEDs są włączone, a bursztynowa, gdy któryś jest wyłączony albo WLED nie odpowiada. Stuknięcie w pigułkę otwiera Playback.
-- **Laptop (od 1100 px):** zakładki z boku, a pod nimi ten sam status. W Rules obok listy jest edytor zaznaczonej reguły. Na start zaznaczona jest pierwsza reguła, a przy pustej liście edytor od razu tworzy nową. Sounds, LEDs i Playback to jedna kolumna do 720 px.
+- **Laptop (od 1100 px):** zakładki z boku, a pod nimi ten sam status. Rules zajmuje całą szerokość, a edytor otwiera się nad listą (od 2026-10-28; wcześniej stał na stałe obok listy, która przy 35 regułach wymagała długiego scrolla). Sounds, LEDs i Playback to jedna kolumna do 720 px.
 
 **Rules**
 - Reguły są w grupach „Results” (bust, checkout, set, mecz), „Visits” (suma, przedział, kombinacja), „Darts” (lotka, „Left on”), „Minigames” i „Match and board”. Reguła trafia do grupy swojego najważniejszego wyzwalacza.
 - Grupy się zwijają stuknięciem w nagłówek (2026-10-27, gdy reguł zrobiło się dużo). Zwinięte grupy pamięta przeglądarka. Na start wszystkie są rozwinięte.
 - **Wyszukiwarka** nad listą reguł (2026-10-27) szuka po nazwie, wyzwalaczach i nazwach dźwięków, tak jak w Sounds. Przy wpisanym zapytaniu trafienia widać też w zwiniętych grupach.
 - W grupie kolejność idzie według priorytetu, a przy remisie od najstarszej.
-- Wiersz pokazuje nazwę (bez nazwy: wyzwalacze), wyzwalacze, dźwięk, kolor i nazwę presetu ledów oraz przełącznik. Stuknięcie otwiera edytor. Na liście nie ma „Test” ani usuwania.
+- **Kafelki** (2026-10-28): reguły są kafelkami w siatce na całą szerokość, na laptopie ok. 190 px na kafelek, na telefonie dwa w rzędzie. Na 1920×1080 cała lista mieści się bez scrolla. Kafelek pokazuje nazwę (bez nazwy: wyzwalacze), wyzwalacze, dźwięk, kolor i nazwę presetu ledów, a z boku przełącznik i przycisk odtwarzania, który działa jak „Test whole rule”. Stuknięcie w kafelek otwiera edytor. Usuwanie jest tylko w edytorze.
 - Pusta lista: „No rules yet. Scoreboard animations work without them.” i „New rule”. Bez szablonów.
 
 **Edytor reguły**
-- Na telefonie zajmuje cały ekran i ma własny adres (`/effects/rules/12`, `/effects/rules/new`). Wstecz działa jak „Cancel”.
+- Otwiera się na cały ekran nad kafelkami, na telefonie i na laptopie, i ma własny adres (`/effects/rules/12`, `/effects/rules/new`). Na górze są „Cancel” i „Save”. Wstecz i Escape działają jak „Cancel”. Po zapisie i po usunięciu wraca do kafelków.
+- Na laptopie „When” i „Then” stoją obok siebie, żeby reguła mieściła się bez scrolla.
 - Nazwa jest opcjonalna. Obok niej jest przełącznik reguły.
 - Blok „When”: wyzwalacze jako chipy, a parametry zaznaczonego chipu pod nimi. „+ Add trigger” otwiera arkusz z wyzwalaczami w grupach, z krótkim opisem.
 - Blok „Then”: warianty dźwięku z odsłuchem i „+ Add a variant from the library” oraz preset ledów z czasem i „Try”.
