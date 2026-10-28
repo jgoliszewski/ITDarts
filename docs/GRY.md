@@ -109,7 +109,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
   - „Cut-throat”: punkty dopisują się rywalom, którzy mają sektor otwarty. Wygrywa ten, kto zamknął wszystko i ma najmniej punktów.
 - **Solo:** trening, czyli zamknąć wszystko w jak najmniejszej liczbie lotek, bez punktów.
 - **Bez Co-op**, bez „No score” i bez Tactics.
-- **Ekran wyników:** siatka z wierszami 20 … 15 i Bull oraz kolumną na gracza ze znacznikami /, X, Ⓧ. Punkty są nad kolumną, aktywny gracz ma pomarańczową kolumnę. Sektor zamknięty u wszystkich jest wyszarzony. Hero nad siatką pokazuje imię i kafelki lotek ze znacznikami.
+- **Ekran wyników:** siatka z wierszami 20 … 15 i Bull oraz kolumną na gracza ze znacznikami /, X, Ⓧ. Punkty są nad kolumną, aktywny gracz ma pomarańczową kolumnę. Sektor zamknięty u wszystkich jest wyszarzony. Siatka jest szersza niż lista w innych grach i wypełnia całą wysokość, a punkty nad kolumnami są duże i zwężają się przy wielu graczach (od 2026-10-28, ze zgłoszenia o za małych wynikach). Hero obok siatki pokazuje imię i kafelki lotek ze znacznikami.
 - **Wyzwalacze:** „Marks in visit” 5–9 (9 przy trzech różnych trebles to White Horse), „Sector closed”, „Game won”.
 - **Statystyki:** MPR (znaczniki na rundę). Rekordem jest solo: najmniej lotek.
 

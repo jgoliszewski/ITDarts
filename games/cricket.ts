@@ -17,13 +17,15 @@ interface State extends Turn {
   darts: number[];
   /** Marks that counted, for MPR: closing marks plus marks that scored. */
   scoredMarks: number[];
+  /** Per visit: the marks that counted, as in `scoredMarks`. */
+  visitMarks: number[];
   winners: number[];
 }
 
 function play(t: Turns, players: number, o: CricketOptions): State {
   const marks = Array.from({ length: players }, () => CRICKET_SECTORS.map(() => 0));
   const points = Array(players).fill(0), darts = Array(players).fill(0), scoredMarks = Array(players).fill(0);
-  const goods: boolean[][] = [];
+  const goods: boolean[][] = [], visitMarksAll: number[] = [];
   const closedAll = (p: number) => marks[p].every(m => m >= 3);
   const others = (p: number) => points.filter((_, i) => i !== p);
   const wins = (p: number) => closedAll(p) && (players === 1
@@ -57,6 +59,7 @@ function play(t: Turns, players: number, o: CricketOptions): State {
       return { good: add > 0 || scores, end: winner !== null };
     });
     goods.push(w.good);
+    visitMarksAll.push(visitMarks);
     darts[p] += w.used;
     left = w.dartsLeft;
     // White Horse: three trebles on three different numbers, each one fresh.
@@ -68,7 +71,7 @@ function play(t: Turns, players: number, o: CricketOptions): State {
   const last = t.visits.at(-1);
   const over = winner !== null;
   const current = !last ? t.starter! : last.closed ? (last.player + 1) % players : last.player;
-  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, marks, points, darts, scoredMarks, winners: over ? [winner!] : [] };
+  return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, marks, points, darts, scoredMarks, visitMarks: visitMarksAll, winners: over ? [winner!] : [] };
 }
 
 export interface CricketView extends MiniView {
@@ -77,6 +80,8 @@ export interface CricketView extends MiniView {
   /** Per sector: closed by every player. */
   dead: boolean[];
   solo: boolean;
+  /** Marks of the visit on screen, the headline of the turn card. */
+  visitMarks: number;
 }
 
 const mpr = (marks: number, darts: number) => (darts ? (marks / darts) * 3 : 0);
@@ -102,6 +107,7 @@ function view(events: TurnEvent[], players: number, o: CricketOptions): CricketV
     points: s.points,
     dead: CRICKET_SECTORS.map((_, k) => s.marks.every(m => m[k] >= 3)),
     solo,
+    visitMarks: f.visit.darts.length ? s.visitMarks.at(-1) ?? 0 : 0,
   };
 }
 

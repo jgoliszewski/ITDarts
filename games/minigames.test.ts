@@ -167,6 +167,15 @@ describe('cricket', () => {
     expect(v.dead[0]).toBe(true);
   });
 
+  it('counts the marks of the visit on screen, again after a fix', () => {
+    // From a bug report: S2 fixed to T17 on a closed 17 left the turn card unchanged.
+    const log = [...visit('T17'), ...visit('S1'), d('S2'), d('S17'), d('S4')];
+    const o3 = { ...o, mode: 'cutthroat' as const };
+    expect(cricket.view(log, 2, o3).visitMarks).toBe(1);
+    expect(cricket.view([...log, { t: 'fix', index: 0, dart: parseDart('T17')! }], 2, o3).visitMarks).toBe(4);
+    expect(cricket.view([...log, next], 2, o3).visitMarks).toBe(0);
+  });
+
   it('gives points to open rivals in cut-throat', () => {
     const v = cricket.view([d('T20'), d('S20')], 3, { ...o, mode: 'cutthroat' });
     expect(v.points).toEqual([0, 20, 20]);

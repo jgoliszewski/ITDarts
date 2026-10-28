@@ -45,7 +45,8 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 - **Takeout** kończy turę automatycznie. Lotki, których brakuje do trzech, wpadają jako Miss.
 - **Karta tury** (z testów 2026-10-26): gdy Tura się skończy (trzecia lotka, bust, checkout, utrata życia), ekran nie przeskakuje dalej, tylko od razu pokazuje kartę tury. Przy krótszej Turze karta pojawia się z początkiem takeoutu.
-  - Na karcie: imię, duży werdykt i lotki. Werdykt to „CHECKOUT”, „BUST” (czerwony) albo zdarzenie gry, np. „LIFE LOST”. Bez werdyktu jest wynik tury: suma w X01, 121 i Higher or Lower, a w pozostałych minigierkach liczba trafień („2 HITS”).
+  - Na karcie: imię, duży werdykt i lotki. Werdykt to „CHECKOUT”, „BUST” (czerwony) albo zdarzenie gry, np. „LIFE LOST”. Bez werdyktu jest wynik tury: suma w X01, 121 i Higher or Lower, w Cricket liczba marków („4 MARKS”, od 2026-10-28, ze zgłoszenia: po poprawce S2 na T17 liczba trafień się nie zmieniała), a w pozostałych minigierkach liczba trafień („2 HITS”).
+  - Karta i inne nakładki mieszczą się nad paskiem Pilota (od 2026-10-28, ze zgłoszenia: pasek „Removing darts” wystawał pod pasek).
   - Lotki to duże kafelki jak na ekranie gry (od 2026-10-27, ze zgłoszenia o nieczytelnej karcie). W minigierkach na górze jest pole (np. „S7”). W grach liczonych trafieniami (ATC, Full Board, Cricket, Killer) kafelek jest zielony przy trafieniu i czerwony przy pudle (od 2026-10-27). W 121 i Higher or Lower lotka, która nic nie dała, jest wygaszona. Niedorzucone lotki to puste kafelki.
   - Pod lotkami są kafelki ze stanem po Turze: X01 „Left”, 121 „Target”, „Left” i „Darts in attempt”, Higher or Lower „Range”, reszta minigierek to samo co hero (np. „Target 7”) i jego notka (np. „2 / 21 · 3 darts”).
   - Hero pod kartą trzyma stan z chwili końca Tury, np. w 121 nadal „Target 121”. Nowy cel, nowe życie i następny gracz pojawiają się dopiero po końcu takeoutu.
