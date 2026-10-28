@@ -5,7 +5,8 @@ import { GAMES } from '../games/index.ts';
 import type { StatVisit, X01Options } from '../games/x01/index.ts';
 import { x01Stats } from '../games/x01/index.ts';
 import type { Db } from './db.ts';
-import type { GameStatsResponse, H2HResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from './protocol.ts';
+import { walked } from '../games/report.ts';
+import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from './protocol.ts';
 
 export const WINDOWS: StatsWindow[] = ['7d', '30d', '90d', '365d', 'all', 'l10', 'l100'];
 
@@ -35,16 +36,34 @@ interface VisitRow {
 }
 
 export class Stats {
-  constructor(private db: Db, private now = () => Date.now()) {}
+  constructor(private db: Db, private now = () => Date.now(), private ocheMeters = 2.37) {}
 
-  /** Leg ids in the window for one player (null means: no leg limit). */
-  private legIds(playerId: number, w: StatsWindow): number[] | null {
+  /** Leg ids in the window for one player (null means: no leg limit). Minigames have one leg per match. */
+  private legIds(playerId: number, w: StatsWindow, game: GameId = 'x01'): number[] | null {
     const n = legLimit(w);
     if (n === null) return null;
     return (this.db.sql.prepare(`
       SELECT v.leg_id AS id FROM visits v JOIN legs l ON l.id = v.leg_id JOIN matches m ON m.id = l.match_id
-      WHERE v.player_id = ? AND m.game = 'x01'
-      GROUP BY v.leg_id ORDER BY MAX(v.at) DESC LIMIT ?`).all(playerId, n) as { id: number }[]).map(r => r.id);
+      WHERE v.player_id = ? AND m.game = ?
+      GROUP BY v.leg_id ORDER BY MAX(v.at) DESC LIMIT ?`).all(playerId, game, n) as { id: number }[]).map(r => r.id);
+  }
+
+  /** Where each player's darts landed in one game, and how far they walked (docs/UI.md, Heatmapa). */
+  heat(ids: number[], game: GameId, w: StatsWindow): HeatResponse {
+    return ids.flatMap(id => {
+      const player = this.db.player(id);
+      if (!player) return [];
+      const legs = this.legIds(id, w, game);
+      const where = ['v.player_id = ?', 'm.game = ?'];
+      const args: (number | string)[] = [id, game];
+      if (legs) where.push(`v.leg_id IN (${legs.map(() => '?').join(',') || 'NULL'})`), args.push(...legs);
+      else if (since(w, this.now())) where.push('v.at >= ?'), args.push(since(w, this.now()));
+      const from = `FROM visits v JOIN legs l ON l.id = v.leg_id JOIN matches m ON m.id = l.match_id WHERE ${where.join(' AND ')}`;
+      const visits = (this.db.sql.prepare(`SELECT COUNT(*) AS n ${from}`).get(...args) as { n: number }).n;
+      const rows = this.db.sql.prepare(`SELECT d.x, d.y FROM darts d WHERE d.visit_id IN (SELECT v.id ${from})`).all(...args) as { x: number | null; y: number | null }[];
+      const darts = rows.filter(r => r.x !== null && r.y !== null).map(r => [r.x, r.y] as [number, number]);
+      return [{ player, heat: { darts, noPos: rows.length - darts.length, visits }, distance: walked(visits, this.ocheMeters) }];
+    });
   }
 
   private visits(playerId: number, w: StatsWindow, matchIds?: number[]): VisitRow[] {

@@ -83,7 +83,7 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
   );
 }
 
-function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () => void }) {
+function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   const v = m.view;
   if (m.intro && m.record) {
     const r = m.record;
@@ -125,9 +125,7 @@ function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () =>
         <b style={{ fontSize: 24 }}>{isX01(m) ? m.roster[m.view.matchWinner!].name : winnersOf(m)}</b>
         {!isX01(m) && <span className="muted" style={{ fontSize: 14 }}>{m.view.result}</span>}
         {!isX01(m) && <NewRecord m={m} />}
-        <button className="btn primary block" onClick={() => act({ type: 'closeMatch', then: 'rematch' })}>Rematch</button>
-        <button className="btn block" onClick={onNew}>New match</button>
-        <button className="btn block" onClick={() => act({ type: 'closeMatch', then: 'lobby' })}>Back to lobby</button>
+        <button className="btn primary block" onClick={() => act({ type: 'closeMatch', then: 'summary' })}>Summary</button>
       </div>
     );
   }
@@ -145,8 +143,8 @@ function PhaseCard({ s, m, onNew }: { s: ClientState; m: LiveMatch; onNew: () =>
   return null;
 }
 
-export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
-  s: ClientState; onMenu: () => void; onBoard: () => void; onFix: (i: number) => void; onEnd: () => void; onNew: () => void;
+export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd }: {
+  s: ClientState; onMenu: () => void; onBoard: () => void; onFix: (i: number) => void; onEnd: () => void;
 }) {
   const m = s.match!;
   const v = m.view;
@@ -160,7 +158,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onNew }: {
       {offline && <div className="banner">Board offline · enter darts by hand</div>}
       <div className="phone-body">
         <Players m={m} />
-        <PhaseCard s={s} m={m} onNew={onNew} />
+        <PhaseCard s={s} m={m} />
         {!inBull && (
           <div className="section">
             <div className="p-turn-head">

@@ -24,6 +24,7 @@ Efekty wyklikane na stronie `/effects` (reguły, dźwięki, stany bazowe ledów)
 | `effectsDir` | Folder efektów w repo (`effects.json` i `sounds/`), domyślnie `effects`. |
 | `extraBackupDir` | Drugi folder na backupy, np. zsynchronizowany OneDrive. `null` wyłącza. |
 | `browser` | Ścieżka do przeglądarki kiosku. Domyślnie Edge, potem Chrome. |
+| `ocheMeters` | Odległość od linii do tarczy w metrach do statystyki „Distance walked”. Domyślnie 2.37. |
 
 ## Development
 

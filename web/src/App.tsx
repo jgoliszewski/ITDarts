@@ -16,6 +16,7 @@ import { Players } from './screens/Players.tsx';
 import { QrOverlay, Scoreboard } from './screens/Scoreboard.tsx';
 import { Setup } from './screens/Setup.tsx';
 import { StatsPage } from './screens/Stats.tsx';
+import { Summary } from './screens/Summary.tsx';
 import { useWide } from './util.ts';
 
 type Screen = 'main' | 'setup' | 'players' | 'board' | 'howto';
@@ -158,7 +159,7 @@ function Main({ s }: { s: ClientState }) {
   const askEnd = (then: 'end' | 'new') => {
     if (!m) return then === 'new' && setScreen('setup');
     if (endsNormally(m)) {
-      void act({ type: 'closeMatch', then: 'lobby' }).then(r => r.ok && then === 'new' && setScreen('setup'));
+      void act({ type: 'closeMatch', then: then === 'new' ? 'lobby' : 'summary' }).then(r => r.ok && then === 'new' && setScreen('setup'));
     } else setEndAsk(then);
   };
   const doEnd = async (save: boolean) => {
@@ -219,6 +220,8 @@ function Main({ s }: { s: ClientState }) {
     return <><BoardPanel s={s} wide={false} onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />{dialogs}</>;
   }
 
+  if (!m && s.summary && pilotOnly !== 'board') return <><Summary s={s} wide={wide} onNew={() => setScreen('setup')} onMenu={() => setMenu(true)} />{dialogs}</>;
+
   if (wide) {
     const overlay = (
       <>
@@ -228,7 +231,7 @@ function Main({ s }: { s: ClientState }) {
       </>
     );
     return m
-      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onNew={() => askEnd('new')} overlay={overlay} />
+      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} overlay={overlay} />
       : <Lobby s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
@@ -236,7 +239,7 @@ function Main({ s }: { s: ClientState }) {
   return (
     <>
       {m
-        ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} onNew={() => askEnd('new')} />
+        ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} />
         : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} />}
       {dialogs}
     </>

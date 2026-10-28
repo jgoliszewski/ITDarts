@@ -138,3 +138,16 @@ describe('minigames', () => {
     expect(new Stats(db).list()[0].avg).toBeNull();
   });
 });
+
+describe('heat', () => {
+  it('returns dart positions per player in a game, darts without one, and the distance walked', () => {
+    const a = db.createPlayer('Anna'), b = db.createPlayer('Bartek');
+    const at: X01Event = { t: 'dart', dart: parseDart('T20')!, coords: { x: 0, y: 0.6 }, at: Date.now() };
+    save([{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bartek' }], [at, d('S1'), d('S20'), next, d('S5'), d('S5'), d('S5'), next, d('D10')]);
+    const [ha, hb] = new Stats(db, undefined, 2.5).heat([a, b], 'x01', 'all');
+    expect(ha.heat).toEqual({ darts: [[0, 0.6]], noPos: 3, visits: 2 });
+    expect(ha.distance).toBe(10);
+    expect(hb.heat.visits).toBe(1);
+    expect(new Stats(db).heat([a], 'atc', 'all')[0].heat.visits).toBe(0);
+  });
+});

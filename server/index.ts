@@ -17,7 +17,7 @@ import { Stats, parseWindow } from './stats.ts';
 const cfg = loadConfig();
 const db = new Db(cfg.dataDir);
 const board = new Board(cfg.board);
-const stats = new Stats(db);
+const stats = new Stats(db, undefined, cfg.ocheMeters);
 let browser: ChildProcess | null = null;
 let fakeBoard: ChildProcess | null = null;
 const FAKE_BOARD_PORT = '3180';
@@ -75,6 +75,11 @@ app.get<{ Params: { id: string }; Querystring: { window?: string; game?: string 
 });
 
 app.get<{ Querystring: { game?: string } }>('/api/stats/records', async req => (isGameId(req.query.game) ? stats.records(req.query.game) : []));
+
+app.get<{ Querystring: { ids?: string; game?: string; window?: string } }>('/api/stats/heat', async req => {
+  const ids = String(req.query.ids ?? '').split(',').map(Number).filter(Number.isInteger).slice(0, 4);
+  return stats.heat(ids, isGameId(req.query.game) ? req.query.game : 'x01', parseWindow(req.query.window));
+});
 
 app.get<{ Querystring: { a?: string; b?: string; window?: string } }>('/api/stats/h2h', async (req, reply) => {
   const r = stats.h2h(Number(req.query.a), Number(req.query.b), parseWindow(req.query.window));

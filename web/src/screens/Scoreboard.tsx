@@ -260,7 +260,7 @@ function LegEnd({ m, takeout }: { m: X01Match; takeout: boolean }) {
   );
 }
 
-function MatchEnd({ m, isPilot, onNew }: { m: X01Match; isPilot: boolean; onNew: () => void }) {
+function MatchEnd({ m, isPilot }: { m: X01Match; isPilot: boolean }) {
   const v = m.view;
   const w = v.matchWinner!;
   return (
@@ -275,11 +275,9 @@ function MatchEnd({ m, isPilot, onNew }: { m: X01Match; isPilot: boolean; onNew:
         </div>
         {isPilot ? (
           <div className="actions">
-            <button className="btn primary" onClick={() => act({ type: 'closeMatch', then: 'rematch' })}>Rematch</button>
-            <button className="btn" onClick={onNew}>New match</button>
-            <button className="btn" onClick={() => act({ type: 'closeMatch', then: 'lobby' })}>Back to lobby</button>
+            <button className="btn primary" onClick={() => act({ type: 'closeMatch', then: 'summary' })}>Summary</button>
           </div>
-        ) : <div className="note">Rematch, new match or lobby: choose on the pilot.</div>}
+        ) : <div className="note">The summary opens from the pilot.</div>}
       </div>
     </div>
   );
@@ -331,14 +329,13 @@ export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void 
   );
 }
 
-export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, overlay }: {
+export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: {
   s: ClientState;
   onMenu: () => void;
   onQr: () => void;
   onBoard?: () => void;
   onFix: (index: number) => void;
   onEnd: () => void;
-  onNew: () => void;
   overlay?: ReactNode;
 }) {
   const m = s.match!;
@@ -392,7 +389,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onNew, over
         : (v.phase === 'bulloff' || m.bullTakeout) && <BullOff m={m} isPilot={isPilot} />}
       {v.phase === 'throwing' && (takeout || finished) && !m.bullTakeout && <TurnCard s={s} m={m} onDart={onFix} canEdit={isPilot} />}
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} takeout={takeout} />}
-      {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} onNew={onNew} /> : <MiniEnd m={m} isPilot={isPilot} onNew={onNew} />)}
+      {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} /> : <MiniEnd m={m} isPilot={isPilot} />)}
       <HowToOverlay s={s} />
       <FxLayer total={isX01(m) ? m.view.visit.total : null} />
       {overlay}

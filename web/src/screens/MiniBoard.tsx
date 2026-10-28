@@ -195,7 +195,7 @@ export function NewRecord({ m }: { m: MiniMatch }) {
   );
 }
 
-export function MiniEnd({ m, isPilot, onNew }: { m: MiniMatch; isPilot: boolean; onNew: () => void }) {
+export function MiniEnd({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) {
   const v = m.view;
   const shared = v.winners.length !== 1;
   return (
@@ -207,11 +207,9 @@ export function MiniEnd({ m, isPilot, onNew }: { m: MiniMatch; isPilot: boolean;
         <NewRecord m={m} />
         {isPilot ? (
           <div className="actions">
-            <button className="btn primary" onClick={() => act({ type: 'closeMatch', then: 'rematch' })}>Rematch</button>
-            <button className="btn" onClick={onNew}>New match</button>
-            <button className="btn" onClick={() => act({ type: 'closeMatch', then: 'lobby' })}>Back to lobby</button>
+            <button className="btn primary" onClick={() => act({ type: 'closeMatch', then: 'summary' })}>Summary</button>
           </div>
-        ) : <div className="note">{shared ? 'Well played.' : ''} Rematch, new match or lobby: choose on the pilot.</div>}
+        ) : <div className="note">{shared ? 'Well played. ' : ''}The summary opens from the pilot.</div>}
       </div>
     </div>
   );

@@ -17,6 +17,8 @@ import type { X01View } from '../games/x01/index.ts';
 import { callerLines } from '../games/x01/index.ts';
 import type { Change, Fact, Happening } from '../games/effects.ts';
 import { changes } from '../games/effects.ts';
+import type { MatchReport } from '../games/report.ts';
+import { matchReport } from '../games/report.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
@@ -84,6 +86,8 @@ export class Hub {
   private qrTimer: NodeJS.Timeout | null = null;
   private introTimer: NodeJS.Timeout | null = null;
   private howTo: ClientState['howTo'] = null;
+  /** The summary of the match just saved, up until the pilot moves on (docs/UI.md, Podsumowanie meczu). Lost on restart. */
+  private summary: MatchReport | null = null;
   /** A bull-off dart is in the board: the next dart counts only after the takeout. */
   private bullOut = false;
   private urls: string[];
@@ -233,6 +237,7 @@ export class Hub {
         turnPass: l.turnPass,
       } as LiveMatch),
       lastMatch: this.db.lastMatch(),
+      summary: this.summary,
       players: this.db.players(),
       recentPlayerIds: this.db.recentPlayerIds(),
       urls: this.urls,
@@ -348,6 +353,7 @@ export class Hub {
     const game = GAMES[gameId];
     const roster = this.checkRoster(rosterInput);
     if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs at least ${game.minPlayers} players`);
+    this.summary = null;
     // Alone there is nobody to bull off against, whatever the setup says.
     const opts = { ...game.normalizeOptions(options), ...(roster.length === 1 && { bullOff: 'off' }) };
     const rec: LiveRecord = { key: randomUUID(), game: gameId, options: opts, roster, startedAt: Date.now(), events: [] };
@@ -374,8 +380,8 @@ export class Hub {
     void this.board.action('reset').catch(() => undefined);
   }
 
-  /** Saves or drops the live match. Returns the saved setup for a rematch. */
-  private finish(save: boolean) {
+  /** Saves or drops the live match, with `report` also keeping its summary on screen. Returns the saved setup for a rematch. */
+  private finish(save: boolean, report = false) {
     const l = this.live;
     if (!l) throw new UserError('No match in progress');
     const { rec, view } = l;
@@ -396,9 +402,16 @@ export class Hub {
     if (status === 'finished' || save) {
       const mini = 'winners' in view ? view : null;
       const scores = this.recordScores(l);
+      const legs = game.compact(rec.events, n, rec.options);
+      if (report) {
+        this.summary = matchReport({
+          game: rec.game, description: game.describe(rec.options, n), names: rec.roster.map(r => r.name), legs, view,
+          checkOut: rec.game === 'x01' ? rec.options.checkOut : null, ended: status === 'ended', ocheMeters: this.cfg.ocheMeters,
+        });
+      }
       this.db.saveMatch({
         game: rec.game, options: rec.options, roster: rec.roster, startedAt: rec.startedAt, endedAt: Date.now(),
-        status, winner, sets: 'sets' in view ? view.sets : [], legs: game.compact(rec.events, n, rec.options),
+        status, winner, sets: 'sets' in view ? view.sets : [], legs,
         legsWon: rec.game === 'hol' ? (view as HolView).points : undefined,
         variant: scores ? this.variant(rec)!.key : null,
         scores: scores ?? undefined,
@@ -526,13 +539,16 @@ export class Hub {
         this.apply({ t: 'nextLeg' });
         return {};
       case 'endMatch':
-        this.finish(cmd.save);
+        this.finish(cmd.save, cmd.save);
         return {};
       case 'closeMatch': {
-        const rec = this.finish(true);
+        const rec = this.finish(true, cmd.then === 'summary');
         if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster);
         return {};
       }
+      case 'closeSummary':
+        this.summary = null;
+        return {};
       case 'dismissResumed':
         if (this.live) this.live.resumed = false;
         return {};

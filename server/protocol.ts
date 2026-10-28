@@ -3,6 +3,7 @@ import type { O121, View121 } from '../games/121.ts';
 import type { CricketOptions, CricketView } from '../games/cricket.ts';
 import type { Dart } from '../games/darts.ts';
 import type { Fx } from './effects/index.ts';
+import type { MatchReport, PlayerHeat } from '../games/report.ts';
 import type { HolOptions, HolView } from '../games/hol.ts';
 import type { KillerOptions, KillerView } from '../games/killer.ts';
 import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
@@ -91,6 +92,8 @@ export interface ClientState {
   board: BoardStatus;
   match: LiveMatch | null;
   lastMatch: MatchSummary | null;
+  /** The match summary screen, shown instead of the lobby until the pilot moves on. */
+  summary: MatchReport | null;
   players: PlayerInfo[];
   recentPlayerIds: number[];
   urls: string[];
@@ -122,7 +125,8 @@ export type Command =
   | { type: 'next' }
   | { type: 'nextLeg' }
   | { type: 'endMatch'; save: boolean }
-  | { type: 'closeMatch'; then: 'rematch' | 'lobby' }
+  | { type: 'closeMatch'; then: 'summary' | 'rematch' | 'lobby' }
+  | { type: 'closeSummary' }
   | { type: 'dismissResumed' }
   | { type: 'board'; action: BoardAction }
   | { type: 'fakeBoard'; on: boolean }
@@ -174,6 +178,9 @@ export interface GameStatsResponse {
   /** Best result per record variant. */
   bests: { label: string; value: string }[];
 }
+
+/** Dart positions per player in one game and window; `distance` in metres. */
+export type HeatResponse = { player: PlayerInfo; heat: PlayerHeat; distance: number }[];
 
 export interface RecordTable {
   key: string;

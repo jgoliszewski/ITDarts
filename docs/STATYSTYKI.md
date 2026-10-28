@@ -8,7 +8,7 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 - **Po zakończeniu meczu** log jest kompaktowany do obowiązujących lotek. Nie trzymamy oryginalnej detekcji ani informacji, czy lotkę wpisano ręcznie.
 - **Kontekst meczu:** gra i jej opcje, gracze w kolejności rzucania, kto zaczynał, data, status.
 - **Lotka:** segment i mnożnik, gracz, numer w turze, czas, wynik przed i po, bust.
-- **Współrzędne** z Board Managera zapisujemy, gdy przychodzą, tylko przy rzutach niepoprawianych i niedopisanych ręcznie. Na razie nic ich nie wyświetla (kiedyś heatmapy).
+- **Współrzędne** z Board Managera zapisujemy, gdy przychodzą, tylko przy rzutach niepoprawianych i niedopisanych ręcznie. Rysuje je heatmapa ([UI.md](UI.md#heatmapa)).
 
 ## Gracze
 
@@ -46,7 +46,7 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 
 Definicji średniej until 170 nie znaleźliśmy w żadnym oficjalnym źródle. Przyjęliśmy najczęstszy podział legu na fazę punktowania i fazę checkoutu, bez cięcia tury w połowie.
 
-Później, bez zmian w modelu (policzą się wstecz): skuteczność na poszczególnych double, bust rate, heatmapy.
+Później, bez zmian w modelu (policzą się wstecz): skuteczność na poszczególnych double, bust rate.
 
 ## Okna
 
@@ -62,6 +62,12 @@ Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lot
 - Widok „Stats” jest tylko do odczytu i otwiera się z dowolnego urządzenia w LAN bez przejmowania Pilota.
 - Zawartość: lista graczy, profil gracza z oknami, head-to-head.
 - Telefon pamięta wybór „to ja” i otwiera się od razu na tym profilu.
+- **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), pod nią „Distance walked” w km.
+- **Porównanie graczy** na `/stats/compare`, wejście przyciskiem „Compare” na liście graczy:
+  - wybór 2–4 zarejestrowanych graczy (chipy), gry i okna;
+  - tabela z kolumną na gracza i wierszami jak w profilu tej gry, z podświetloną najlepszą wartością;
+  - pod nią heatmapa z linią i dystans w km. Head-to-head zostaje w profilu.
+- **Distance walked:** każda Tura to przejście do tarczy i z powrotem, czyli 2 × odległość od linii do tarczy (`ocheMeters` w `config.json`, domyślnie 2,37 m). Bull-off się nie liczy.
 - W trakcie meczu Ekran wyników pokazuje tylko to, co ustala [UI.md](UI.md). Historii tam nie ma.
 - Makiety widoku robimy przy implementacji statystyk.
 

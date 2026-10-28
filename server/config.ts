@@ -13,6 +13,8 @@ export interface Config {
   /** Browser opened in kiosk mode with --kiosk. Edge by default. */
   browser: string | null;
   kiosk: boolean;
+  /** Oche to board in metres; a visit walks there and back (Distance walked, docs/STATYSTYKI.md). */
+  ocheMeters: number;
 }
 
 const DEFAULTS: Config = {
@@ -23,6 +25,7 @@ const DEFAULTS: Config = {
   extraBackupDir: null,
   browser: null,
   kiosk: false,
+  ocheMeters: 2.37,
 };
 
 /** config.json in the repo root, then command line flags: --board host:port, --port N, --kiosk. */

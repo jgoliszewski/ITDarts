@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_IDS, isGameId } from '../../../games/index.ts';
-import type { GameStatsResponse, H2HResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
+import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
+import type { Row } from '../components/Compare.tsx';
+import { CompareTable, fmtKm, gameRows, gameStats, playerColor, x01Rows } from '../components/Compare.tsx';
+import { Heatmap } from '../components/Heatmap.tsx';
 import { Icon, Logo } from '../components/ui.tsx';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
@@ -100,6 +103,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>Winrate counts finished matches between registered players only. Matches with guests count for averages, not for wins.</p>
         </>
       )}
+      <PlayerHeat ids={[id]} game="x01" w={w} />
       {data.opponents.length > 0 && (
         <div className="section">
           <div className="caps" style={{ fontSize: 13 }}>Opponents</div>
@@ -132,18 +136,6 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
 const GAME_KEY = 'itdarts.statsGame';
 const pct = (a: number | undefined, b: number | undefined) => (b ? `${Math.round(((a ?? 0) / b) * 1000) / 10}%` : '–');
 
-/** The game's own numbers, from the totals the module keeps per match. */
-function gameStats(game: GameId, t: Record<string, number>): [string, string, string?][] {
-  switch (game) {
-    case 'atc':
-    case 'fullboard': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Darts', String(t.darts ?? 0)]];
-    case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
-    case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];
-    case 'killer': return [['Lives taken', String(t.taken ?? 0)]];
-    default: return [];
-  }
-}
-
 function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<GameStatsResponse>(`/api/stats/players/${id}?game=${game}&window=${w}`);
   if (error) return <p className="muted">This player does not exist.</p>;
@@ -159,6 +151,7 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
           <Stat l="Won" v={String(data.won)} s={data.played ? pct(data.won, data.played) : undefined} />
         </div>
       )}
+      <PlayerHeat ids={[id]} game={game} w={w} />
       {data.bests.length > 0 && (
         <div className="section">
           <div className="caps" style={{ fontSize: 13 }}>Personal bests · all time</div>
@@ -168,6 +161,90 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
         </div>
       )}
     </div>
+  );
+}
+
+/** Heatmap of one or more players in a game and window, with the distance walked under a single player's board. */
+function PlayerHeat({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
+  const { data } = useJson<HeatResponse>(`/api/stats/heat?ids=${ids.join(',')}&game=${game}&window=${w}`);
+  if (!data || data.length === 0 || data.every(p => p.heat.visits === 0)) return null;
+  return (
+    <div className="section">
+      <div className="caps" style={{ fontSize: 13 }}>Heatmap</div>
+      <Heatmap players={data.map((p, i) => ({ name: p.player.name, color: playerColor(i), heat: p.heat }))} />
+      {data.length === 1 && <div className="stat-grid"><Stat l="Distance walked" v={fmtKm(data[0].distance)} /></div>}
+    </div>
+  );
+}
+
+const COMPARE_KEY = 'itdarts.compare';
+
+/** Stats of 2–4 players side by side, rows as in the profile of the game (docs/STATYSTYKI.md, Prezentacja). */
+function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
+  const [data, setData] = useState<{ stats: (PlayerStatsResponse | GameStatsResponse)[]; heat: HeatResponse } | null>(null);
+  const key = ids.join(',');
+  useEffect(() => {
+    let alive = true;
+    const json = (url: string) => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(r.status)));
+    Promise.all([
+      Promise.all(key.split(',').map(id => json(`/api/stats/players/${id}?window=${w}${game === 'x01' ? '' : `&game=${game}`}`))),
+      json(`/api/stats/heat?ids=${key}&game=${game}&window=${w}`),
+    ]).then(([stats, heat]) => alive && setData({ stats, heat })).catch(() => alive && setData(null));
+    return () => { alive = false; };
+  }, [key, game, w]);
+  if (!data) return <p className="muted">Loading…</p>;
+  const names = data.stats.map(d => d.player.name);
+  const rows: Row[] = game === 'x01'
+    ? (() => {
+      const ps = data.stats as PlayerStatsResponse[];
+      return [
+        ...x01Rows(ps.map(p => p.x01)),
+        { label: 'Winrate', values: ps.map(p => (p.results.winrate === null ? '–' : `${p.results.winrate}%`)), nums: ps.map(p => p.results.winrate), better: 'higher' as const },
+      ];
+    })()
+    : (() => {
+      const gs = data.stats as GameStatsResponse[];
+      return [
+        ...gameRows(game, gs.map(g => g.totals)),
+        { label: 'Played', values: gs.map(g => String(g.played)) },
+        { label: 'Won', values: gs.map(g => String(g.won)), nums: gs.map(g => g.won), better: 'higher' as const },
+      ];
+    })();
+  rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtKm(h.distance)) });
+  return (
+    <>
+      <CompareTable names={names} rows={rows} />
+      {data.heat.some(h => h.heat.visits > 0) && (
+        <Heatmap players={data.heat.map((p, i) => ({ name: p.player.name, color: playerColor(i), heat: p.heat }))} />
+      )}
+    </>
+  );
+}
+
+function ComparePage() {
+  const { w, setW, game, setGame } = useStatsPrefs();
+  const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
+  const [ids, setIdsState] = useState<number[]>(() => (store.get(COMPARE_KEY) ?? '').split(',').map(Number).filter(n => n > 0).slice(0, 4));
+  const setIds = (v: number[]) => { setIdsState(v); store.set(COMPARE_KEY, v.join(',')); };
+  const known = list ? ids.filter(id => list.some(p => p.id === id)) : ids;
+  const toggle = (id: number) => setIds(known.includes(id) ? known.filter(x => x !== id) : known.length < 4 ? [...known, id] : known);
+  return (
+    <>
+      <GamePicker game={game} setGame={setGame} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="chip-row">
+          {list?.map(p => {
+            const at = known.indexOf(p.id);
+            return (
+              <button key={p.id} className={`chip ${at >= 0 ? 'on' : ''}`} onClick={() => toggle(p.id)}
+                style={at >= 0 ? { background: playerColor(at), borderColor: playerColor(at), color: '#111' } : undefined}>{p.name}</button>
+            );
+          })}
+        </div>
+        <WindowPicker value={w} onChange={setW} />
+        {known.length < 2 ? <p className="muted" style={{ margin: 0 }}>Pick 2 to 4 players.</p> : <CompareData ids={known} game={game} w={w} />}
+      </div>
+    </>
   );
 }
 
@@ -225,6 +302,7 @@ export function PlayerStats({ id }: { id: number }) {
 }
 
 export function StatsPage({ path }: { path: string }) {
+  const compare = path === '/stats/compare';
   const id = Number(path.split('/')[2]) || null;
   const { game, setGame } = useStatsPrefs();
   const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
@@ -241,18 +319,21 @@ export function StatsPage({ path }: { path: string }) {
   return (
     <div className="stats-page">
       <header className="stats-head">
-        <button className="icon-btn" aria-label="Back" onClick={() => go(id ? '/stats' : '/')}>{Icon.back(22)}</button>
-        <h1>{id ? 'Player' : 'Stats'}</h1>
+        <button className="icon-btn" aria-label="Back" onClick={() => go(id || compare ? '/stats' : '/')}>{Icon.back(22)}</button>
+        <h1>{compare ? 'Compare' : id ? 'Player' : 'Stats'}</h1>
         <Logo />
       </header>
-      {id ? <PlayerStats id={id} /> : (
+      {compare ? <ComparePage /> : id ? <PlayerStats id={id} /> : (
         <>
         <GamePicker game={game} setGame={setGame} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {!x01 && <Records game={game} />}
           {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them on the pilot under Players.</p> : (
             <>
-              <div className="caps" style={{ fontSize: 13 }}>{x01 ? 'Players · average last 30 days' : 'Players'}</div>
+              <div className="option-row">
+                <div className="caps" style={{ fontSize: 13 }}>{x01 ? 'Players · average last 30 days' : 'Players'}</div>
+                {list.length > 1 && <button className="btn" onClick={() => go('/stats/compare')}>Compare</button>}
+              </div>
               <div className="player-cards">
                 {list.map(p => (
                   <button key={p.id} className="player-card" onClick={() => go(`/stats/${p.id}`)}>

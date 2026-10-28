@@ -84,7 +84,27 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 - **Koniec legu:** ekran ze zwycięzcą, checkoutem, liczbą lotek i średnią z legu.
   - W match mode trzyma się do końca takeoutu, potem następny leg startuje sam.
   - Bez match mode czeka na „Next leg” albo „End match”.
-- **Koniec meczu:** ekran wygranej trzyma się do wyboru na Pilocie: „Rematch” (zaczyna następny w kolejności), „New match” albo „Back to lobby”.
+- **Koniec meczu:** karta wygranej („MATCH WON”, w minigrach „WINNER” albo „GAME OVER”) ma na Pilocie jeden przycisk „Summary”, który zapisuje mecz i otwiera [podsumowanie](#podsumowanie-meczu). „End match” ze „Save to stats” i zwykłe zakończenie po legu bez match mode też prowadzą do podsumowania, „Discard” prosto do lobby.
+
+## Podsumowanie meczu
+
+Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie graczy, distance walked).
+
+- Pełny ekran zamiast lobby na dużym ekranie i w telefonach, aż Pilot wybierze „Rematch” (zaczyna następny w kolejności), „New match” albo „Back to lobby”. Bez kontroli widać podsumowanie bez przycisków. Serwer trzyma je w pamięci, restart wraca do lobby.
+- Od góry:
+  - nagłówek: „MATCH WON” i zwycięzca z wynikiem w legach albo setach, w minigrach wynik gry, a po przerwaniu „MATCH ENDED”;
+  - tabela porównania: kolumna na gracza w jego kolorze, wiersze ze statystykami meczu, najlepsza wartość w wierszu podświetlona. X01: średnia, pierwsze 9, checkout %, najwyższy checkout, najkrótszy leg, 60+, 80+, 100+, lotki. Minigry: liczby z modułu gry, jak w profilu na `/stats`. Ostatni wiersz to „Distance walked” w metrach;
+  - [heatmapa](#heatmapa) graczy z tego meczu.
+- Goście mają pełną kolumnę i heatmapę, bo podsumowanie liczy się z meczu, a nie z historii.
+- Na telefonie tabela przewija się w poziomie, heatmapa jest pod nią, a przyciski są przypięte na dole.
+- **Kolory graczy** według miejsca w meczu albo w porównaniu: 1 różowy, 2 turkusowy, 3 pomarańczowy, 4 zielony, dalej od nowa. Profil gracza ich nie zapisuje.
+
+## Heatmapa
+
+- Wygląd jak w Autodarts: tarcza w klasycznych kolorach z szarymi drutami i numerami, obręcz w kolorze gracza. Każda lotka to mała plamka, pojedyncza zielonożółta z niebieską poświatą, a nakładające się przechodzą w żółć i czerwień.
+- Rysuje tylko lotki z coords. Lotki poprawione albo dopisane ręcznie podaje dopisek „N darts without position”, a bez żadnych coords zamiast tarczy jest „No positions recorded”. Lotek z bull-offu nie ma.
+- **Dwóch graczy:** jedna tarcza z pionową linią, którą przeciąga się palcem albo myszą. Na lewo od linii są lotki pierwszego gracza, na prawo drugiego, a połówki obręczy mają ich kolory. Przy 3–4 graczach pod tarczą są dwa pola wyboru, domyślnie dwaj pierwsi.
+- **Jeden gracz** (solo, profil gracza): tarcza bez linii.
 
 ## Lobby i QR
 

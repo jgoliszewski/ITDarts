@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
+Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -52,6 +52,11 @@ Stan na 2026-10-27. Aktualizuj przy każdym większym kroku.
   - **Animacje:** 180, 140+, bust, konfetti, błysk kafelka T20 i Bull, wejście ekranu końca legu.
   - **Sprawdzone** skryptem przez websocket z symulatorem tarczy i atrapą WLED (`npm run fake-wled`): reguły 180 i T20, Poprawka S20 ↔ T20, Undo, Sounds off, powrót WLED do stanu bazowego. Do tego zrzuty strony `/effects`, edytora, menu i animacji.
 - **Zgłaszanie błędów** ([UI.md](UI.md#zgłaszanie-błędów)): „Report a bug” w każdym menu zapisuje `bugs/<czas>.json` z kontekstem i logiem meczu. Sprawdzone skryptem przez websocket: zapis i odrzucenie pustego opisu. Dialogu nikt jeszcze nie klikał.
+- **Podsumowanie meczu, heatmapa, porównanie i distance walked** (2026-10-28, grilling ze zgłoszeń, [UI.md](UI.md#podsumowanie-meczu), [STATYSTYKI.md](STATYSTYKI.md#prezentacja)):
+  - karta wygranej ma „Summary”; serwer zapisuje mecz i trzyma raport (`games/report.ts`, `summary` w stanie) do Rematch, New match albo Back to lobby. „End match” z „Save” też go pokazuje;
+  - heatmapa w stylu Autodarts z linią między dwoma graczami (`web/src/components/Heatmap.tsx`) w podsumowaniu, w profilu gracza i na `/stats/compare`; dane z `GET /api/stats/heat`;
+  - „Distance walked” = Tury × 2 × `ocheMeters` (domyślnie 2,37 m);
+  - sprawdzone skryptem z symulatorem tarczy (mecz wygrany i przerwany z gośćmi) i zrzutami: 1920×1080, 1600×900, telefon 375 px, `/stats/compare`. Przeciągania linii i przycisku „Summary” nikt jeszcze nie klikał.
 - **Menu** rozdzielone na menu meczu i ogólne; Board panel, Players i Stats mają własne przyciski. Gracz w Players pokazuje swoje statystyki.
 
 - **Podpowiedzi Checkout i Setup** ([UI.md](UI.md#ekran-wyników)), 2026-10-27, ze zgłoszenia: trasy z tabeli PDC (z kontynuacją zaplanowanej trasy w turze), a poza tabelą optymalna strategia (oczekiwana liczba lotek z modelem pudeł), aktualizowana po każdej lotce, z „Setup”, gdy checkoutu nie ma. Działa w X01 i 121. Sprawdzone testami, jeszcze nie oglądane na ekranie.
