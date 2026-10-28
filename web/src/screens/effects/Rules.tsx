@@ -16,7 +16,7 @@ type Group = 'results' | 'visits' | 'darts' | 'games' | 'match';
 const GROUP_TITLES: [Group, string][] = [['results', 'Results'], ['visits', 'Visits'], ['darts', 'Darts'], ['games', 'Minigames'], ['match', 'Match and board']];
 
 const groupOf = (t: Trigger): Group =>
-  t.kind === 'game' ? 'games'
+  t.kind === 'game' || t.kind === 'hit' || t.kind === 'miss' ? 'games'
   : t.kind === 'dart' || t.kind === 'left' ? 'darts'
   : t.kind === 'total' || t.kind === 'range' || t.kind === 'combo' ? 'visits'
   : ['bust', 'checkout', 'setWon', 'matchWon'].includes(t.kind) ? 'results'
@@ -129,6 +129,8 @@ const PICKER: [string, [KindChoice, string, string][]][] = [
     ['matchWon', 'Match won', 'The end of every game'],
   ]],
   ['Minigames', [
+    ['hit', 'Hit', 'A dart that counts: ATC, Full Board, Cricket; a won visit in Higher or Lower'],
+    ['miss', 'Miss', 'A dart that does not count; a lost visit in Higher or Lower'],
     ['game:targetHit', 'Target hit', 'Around the Clock'],
     ['game:sectorCleared', 'Sector cleared', 'Full Board'],
     ['game:attemptFailed', 'Attempt failed', '121: out of darts on a target'],
@@ -143,6 +145,7 @@ const PICKER: [string, [KindChoice, string, string][]][] = [
   ['Match and board', [
     ['matchStart', 'Match start', 'Right after Start'],
     ['legStart', 'Leg start', 'Every leg, the first one too'],
+    ['nextPlayer', 'Next player', 'The visit goes to the next player'],
     ['takeoutStart', 'Takeout start', 'Darts are being pulled'],
     ['takeoutEnd', 'Takeout end', 'The board is clear'],
     ['boardOffline', 'Board offline', 'Board Manager lost'],
@@ -289,9 +292,9 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
     }
   };
 
-  // A base rule (docs/EFEKTY.md, Reguły bazowe): no Delete, and Reset brings back its name, triggers and sound.
+  // A base rule (docs/EFEKTY.md, Reguły bazowe): no Delete, and Reset brings back its name, triggers, sound and LEDs.
   const base = rule?.base;
-  const changed = base && JSON.stringify([r.name, r.enabled, r.triggers, r.sounds]) !== JSON.stringify([base.name, true, base.triggers, base.sounds]);
+  const changed = base && JSON.stringify([r.name, r.enabled, r.triggers, r.sounds, r.led]) !== JSON.stringify([base.name, true, base.triggers, base.sounds, base.led]);
   const selected = r.triggers[Math.min(chip, r.triggers.length - 1)];
   const preset = r.led && presetOf(d, r.led.preset);
   const off = [!d.settings.sounds && r.sounds.length ? 'Sounds' : null, !d.settings.leds && r.led ? 'LEDs' : null].filter(Boolean);
@@ -369,7 +372,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
 
       <div className="fx-actions">
         {rule && !base && <button className="btn danger" onClick={() => setAskDelete(true)}>Delete</button>}
-        {changed && <button className="btn" onClick={() => { set({ name: base.name, enabled: true, triggers: base.triggers, sounds: base.sounds }); setChip(0); }}>Reset to default</button>}
+        {changed && <button className="btn" onClick={() => { set({ name: base.name, enabled: true, triggers: base.triggers, sounds: base.sounds, led: base.led }); setChip(0); }}>Reset to default</button>}
         <span className="spacer" />
         <button className="btn" disabled={!canTest} onClick={() => call<{ sound: { url: string; gain: number } | null }>('POST', '/api/effects/test', r).then(res => res?.sound && playSound(res.sound.url, res.sound.gain))}>{Icon.play(16)}Test whole rule</button>
         {wide && <button className="btn primary" onClick={save} disabled={!isDirty && !!rule}>Save</button>}

@@ -11,6 +11,7 @@ import { UserError } from '../db.ts';
 import { slug } from './slug.ts';
 import type { BaseRule } from './builtin.ts';
 import { BASE_RULES, BUILTIN_SOUNDS, builtinId, builtinKey, isBuiltinSound } from './builtin.ts';
+import { ledDefault } from './leds.ts';
 
 export type BaseState = 'lobby' | 'match' | 'takeout' | 'offline';
 export const BASE_STATES: BaseState[] = ['lobby', 'match', 'takeout', 'offline'];
@@ -26,8 +27,6 @@ export interface EffectsSettings {
   callerVolume: number;
   /** The caller's voice: a folder in assets/caller/ (repo). */
   callerVoice: string;
-  /** The built-in turn sound (first a swoosh, now a marimba arpeggio); off for those who put their own sound on “Takeout end” (repo). */
-  swoosh: boolean;
   /** Volume of a built-in sound in %, by key, only where it is not 100 (repo). */
   builtinVolume: Record<string, number>;
   wled: {
@@ -64,7 +63,7 @@ export interface Rule {
   /** WLED preset and how long it plays. */
   led: { preset: number; seconds: number } | null;
   /** What “Reset to default” brings back; only on a base rule (builtin.ts). */
-  base?: { name: string; triggers: Trigger[]; sounds: string[] };
+  base?: { name: string; triggers: Trigger[]; sounds: string[]; led: Rule['led'] };
 }
 
 export type RuleInput = Omit<Rule, 'id' | 'base'>;
@@ -72,7 +71,7 @@ export type RuleInput = Omit<Rule, 'id' | 'base'>;
 /** What effects/effects.json holds. Keys are written in this order. */
 interface EffectsFile {
   version: 1;
-  settings: { volume: number; callerVolume: number; callerVoice: string; swoosh: boolean; builtinVolume: Record<string, number>; base: Record<BaseState, number | null> };
+  settings: { volume: number; callerVolume: number; callerVoice: string; builtinVolume: Record<string, number>; base: Record<BaseState, number | null> };
   sounds: { file: string; name: string; volume: number; durationMs: number }[];
   rules: Rule[];
 }
@@ -93,7 +92,7 @@ export const CALLER_VOICE = /^[a-z0-9-]{1,32}$/;
 
 const EMPTY: EffectsFile = {
   version: 1,
-  settings: { volume: 80, callerVolume: 80, callerVoice: 'brian', swoosh: true, builtinVolume: {}, base: { lobby: null, match: null, takeout: null, offline: null } },
+  settings: { volume: 80, callerVolume: 80, callerVoice: 'brian', builtinVolume: {}, base: { lobby: null, match: null, takeout: null, offline: null } },
   sounds: [],
   rules: [],
 };
@@ -106,6 +105,12 @@ export function soundType(buf: Buffer): 'mp3' | 'wav' | 'ogg' | null {
   if (buf.subarray(0, 3).toString('latin1') === 'ID3' || (buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0)) return 'mp3';
   return null;
 }
+
+/** A built-in sound's volume until it is changed on the page. */
+const defaultVolume = (key: string) => BUILTIN_SOUNDS.find(s => s.key === key)?.volume ?? 100;
+
+/** What a base rule holds by default, LEDs included; “Reset to default” brings it back. */
+const baseDefaults = (b: BaseRule) => ({ name: b.name, triggers: b.triggers.map(normalizeTrigger), sounds: b.sound ? [b.sound] : [], led: b.led ? ledDefault(b.led) : null });
 
 const int = (v: unknown, lo: number, hi: number): number | null => (Number.isInteger(v) && (v as number) >= lo && (v as number) <= hi ? (v as number) : null);
 
@@ -165,7 +170,7 @@ export function parseEffectsFile(text: string): EffectsFile {
     if ('volume' in s) settings.volume = int(s.volume, 0, 100) ?? fail('volume is 0–100');
     if ('callerVolume' in s) settings.callerVolume = int(s.callerVolume, 0, 100) ?? fail('callerVolume is 0–100');
     if ('callerVoice' in s) settings.callerVoice = typeof s.callerVoice === 'string' && CALLER_VOICE.test(s.callerVoice) ? s.callerVoice : fail('callerVoice is a folder name in assets/caller, like brian');
-    if ('swoosh' in s) settings.swoosh = s.swoosh === true;
+    // `swoosh` switched the hard-coded Next player sound; it is the rule b-next-player now, and the key is ignored.
     for (const [k, v] of Object.entries((s.builtinVolume ?? {}) as Record<string, unknown>)) {
       if (!isBuiltinSound(builtinId(k))) fail(`builtinVolume: no built-in sound "${k}"`);
       settings.builtinVolume[k] = int(v, 0, 200) ?? fail(`builtinVolume.${k} is 0–200`);
@@ -197,7 +202,7 @@ export function parseEffectsFile(text: string): EffectsFile {
 export function formatEffectsFile(f: EffectsFile): string {
   const out: EffectsFile = {
     version: 1,
-    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, swoosh: f.settings.swoosh, builtinVolume: Object.fromEntries(Object.entries(f.settings.builtinVolume).filter(([, v]) => v !== 100).sort()), base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
+    settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, builtinVolume: Object.fromEntries(Object.entries(f.settings.builtinVolume).filter(([k, v]) => v !== defaultVolume(k)).sort()), base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
     sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs })),
     rules: f.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, triggers: r.triggers.map(normalizeTrigger), sounds: r.sounds, led: r.led && { preset: r.led.preset, seconds: r.led.seconds } })),
   };
@@ -245,8 +250,8 @@ export class EffectsStore {
       const old = this.data.rules.find(r => !this.baseRules.some(x => x.id === r.id) && names.includes(r.name.trim().toLowerCase()));
       if (old) {
         old.id = b.id;
-        if (old.sounds.length === 0) old.sounds = [b.sound];
-      } else this.data.rules.push({ id: b.id, name: b.name, enabled: true, triggers: b.triggers.map(normalizeTrigger), sounds: [b.sound], led: null });
+        if (old.sounds.length === 0 && b.sound) old.sounds = [b.sound];
+      } else this.data.rules.push({ id: b.id, ...baseDefaults(b), enabled: true });
       changed = true;
     }
     if (changed) this.save();
@@ -317,7 +322,7 @@ export class EffectsStore {
     const l = this.local();
     const s = this.data.settings;
     return {
-      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice, swoosh: s.swoosh,
+      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice,
       builtinVolume: { ...s.builtinVolume },
       wled: { address: l.address, base: { ...s.base } },
     };
@@ -331,7 +336,6 @@ export class EffectsStore {
     if ('sounds' in p) l.sounds = !!p.sounds;
     if ('caller' in p) l.caller = !!p.caller;
     if ('leds' in p) l.leds = !!p.leds;
-    if ('swoosh' in p) s.swoosh = !!p.swoosh;
     if ('volume' in p) s.volume = int(p.volume, 0, 100) ?? fail('Volume is 0–100');
     if ('callerVolume' in p) s.callerVolume = int(p.callerVolume, 0, 100) ?? fail('Caller volume is 0–100');
     if ('callerVoice' in p) s.callerVoice = typeof p.callerVoice === 'string' && CALLER_VOICE.test(p.callerVoice) ? p.callerVoice : fail('Pick a caller voice from the list');
@@ -361,7 +365,7 @@ export class EffectsStore {
   rules(): Rule[] {
     return this.data.rules.map(r => {
       const b = this.baseRules.find(x => x.id === r.id);
-      return structuredClone(b ? { ...r, base: { name: b.name, triggers: b.triggers.map(normalizeTrigger), sounds: [b.sound] } } : r);
+      return structuredClone(b ? { ...r, base: baseDefaults(b) } : r);
     });
   }
 
@@ -404,7 +408,7 @@ export class EffectsStore {
   sounds(): Sound[] {
     const used = (id: string) => this.data.rules.filter(r => r.sounds.includes(id)).length;
     const builtin: Sound[] = BUILTIN_SOUNDS.map(b => ({
-      id: builtinId(b.key), name: b.name, file: '', builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? 100, durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
+      id: builtinId(b.key), name: b.name, file: '', builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? defaultVolume(b.key), durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
     }));
     const files: Sound[] = this.data.sounds
       .map(s => ({ id: s.file, name: s.name, file: s.file, builtin: null, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
@@ -475,9 +479,8 @@ export class EffectsStore {
     const f = structuredClone(EMPTY);
     const old = this.db.sql.prepare("SELECT value FROM settings WHERE key = 'effects'").get() as { value: string } | undefined;
     if (old) {
-      const s = JSON.parse(old.value) as { volume?: number; swoosh?: boolean; wled?: { base?: Record<string, number | null> } };
+      const s = JSON.parse(old.value) as { volume?: number; wled?: { base?: Record<string, number | null> } };
       if (int(s.volume, 0, 100) !== null) f.settings.volume = s.volume!;
-      if (typeof s.swoosh === 'boolean') f.settings.swoosh = s.swoosh;
       for (const b of BASE_STATES) f.settings.base[b] = int(s.wled?.base?.[b], 1, 250);
     }
     if (!this.oldTables()) return f;

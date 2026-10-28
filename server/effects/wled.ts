@@ -1,5 +1,7 @@
 // WLED client: the server is its only user (docs/EFEKTY.md), over the JSON API.
-// An effect is a one-item playlist with "end", so WLED goes back to the base preset by itself.
+// An effect is a one-item playlist with "end", so WLED goes back to the base preset by itself. It fades in over FADE_IN;
+// the fade back is the base preset's own transition (server/effects/leds.ts).
+import { FADE_IN } from './leds.ts';
 
 export interface WledPreset {
   id: number;
@@ -69,7 +71,7 @@ export class Wled {
 
   /** Plays `id` for `seconds`, then applies `end` (255 lets WLED restore what was on before). */
   effect(id: number, seconds: number, end: number | null) {
-    this.send({ on: true, playlist: { ps: [id], dur: [Math.max(1, Math.round(seconds * 10))], transition: [0], repeat: 1, end: end ?? 255 } });
+    this.send({ on: true, playlist: { ps: [id], dur: [Math.max(1, Math.round(seconds * 10))], transition: [Math.round(FADE_IN * 10)], repeat: 1, end: end ?? 255 } });
   }
 
   off() {

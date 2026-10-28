@@ -98,7 +98,7 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 
 - [ ] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
 - [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła. Pobieranie `presets.json` działa (WLED 0.15.4).
-- [ ] Ledy w meczu (2026-10-28): wszystkie 24 reguły bazowe i stany lobby i offline mają presety z rundy od podstaw w LED labu ([EFEKTY.md](EFEKTY.md#presety-z-led-labu-2026-10-28)). Do sprawdzenia w prawdziwym meczu: czy efekty są czytelne obok dźwięków, czy Pulse i Fill nie startują w losowym miejscu cyklu, czy same efekty po lotce (ruch przez 0,5–6 s) nie wywołują fałszywego takeoutu. Nieużywane presety (2, 4–28, 36, 43, 46–48) czekają na decyzję o usunięciu.
+- [ ] Ledy i dźwięki Momentów (2026-10-28, [#9](https://github.com/jgoliszewski/ITDarts/issues/9), [EFEKTY.md](EFEKTY.md#presety-momentów-2026-10-28)): presety wgrać na kontroler (`npm run leds:upload`), ustalić przy tarczy, który segment to ring tarczy i gdzie jest pierwszy led, a potem obejrzeć i posłuchać w meczu. Lista kroków jest w [#10](https://github.com/jgoliszewski/ITDarts/issues/10).
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
 - [ ] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.
@@ -132,7 +132,8 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
 4. Otwarte issues:
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
-   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
+   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek;
+   - [#9](https://github.com/jgoliszewski/ITDarts/issues/9): mapa Momentów, dźwięki i ledy. Postanowienia są w [MAPA.md](MAPA.md), a kod jest gotowy: nowe dźwięki, Reguły bazowe Next player, Hit, Miss i minigierek, presety ledów z kodu i symulator (`npm run led-sim`). Czeka na sprawdzenie przy tarczy, a potem na przeróbkę strony Effects i konfiguratora ([MAPA.md](MAPA.md#do-zrobienia)).
 5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo

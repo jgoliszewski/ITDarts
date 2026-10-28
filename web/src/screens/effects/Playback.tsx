@@ -1,7 +1,7 @@
 // Playback tab: the pilot switches, the built-in turn sound, the caller and both volumes.
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/ui.tsx';
-import { playCaller, turnSound } from '../../sound.ts';
+import { playCaller } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call } from './api.ts';
 import { Seg, Switch } from './parts.tsx';
@@ -22,8 +22,7 @@ function Volume({ label, value, onSave }: { label: string; value: number; onSave
 export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
   const s = d.settings;
   const put = (patch: object) => call('PUT', '/api/effects/settings', patch).then(d.reload);
-  // `swoosh` is the setting's key in effects.json; the sound itself is now a marimba arpeggio.
-  const row = (label: string, info: string, on: boolean, key: 'sounds' | 'caller' | 'leds' | 'swoosh', preview?: () => void) => (
+  const row = (label: string, info: string, on: boolean, key: 'sounds' | 'caller' | 'leds', preview?: () => void) => (
     <div className="fx-setting">
       <span className="grow"><b>{label}</b><span className="muted">{info}</span></span>
       {preview && <button className="icon-btn" aria-label={`Play ${label}`} onClick={preview}>{Icon.play(18)}</button>}
@@ -34,7 +33,7 @@ export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
     <div className="fx-col">
       {wide && <h2 className="fx-h">Playback</h2>}
       <section className="box">
-        {row('Sounds', 'Rule sounds and the next player sound, on the laptop only', s.sounds, 'sounds')}
+        {row('Sounds', 'Rule sounds, on the laptop only', s.sounds, 'sounds')}
         {row('Caller', 'The referee in X01: scores, “you require”, game shot. On the laptop only', s.caller, 'caller')}
         <div className="fx-setting" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, paddingBlock: 12 }}>
           <span className="grow"><b>Caller voice</b><span className="muted">One folder per voice in assets/caller</span></span>
@@ -49,8 +48,6 @@ export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
           </div>
         </div>
         {row('LEDs', 'Off turns the lights off', s.leds, 'leds')}
-        {row('Next player sound', 'Built-in marimba arpeggio. Turn it off to use your own sound on Takeout end', s.swoosh, 'swoosh',
-          () => turnSound(0.75 * (s.volume / 100)))}
         <Volume label="Effects volume" value={s.volume} onSave={volume => put({ volume })} />
         <Volume label="Caller volume" value={s.callerVolume} onSave={callerVolume => put({ callerVolume })} />
       </section>

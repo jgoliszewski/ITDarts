@@ -65,11 +65,14 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 - **Reguły bazowe** (grilling 2026-10-27): zestaw startowy z 2026-10-26 stał się listą w kodzie (`BASE_RULES` w `server/effects/builtin.ts`), każda reguła z dźwiękiem wbudowanym jako domyślnym.
   - Mają stałe id `b-…`, więc ta sama reguła w domu i w pracy to jedna reguła. Serwer przy każdym wczytaniu pliku dopisuje brakujące, a nowa reguła bazowa to zmiana w kodzie.
   - Nie da się ich usunąć (API odmawia), da się wyłączyć i edytować jak każdą: nazwę, wyzwalacze, dźwięki (także dołożyć własne pliki jako warianty) i ledy. W edytorze zamiast „Delete” jest nagłówek „Built-in rule”.
-  - „Reset to default” pojawia się, gdy nazwa, wyzwalacze, dźwięki albo przełącznik różnią się od definicji, i przywraca je; ledów nie rusza, bo to preset konkretnego kontrolera. Działa jak edycja: zapis przez „Save”.
+  - „Reset to default” pojawia się, gdy nazwa, wyzwalacze, dźwięki, ledy albo przełącznik różnią się od definicji, i przywraca je. Ledy wchodzą w to od 2026-10-28, odkąd presety mają stałe numery ([Ledy](#ledy-wled)). Działa jak edycja: zapis przez „Save”.
   - Zakładki „Default” nie ma: reguły bazowe są na liście Rules razem z własnymi, bo o remisie priorytetów decyduje kolejność w pliku, a bazowe są w nim wcześniej, więc wygrywają z własną regułą na to samo. Kto chce własne 180, edytuje bazowe albo je wyłącza.
   - Przejście ze starego zestawu: reguła o tej samej nazwie (albo aliasie, „Ton+ finish” → High finish) dostała stałe id i zachowała, co miała. Pusta lista dźwięków dostała domyślny, a przypisany plik został jako nadpisanie (tak zostały Bullseye, Clean 20s i Bed and breakfast). Reguły spoza listy („Missed the 20”, „67”) zostały własnymi.
   - Do zestawu doszło sześć reguł Treble 15…Treble 20 (lotka T15…T20), każda z własnym stopniem drabinki. Bull to istniejąca reguła Bullseye (50). Reguł na Takeout start/end i Board online/offline nie ma: odrzucone w grillingu.
-  - Zmiana gracza, Hit i Miss zostają poza regułami, na sztywno, bo nie mają wyzwalaczy; wrócimy do tego, gdy reszta zadziała.
+  - Od 2026-10-28 ([MAPA.md](MAPA.md), Q2 i Q12) doszły:
+    - Next player, Hit i Miss: wcześniej grały na sztywno w kiosku, teraz mają własne Wyzwalacze, które zgłasza hub (sekcja [Wbudowane dźwięki](#wbudowane-dźwięki));
+    - Life lost i Attempt failed z dźwiękiem No score, Sector closed z dźwiękiem Hit, Became killer i Leg start bez dźwięku, tylko z ledami.
+  - Każda reguła bazowa ma też domyślne ledy: preset i czas z `server/effects/leds.ts`.
 - **Zestaw startowy** (2026-10-26), zapisany w `effects/effects.json`, bez dźwięków (od 2026-10-27 to reguły bazowe powyżej). Kolejność ma znaczenie, bo przy remisie priorytetów gra reguła wcześniejsza:
   - 180 (suma 180, a do tego kombinacja T20 · T20 · T20, żeby przy 180 wygrywała z „Clean 20s”);
   - Big Fish (170 z checkoutem);
@@ -114,6 +117,12 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
     - High finish i Big fish: ta sama kadencja G → C z dzwonkami, w Big fish po narastającym szumie i z gongiem;
     - Bull: niska marimba w oktawach i dzwonek; Bust: trzy tony w dół i niski zjazd; No score: trzy tony w dół i niski zjazd, niżej niż Bust; Madhouse: niska molowa marimba i wysoki dzwonek; Game on: trzy stopnie w górę i dzwonek; Clean 20s: trzy uderzenia i dzwonek; Bed and breakfast: kalimba pół tonu w dół; New record: dzwonki w górę; White Horse: galop marimby; Player out: niska molowa marimba i zjazd;
     - Next player, Hit i Miss to dotychczasowe dźwięki, dostępne też jako wpisy.
+  - **Zmiany z 2026-10-28** ([MAPA.md](MAPA.md), Q10 i Q11): bogactwo idzie za siłą Momentu (S sama marimba, M bieg i jeden dzwonek, L akordy i dzwonki, XL najdłuższe), a wszystko złe ma jeden motyw.
+    - Treble 15–20: trzy szybkie nuty marimby bez dzwonka, nadal po pentatonice, więc T20 jest najwyżej;
+    - Clean 20s: trzy uderzenia bez dzwonka;
+    - Ton: bieg i mały dzwonek;
+    - Set won: G → C → C o stopień wyżej, z dzwonkami, żeby nie brzmiał jak High finish;
+    - No score: marimba w dół bez zjazdu; Bust: marimba w dół i niski zjazd; Player out: niska marimba w dół i długi zjazd.
   - Strony z propozycjami nie ma w repo. Strojenie to liczby w `sound.ts`.
 - Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
 
@@ -123,16 +132,16 @@ Ustalone po pierwszych testach (2026-10-26): bez sygnału gracze nie wiedzą, ż
 
 - **Dźwięk zmiany gracza:** gra, gdy Tura przechodzi na następnego gracza, czyli po końcu takeoutu, po „Takeout done” i po „Next player”. Gra też przy starcie następnego legu. Nie gra w bull-offie ani po końcu meczu.
 - To arpeggio marimby: C5, E5, G5 co 75 ms. Wybrane 2026-10-26 z kilkunastu propozycji w miejsce pierwszego swoosha (szum z opadającym filtrem), który brzmiał za ostro. Od 2026-10-27 ta marimba (sine plus krótka czwarta harmoniczna) jest podstawą wszystkich dźwięków wbudowanych (sekcja [Dźwięk](#dźwięk)).
-- Jest na sztywno w kodzie, jak animacje. Nie jest Regułą i nie da się go przypisać do innego wyzwalacza.
+- Od 2026-10-28 to Reguła bazowa Next player z Wyzwalaczem „Next player”, który zgłasza hub. Gra osobno, po regule tego samego zdarzenia, żeby wynik tury jej nie zagłuszył. Ledów nie ma.
 - Syntetyzowany w przeglądarce kiosku (WebAudio), więc nie potrzebuje pliku ani licencji.
-- Wycisza go przełącznik Sounds na Pilocie, a głośność bierze z poziomu efektów. W Playback jest jego odsłuch.
-- Reguła na „Takeout end” gra niezależnie od niego. Kto chce własny dźwięk, wyłącza wbudowany dźwięk na stronie efektów. Jego przełącznik ma w `effects.json` klucz `swoosh`, zostawiony po pierwszej wersji.
-- **Trafienie i pudło w minigierkach** (2026-10-27, wybrane z kilku propozycji): ta sama marimba. Trafienie to kwinta w górę (C5, potem G5 po 60 ms), pudło to kwinta w dół (G4, potem C4).
+- Wycisza go przełącznik Sounds na Pilocie albo wyłączenie reguły, a głośność bierze z poziomu efektów.
+- Kto chce własny dźwięk, podpina go do reguły Next player albo ją wyłącza. Przełącznik `swoosh` zniknął z Playback i z `effects.json` (stary klucz serwer pomija).
+- **Trafienie i pudło w minigierkach** (2026-10-27, wybrane z kilku propozycji): ta sama marimba. Trafienie to kwinta w górę (C5, potem G5 po 60 ms), pudło to kwinta w dół (G4, potem C4). Od 2026-10-28 to Reguły bazowe Hit i Miss: hub ocenia świeżą lotkę (`dartCue` w `games/turns.ts`) i zgłasza Wyzwalacz „Hit” albo „Miss”. Przegrywają z każdą inną regułą tej lotki, np. z Treble 20.
   - ATC, Full Board i Cricket grają po każdej lotce. Trafienie to lotka, która się liczy: cel w ATC, nowy sektor w Full Board, co najmniej jeden znacznik w Cricket.
   - Higher or Lower gra raz na Turę, gdy jest rozstrzygnięta: trafienie, gdy Tura się udała, pudło przy „Out”. Lotka poza tarczą rozstrzyga od razu.
   - X01, 121 i Killer milczą: tam pojedyncza lotka nie jest ani dobra, ani zła, a w X01 mówi caller.
   - Poprawka i Undo nie grają. Lotka rzucona po Undo gra znowu.
-  - Głośność to trzy czwarte dźwięku zmiany gracza. Wycisza go przełącznik Sounds; własnego przełącznika nie ma.
+  - Domyślna głośność Hit i Miss to 56 %, a Next player 75 % (`volume` w `BUILTIN_SOUNDS`), bo grają najczęściej. Zmienia się ją suwakiem w Sounds jak każdą.
 
 ## Konfiguracja w repo
 
@@ -154,61 +163,54 @@ Grilling z 2026-10-26: konfiguracja wyklikana w domu ma działać też w pracy.
 ## Ledy (WLED)
 
 - Jeden kontroler WLED, sterowany z serwera przez JSON API, nigdy z przeglądarki.
-- Efekty są presetami zaprojektowanymi w aplikacji WLED. Reguła podaje preset i czas trwania, domyślnie 1 s.
-- Serwer wysyła playlistę z presetem efektu na zadany czas. Jako `"end"` podaje preset bieżącego stanu bazowego, a bez niego `255`. WLED sam wraca wtedy do tła, a serwer nie odmierza czasu.
+- Efekty to presety WLED. Reguła podaje preset i czas trwania. Reguły bazowe mają je z kodu ([Presety Momentów](#presety-momentów-2026-10-28)), a reguła własna dostaje preset wybrany na stronie efektów, domyślnie na 1 s.
+- Serwer wysyła playlistę z presetem efektu na zadany czas, z wejściem w 0,2 s (`transition` 2). Jako `"end"` podaje preset bieżącego stanu bazowego, a bez niego `255`. WLED sam wraca wtedy do tła, a serwer nie odmierza czasu. Powrót trwa 0,7 s, bo tyle ma `transition` w presecie tła.
 - Nowe zdarzenie przerywa trwający efekt.
 - Zmiana stanu bazowego czeka na koniec trwającego efektu, żeby takeout nie uciął efektu po 180 (z implementacji).
 - Przełącznik LEDs na Pilocie wyłączony gasi ledy, a włączony zapala stan bazowy.
-- Do testów bez kontrolera jest atrapa: `npm run fake-wled` (port 3190). Na stronie efektów wpisujemy adres `localhost:3190`, a `http://localhost:3190` pokazuje aktualny kolor.
+- Do testów bez kontrolera jest atrapa: `npm run fake-wled` (port 3190). Na stronie efektów wpisujemy adres `localhost:3190`, a `http://localhost:3190` pokazuje aktualny kolor. Atrapa przyjmuje też `npm run leds:upload -- --wled localhost:3190`.
 - **Stany bazowe**, czyli tło między efektami, każdy z własnym presetem:
   - lobby;
   - mecz w toku;
   - takeout;
   - tarcza offline.
 
-### Presety z LED labu (2026-10-28)
+### Presety Momentów (2026-10-28)
 
-Presety efektów dobieramy na stronie testowej `npm run led-lab` (`http://localhost:3195`). Kandydaci są w `server/led-lab/candidates.ts`. Każdy ma Play i Hold na prawdziwym ringu, suwaki, kolory i werdykt. Werdykty leżą lokalnie w `data/led-lab.json`.
+Postanowione w grillingu [#9](https://github.com/jgoliszewski/ITDarts/issues/9). Pełne uzasadnienie i tabela Moment → dźwięk → ledy są w [MAPA.md](MAPA.md#przypisania). Zastąpiły presety z LED labu, które razem z labem zniknęły z repo.
 
-- **Wdrożenie:** przypisanie jest w kodzie (`ASSIGN` i `ASSIGN_BASE` w `candidates.ts`). `npm run led-lab:upload` zapisuje użyte presety na kontrolerze i ustawia reguły bazowe oraz stany bazowe przez API działającej aplikacji. Numer presetu jest stały (`data/led-lab-presets.json`), więc poprawiony kandydat nadpisuje ten sam numer. Skrypt niczego nie usuwa, a przed zapisem robi backup `presets.json` w `data/backups/`.
-- **Jak budujemy preset:** jak w aplikacji WLED, obie połówki ringu (0–48 i 48–100) z pełnym obiektem segmentu, reszta segmentów czyszczona. Paleta zawsze ustawiona wprost.
-- **Wnioski z testów:**
+- **Dwa ringi:** kontroler steruje dwoma ringami po mniej więcej 50 ledów, po jednym segmencie (0–48 i 48–100).
+  - Ring tarczy, zewnętrzny, bliżej gracza, oświetla tarczę. W efekcie płynnie przechodzi w jeden kolor i wraca.
+  - Ring ściany, wewnętrzny, przy ścianie, robi poświatę. W efekcie ma ruch w tym samym kolorze.
+  - Oba grają tyle samo, najwyżej 2 s. Dłużej grają tylko Match won (6 s) i New record (3 s), bo po końcu gry nic nie jest wykrywane.
+  - Który segment świeci na tarczę i gdzie jest pierwszy led, trzeba jeszcze sprawdzić przy tarczy. Stałe `BOARD_SEGMENT` i `SPLIT_AT` są w `server/effects/leds.ts`.
+- **Kolory:**
+  - pomarańcz: dobrze, w tym wszystkie treble;
+  - zieleń: wygrany leg i Bull;
+  - fiolet i magenta: zabawne;
+  - tęcza: największe;
+  - czerwień i karmin: źle;
+  - biel: neutralne.
+
+  Złota nie ma, bo na ledach wygląda jak słaby żółty.
+- **Jedna lista w kodzie:** `LEDS` w `server/effects/leds.ts` ma każdy wygląd z numerem presetu (100–128, zakres 100–149 należy do aplikacji). Z tej listy:
+  - symulator rysuje ringi (`npm run led-sim`, [MAPA.md](MAPA.md#symulator-ledów));
+  - `npm run leds:upload` zapisuje presety na kontrolerze;
+  - Reguły bazowe biorą domyślne ledy, a „Reset to default” je przywraca.
+
+  Stałe numery sprawiają, że dom i praca mają te same presety.
+- **`npm run leds:upload`** (`server/effects/leds-upload.ts`, opcje `--wled <host>` i `--dry-run`):
+  - przed zapisem robi backup `presets.json` w `data/backups/`;
+  - zapisuje wszystkie presety z listy;
+  - usuwa wszystkie inne poza 1 (Gameon) i 3 (stary Bust), czyli też stare presety z LED labu.
+- **Stany bazowe:** lobby i mecz to preset 100 (ciepła biel, statyczna), tarcza offline to 101 (czerwony Pulse), a takeout nie ma presetu.
+- **Wnioski z LED labu**, które dalej obowiązują:
   - kamery tarczy biorą ruch ledów za takeout, więc stan bazowy, do którego wraca efekt, musi być statyczny: lobby i mecz to Gameon (ciepła biel, Solid), a takeout nie ma stanu bazowego (z ruchem takeout nie kończy się nigdy). Ruchome tło zostaje tylko dla tarczy offline;
   - czarny jako kolor nie ma sensu, to zgaszone ledy, a przygaszone kolory wyglądają jak słaby prąd; tłem efektu jest stan bazowy (ciepła biel z Gameon);
   - na ledach 255,80,0 wygląda prawie jak czerwień, pomarańcz to 255,115,0;
   - Starburst w kolorze gasnący do ciepłej bieli i Sparkle wyglądają na zepsute; Starburst gasnący do czystej bieli jest dobry;
   - Blink, Breathe i Wipe liczą cykl od zegara kontrolera, więc startują w losowym miejscu; Blink przez to mruga nieregularnie. Heartbeat zaczyna uderzenie od startu efektu i na nim jest Double Pulse; przy prędkości 0 uderza w 0 i 0,5 s, a kolejną parę zaczyna w 1,5 s, więc efekt trwa najwyżej 1,4 s (aplikacja zaokrągla czas do 0,1 s).
-- **Zachowania** (runda od podstaw): Flash, Pulse, Double Pulse, Fill, Run, Ripple i Burst, w czystej bieli, pomarańczu i tęczy, a Flash, Pulse i Double Pulse też w czerwieni. Odpadły Comet, Blink i Fade Flash, a po pierwszym meczu także Double Pulse (za ostry: Heartbeat wskakuje na pełny kolor od razu). W meczu nie pasowały też Fill na Checkout i Ripple w tęczy na Big Fish (prawie niewidoczny).
-- **Zasada przypisania:** siła zdarzenia wybiera zachowanie (małe Flash, średnie Pulse albo Run, duże Fill albo Ripple, największe Burst), a kolor jego charakter (biel neutralnie, pomarańcz dobrze, tęcza największe momenty, czerwień źle).
-
-| Reguła lub stan | Efekt | Preset | Czas |
-|---|---|---|---|
-| Lobby | Gameon | 1 | stan |
-| Mecz | Gameon | 1 | stan |
-| Takeout | brak | | |
-| Tarcza offline | Pulse · czerwień | 34 | stan |
-| Treble 15–19 | Flash · biel | 29 | 0,5 s |
-| Treble 20 | Flash · pomarańcz | 30 | 0,5 s |
-| No score | Flash · czerwień | 31 | 0,5 s |
-| Ton | Pulse · biel | 32 | 1,5 s |
-| New record | Pulse · tęcza | 33 | 3 s |
-| Player out | Pulse · czerwień | 34 | 1,5 s |
-| Game on | Fill · biel | 35 | 2,2 s |
-| Checkout | Rainbow Sweep (tęcza przesuwa się po całym ringu) | 49 | 1,5 s |
-| High finish | Fill · tęcza | 37 | 2,2 s |
-| Clean 20s | Run · biel | 38 | 1,5 s |
-| Ton 40 | Run · pomarańcz | 39 | 1,5 s |
-| Madhouse | Run · tęcza | 40 | 1,5 s |
-| White Horse | Burst · biel | 41 | 2 s |
-| Set won | Ripple · pomarańcz | 42 | 3 s |
-| Big Fish | Burst · tęcza na bieli | 50 | 4 s |
-| 180 | Burst · pomarańcz na bieli | 44 | 4 s |
-| Match won | Burst · tęcza na bieli | 45 | 6 s |
-| Bed and breakfast | Ripple · biel | 52 | 1,5 s |
-| Bullseye | Flash · pomarańcz, dłuższy | 51 | 1 s |
-| Bust | Bust (preset użytkownika z aplikacji WLED, Dissolve) | 3 | 1,4 s |
-
-Reguły własne (np. „Missed the 20”, „67”) zostają bez ledów. Na kontrolerze zostały też nieużywane presety z wcześniejszych rund: 2, 4–28, 36, 43 i 46–48, a usunięcie czeka na decyzję.
+  - po teście w meczu: ruch po lotce i po trzeciej lotce nie przeszkadza; przeszkadzał tylko ruch w czasie takeoutu, gdy po wyjęciu lotek ring dalej się ruszał.
 
 ## Animacje na Ekranie wyników
 

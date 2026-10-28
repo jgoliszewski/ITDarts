@@ -112,6 +112,10 @@ _Avoid_: trigger (w dokumentach), event
 Jeden lub więcej Wyzwalaczy z przypisanym dźwiękiem i presetem ledów, wyklikana na stronie „Effects”. Naraz gra jedna Reguła, ta o najwyższym priorytecie.
 _Avoid_: efekt (w tym znaczeniu), akcja
 
+**Moment**:
+Chwila w grze, na którą może coś zagrać: dźwięk, ledy albo jedno i drugie, z siłą (S, M, L, XL) i charakterem (neutralny, dobry, zły, zabawny). Każda Reguła bazowa to jeden Moment; mapa Momentów jest w [MAPA.md](docs/MAPA.md).
+_Avoid_: akcja, event
+
 **Biblioteka dźwięków**:
 Wspólna lista wgranych plików dźwiękowych i Dźwięków wbudowanych, z której Reguły wybierają dźwięki.
 _Avoid_: sound pack, paczka

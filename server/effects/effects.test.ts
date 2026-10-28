@@ -8,6 +8,7 @@ import type { Fx } from './index.ts';
 import { Effects } from './index.ts';
 import { slug } from './slug.ts';
 import { BASE_RULES, builtinId } from './builtin.ts';
+import { ledDefault } from './leds.ts';
 import { EffectsStore, formatEffectsFile, parseEffectsFile, soundType } from './store.ts';
 import { presetColor } from './wled.ts';
 
@@ -98,10 +99,10 @@ describe('effects store', () => {
   });
 
   it('keeps the WLED address and pilot switches out of the repo file', () => {
-    store.updateSettings({ volume: 40, callerVolume: 60, callerVoice: 'arthur', sounds: false, caller: false, swoosh: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
+    store.updateSettings({ volume: 40, callerVolume: 60, callerVoice: 'arthur', sounds: false, caller: false, wled: { address: '192.168.1.50', base: { lobby: 1 } } });
     expect(() => store.updateSettings({ callerVoice: '../x' })).toThrow('caller voice');
     const file = JSON.parse(fileText());
-    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, callerVoice: 'arthur', swoosh: false, builtinVolume: {}, base: { lobby: 1, match: null, takeout: null, offline: null } });
+    expect(file.settings).toEqual({ volume: 40, callerVolume: 60, callerVoice: 'arthur', builtinVolume: {}, base: { lobby: 1, match: null, takeout: null, offline: null } });
     expect(fileText()).not.toContain('192.168.1.50');
     expect(store.settings()).toMatchObject({ sounds: false, caller: false, leds: true, wled: { address: '192.168.1.50' } });
   });
@@ -158,7 +159,7 @@ describe('effects store', () => {
     expect(store.rules()).toHaveLength(BASE_RULES.length + 1);
     expect(store.rules().find(r => r.id === 'b-high-finish')).toMatchObject({ name: 'Ton+ finish', triggers: [{ kind: 'range', min: 100, max: 167, checkout: 'only' }], sounds: [builtinId('high-finish')], base: { name: 'High finish', sounds: [builtinId('high-finish')] } });
     expect(store.rules().find(r => r.id === 'b-bullseye')).toMatchObject({ name: 'bullseye', sounds: [file] });
-    expect(store.rules().find(r => r.id === 'b-180')).toMatchObject({ name: '180', enabled: true, sounds: [builtinId('180')], led: null });
+    expect(store.rules().find(r => r.id === 'b-180')).toMatchObject({ name: '180', enabled: true, sounds: [builtinId('180')], led: ledDefault('180') });
     expect(store.rules().find(r => r.name === 'Mine')!.base).toBeUndefined();
     expect(() => store.deleteRule('b-180')).toThrow('cannot be deleted');
     store.updateRule('b-180', { name: 'Mine', enabled: false, triggers: [t180], sounds: [] });

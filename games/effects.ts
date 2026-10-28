@@ -28,7 +28,12 @@ export type Fact =
   | { kind: 'takeoutStart' }
   | { kind: 'takeoutEnd' }
   | { kind: 'boardOffline' }
-  | { kind: 'boardOnline' };
+  | { kind: 'boardOnline' }
+  /** The visit went to the next player, or the next leg started. */
+  | { kind: 'nextPlayer' }
+  /** Minigames: a new dart that counts or does not (dartCue in games/turns.ts). */
+  | { kind: 'hit' }
+  | { kind: 'miss' };
 
 /** One occurrence. The same slot before and after a log event is the same occurrence, maybe with other facts. */
 export interface Happening {
@@ -110,7 +115,7 @@ export function matches(t: Trigger, f: Fact): boolean {
 const ORDER = [
   'newRecord', 'matchWon', 'setWon', 'onlyCheckout', 'checkout', 'bust',
   'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
-  'combo', 'total', 'range', 'left', 'dart', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
+  'combo', 'total', 'range', 'left', 'dart', 'hit', 'miss', 'matchStart', 'legStart', 'nextPlayer', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
 ] as const;
 
 /** Lower is more important. */
@@ -170,7 +175,7 @@ export function isValidTrigger(t: unknown): t is Trigger {
     case 'left': return Number.isInteger(x.score) && (x.score as number) >= 1 && (x.score as number) <= MAX_LEFT;
     case 'game':
       return GAME_EVENTS.includes(x.event as GameEvent) && (x.event !== 'marks' || (Number.isInteger(x.marks) && (x.marks as number) >= 5 && (x.marks as number) <= 9));
-    default: return ['bust', 'checkout', 'setWon', 'matchWon', 'matchStart', 'legStart', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'].includes(x.kind as string);
+    default: return ['bust', 'checkout', 'setWon', 'matchWon', 'matchStart', 'legStart', 'nextPlayer', 'hit', 'miss', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'].includes(x.kind as string);
   }
 }
 
@@ -214,6 +219,9 @@ export const SIMPLE_LABELS: Record<Exclude<TriggerKind, 'dart' | 'total' | 'rang
   matchWon: 'Match won',
   matchStart: 'Match start',
   legStart: 'Leg start',
+  nextPlayer: 'Next player',
+  hit: 'Hit',
+  miss: 'Miss',
   takeoutStart: 'Takeout start',
   takeoutEnd: 'Takeout end',
   boardOffline: 'Board offline',

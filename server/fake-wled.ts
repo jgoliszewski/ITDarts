@@ -45,6 +45,18 @@ app.get('/presets.json', async () => ({
   ...Object.fromEntries(Object.entries(PRESETS).map(([id, p]) => [id, { n: p.n, on: true, seg: [{ id: 0, col: [rgb(p.color), [0, 0, 0], [0, 0, 0]], fx: 0 }] }])),
   20: { n: 'Party playlist', playlist: { ps: [10, 11], dur: [50, 50] } },
 }));
+// Like the real /upload with /presets.json (npm run leds:upload): the presets are replaced by the file's.
+app.addContentTypeParser('multipart/form-data', { parseAs: 'string' }, (_req, body, done) => done(null, body));
+app.post<{ Body: string }>('/upload', async req => {
+  const file = JSON.parse(req.body.slice(req.body.indexOf('{'), req.body.lastIndexOf('}') + 1)) as Record<string, { n?: string; seg?: { col?: number[][] }[] }>;
+  for (const id of Object.keys(PRESETS)) delete PRESETS[Number(id)];
+  for (const [id, p] of Object.entries(file)) {
+    const c = p.seg?.[0]?.col?.[0];
+    if (Number(id) > 0) PRESETS[Number(id)] = { n: p.n ?? `Preset ${id}`, color: c ? `#${c.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('')}` : '#888888' };
+  }
+  note(`presets uploaded: ${Object.keys(PRESETS).length}`);
+  return 'OK';
+});
 app.post<{ Body: { on?: boolean; ps?: number; playlist?: { ps: number[]; dur: number[]; end?: number } } }>('/json/state', async req => {
   const b = req.body ?? {};
   if (typeof b.on === 'boolean') on = b.on;

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED simulator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='%23F58224' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+  :root { --bg: #0a0a0b; --panel: #151517; --line: #2a2a2e; --text: #ececec; --muted: #8d8d93; --accent: #f58224; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px system-ui, sans-serif; }
+  .wrap { display: grid; grid-template-columns: minmax(300px, 620px) 1fr; gap: 20px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .stage { position: sticky; top: 16px; align-self: start; display: grid; gap: 12px; }
+  @media (max-width: 900px) { .stage { position: static; } }
+  h1 { font-size: 20px; margin: 0; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 6px; }
+  canvas { display: block; border-radius: 50%; }
+  #now { min-height: 2.6em; color: var(--muted); font-size: 13px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  label { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  button, select, input[type=text] { font: inherit; color: var(--text); background: #232327; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; } button:hover { background: #2d2d32; }
+  #tabs button.on, #sets button.on { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+  #sequences { display: grid; gap: 6px; } #sequences button { text-align: left; }
+  #idea { color: var(--muted); margin: 0; }
+  .moment { border-bottom: 1px solid var(--line); padding: 8px 0; display: grid; gap: 4px; }
+  .moment.picked .name b::after { content: ' ✓'; color: #4caf6e; }
+  .name { background: none; border: 0; padding: 0; display: flex; gap: 8px; align-items: center; text-align: left; }
+  .name b { font-size: 15px; } .name:hover b { color: var(--accent); }
+  .meta { color: var(--muted); font-size: 12px; }
+  .chip { font-size: 11px; border-radius: 6px; padding: 1px 6px; background: #2a2a2e; color: #ccc; }
+  .s-S { opacity: .7; } .s-L { background: #3a3a40; } .s-XL { background: #555; color: #fff; }
+  .m-good { color: #ffb36b; } .m-bad { color: #ff6b6b; } .m-fun { color: #c58bff; }
+  .variants { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .variant { display: flex; gap: 6px; align-items: center; padding: 4px 8px; font-size: 12px; }
+  .variant i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #555; }
+  .variant.current { border-color: #777; } .variant.chosen { border-color: #4caf6e; box-shadow: 0 0 0 1px #4caf6e; }
+  .variant.none { opacity: .45; }
+  .variants select, .variants input { font-size: 12px; padding: 4px 6px; }
+  .variants input { flex: 1; min-width: 120px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <div class="row"><h1>LED simulator</h1><span class="meta">draft for issue #9, see docs/MAPA.md</span></div>
+    <div><canvas id="ring"></canvas></div>
+    <div id="now">Base</div>
+    <div class="panel">
+      <div class="row" id="sets"></div>
+      <p id="idea"></p>
+      <div class="row">
+        <label>Fade <input id="fade" type="range" min="0" max="2.5" step="0.25"><span id="fadeOut"></span></label>
+        <label><input id="sound" type="checkbox"> Sound</label>
+        <label>Volume <input id="volume" type="range" min="0" max="1.5" step="0.05"></label>
+        <button id="stop">Back to base</button>
+        <button id="pause">Pause</button>
+        <select id="speed" title="Playback speed"><option value="1">1×</option><option value="0.5">½×</option><option value="0.25">¼×</option></select>
+      </div>
+      <div class="row">
+        <label>LED 0 at <select id="start"><option value="0">top</option><option value="90">right</option><option value="180">bottom</option><option value="270">left</option></select></label>
+        <label>Direction <select id="dir"><option value="1">clockwise</option><option value="-1">anticlockwise</option></select></label>
+        <label>Rings <select id="split"><option value="48">0–48 and 48–100</option><option value="50">0–50 and 50–100</option></select></label>
+        <label>Lights the board <select id="boardRing"><option value="first">first ring</option><option value="second">second ring</option></select></label>
+        <label><input id="rev2" type="checkbox"> Second ring reversed</label>
+        <label>Base <select id="base"><option value="warm">Gameon warm white</option><option value="white">pure white</option></select></label>
+      </div>
+    </div>
+    <div class="panel">
+      <b>Sequences</b>
+      <div id="sequences"></div>
+    </div>
+  </div>
+  <div>
+    <div class="row" id="tabs"><span id="picked" class="meta"></span><button id="copy">Copy picks</button></div>
+    <div id="list"></div>
+  </div>
+</div>
+<script type="module" src="/src/ledsim/main.ts"></script>
+</body>
+</html>

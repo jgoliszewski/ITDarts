@@ -196,34 +196,46 @@ function gong(a: AudioContext, t: number, freq: number, volume: number, dur: num
   [[1, 0.38], [1.48, 0.2], [2.37, 0.14], [3.1, 0.09], [4.2, 0.05]].forEach(([r, p], i) => tone(a, t, freq * r, dur * (1 - i * 0.12), volume * p, 0.004, { space }));
 }
 
-const C4 = 261.63, Eb4 = 311.13, G4 = 392.0, Ab4 = 415.3, A4 = 440, B4 = 493.88;
+const C4 = 261.63, Eb4 = 311.13, F4 = 349.23, G4 = 392.0, Ab4 = 415.3, A4 = 440, B4 = 493.88;
 const C5 = 523.25, D5 = 587.33, Eb5 = 622.25, E5 = 659.25, F5 = 698.46, G5 = 783.99, A5 = 880, B5 = 987.77;
 const C6 = 1046.5, D6 = 1174.66, Eb6 = 1244.51, E6 = 1318.51, G6 = 1567.98, C7 = 2093, E7 = 2637.02;
 
-const CHORD_C = [C4, 329.63, G4, C5], CHORD_F = [349.23, A4, C5, F5], CHORD_G = [G4, B4, D5, G5], CHORD_C_HI = [C5, E5, G5, C6];
+const CHORD_C = [C4, 329.63, G4, C5], CHORD_F = [F4, A4, C5, F5], CHORD_G = [G4, B4, D5, G5], CHORD_C_HI = [C5, E5, G5, C6];
 const seq = (t: number, freqs: number[], step: number, play: (t: number, f: number) => void) => freqs.forEach((f, i) => play(t + i * step, f));
 
-/** A treble sparkle transposed up the pentatonic: T15 starts on C5, T20 on C6. */
-function sparkle(a: AudioContext, t: number, v: number, ratio: number) {
-  seq(t, [C5, E5, G5, C6].map(f => f * ratio), 0.04, (t, f) => marimba(a, t, f, v, 0.2));
-  bell(a, t + 0.16, E6 * ratio, v * 0.7, 0.4, 0.9);
+/** A treble: three quick marimba notes, no bell (S), transposed up the pentatonic: T15 starts on C5, T20 on C6. */
+function treble(a: AudioContext, t: number, v: number, ratio: number) {
+  seq(t, [C5, E5, G5].map(f => f * ratio), 0.045, (t, f) => marimba(a, t, f, v, 0.15));
 }
 const PENTATONIC = [C5, D5, E5, G5, A5, C6].map(f => f / C5);
 
-/** Picked on 2026-10-27 from the proposal pages. `v` is the gain, with the effects volume already in it. */
+/** Everything bad shares one motif: marimba stepping down, with a low slide from M up. */
+function down(a: AudioContext, t: number, v: number, freqs: number[], slide: number | null, slideLen = 0.45) {
+  seq(t, freqs, 0.11, (t, f) => marimba(a, t, f, v * 1.1, 0.25));
+  if (slide) tone(a, t + 0.1, slide, slideLen, v * 0.3, 0.02, { space: 0.2, glide: slide / 2 });
+}
+
+/**
+ * Picked on 2026-10-27 from the proposal pages; since 2026-10-28 richness follows strength (S marimba alone, M a run and
+ * one bell, L strummed chords and bells, XL the longest) and every bad moment shares one motif (docs/MAPA.md).
+ * `v` is the gain, with the effects volume already in it.
+ */
 const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> = {
-  'treble-15': (a, t, v) => sparkle(a, t, v, PENTATONIC[0]),
-  'treble-16': (a, t, v) => sparkle(a, t, v, PENTATONIC[1]),
-  'treble-17': (a, t, v) => sparkle(a, t, v, PENTATONIC[2]),
-  'treble-18': (a, t, v) => sparkle(a, t, v, PENTATONIC[3]),
-  'treble-19': (a, t, v) => sparkle(a, t, v, PENTATONIC[4]),
-  'treble-20': (a, t, v) => sparkle(a, t, v, PENTATONIC[5]),
+  'treble-15': (a, t, v) => treble(a, t, v, PENTATONIC[0]),
+  'treble-16': (a, t, v) => treble(a, t, v, PENTATONIC[1]),
+  'treble-17': (a, t, v) => treble(a, t, v, PENTATONIC[2]),
+  'treble-18': (a, t, v) => treble(a, t, v, PENTATONIC[3]),
+  'treble-19': (a, t, v) => treble(a, t, v, PENTATONIC[4]),
+  'treble-20': (a, t, v) => treble(a, t, v, PENTATONIC[5]),
   bull: (a, t, v) => {
     marimba(a, t, C4, v * 1.2, 0.3);
     marimba(a, t + 0.07, C5, v, 0.3);
     bell(a, t + 0.1, E5, v * 0.8, 0.5, 1.3);
   },
-  ton: (a, t, v) => seq(t, [C5, E5, G5], 0.07, (t, f) => marimba(a, t, f, v, 0.1)),
+  ton: (a, t, v) => {
+    seq(t, [C5, E5, G5], 0.07, (t, f) => marimba(a, t, f, v, 0.1));
+    bell(a, t + 0.21, G6, v * 0.5, 0.35, 0.7);
+  },
   'ton-40': (a, t, v) => {
     seq(t, [C5, E5, G5, C6], 0.065, (t, f) => marimba(a, t, f, v, 0.15));
     bell(a, t + 0.26, E6, v * 0.8, 0.4, 1.0);
@@ -250,12 +262,12 @@ const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> =
     strum(a, t + 0.7, [C5, E5, G5, C6, E6], v, 0.4);
     seq(t + 0.75, [C6, E6, G6, C7], 0.05, (t, f) => bell(a, t, f, v * 0.8, 0.6, 1.5));
   },
+  // Like High finish, told apart by a third chord a step higher: G → C → C up.
   'set-won': (a, t, v) => {
     strum(a, t, CHORD_G, v, 0.2);
-    seq(t + 0.08, [G5, B5], 0.08, (t, f) => marimba(a, t, f, v, 0.2));
-    strum(a, t + 0.32, CHORD_C_HI, v, 0.3);
-    bell(a, t + 0.34, E6, v * 0.8, 0.5, 1.2);
-    bell(a, t + 0.44, C6, v * 0.8, 0.5, 1.2);
+    strum(a, t + 0.3, CHORD_C_HI, v, 0.3);
+    strum(a, t + 0.6, [E5, G5, C6, E6], v, 0.35);
+    seq(t + 0.62, [C6, E6, G6], 0.06, (t, f) => bell(a, t, f, v * 0.8, 0.55, 1.3));
   },
   'match-won': (a, t, v) => {
     const chords = [CHORD_C, CHORD_F, CHORD_G], arps = [[C5, E5, G5], [F5, A5, C6], [G5, B5, D6]];
@@ -268,14 +280,8 @@ const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> =
     bell(a, t + 1.28, G6, v * 0.7, 0.6, 1.6);
     bell(a, t + 1.34, C7, v * 0.5, 0.6, 1.6);
   },
-  bust: (a, t, v) => {
-    seq(t, [Eb5, C5, Ab4], 0.11, (t, f) => tone(a, t, f, 0.35, v * 0.22, 0.01, { type: 'triangle', space: 0.25 }));
-    tone(a, t + 0.1, 180, 0.5, v * 0.3, 0.02, { space: 0.2, glide: 90 });
-  },
-  'no-score': (a, t, v) => {
-    seq(t, [C5, Ab4, 349.23], 0.11, (t, f) => tone(a, t, f, 0.35, v * 0.22, 0.01, { type: 'triangle', space: 0.25 }));
-    tone(a, t + 0.08, 160, 0.45, v * 0.3, 0.02, { space: 0.2, glide: 80 });
-  },
+  bust: (a, t, v) => down(a, t, v, [Eb5, C5, Ab4], 180),
+  'no-score': (a, t, v) => down(a, t, v, [C5, Ab4, F4], null),
   madhouse: (a, t, v) => {
     marimba(a, t, C4, v * 1.1, 0.3);
     marimba(a, t + 0.09, Eb4, v, 0.3);
@@ -285,10 +291,7 @@ const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> =
     seq(t, [C5, D5, E5], 0.07, (t, f) => marimba(a, t, f, v, 0.15));
     bell(a, t + 0.21, G5, v * 0.8, 0.4, 1.0);
   },
-  'clean-20s': (a, t, v) => {
-    seq(t, [C6, C6, C6], 0.09, (t, f) => marimba(a, t, f, v, 0.15));
-    bell(a, t + 0.27, E6, v * 0.7, 0.4, 0.9);
-  },
+  'clean-20s': (a, t, v) => seq(t, [C6, C6, C6], 0.09, (t, f) => marimba(a, t, f, v, 0.15)),
   'bed-and-breakfast': (a, t, v) => seq(t, [C5, B4], 0.11, (t, f) => kalimba(a, t, f, v * 0.9)),
   'new-record': (a, t, v) => {
     seq(t, [C6, E6, G6, C7], 0.07, (t, f) => bell(a, t, f, v * 0.8, 0.5, 1.2));
@@ -298,11 +301,7 @@ const BUILTIN: Record<string, (a: AudioContext, t: number, v: number) => void> =
     [0, 0.06, 0.18, 0.24, 0.3, 0.42].forEach((d, i) => marimba(a, t + d, i % 3 === 2 ? G5 : C5, v * 0.9, 0.15));
     bell(a, t + 0.5, C6, v * 0.8, 0.4, 1.0);
   },
-  'player-out': (a, t, v) => {
-    marimba(a, t, Eb4, v * 1.1, 0.3);
-    marimba(a, t + 0.1, C4, v * 1.1, 0.3);
-    tone(a, t, 260, 0.8, v * 0.2, 0.02, { space: 0.2, glide: 130 });
-  },
+  'player-out': (a, t, v) => down(a, t, v, [Eb4, C4], 200, 1.1),
   turn: (a, t, v) => [C5, E5, G5].forEach((f, i) => marimba(a, t + i * 0.075, f, v)),
   hit: (a, t, v) => {
     marimba(a, t, C5, v);
@@ -323,12 +322,3 @@ export function builtinSound(key: string, gain: number) {
   play(a, t, gain);
   effectEnd = Math.max(effectEnd, t + (BUILTIN_SOUNDS.find(s => s.key === key)?.durationMs ?? 0) / 1000);
 }
-
-/** The next player's turn: a marimba arpeggio, C5 E5 G5 (picked after the first tests in place of a noise swoosh). */
-export const turnSound = (volume = 0.6) => builtinSound('turn', volume);
-
-/** A counted dart in the minigames with hit sounds: a fifth up, C5 G5 (docs/EFEKTY.md, Wbudowane dźwięki). */
-export const hitSound = (volume = 0.45) => builtinSound('hit', volume);
-
-/** A dart that did not count: the mirror of the hit, G4 C4. */
-export const missSound = (volume = 0.45) => builtinSound('miss', volume);

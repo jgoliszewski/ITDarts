@@ -76,16 +76,3 @@ export function winnersOf(m: MiniMatch): string {
   const names = m.view.winners.map(i => m.roster[i].name);
   return names.length ? names.join(' & ') : m.roster.length > 1 ? 'Team' : m.roster[0].name;
 }
-
-/**
- * Hit or miss sound for a new dart (docs/EFEKTY.md, Wbudowane dźwięki). `before` is how many darts the visit on screen had.
- * ATC, Full Board and Cricket sound every dart; Higher or Lower sounds once, when the visit is decided. Other games stay silent.
- */
-export function dartCue(m: LiveMatch, before: number): 'hit' | 'miss' | null {
-  if (isX01(m) || m.view.phase === 'bulloff') return null;
-  const v = m.view.visit;
-  if (v.darts.length !== before + 1) return null;
-  if (m.game === 'atc' || m.game === 'fullboard' || m.game === 'cricket') return v.good.at(-1) ? 'hit' : 'miss';
-  if (m.game === 'hol' && v.dartsLeft === 0) return v.verdict?.tone === 'bad' ? 'miss' : 'hit';
-  return null;
-}

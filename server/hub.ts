@@ -13,6 +13,7 @@ import { callerLines121 } from '../games/121.ts';
 import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { MiniView } from '../games/turns.ts';
+import { dartCue } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
 import { callerLines } from '../games/x01/index.ts';
 import type { Change, Fact, Happening } from '../games/effects.ts';
@@ -254,7 +255,7 @@ export class Hub {
       showQr: this.showQr,
       boardTest: this.boardTest,
       howTo: this.howTo,
-      effects: { ...(({ sounds, caller, leds, volume, swoosh }) => ({ sounds, caller, leds, volume, swoosh }))(this.effects.store.settings()), rev: this.effects.store.rev },
+      effects: { ...(({ sounds, caller, leds, volume }) => ({ sounds, caller, leds, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
   }
 
@@ -271,9 +272,11 @@ export class Hub {
     l.rec.events.push(e);
     this.db.appendLive(e);
     const before = l.view.phase;
+    const dartsBefore = 'visit' in l.view ? l.view.visit.darts.length : 0;
     l.view = this.compute(l.rec);
     // The visit went to the next player, or the next leg started: not the end of the match.
-    if ((e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing') l.turnPass++;
+    const passed = (e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing';
+    if (passed) l.turnPass++;
     const hadRecord = !!l.newRecord;
     l.newRecord = this.newRecords(l);
     if (e.t !== 'fix') l.lastFix = null;
@@ -286,9 +289,14 @@ export class Hub {
     const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' ? 'undo' : 'other');
     l.happenings = happenings;
     if (l.newRecord && !hadRecord && e.t !== 'undo') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
+    // Hit and Miss come from a fresh dart only, like the dart triggers.
+    const cue = e.t === 'dart' ? dartCue(l.rec.game, l.view as MiniView, dartsBefore) : null;
+    if (cue) cs.push({ fact: { kind: cue }, before: null });
     // State first, so the scoreboard animates the visit it already shows.
     this.broadcast();
     this.effects.fire(cs, this.caller(l, cs, e.t === 'next' || e.t === 'nextLeg' || e.t === 'start'));
+    // Next player plays on its own, so a visit rule that comes with the same event does not drown it.
+    if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
   /** The caller speaks in X01 and 121 only (docs/EFEKTY.md#caller). */

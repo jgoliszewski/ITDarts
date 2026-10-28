@@ -314,3 +314,16 @@ export const OFF_ON: [unknown, string][] = [[false, 'Off'], [true, 'On']];
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export const livesLabel = (n: number) => `${n} ${n === 1 ? 'life' : 'lives'}`;
+
+/**
+ * Hit or Miss for a new dart (docs/EFEKTY.md, Wbudowane dźwięki), fired by the hub as the Next player, Hit and Miss
+ * rules. `before` is how many darts the visit had. ATC, Full Board and Cricket judge every dart; Higher or Lower judges
+ * the visit once it is decided. Other games have neither.
+ */
+export function dartCue(game: GameId, view: { phase: string; visit?: MiniView['visit'] }, before: number): 'hit' | 'miss' | null {
+  const v = view.visit;
+  if (game === 'x01' || view.phase === 'bulloff' || !v || v.darts.length !== before + 1) return null;
+  if (game === 'atc' || game === 'fullboard' || game === 'cricket') return v.good.at(-1) ? 'hit' : 'miss';
+  if (game === 'hol' && v.dartsLeft === 0) return v.verdict?.tone === 'bad' ? 'miss' : 'hit';
+  return null;
+}
