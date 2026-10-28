@@ -9,6 +9,7 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Grilling hostingu** ([#8](https://github.com/jgoliszewski/ITDarts/issues/8), 2026-10-28): plan w [HOSTING.md](HOSTING.md), jeszcze nic nie zaimplementowane.
 - **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
@@ -129,6 +130,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 4. Otwarte issues:
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
    - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
+5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo
 
