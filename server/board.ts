@@ -200,8 +200,13 @@ export class Board extends EventEmitter<BoardEvents> {
       this.emit('status');
     }
     try {
+      // Board Manager answers "Auto-calibration failed" (400) while detection is stopped, so start it first.
+      if (a === 'calibrate' && !this.status.detecting) await this.action('start');
       const r = await fetch(`http://${this.address}${path}`, { method, signal: AbortSignal.timeout(slow ? 120_000 : 5000) });
-      if (!r.ok) throw new Error(`Board Manager answered ${r.status}`);
+      if (!r.ok) {
+        const text = (await r.text().catch(() => '')).trim().slice(0, 120);
+        throw new Error(text ? `Board Manager: ${text}` : `Board Manager answered ${r.status}`);
+      }
       if (a === 'start') this.status.detecting = true;
       if (a === 'stop') this.status.detecting = false;
       if (a === 'reset') this.processed = 0;
