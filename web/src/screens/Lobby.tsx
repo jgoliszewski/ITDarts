@@ -29,6 +29,11 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
           </div>
         </section>
         <aside className="lobby-side">
+          <nav className="lobby-nav">
+            <button className="btn" onClick={() => takeThen(onPlayers)}>Players</button>
+            <a className="btn" href="/stats">Stats</a>
+            <a className="btn" href="/effects">Effects</a>
+          </nav>
           {last && (
             <div className="card">
               <div className="caps">Last match · {last.description.replace(/^X01 · /, '')}</div>
@@ -52,10 +57,6 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
                 Rematch {last.players.map(p => p.name).join(' vs ')}
               </button>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'calc(12 * var(--u))' }}>
-              <button className="btn" onClick={() => takeThen(onPlayers)}>Players</button>
-              <a className="btn" href="/stats" style={{ textDecoration: 'none' }}>Stats</a>
-            </div>
           </div>
         </aside>
       </main>

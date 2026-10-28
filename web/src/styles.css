@@ -245,6 +245,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .last-row.win .n { font-weight: 800; color: var(--text); }
 .last-row .num { font-size: calc(80 * var(--u)); color: var(--muted); line-height: 1; }
 .last-row.win .num { color: var(--accent); }
+.lobby-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(12 * var(--u)); }
+.lobby-nav .btn { height: calc(72 * var(--u)); font-size: calc(22 * var(--u)); text-decoration: none; }
 .lobby-actions { flex: 1; justify-content: flex-end; }
 .lobby-actions .btn { height: calc(96 * var(--u)); font-size: calc(28 * var(--u)); }
 .lobby-actions .btn.secondary { height: calc(72 * var(--u)); font-size: calc(22 * var(--u)); }
@@ -256,6 +258,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .phone-header h1 { flex: 1; margin: 0; font-size: 22px; font-weight: 800; }
 .phone-header .pill { height: 44px; padding: 0 14px; background: var(--card); font-size: 14px; }
 .phone-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+.phone-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.phone-nav .btn { text-decoration: none; }
 .p-players { display: flex; flex-direction: column; gap: 8px; }
 .p-player { display: flex; align-items: center; padding: 12px 18px; border-radius: 20px; background: var(--card); }
 .p-player .who { flex: 1; min-width: 0; }

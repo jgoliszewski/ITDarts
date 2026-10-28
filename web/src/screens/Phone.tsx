@@ -224,6 +224,11 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
     <div className="phone">
       <PhoneHeader s={s} title="ITDarts" onMenu={onMenu} onBoard={onBoard} />
       <div className="phone-body">
+        <nav className="phone-nav">
+          <button className="btn" onClick={onPlayers}>Players</button>
+          <a className="btn" href="/stats">Stats</a>
+          <a className="btn" href="/effects">Effects</a>
+        </nav>
         {last && (
           <div className="box">
             <span className="caps" style={{ fontSize: 13 }}>Last match · {last.description.replace(/^X01 · /, '')}</span>
@@ -243,10 +248,6 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
         <button className="btn primary" onClick={onNew}>New match</button>
         {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>Rematch {last.players.map(p => p.name).join(' vs ')}</button>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button className="btn" onClick={onPlayers}>Players</button>
-          <a className="btn" href="/stats" style={{ textDecoration: 'none' }}>Stats</a>
-        </div>
       </div>
     </div>
   );

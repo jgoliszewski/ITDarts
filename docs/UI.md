@@ -118,7 +118,7 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
 
 ## Menu Pilota
 
-Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku obok QR (na telefonie: status tarczy w nagłówku). New match, Players i Stats to przyciski na ekranie głównym.
+Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku obok QR (na telefonie: status tarczy w nagłówku). New match to przycisk na ekranie głównym, a Players, Stats i Effects są w rzędzie na górze ekranu głównego (kiosk: nad ostatnim meczem po prawej, telefon Pilota: pod nagłówkiem).
 
 - **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
 - **Bez meczu:** Close app, czyli wyjście z kiosku, z potwierdzeniem. Tylko na laptopie przy tarczy.

@@ -38,11 +38,11 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
   );
   // Pilot switches; the server keeps them, so they survive a restart.
   const toggles = (
-    <div className="seg" style={{ gridAutoColumns: '1fr' }}>
+    <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid var(--line)' }}><div className="seg" style={{ gridAutoColumns: '1fr' }}>
       <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
       <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
       <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
-    </div>
+    </div></div>
   );
   return (
     <>
@@ -61,19 +61,19 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
           <>
             {item('How to play', () => open('howto'))}
             {!wide && item('Show QR', () => open('qr'))}
-            {toggles}
             {item('Effects', () => (location.href = '/effects'))}
             {item('End match', () => open('end'), true)}
           </>
         ) : (
           <>
             {!wide && item('Show QR', () => open('qr'))}
-            {toggles}
             {item('Effects', () => (location.href = '/effects'))}
             {s.you.isLocal && item('Close app', () => open('close'), true)}
           </>
         )}
         {item('Report a bug', () => open('bug'))}
+        {/* Switches sit apart from the menu items, just above Close. */}
+        {pilot && toggles}
         <button className="btn ghost block" style={{ marginTop: 8 }} onClick={onClose}>Close</button>
       </div>
     </>
