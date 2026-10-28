@@ -166,6 +166,50 @@ Grilling z 2026-10-26: konfiguracja wyklikana w domu ma działać też w pracy.
   - takeout;
   - tarcza offline.
 
+### Presety z LED labu (2026-10-28)
+
+Presety efektów dobieramy na stronie testowej `npm run led-lab` (`http://localhost:3195`). Kandydaci są w `server/led-lab/candidates.ts`. Każdy ma Play i Hold na prawdziwym ringu, suwaki, kolory i werdykt. Werdykty leżą lokalnie w `data/led-lab.json`.
+
+- **Wdrożenie:** przypisanie jest w kodzie (`ASSIGN` i `ASSIGN_BASE` w `candidates.ts`). `npm run led-lab:upload` zapisuje użyte presety na kontrolerze i ustawia reguły bazowe oraz stany bazowe przez API działającej aplikacji. Numer presetu jest stały (`data/led-lab-presets.json`), więc poprawiony kandydat nadpisuje ten sam numer. Skrypt niczego nie usuwa, a przed zapisem robi backup `presets.json` w `data/backups/`.
+- **Jak budujemy preset:** jak w aplikacji WLED, obie połówki ringu (0–48 i 48–100) z pełnym obiektem segmentu, reszta segmentów czyszczona. Paleta zawsze ustawiona wprost.
+- **Wnioski z testów:**
+  - kamery tarczy biorą ruch ledów za takeout, więc stan bazowy, do którego wraca efekt, musi być statyczny: lobby i mecz to Gameon (ciepła biel, Solid), a takeout nie ma stanu bazowego (z ruchem takeout nie kończy się nigdy). Ruchome tło zostaje tylko dla tarczy offline;
+  - czarny jako kolor nie ma sensu, to zgaszone ledy, a przygaszone kolory wyglądają jak słaby prąd; tłem efektu jest stan bazowy (ciepła biel z Gameon);
+  - na ledach 255,80,0 wygląda prawie jak czerwień, pomarańcz to 255,115,0;
+  - Starburst w kolorze gasnący do ciepłej bieli i Sparkle wyglądają na zepsute; Starburst gasnący do czystej bieli jest dobry;
+  - Blink, Breathe i Wipe liczą cykl od zegara kontrolera, więc startują w losowym miejscu; Blink przez to mruga nieregularnie. Heartbeat zaczyna uderzenie od startu efektu i na nim jest Double Pulse; przy prędkości 0 uderza w 0 i 0,5 s, a kolejną parę zaczyna w 1,5 s, więc efekt trwa najwyżej 1,4 s (aplikacja zaokrągla czas do 0,1 s).
+- **Zachowania** (runda od podstaw): Flash, Pulse, Double Pulse, Fill, Run, Ripple i Burst, w czystej bieli, pomarańczu i tęczy, a Flash, Pulse i Double Pulse też w czerwieni. Odpadły Comet, Blink i Fade Flash, a po pierwszym meczu także Double Pulse (za ostry: Heartbeat wskakuje na pełny kolor od razu). W meczu nie pasowały też Fill na Checkout i Ripple w tęczy na Big Fish (prawie niewidoczny).
+- **Zasada przypisania:** siła zdarzenia wybiera zachowanie (małe Flash, średnie Pulse albo Run, duże Fill albo Ripple, największe Burst), a kolor jego charakter (biel neutralnie, pomarańcz dobrze, tęcza największe momenty, czerwień źle).
+
+| Reguła lub stan | Efekt | Preset | Czas |
+|---|---|---|---|
+| Lobby | Gameon | 1 | stan |
+| Mecz | Gameon | 1 | stan |
+| Takeout | brak | | |
+| Tarcza offline | Pulse · czerwień | 34 | stan |
+| Treble 15–19 | Flash · biel | 29 | 0,5 s |
+| Treble 20 | Flash · pomarańcz | 30 | 0,5 s |
+| No score | Flash · czerwień | 31 | 0,5 s |
+| Ton | Pulse · biel | 32 | 1,5 s |
+| New record | Pulse · tęcza | 33 | 3 s |
+| Player out | Pulse · czerwień | 34 | 1,5 s |
+| Game on | Fill · biel | 35 | 2,2 s |
+| Checkout | Rainbow Sweep (tęcza przesuwa się po całym ringu) | 49 | 1,5 s |
+| High finish | Fill · tęcza | 37 | 2,2 s |
+| Clean 20s | Run · biel | 38 | 1,5 s |
+| Ton 40 | Run · pomarańcz | 39 | 1,5 s |
+| Madhouse | Run · tęcza | 40 | 1,5 s |
+| White Horse | Burst · biel | 41 | 2 s |
+| Set won | Ripple · pomarańcz | 42 | 3 s |
+| Big Fish | Burst · tęcza na bieli | 50 | 4 s |
+| 180 | Burst · pomarańcz na bieli | 44 | 4 s |
+| Match won | Burst · tęcza na bieli | 45 | 6 s |
+| Bed and breakfast | Ripple · biel | 52 | 1,5 s |
+| Bullseye | Flash · pomarańcz, dłuższy | 51 | 1 s |
+| Bust | Bust (preset użytkownika z aplikacji WLED, Dissolve) | 3 | 1,4 s |
+
+Reguły własne (np. „Missed the 20”, „67”) zostają bez ledów. Na kontrolerze zostały też nieużywane presety z wcześniejszych rund: 2, 4–28, 36, 43 i 46–48, a usunięcie czeka na decyzję.
+
 ## Animacje na Ekranie wyników
 
 Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie blokują Pilota i nie zasłaniają wyniku dłużej niż około 2 s.

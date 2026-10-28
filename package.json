@@ -12,6 +12,8 @@
     "dev:fake": "concurrently -k -n board,wled,server,web -c magenta,green,yellow,cyan \"tsx server/fake-board.ts\" \"tsx server/fake-wled.ts\" \"tsx watch server/index.ts --board localhost:3180\" \"vite\"",
     "fake-board": "tsx server/fake-board.ts",
     "fake-wled": "tsx server/fake-wled.ts",
+    "led-lab": "tsx server/led-lab/index.ts",
+    "led-lab:upload": "tsx server/led-lab/upload.ts",
     "build": "vite build",
     "start": "tsx server/index.ts",
     "kiosk": "vite build && tsx server/index.ts --kiosk",

@@ -97,7 +97,8 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 ## Do sprawdzenia przy efektach
 
 - [ ] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
-- [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła i czy pobieranie `presets.json` działa na jego wersji.
+- [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła. Pobieranie `presets.json` działa (WLED 0.15.4).
+- [ ] Ledy w meczu (2026-10-28): wszystkie 24 reguły bazowe i stany lobby i offline mają presety z rundy od podstaw w LED labu ([EFEKTY.md](EFEKTY.md#presety-z-led-labu-2026-10-28)). Do sprawdzenia w prawdziwym meczu: czy efekty są czytelne obok dźwięków, czy Pulse i Fill nie startują w losowym miejscu cyklu, czy same efekty po lotce (ruch przez 0,5–6 s) nie wywołują fałszywego takeoutu. Nieużywane presety (2, 4–28, 36, 43, 46–48) czekają na decyzję o usunięciu.
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
 - [ ] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.

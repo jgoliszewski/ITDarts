@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>LED lab</title>
+<style>
+  body { font: 15px system-ui, sans-serif; background: #111; color: #eee; margin: 0; }
+  header { position: sticky; top: 0; z-index: 1; background: #1b1b1b; border-bottom: 1px solid #333; padding: 10px 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  header h1 { font-size: 18px; margin: 0 8px 0 0; }
+  main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+  h2 { font-size: 16px; color: #aaa; margin: 24px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .card { background: #1d1d1d; border: 2px solid #2c2c2c; border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .card.keep { border-color: #2e9e5b; } .card.drop { opacity: .45; } .card.maybe { border-color: #c9962a; }
+  .card.playing { box-shadow: 0 0 0 2px #fff; }
+  .title { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .title b { font-size: 16px; } .fx { color: #888; font-size: 13px; }
+  .use { color: #bbb; font-size: 13px; margin: 0; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  label.s { display: grid; grid-template-columns: 80px 1fr 40px; gap: 6px; align-items: center; font-size: 13px; color: #aaa; }
+  input[type=color] { width: 34px; height: 26px; border: 0; padding: 0; background: none; }
+  button { font: inherit; background: #333; color: #eee; border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  button:hover { background: #444; } button.play { background: #2f5fd0; } button.on.keep { background: #2e9e5b; } button.on.drop { background: #a33; } button.on.maybe { background: #c9962a; color: #111; }
+  input[type=text] { font: inherit; background: #111; color: #eee; border: 1px solid #333; border-radius: 6px; padding: 5px 8px; flex: 1; }
+  select { font: inherit; background: #222; color: #eee; border: 1px solid #444; border-radius: 6px; padding: 4px; }
+  .muted { color: #888; font-size: 13px; }
+  iframe { width: 100%; height: 40px; border: 0; border-radius: 6px; background: #000; display: block; }
+</style>
+<header>
+  <h1>LED lab</h1>
+  <span class="muted" id="wled"></span>
+  <label class="muted">Back to <select id="base"></select></label>
+  <button id="toBase">Back to base now</button>
+  <label class="muted">Show <select id="filter"><option value="all">all</option><option value="open">undecided</option><option value="keep">kept</option></select></label>
+  <span class="muted" id="count"></span>
+</header>
+<main>
+  <iframe id="live" title="Live view"></iframe>
+  <p class="muted">Play runs the preset for its duration and goes back to the base, like an effect in a match. Hold keeps it on. Keep what reads well on the ring and does not glitch. Sliders and colours are saved with your verdict.</p>
+  <div id="groups"></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const hex = c => '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+let lab, playing = null;
+
+async function api(path, body, method = 'POST') {
+  const r = await fetch(path, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) alert((await r.json()).message ?? r.statusText);
+}
+
+function decision(id) {
+  return lab.decisions[id] ??= { verdict: null, note: '', tweak: {} };
+}
+
+let saveTimers = {};
+function save(id) {
+  clearTimeout(saveTimers[id]);
+  saveTimers[id] = setTimeout(() => api('/api/decisions/' + id, decision(id), 'PUT'), 300);
+  counts();
+}
+
+function counts() {
+  const ids = items().map(i => i.key);
+  const v = ids.map(id => lab.decisions[id]?.verdict);
+  $('#count').textContent = `${v.filter(x => x === 'keep').length} kept · ${v.filter(x => x === 'maybe').length} maybe · ${v.filter(x => !x).length} undecided of ${ids.length}`;
+}
+
+// Grouped by trigger; the presets already on the controller sit in the group they compete in.
+function items() {
+  const other = 'Other presets on the controller';
+  const order = [...new Set(lab.candidates.map(c => c.group)), other];
+  return [
+    ...lab.candidates.map(c => ({ key: c.id, group: c.group, name: c.name, use: c.use, c, dur: c.dur })),
+    ...lab.presets.filter(p => order.includes(lab.saved[p.id])).map(p => ({ key: 'preset-' + p.id, group: lab.saved[p.id] ?? other, name: `Saved ${p.id} · ${p.name}`, use: 'Already on the controller.', preset: p.id, dur: 2 })),
+  ].sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
+}
+
+function slider(label, value, min, max, step, onInput) {
+  const l = document.createElement('label');
+  l.className = 's';
+  l.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${value}"><output>${value}</output>`;
+  const [input, out] = [l.querySelector('input'), l.querySelector('output')];
+  input.oninput = () => { out.textContent = input.value; onInput(Number(input.value)); };
+  return l;
+}
+
+function card(it) {
+  const d = decision(it.key), t = d.tweak, c = it.c;
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.key = it.key;
+  el.innerHTML = `<div class="title"><b></b><span class="fx"></span></div><p class="use"></p>`;
+  el.querySelector('b').textContent = it.name;
+  el.querySelector('.fx').textContent = c ? `${lab.effects[c.fx] ?? 'fx ' + c.fx} · palette ${c.pal}` : '';
+  el.querySelector('.use').textContent = it.use;
+
+  if (c) {
+    const colors = document.createElement('div');
+    colors.className = 'row';
+    const col = t.col ?? c.col.map(hex);
+    col.forEach((value, i) => {
+      const input = Object.assign(document.createElement('input'), { type: 'color', value, title: `Colour ${i + 1}` });
+      input.onchange = () => { col[i] = input.value; t.col = [...col]; save(it.key); };
+      colors.append(input);
+    });
+    el.append(colors,
+      slider('Speed', t.sx ?? c.sx, 0, 255, 1, v => { t.sx = v; save(it.key); }),
+      slider('Intensity', t.ix ?? c.ix, 0, 255, 1, v => { t.ix = v; save(it.key); }),
+      slider('Brightness', t.bri ?? c.bri ?? 239, 10, 255, 1, v => { t.bri = v; save(it.key); }));
+  }
+  if (it.dur !== null) el.append(slider('Seconds', t.dur ?? it.dur, 0.3, 8, 0.1, v => { t.dur = v; save(it.key); }));
+
+  const play = hold => async () => {
+    playing = it.key;
+    document.querySelectorAll('.card').forEach(x => x.classList.toggle('playing', x.dataset.key === it.key));
+    await api('/api/play', { id: c?.id, preset: it.preset, tweak: t, hold, base: Number($('#base').value) });
+  };
+  const buttons = document.createElement('div');
+  buttons.className = 'row';
+  const b = (text, cls, fn) => Object.assign(document.createElement('button'), { textContent: text, className: cls, onclick: fn });
+  buttons.append(...(it.dur !== null ? [b('Play', 'play', play(false))] : []), b(it.dur === null ? 'Show' : 'Hold', it.dur === null ? 'play' : '', play(true)));
+  const verdicts = ['keep', 'maybe', 'drop'].map(v => b(v[0].toUpperCase() + v.slice(1), v, () => {
+    d.verdict = d.verdict === v ? null : v;
+    paint();
+    save(it.key);
+  }));
+  const paint = () => {
+    el.classList.remove('keep', 'maybe', 'drop');
+    if (d.verdict) el.classList.add(d.verdict);
+    verdicts.forEach((x, i) => x.classList.toggle('on', ['keep', 'maybe', 'drop'][i] === d.verdict));
+  };
+  paint();
+  buttons.append(document.createTextNode(' '), ...verdicts);
+  const note = Object.assign(document.createElement('input'), { type: 'text', placeholder: 'Note: what for, what to change', value: d.note });
+  note.oninput = () => { d.note = note.value; save(it.key); };
+  el.append(buttons, note);
+  return el;
+}
+
+function render() {
+  const f = $('#filter').value;
+  const root = $('#groups');
+  root.innerHTML = '';
+  const groups = Map.groupBy(items().filter(it => f === 'all' || (f === 'open' ? !lab.decisions[it.key]?.verdict : lab.decisions[it.key]?.verdict === 'keep')), it => it.group);
+  for (const [name, list] of groups) {
+    const h = document.createElement('h2');
+    h.textContent = name;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    grid.append(...list.map(card));
+    root.append(h, grid);
+  }
+  document.querySelectorAll('.card').forEach(x => x.classList.toggle('playing', x.dataset.key === playing));
+  counts();
+}
+
+(async () => {
+  lab = await fetch('/api/lab').then(r => r.json());
+  $('#wled').textContent = 'WLED ' + lab.wled;
+  $('#live').src = `http://${lab.wled}/liveview`;
+  $('#base').innerHTML = lab.presets.map(p => `<option value="${p.id}">${p.id} · ${p.name}</option>`).join('');
+  $('#toBase').onclick = () => { playing = null; render(); api('/api/base', { base: Number($('#base').value) }); };
+  $('#filter').onchange = render;
+  render();
+})();
+</script>
+</html>

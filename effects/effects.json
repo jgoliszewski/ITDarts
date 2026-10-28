@@ -10,7 +10,7 @@
       "lobby": 1,
       "match": 1,
       "takeout": null,
-      "offline": null
+      "offline": 34
     }
   },
   "sounds": [
@@ -211,7 +211,10 @@
       "sounds": [
         "builtin:180"
       ],
-      "led": null
+      "led": {
+        "preset": 44,
+        "seconds": 4
+      }
     },
     {
       "id": "b-big-fish",
@@ -227,7 +230,10 @@
       "sounds": [
         "builtin:big-fish"
       ],
-      "led": null
+      "led": {
+        "preset": 50,
+        "seconds": 4
+      }
     },
     {
       "id": "b-high-finish",
@@ -244,7 +250,10 @@
       "sounds": [
         "builtin:high-finish"
       ],
-      "led": null
+      "led": {
+        "preset": 37,
+        "seconds": 2.2
+      }
     },
     {
       "id": "b-madhouse",
@@ -260,7 +269,10 @@
       "sounds": [
         "builtin:madhouse"
       ],
-      "led": null
+      "led": {
+        "preset": 40,
+        "seconds": 1.5
+      }
     },
     {
       "id": "b-checkout",
@@ -274,7 +286,10 @@
       "sounds": [
         "builtin:leg-won"
       ],
-      "led": null
+      "led": {
+        "preset": 49,
+        "seconds": 1.5
+      }
     },
     {
       "id": "b-bust",
@@ -288,7 +303,10 @@
       "sounds": [
         "builtin:bust"
       ],
-      "led": null
+      "led": {
+        "preset": 3,
+        "seconds": 1.4
+      }
     },
     {
       "id": "b-clean-20s",
@@ -318,7 +336,10 @@
       "sounds": [
         "jeszcze-jak.mp3"
       ],
-      "led": null
+      "led": {
+        "preset": 38,
+        "seconds": 1.5
+      }
     },
     {
       "id": "b-bed-and-breakfast",
@@ -348,7 +369,10 @@
       "sounds": [
         "papiez-a-mozna-jak-najbadziej.mp3"
       ],
-      "led": null
+      "led": {
+        "preset": 52,
+        "seconds": 1.5
+      }
     },
     {
       "id": "rmx20",
@@ -452,7 +476,10 @@
       "sounds": [
         "builtin:ton-40"
       ],
-      "led": null
+      "led": {
+        "preset": 39,
+        "seconds": 1.5
+      }
     },
     {
       "id": "b-ton",
@@ -469,7 +496,10 @@
       "sounds": [
         "builtin:ton"
       ],
-      "led": null
+      "led": {
+        "preset": 32,
+        "seconds": 1.5
+      }
     },
     {
       "id": "b-no-score",
@@ -485,7 +515,10 @@
       "sounds": [
         "builtin:no-score"
       ],
-      "led": null
+      "led": {
+        "preset": 31,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-bullseye",
@@ -503,7 +536,10 @@
       "sounds": [
         "piekny-jestes.mp3"
       ],
-      "led": null
+      "led": {
+        "preset": 51,
+        "seconds": 1
+      }
     },
     {
       "id": "b-match-won",
@@ -517,7 +553,10 @@
       "sounds": [
         "builtin:match-won"
       ],
-      "led": null
+      "led": {
+        "preset": 45,
+        "seconds": 6
+      }
     },
     {
       "id": "b-set-won",
@@ -531,7 +570,10 @@
       "sounds": [
         "builtin:set-won"
       ],
-      "led": null
+      "led": {
+        "preset": 42,
+        "seconds": 3
+      }
     },
     {
       "id": "b-game-on",
@@ -545,7 +587,10 @@
       "sounds": [
         "builtin:game-on"
       ],
-      "led": null
+      "led": {
+        "preset": 35,
+        "seconds": 2.2
+      }
     },
     {
       "id": "b-new-record",
@@ -560,7 +605,10 @@
       "sounds": [
         "builtin:new-record"
       ],
-      "led": null
+      "led": {
+        "preset": 33,
+        "seconds": 3
+      }
     },
     {
       "id": "b-white-horse",
@@ -575,7 +623,10 @@
       "sounds": [
         "builtin:white-horse"
       ],
-      "led": null
+      "led": {
+        "preset": 41,
+        "seconds": 2
+      }
     },
     {
       "id": "b-player-out",
@@ -590,7 +641,10 @@
       "sounds": [
         "builtin:player-out"
       ],
-      "led": null
+      "led": {
+        "preset": 34,
+        "seconds": 1.5
+      }
     },
     {
       "id": "rdz6u",
@@ -639,7 +693,10 @@
       "sounds": [
         "builtin:treble-15"
       ],
-      "led": null
+      "led": {
+        "preset": 29,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-treble-16",
@@ -657,7 +714,10 @@
       "sounds": [
         "builtin:treble-16"
       ],
-      "led": null
+      "led": {
+        "preset": 29,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-treble-17",
@@ -675,7 +735,10 @@
       "sounds": [
         "builtin:treble-17"
       ],
-      "led": null
+      "led": {
+        "preset": 29,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-treble-18",
@@ -693,7 +756,10 @@
       "sounds": [
         "builtin:treble-18"
       ],
-      "led": null
+      "led": {
+        "preset": 29,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-treble-19",
@@ -711,7 +777,10 @@
       "sounds": [
         "builtin:treble-19"
       ],
-      "led": null
+      "led": {
+        "preset": 29,
+        "seconds": 0.5
+      }
     },
     {
       "id": "b-treble-20",
@@ -729,7 +798,10 @@
       "sounds": [
         "builtin:treble-20"
       ],
-      "led": null
+      "led": {
+        "preset": 30,
+        "seconds": 0.5
+      }
     }
   ]
 }
