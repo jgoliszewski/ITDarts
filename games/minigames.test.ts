@@ -277,13 +277,13 @@ describe('121 caller', () => {
 
   it('calls the visit, no score on a bust, and you require at the next visit', () => {
     expect(said([d('T20'), d('S20'), d('S1')])).toEqual(['81']);
-    expect(said([...visit('T20', 'S20', 'S1')])).toEqual(['you_require', '40']);
+    expect(said([...visit('T20', 'S20', 'S1')])).toEqual(['require_40']);
     expect(said([...visit('T20', 'S20', 'S1'), d('S20'), d('S19')])).toEqual(['busted']);
   });
 
   it('calls a checkout as its score and the new target at the next visit', () => {
     expect(said([d('T20'), d('T17'), d('D5')])).toEqual(['121']);
-    expect(said(visit('T20', 'T17', 'D5'))).toEqual(['you_require', '122']);
+    expect(said(visit('T20', 'T17', 'D5'))).toEqual(['require_122']);
   });
 
   it('calls a fixed visit again', () => {

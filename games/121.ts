@@ -137,7 +137,7 @@ export function callerLines121(cs: Change[], view: View121, turnStart: boolean):
     if (fact.kind === 'bust') out.push('busted');
   }
   if (turnStart && view.phase === 'throwing' && view.visit.darts.length === 0 && view.checkout !== null) {
-    out.push('you_require', String(view.remaining));
+    out.push(`require_${view.remaining}`);
   }
   return out;
 }

@@ -4,7 +4,7 @@ Głos callera ([EFEKTY.md](../../../docs/EFEKTY.md#caller)): Huw Ware, sędzia P
 <https://autodarts.x10.mx/hw/> (2026-10-27). Katalog nie ma listingu, pliki sprawdzone po nazwie. Pobrane 1:1, bez obróbki.
 
 Paczka ma `0`–`180` (bez wyników niemożliwych trzema lotkami), `require_1`–`require_180` (całe „you require N”), `game_on` i `gameshot`.
-Nie ma numeru legu ani osobnego „game shot and the match”, więc każdy `gameshot_lN_n` i `matchshot` to to samo `gameshot`.
+Nie ma numeru legu, więc każdy `gameshot_lN_n` to to samo `gameshot`. „Game shot and the match” leży w `gameshot_and_the_match` (spoza listy, znalezione po nazwie 2026-10-28) i to jest `matchshot`.
 To nagrania płatnego callera Autodarts Plus bez licencji na redystrybucję, dlatego leżą tylko w tym prywatnym repo.
 
 | Plik | Plik w paczce |
@@ -382,4 +382,4 @@ To nagrania płatnego callera Autodarts Plus bez licencji na redystrybucję, dla
 | `gameshot_l18_n.mp3` | `gameshot.mp3` |
 | `gameshot_l19_n.mp3` | `gameshot.mp3` |
 | `gameshot_l20_n.mp3` | `gameshot.mp3` |
-| `matchshot.mp3` | `gameshot.mp3` |
+| `matchshot.mp3` | `gameshot_and_the_match.mp3` |
