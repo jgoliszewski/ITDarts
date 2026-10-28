@@ -33,10 +33,10 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - W 121 na ostatniej turze próby nie ma „Setup”, bo cel i tak wraca do początku.
 - **Lista graczy:** stała kolejność rzucania. Aktywny gracz ma pomarańczowy wiersz. W wierszu: imię, legi, średnia z meczu i wynik.
 - **Kropki legów** (od 2026-10-27, ze zgłoszenia o nieczytelnym wyniku): trochę większe niż na początku. W pomarańczowym wierszu aktywnego gracza niewygrany leg jest jaśniejszą kropką, żeby nie zlewał się z wygranym. Liczby setów i legów obok kropek próbowaliśmy i odrzuciliśmy.
-- **Statystyki, tylko przy 2 graczach:**
+- **Statystyki, do 4 graczy** (od 2026-10-28, ze zgłoszenia; wcześniej tylko przy 2):
   - karta z 6 ostatnimi wizytami aktywnego gracza;
   - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 60+, 80+, 100+ (od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura).
-  - Przy 3+ graczach zostaje sama lista. Bez first 9, checkout % i liczby lotek w legu.
+  - Przy 3–4 graczach wiersze listy i karta wizyt są niższe, żeby wszystko zmieściło się nad paskiem. Przy 5+ graczach zostaje sama lista. Bez first 9, checkout % i liczby lotek w legu.
 - **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
 - **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).

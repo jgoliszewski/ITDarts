@@ -363,7 +363,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: 
             <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
             <aside className="side">
               <PlayerList m={m} />
-              {m.roster.length === 2 && <StatsCards m={m} />}
+              {m.roster.length <= 4 && <StatsCards m={m} />}
             </aside>
           </>
         ) : (
