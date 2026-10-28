@@ -141,7 +141,14 @@ export function MiniList({ m }: { m: MiniMatch }) {
   );
 }
 
-const MARK = ['', '/', 'X', 'Ⓧ'];
+// Drawn, not typed: in the condensed font an X's strokes don't cross at a right angle.
+const MARK = [null, 1, 2, 3].map(n => n && (
+  <svg width="0.8em" height="0.8em" viewBox="-12 -12 24 24" fill="none" stroke="currentColor" strokeWidth={n === 3 ? 2.6 : 3} strokeLinecap="round" aria-label={`${n} of 3`}>
+    {n === 3 && <circle r="10.5" />}
+    <path d={n === 3 ? 'M-5 5L5-5' : 'M-8 8L8-8'} />
+    {n > 1 && <path d={n === 3 ? 'M-5-5L5 5' : 'M-8-8L8 8'} />}
+  </svg>
+));
 
 export function CricketGrid({ m }: { m: Extract<MiniMatch, { game: 'cricket' }> }) {
   const v = m.view;
