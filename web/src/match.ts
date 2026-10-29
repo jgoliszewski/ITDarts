@@ -57,6 +57,10 @@ export const visitDarts = (m: LiveMatch): Dart[] => m.view.visit.darts.map(d => 
 /** Points a dart shows on its tile; in Higher or Lower T1 is worth zero. */
 export const dartValue = (m: LiveMatch, d: Dart): number => (m.game === 'hol' ? holValue(d) : value(d));
 
+/** Tile colour for a minigame dart: games counted in hits show green or red; scoring games dim the darts that did nothing. */
+export const dartTone = (m: MiniMatch, good: boolean): 'hit' | 'miss' | '' | 'dead' =>
+  m.game === 'hol' || m.game === '121' || m.game === 'randomco' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
+
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {
   const mm = m.options.matchMode;

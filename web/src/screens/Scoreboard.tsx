@@ -6,7 +6,7 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartValue, isX01, legTarget } from '../match.ts';
+import { controls, dartTone, dartValue, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
@@ -182,8 +182,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                 // Minigames lead with the field hit, as on their screen; X01 with the points.
                 const [top, sub] = good ? [label(d.dart), dartValue(m, d.dart)] : [value(d.dart), label(d.dart)];
                 const tile = <><span className="num">{top}</span><span className="lbl">{sub}</span></>;
-                // Games counted in hits colour each dart green or red; scoring games dim the darts that did nothing.
-                const cls = `dart-tile ${!good ? '' : scored === null ? (good[i] ? 'hit' : 'miss') : good[i] ? '' : 'dead'}`;
+                const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i]) : ''}`;
                 return canEdit
                   ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
                   : <div key={i} className={cls}>{tile}</div>;
