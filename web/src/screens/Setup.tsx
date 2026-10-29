@@ -145,17 +145,31 @@ function X01Section({ options, setOptions }: { options: X01Options; setOptions: 
   );
 }
 
+/**
+ * Min or Max: the typed text stays while the field has focus, but every keystroke already saves the normalized value,
+ * so Start sends it even if the field never blurs (iOS). Leaving the field shows the normalized value.
+ */
+function RangeField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+  const [text, setText] = useState<string | null>(null);
+  return (
+    <label>{label}
+      <input className="field num" type="number" inputMode="numeric" value={text ?? value} aria-label={`${label} number`}
+        onFocus={() => setText(String(value))}
+        onChange={e => {
+          setText(e.target.value);
+          const n = parseInt(e.target.value, 10);
+          if (Number.isInteger(n)) onChange(n);
+        }}
+        onBlur={() => setText(null)} onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()} />
+    </label>
+  );
+}
+
 /** Random Checkouts: Min and Max with presets; the game keeps them within the check-out rule. */
 function RangeSection({ options, setOptions }: { options: RcOptions; setOptions: (o: RcOptions) => void }) {
   const presets = RANGE_PRESETS.map(([l, min, max]) => [l, Math.max(min, lowestNumber(options.checkOut)), Math.min(max, highestNumber(options.checkOut))] as const);
   const on = presets.find(([, min, max]) => min === options.min && max === options.max)?.[0] ?? '';
-  // Typed values apply when the field is left, so “1” on the way to “120” isn't pulled up to the minimum.
-  const field = (k: 'min' | 'max', text: string) => (
-    <label>{text}
-      <input key={options[k]} className="field num" type="number" inputMode="numeric" defaultValue={options[k]} aria-label={`${text} number`}
-        onBlur={e => setOptions({ ...options, [k]: parseInt(e.target.value, 10) })} onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()} />
-    </label>
-  );
+  const field = (k: 'min' | 'max', label: string) => <RangeField label={label} value={options[k]} onChange={n => setOptions({ ...options, [k]: n })} />;
   return (
     <div className="section">
       <Label def={GAMES.randomco.options.find(d => d.label === 'Range')} text="Range" />

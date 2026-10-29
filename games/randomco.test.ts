@@ -57,6 +57,12 @@ describe('random checkouts: options', () => {
     expect(o({ min: 'x' as unknown as number, max: 2.5 })).toMatchObject({ min: 41, max: 80 });
   });
 
+  it('widens up when nothing below the range can be checked out', () => {
+    expect(o({ checkOut: 'master', min: 1, max: 1 })).toMatchObject({ min: 1, max: 2 });
+    expect(numbersIn(o({ checkOut: 'master', min: 1, max: 1 }))).toEqual([2]);
+    expect(o({ checkOut: 'single', min: 1, max: 1 })).toMatchObject({ min: 1, max: 1 });
+  });
+
   it('widens a range nobody can check out down to a number that works', () => {
     expect(o({ min: 169, max: 169 })).toMatchObject({ min: 167, max: 169 });
     expect(numbersIn(o({ min: 169, max: 169 }))).toEqual([167]);
@@ -129,6 +135,40 @@ describe('random checkouts: play', () => {
     expect(off.reach).toBe(true);
   });
 
+  it('plays Single out: 1 left is no bust and a single checks out', () => {
+    const single = o({ checkOut: 'single', min: 40, max: 40 });
+    const v = rc.view([seed(1), d('S20'), d('S19')], 1, single);
+    expect([v.remaining, v.visit.verdict]).toEqual([1, null]);
+    const out1 = rc.view([seed(1), d('S20'), d('S19'), d('S1')], 1, single);
+    expect([out1.points, out1.visit.verdict?.text]).toEqual([[1], 'Checkout']);
+    expect(rc.view([seed(1), d('S20'), d('S19')], 1, o({ min: 40, max: 40 })).visit.verdict?.text).toBe('Bust');
+  });
+
+  it('plays Master out: a treble checks out, 1 left busts', () => {
+    const master = o({ checkOut: 'master', min: 60, max: 60 });
+    expect(rc.view([seed(1), d('T20')], 1, master).points).toEqual([1]);
+    expect(rc.view([seed(1), d('S20'), d('S20'), d('S20')], 1, master).points).toEqual([0]);
+    const bust = rc.view([seed(1), d('S20'), d('S20'), d('S19')], 1, master);
+    expect([bust.visit.verdict?.text, bust.remaining]).toEqual(['Bust', 60]);
+  });
+
+  it('a fix turns a dart into a checkout or a bust', () => {
+    const forty = o({ min: 40, max: 40 });
+    const fixed = rc.view([seed(1), d('S20'), d('S10'), { t: 'fix', index: 1, dart: { n: 10, m: 2 } }], 1, forty);
+    expect([fixed.points, fixed.visit.verdict?.text]).toEqual([[1], 'Checkout']);
+    const busted = rc.view([seed(1), d('S20'), d('D10'), { t: 'fix', index: 1, dart: { n: 10, m: 3 } }], 1, forty);
+    expect([busted.points, busted.visit.verdict?.text, busted.remaining]).toEqual([[0], 'Bust', 40]);
+  });
+
+  it('counts a co-op checkout in the first visit only in the first team visit at the number', () => {
+    const coop = o({ min: 40, max: 40, coop: true });
+    const v = rc.view([seed(1), d('S20'), next, d('D10'), next, d('D20'), next], 2, coop);
+    expect(v.stats).toEqual([
+      { checkouts: 1, checkoutDarts: 1, firstVisit: 1 },
+      { checkouts: 1, checkoutDarts: 1, firstVisit: 0 },
+    ]);
+  });
+
   it('keeps per-player checkout stats', () => {
     const forty = o({ min: 40, max: 40 });
     // Player 0 checks out in the first visit; then player 1 needs two visits for the next 40.
@@ -159,6 +199,20 @@ describe('random checkouts: end match', () => {
     const coop = rc.view([...two, end], 2, o({ min: 40, max: 40, coop: true }));
     expect(coop.winners).toEqual([]);
     expect(coop.result).toBe('2 checkouts together');
+  });
+
+  it('fires Game won only when someone checked out', () => {
+    const won = (log: TurnEvent[], opts: RcOptions) => rc.happenings(log, 2, opts).some(h => h.fact.kind === 'matchWon');
+    expect(won([seed(1), d('S1'), next, end], forty)).toBe(false);
+    expect(won([...two, end], forty)).toBe(true);
+    expect(won([...two, end], o({ min: 40, max: 40, coop: true }))).toBe(true);
+    expect(won([seed(1), d('S1'), next, end], o({ min: 40, max: 40, coop: true }))).toBe(false);
+  });
+
+  it('ignores a fix and next after the end; an undo then plays on', () => {
+    const s1 = d('S1');
+    const after = [...two, end, { t: 'fix', index: 0, dart: { n: 20, m: 3 } } as TurnEvent, next, undo, s1];
+    expect(rc.view(after, 2, forty)).toEqual(rc.view([...two, s1], 2, forty));
   });
 
   it('fires Game won, and an undo plays on', () => {

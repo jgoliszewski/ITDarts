@@ -111,11 +111,12 @@ function play(t: Turns, players: number, o: RcOptions): State {
     else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: start - rest[k] } });
     if (out) fx.push({ slot: `${V}:checkout`, fact: { kind: 'checkout' } });
     if (!v.closed) held = { number, left: [...rest] };
-    visitsAt[p]++;
+    // Visits at the number count per side: in co-op the team's first visit is the first visit.
+    visitsAt[k]++;
     if (out) {
       points[p]++;
       checkoutDarts[p] += dartsAt[p];
-      if (visitsAt[p] === 1) firstVisit[p]++;
+      if (visitsAt[k] === 1) firstVisit[p]++;
       // A new number for everyone; the next player in order throws first.
       number = draw();
       rest.fill(number);
@@ -126,8 +127,9 @@ function play(t: Turns, players: number, o: RcOptions): State {
   const over = t.ended;
   let winners: number[] = [];
   if (over) {
-    fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
     const best = Math.max(...points);
+    // No fanfare for a game ended without a single checkout.
+    if (best > 0) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
     if (!coop && best > 0) winners = points.flatMap((x, i) => (x === best ? [i] : []));
   }
   const last = t.visits.at(-1);
@@ -223,8 +225,12 @@ export function normalizeOptions(input: unknown): RcOptions {
   const fit = (v: unknown, d: number) => Math.min(hi, Math.max(lo, Number.isInteger(v) ? (v as number) : d));
   o.min = fit(raw.min, DEFAULTS.min);
   o.max = Math.max(o.min, fit(raw.max, DEFAULTS.max));
-  // A range nobody can check out (169 at double out) reaches down to the nearest number that works.
-  while (numbersIn(o).length === 0) o.min--;
+  // A range nobody can check out (169 at double out) reaches down to the nearest number that works, or up when
+  // nothing below does (1 at master out). The top of every rule can be checked out, so this ends.
+  while (numbersIn(o).length === 0) {
+    if (o.min > lo) o.min--;
+    else o.max++;
+  }
   return o;
 }
 
