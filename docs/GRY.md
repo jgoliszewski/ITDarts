@@ -4,14 +4,14 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 7 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower i Random Checkouts (od 2026-10-29).
+Gramy w X01 oraz 9 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai i Gotcha (dwie ostatnie od 2026-10-29).
 
-Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Grillujemy je dopiero wtedy, gdy ktoś w biurze o nie poprosi.
+Bob's 27, Halve-It, Count Up i Bermuda Triangle są w backlogu ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Grillujemy je dopiero wtedy, gdy ktoś w biurze o nie poprosi.
 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem jest Higher or Lower z opcją „First to”.
-- **Bez limitu rund** w żadnej grze. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
+- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy.
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
 - **Tura** jak w X01: 3 lotki i Takeout. Po trafieniu celu następna lotka w tej samej Turze idzie już w kolejny cel.
@@ -20,7 +20,12 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 ### Setup na Pilocie
 
 - Kolejność kroków: gra, opcje, gracze.
-- **Kafelki gier:** X01, ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts. Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Ostatnio grana gra jest pierwsza.
+- **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
+  - **Classic:** X01;
+  - **Practice:** ATC, Full Board, 121, Random Checkouts;
+  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha.
+
+  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
@@ -46,7 +51,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 ### Rekordy i Ekran rekordu
 
 - Moduł gry może zdefiniować **statystykę rekordową**: co jest rekordem, czy lepiej mniej, czy więcej, i które opcje tworzą osobny wariant. Rekord zawsze dotyczy dokładnie jednego wariantu.
-- Rekordy mają ATC, Full Board, 121 i solo Cricket. X01 na razie nie ma.
+- Rekordy mają ATC, Full Board, 121, solo Cricket i solo Shanghai. X01 na razie nie ma.
 - **Ekran rekordu:** po „Start” Ekran wyników pokazuje przez około 4 s nazwę wariantu i rekord biura, czyli wartość, kto go ustanowił i kiedy.
   - Rekordów osobistych na tym ekranie nie pokazujemy.
   - W Co-op pokazuje rekord co-op wariantu z imionami składu.
@@ -165,9 +170,36 @@ Postanowienia z grillingu z 2026-10-29. Losowe sektory, double i treble są opcj
 - **Wyzwalacze:** „Checkout” i „Bust” (istnieją), „Game won” przy zapisie.
 - **Statystyki:** liczba checkoutów, średnia liczba lotek na checkout i % checkoutów zamkniętych w pierwszej Turze. Bez rekordu, bo gra nie ma końca.
 
+## Shanghai
+
+Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+
+- **Rundy:** w rundzie N celem jest sektor N. Opcja „Rounds”: 7 (domyślnie, sektory 1–7) albo 20 (1–20).
+- **Punkty:** liczy się tylko sektor rundy, lotka daje N × mnożnik (S5 = 5, D5 = 10, T5 = 15). Inne sektory, bull i pudła dają 0.
+- **Shanghai:** S, D i T sektora rundy w jednej Turze, w dowolnej kolejności. Przy 2+ graczach to natychmiastowa wygrana, bez dogrywania rundy. Solo Shanghai daje swoje punkty i Moment, a gra trwa do ostatniej rundy.
+- **Koniec:** po ostatniej rundzie wygrywa najwięcej punktów. Przy remisie na pierwszym miejscu dogrywkę grają tylko remisujący: każdy jedną Turę na sektor 20, liczoną jak zwykła runda. Wygrywa najwięcej w tej rundzie, kolejny remis daje kolejną rundę na 20, do skutku. Shanghai na 20 w dogrywce też wygrywa.
+- **Gracze:** 1–8, bez Co-op.
+- **Ekran wyników:** jak w ATC. Hero pokazuje imię, duży sektor rundy z „Round 5 / 7” (w dogrywce „Tiebreak”), punkty bieżącej Tury i kafelki lotek: zielone, gdy lotka trafi sektor rundy, czerwone przy pudle. Prawą połowę hero zajmuje tarcza z ATC z podświetlonym sektorem rundy. Lista graczy pokazuje sumę punktów, a w dogrywce wyszarza tych, którzy jej nie grają. Karta Tury pokazuje dużą liczbę punktów Tury. Nagłówek np. „Shanghai · 7 rounds”.
+- **Wyzwalacze:** „Hit” i „Miss” na każdą lotkę, nowy „Shanghai” (XL, dobry, na start dźwięk i ledy z White Horse), „Game won”.
+- **Statystyki:** wygrane, liczba Shanghai i hit rate (% lotek w sektor rundy). Rekordem jest najwyższa suma punktów w grze solo, osobno dla 7 i 20 rund.
+
+## Gotcha
+
+Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+
+- **Cel:** dojść dokładnie do celu, od 0 w górę. Opcja „Target”: 101, 201 (domyślnie) albo 301. Bez wymogu double.
+- **Bust** jak w X01: przekroczenie celu cofa wynik do stanu sprzed Tury i kończy Turę.
+- **Wygrana:** kto pierwszy trafi dokładnie w cel, wygrywa od razu, także w środku Tury.
+- **Gotcha:** na koniec Tury, jeśli wynik gracza się zmienił, każdy rywal z takim samym wynikiem spada do 0. Bust nikogo nie zeruje, bo wynik wraca do stanu sprzed Tury.
+- **Gracze:** 2–8.
+- **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki. Karta Tury pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany. Nagłówek np. „Gotcha · 201”.
+- **Caller** podaje wynik Tury jak w X01, bez „you require” i bez „game shot”.
+- **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won”. Bez „Hit” i „Miss”.
+- **Statystyki:** wygrane i liczba Gotcha (ile razy gracz kogoś wyzerował). Bez rekordu.
+
 ## Statystyki na `/stats`
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha.
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).
