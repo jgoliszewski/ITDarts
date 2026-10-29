@@ -202,9 +202,12 @@ export class Board extends EventEmitter<BoardEvents> {
     }
   }
 
-  /** Before a match: start detection if it is stopped (Board Manager is often found stopped), then clear old darts. */
+  /**
+   * Before a match: start detection and clear old darts. Always both, since the board often does not detect at the
+   * start of a match even though it looks like it does; a second start is harmless (Board Manager 2.0.2 answers 200).
+   */
   async prepare(): Promise<void> {
-    if (!this.status.detecting) await this.action('start');
+    await this.action('start');
     await this.action('reset');
   }
 
