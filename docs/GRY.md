@@ -152,7 +152,7 @@ Postanowienia z grillingu z 2026-10-29. Losowe sektory, double i treble są opcj
 - **Do skutku:** reszta schodzi przez kolejne Tury jak w X01, bez limitu lotek. Bust cofa resztę do stanu sprzed Tury.
 - **Bez końca:** nie ma limitu checkoutów ani Tur. Grę kończy „End match”, a „Save” pokazuje ekran wygranej z „Summary”. Liczba, której nikt nie zamknął, przepada.
 - **Gracze:** 1–8.
-  - **Rywalizacja:** wszyscy dostają tę samą liczbę, a każdy ma własną resztę i rzuca swoje Tury po kolei. Kto pierwszy zamknie, dostaje punkt od razu, bez dogrywania rundy. Potem wszyscy dostają nową liczbę, a zaczyna następny w kolejności. Do nowej liczby pierwszy rzuca więc gracz po zamykającym.
+  - **Rywalizacja:** wszyscy dostają tę samą liczbę, a każdy ma własną resztę i rzuca swoje Tury po kolei. Kto pierwszy zamknie, dostaje punkt od razu, bez dogrywania rundy. Potem wszyscy dostają nową liczbę, a pierwszy rzuca do niej ten, kto zamknął: to nagroda za checkout. Dalej kolejka idzie normalnie.
   - **Co-op:** jedna wspólna reszta, gracze rzucają Tury na zmianę. Punkt dostaje ten, kto zamknie, a drużyna ma wspólny licznik checkoutów. Po checkoucie losujemy nową liczbę i rzuca następny gracz.
 - **Wygrana:** najwięcej punktów w chwili „End match”. Przy remisie wygrywają wszyscy remisujący. Gra zakończona przy 0 punktów albo w Co-op nie ma zwycięzcy, a ekran pokazuje „Game over”. Wyzwalacz „Game won” odpala tylko wtedy, gdy padł choć jeden checkout.
 - **Opcje:**

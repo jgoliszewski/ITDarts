@@ -97,7 +97,7 @@ describe('random checkouts: play', () => {
     const after = rc.view([...log, next], 2, opts);
     expect(after.number).not.toBe(first);
     expect(after.left).toEqual([after.number, after.number]);
-    expect(after.current).toBe(1);
+    expect(after.current).toBe(0); // the closer throws first at the new number
   });
 
   it('undo of the checkout brings the number back, and checking out again draws the same next one', () => {
@@ -116,7 +116,9 @@ describe('random checkouts: play', () => {
     expect(rc.view([seed(1), d('S20'), next, d('S10'), next], 2, forty).left).toEqual([20, 30]);
     const after = rc.view([seed(1), d('S20'), next, d('S10'), next, d('D10'), next], 2, forty);
     expect(after.left).toEqual([40, 40]);
-    expect(after.current).toBe(1);
+    expect(after.current).toBe(0);
+    // A visit without a checkout passes the turn as usual.
+    expect(rc.view([seed(1), d('S20'), next, d('S10'), next, d('D10'), next, d('S1'), next], 2, forty).current).toBe(1);
   });
 
   it('shares one score in co-op and the point goes to whoever checks out', () => {
@@ -171,8 +173,8 @@ describe('random checkouts: play', () => {
 
   it('keeps per-player checkout stats', () => {
     const forty = o({ min: 40, max: 40 });
-    // Player 0 checks out in the first visit; then player 1 needs two visits for the next 40.
-    const v = rc.view([seed(1), d('D20'), next, d('S20'), next, d('S1'), next, d('D10'), next], 2, forty);
+    // Player 0 checks out in the first visit and throws first again; player 1 needs two visits for the next 40.
+    const v = rc.view([seed(1), d('D20'), next, d('S1'), next, d('S20'), next, d('S1'), next, d('D10'), next], 2, forty);
     expect(v.stats).toEqual([
       { checkouts: 1, checkoutDarts: 1, firstVisit: 1 },
       { checkouts: 1, checkoutDarts: 4, firstVisit: 0 },
@@ -182,10 +184,13 @@ describe('random checkouts: play', () => {
 
 describe('random checkouts: end match', () => {
   const forty = o({ min: 40, max: 40 });
-  const two = [seed(1), d('D20'), next, d('D20'), next];
+  // One checkout each: player 0 closes, throws again, then player 1 closes.
+  const two = [seed(1), d('D20'), next, d('S1'), next, d('D20'), next];
+  const twoCoop = [seed(1), d('D20'), next, d('D20'), next];
+  const coopForty = o({ min: 40, max: 40, coop: true });
 
   it('ends as won by the most points, and equal points share the win', () => {
-    const v = rc.view([...two, d('S1'), next, d('D20'), next, end], 2, forty);
+    const v = rc.view([...two, d('D20'), next, end], 2, forty);
     expect(v.phase).toBe('matchWon');
     expect(v.winners).toEqual([1]);
     expect(v.result).toBe('Won with 2 checkouts');
@@ -196,7 +201,7 @@ describe('random checkouts: end match', () => {
 
   it('has no winner without a checkout, and none in co-op', () => {
     expect(rc.view([seed(1), d('S1'), next, end], 2, forty).winners).toEqual([]);
-    const coop = rc.view([...two, end], 2, o({ min: 40, max: 40, coop: true }));
+    const coop = rc.view([...twoCoop, end], 2, coopForty);
     expect(coop.winners).toEqual([]);
     expect(coop.result).toBe('2 checkouts together');
   });
@@ -205,7 +210,7 @@ describe('random checkouts: end match', () => {
     const won = (log: TurnEvent[], opts: RcOptions) => rc.happenings(log, 2, opts).some(h => h.fact.kind === 'matchWon');
     expect(won([seed(1), d('S1'), next, end], forty)).toBe(false);
     expect(won([...two, end], forty)).toBe(true);
-    expect(won([...two, end], o({ min: 40, max: 40, coop: true }))).toBe(true);
+    expect(won([...twoCoop, end], coopForty)).toBe(true);
     expect(won([seed(1), d('S1'), next, end], o({ min: 40, max: 40, coop: true }))).toBe(false);
   });
 

@@ -87,6 +87,8 @@ function play(t: Turns, players: number, o: RcOptions): State {
   const fx: Happening[] = [];
   /** What the screen keeps until the takeout, while the finished visit is still open. */
   let held: Shown | null = null;
+  /** Who checked out in the last visit: in a rivalry they throw first at the new number. */
+  let closer: number | null = null;
   for (const [vi, v] of t.visits.entries()) {
     const p = v.player, k = side(p);
     const start = (visitStart = rest[k]);
@@ -113,11 +115,12 @@ function play(t: Turns, players: number, o: RcOptions): State {
     if (!v.closed) held = { number, left: [...rest] };
     // Visits at the number count per side: in co-op the team's first visit is the first visit.
     visitsAt[k]++;
+    closer = out && !coop ? p : null;
     if (out) {
       points[p]++;
       checkoutDarts[p] += dartsAt[p];
       if (visitsAt[k] === 1) firstVisit[p]++;
-      // A new number for everyone; the next player in order throws first.
+      // A new number for everyone; the closer throws first (co-op: the next player).
       number = draw();
       rest.fill(number);
       dartsAt = zero();
@@ -134,7 +137,7 @@ function play(t: Turns, players: number, o: RcOptions): State {
   }
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.starter! : open ? open.player : (last.player + 1) % players;
+  const current = !last ? t.starter! : open ? open.player : closer ?? (last.player + 1) % players;
   const shown = held ?? { number, left: [...rest] };
   return {
     over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx,
@@ -248,7 +251,7 @@ export const randomCheckouts: GameModule<RcOptions, RcView> = {
     goal: 'Check out numbers drawn at random from the range. Each checkout is a point.',
     turn: 'Everyone gets the same number and plays it down from their own score, one visit each in turn. In Co-op you share one score and take turns.',
     counts: 'Like X01 with the chosen check-out. A bust puts your score back to where the visit started. There is no limit on darts.',
-    win: 'The first to check out gets the point at once, then everyone gets a new number. The game has no end: End match and Save, and the most points wins. Equal points share the win.',
+    win: 'The first to check out gets the point at once, then everyone gets a new number and the closer throws first. The game has no end: End match and Save, and the most points wins. Equal points share the win.',
   },
   normalizeOptions,
   describe: describeRc,
