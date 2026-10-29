@@ -157,7 +157,7 @@ Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzut�
   - Calibrate, z potwierdzeniem i informacją o około 60 s;
   - Restart Board Managera, z potwierdzeniem.
 - Przełącznik „Fake board”: serwer uruchamia symulator Board Managera na `:3180` i łączy się z nim zamiast z prawdziwą tarczą, a przycisk „Open fake board” otwiera stronę do klikania lotek. Wyłączenie wraca do adresu z `config.json`. Wybór nie przetrwa restartu serwera.
-- Ustawienia kamer i detekcji zostają w Board Managerze (`:3180`).
+- Ustawienia kamer i detekcji zostają w Board Managerze (`:3180`). Przycisk „Open Board Manager” otwiera jego stronę (`http://<adres tarczy>/`, od wersji 2.1.0) w nowej karcie. Przy Fake board go nie ma.
 - **Test board** (od 2026-10-28): przycisk w panelu otwiera widok testu: na laptopie na cały ekran (tarcza po lewej, stan i zdarzenia po prawej, bez przewijania strony), na telefonie zamiast panelu. Widać w nim stan (połączenie, detekcja, takeout, czas od ostatniej ramki z Board Managera), te same przyciski co w panelu (Reset, Start/Stop detection, Calibrate, Restart, z tymi samymi potwierdzeniami), tarczę z kropkami lotek rzuconych w teście, listę ostatnich 30 zdarzeń z godziną i coords oraz zwijane „Raw” z ostatnią ramką JSON.
   - W trakcie testu lotki i takeouty nie trafiają do meczu. Koniec testu nie resetuje tarczy, a lotki wyciągnięte w teście się nie liczą.
   - Test kończy się przyciskiem „Done”, zamknięciem panelu albo sam po 10 minutach, żeby zapomniany test nie połykał lotek w meczu.
