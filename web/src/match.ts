@@ -29,7 +29,8 @@ export function controls(s: ClientState): Controls {
     case 'bulloff':
       return { hint: 'Bull-off: one dart each at the bull', primary: null, endInstead: false, canUndo: !!v.bullOff?.throws.length };
     case 'matchWon':
-      return { hint: `${isX01(m) ? 'Match' : 'Game'} over. Undo fixes the last dart.`, primary: null, endInstead: false, canUndo: true };
+      // Random Checkouts ends only by End match: an undo there takes the end back and play goes on.
+      return { hint: m.game === 'randomco' ? 'Game over. Undo plays on.' : `${isX01(m) ? 'Match' : 'Game'} over. Undo fixes the last dart.`, primary: null, endInstead: false, canUndo: true };
     case 'legWon':
       if (takeout) return { hint: 'Board stuck? End the takeout by hand', primary: { label: 'Takeout done', cmd: { type: 'next' } }, endInstead: false, canUndo: true };
       return off

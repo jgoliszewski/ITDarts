@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_IDS, MAX_PLAYERS } from '../../../games/index.ts';
+import type { RcOptions } from '../../../games/randomco.ts';
+import { RANGE_PRESETS, highestNumber, lowestNumber } from '../../../games/randomco.ts';
 import type { OptionDef } from '../../../games/turns.ts';
 import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { X01Options } from '../../../games/x01/rules.ts';
@@ -143,12 +145,38 @@ function X01Section({ options, setOptions }: { options: X01Options; setOptions: 
   );
 }
 
+/** Random Checkouts: Min and Max with presets; the game keeps them within the check-out rule. */
+function RangeSection({ options, setOptions }: { options: RcOptions; setOptions: (o: RcOptions) => void }) {
+  const presets = RANGE_PRESETS.map(([l, min, max]) => [l, Math.max(min, lowestNumber(options.checkOut)), Math.min(max, highestNumber(options.checkOut))] as const);
+  const on = presets.find(([, min, max]) => min === options.min && max === options.max)?.[0] ?? '';
+  // Typed values apply when the field is left, so “1” on the way to “120” isn't pulled up to the minimum.
+  const field = (k: 'min' | 'max', text: string) => (
+    <label>{text}
+      <input key={options[k]} className="field num" type="number" inputMode="numeric" defaultValue={options[k]} aria-label={`${text} number`}
+        onBlur={e => setOptions({ ...options, [k]: parseInt(e.target.value, 10) })} onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()} />
+    </label>
+  );
+  return (
+    <div className="section">
+      <Label def={GAMES.randomco.options.find(d => d.label === 'Range')} text="Range" />
+      <Seg value={on} options={presets.map(([l]) => [l, l])} onChange={l => {
+        const [, min, max] = presets.find(p => p[0] === l)!;
+        setOptions({ ...options, min, max });
+      }} />
+      <div className="range-row">{field('min', 'Min')}{field('max', 'Max')}</div>
+    </div>
+  );
+}
+
 /** Minigame options straight from the module's definitions. */
-function MiniSection({ game, options, players, setOptions }: { game: GameId; options: Record<string, unknown>; players: number; setOptions: (o: Record<string, unknown>) => void }) {
+function MiniSection({ game, options, players, setOptions: save }: { game: GameId; options: Record<string, unknown>; players: number; setOptions: (o: Record<string, unknown>) => void }) {
   // Options meant for 2+ players (Mode, Co-op, Bull-off) show before anyone is added, so the screen doesn't jump.
   const defs = GAMES[game].options.filter(d => d.key && (!d.when || d.when(options, Math.max(players, 2))));
+  // The module keeps related options in step, e.g. the Random Checkouts range when the check-out changes.
+  const setOptions = (o: Record<string, unknown>) => save(GAMES[game].normalizeOptions(o));
   return (
     <>
+      {game === 'randomco' && <RangeSection options={options as unknown as RcOptions} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />}
       {defs.map(d => (
         <div key={d.key} className="section">
           <Label def={d} text={d.label} />

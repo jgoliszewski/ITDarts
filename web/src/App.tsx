@@ -197,7 +197,9 @@ function Main({ s }: { s: ClientState }) {
           <button className="btn danger" onClick={() => doEnd(false)}>Discard</button>
           <button className="btn primary" onClick={() => doEnd(true)}>Save to stats</button>
         </>}>
-          <p>The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely.</p>
+          <p>{m?.game === 'randomco'
+            ? "Save ends the game: the most checkouts wins, and the darts go into everyone's stats. Discard removes the match completely."
+            : "The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely."}</p>
         </Dialog>
       )}
       {closeAsk && (

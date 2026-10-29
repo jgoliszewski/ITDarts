@@ -93,7 +93,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
-        {m.game === '121' && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
+        {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
       </div>
       {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}

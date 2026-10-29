@@ -7,6 +7,7 @@ import type { MatchReport, PlayerHeat } from '../games/report.ts';
 import type { HolOptions, HolView } from '../games/hol.ts';
 import type { KillerOptions, KillerView } from '../games/killer.ts';
 import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
+import type { RcOptions, RcView } from '../games/randomco.ts';
 import type { GameId } from '../games/turns.ts';
 import type { X01Options, X01View } from '../games/x01/index.ts';
 
@@ -49,6 +50,7 @@ interface Games {
   cricket: { options: CricketOptions; view: CricketView };
   killer: { options: KillerOptions; view: KillerView };
   hol: { options: HolOptions; view: HolView };
+  randomco: { options: RcOptions; view: RcView };
 }
 
 /** The office record of the variant being played, for the record screen. */

@@ -54,7 +54,7 @@ function Players({ m }: { m: LiveMatch }) {
 
 function checkoutHint(m: LiveMatch): string | null {
   if (m.view.phase !== 'throwing') return null;
-  if (!isX01(m) && m.game !== '121') return null;
+  if (!isX01(m) && m.game !== '121' && m.game !== 'randomco') return null;
   const { checkout, setup } = m.view;
   return checkout ? `Checkout ${checkout}` : setup ? `Setup ${setup}` : null;
 }

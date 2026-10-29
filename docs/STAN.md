@@ -9,14 +9,19 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
-- **Grilling Random Checkouts i ATC „Order: Random”** (2026-10-29, w sesji): postanowienia w [GRY.md](GRY.md#random-checkouts), jeszcze nic nie zaimplementowane.
+- **Random Checkouts i ATC „Order: Random”** (2026-10-29, [GRY.md](GRY.md#random-checkouts)): zaimplementowane.
+  - Losowość z ziarna w logu: hub dopisuje `{ t: 'seed' }` na start i przy Rematch, gra losuje z niego deterministycznie (`seeded` w `games/turns.ts`), więc Undo i Poprawka przywracają te same liczby. ATC tasuje 1–20 tak jak numery w Killer, bull zostaje na końcu.
+  - Moduł `games/randomco.ts`: wspólna liczba, własna reszta albo wspólna w Co-op, bust, punkt za checkout, nowa liczba dla wszystkich, liczby niemożliwe przy regule nigdy nie losowane (`canCheckOut`), granice zakresu w `normalizeOptions`. Podpowiedź i caller z 121 i X01.
+  - „End match” z „Save” dopisuje do logu `{ t: 'end' }`: gra kończy się jak wygrana (najwięcej punktów, remis dzielą, bez punktów i w Co-op bez zwycięzcy), ekran wygranej ma „Summary”, Undo cofa koniec.
+  - Statystyki gracza: checkouty, lotki na checkout (własne lotki zamykającego przy tej liczbie) i % w pierwszej Turze.
+  - Sprawdzone: testy `games/randomco.test.ts` i ATC w `games/minigames.test.ts`; skryptem przez websocket z symulatorem tarczy na osobnej bazie: start, bust, checkout z punktem i nową liczbą, Undo przywraca liczbę i ponowny checkout daje tę samą następną, End match z Save i ekran wygranej, Summary i zapis meczu, ATC Random. Zrzuty w `.scratch/random-checkouts/`. Niesprawdzone: caller na żywo w kiosku i `/stats` dla nowej gry w przeglądarce.
 - **Grilling hostingu** ([#8](https://github.com/jgoliszewski/ITDarts/issues/8), 2026-10-28): plan w [HOSTING.md](HOSTING.md), jeszcze nic nie zaimplementowane.
 - **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
   - serwer z adapterem Board Managera i SQLite;
   - Ekran wyników, Pilot, setup, Players, Board panel, `/stats`.
-- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer i Higher or Lower.
+- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower i Random Checkouts.
   - Gry dzielą log tur z `games/turns.ts`. Każda jest czystą funkcją logu, więc Poprawka i Undo działają wszędzie.
   - Gotowe są też Co-op, Ekran rekordu ze „Skip”, „New record” na ekranie wygranej, „How to play” w setupie i w menu Pilota razem z „Show on screen”, podpowiedzi „i” przy opcjach i Reroll numerów w Killer.
   - Setup pamięta opcje osobno dla każdej gry i stawia ostatnio graną grę na początku listy.

@@ -12,8 +12,10 @@ import type { View121 } from '../games/121.ts';
 import { callerLines121 } from '../games/121.ts';
 import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
+import type { RcView } from '../games/randomco.ts';
+import { callerLinesRc } from '../games/randomco.ts';
 import type { MiniView } from '../games/turns.ts';
-import { dartCue } from '../games/turns.ts';
+import { dartCue, newSeed } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
 import { callerLines } from '../games/x01/index.ts';
 import type { Change, Fact, Happening } from '../games/effects.ts';
@@ -299,9 +301,10 @@ export class Hub {
     if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
-  /** The caller speaks in X01 and 121 only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01, 121 and Random Checkouts only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
     if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
+    if (l.rec.game === 'randomco') return callerLinesRc(cs, l.view as RcView, turnStart);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
@@ -379,6 +382,12 @@ export class Hub {
     this.db.startLive(rec);
     if (gameId === 'killer') {
       const e = { t: 'numbers', numbers: drawNumbers(roster.length) };
+      rec.events.push(e);
+      this.db.appendLive(e);
+    }
+    // Random draws come from a logged seed, so undo and fixes replay the same numbers; a rematch draws a new one.
+    if (gameId === 'randomco' || (gameId === 'atc' && opts.order === 'random')) {
+      const e = { t: 'seed', seed: newSeed() };
       rec.events.push(e);
       this.db.appendLive(e);
     }
@@ -558,6 +567,11 @@ export class Hub {
         this.apply({ t: 'nextLeg' });
         return {};
       case 'endMatch':
+        // Random Checkouts has no end of its own: Save ends it as won, with the win screen first.
+        if (cmd.save && this.live?.rec.game === 'randomco' && v?.phase === 'throwing') {
+          this.apply({ t: 'end' });
+          return {};
+        }
         this.finish(cmd.save, cmd.save);
         return {};
       case 'closeMatch': {

@@ -158,15 +158,16 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
   const hits = good?.filter(Boolean).length ?? 0;
   const scored = isX01(m) ? m.view.visit.total
     : m.game === 'hol' ? m.view.sum ?? 0
-    : m.game === '121' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
+    : m.game === '121' || m.game === 'randomco' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
   const big = verdict ? verdict.text : scored !== null ? String(scored) : `${n} ${unit}${n === 1 ? '' : 's'}`;
   const stats: [string, string][] = isX01(m) ? [['Left', String(m.view.scores[v.current])]]
     : m.game === '121' ? [['Target', String(m.view.target)], ['Left', String(m.view.remaining)], ['Darts in attempt', String(m.view.attemptLeft)]]
+    : m.game === 'randomco' ? [['Number', String(m.view.number)], ['Left', String(m.view.remaining)]]
     : m.game === 'hol' ? [['Range', `${m.view.lo}–${m.view.hi}`]]
     : [[m.view.hero.caption, m.view.hero.big]];
-  const note = isX01(m) || m.game === '121' || m.game === 'hol' ? null : m.view.hero.note;
+  const note = isX01(m) || m.game === '121' || m.game === 'randomco' || m.game === 'hol' ? null : m.view.hero.note;
   return (
     <div className="overlay">
       <div className="overlay-card">

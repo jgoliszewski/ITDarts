@@ -17,6 +17,11 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
     case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
     case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];
     case 'killer': return [['Lives taken', String(t.taken ?? 0)]];
+    case 'randomco': return [
+      ['Checkouts', String(t.checkouts ?? 0)],
+      ['Darts per checkout', t.checkouts ? (t.checkoutDarts / t.checkouts).toFixed(1) : '–'],
+      ['First visit', pct(t.firstVisit, t.checkouts), 'checkouts in the first visit'],
+    ];
     default: return [];
   }
 }
@@ -52,7 +57,7 @@ export function gameRows(game: GameId, totals: Record<string, number>[]): Row[] 
     label,
     values: per.map(p => p[i][1]),
     nums: per.map(p => (Number.isFinite(parseFloat(p[i][1])) ? parseFloat(p[i][1]) : null)),
-    better: label === 'Darts' ? undefined : 'higher',
+    better: label === 'Darts' ? undefined : label === 'Darts per checkout' ? 'lower' : 'higher',
   }));
 }
 
