@@ -8,7 +8,7 @@ Szkic z 2026-10-28 do grillingu [#9](https://github.com/jgoliszewski/ITDarts/iss
 npm run led-sim
 ```
 
-Otwiera `http://localhost:5173/led-sim.html` (strona działa też przy `npm run dev` i `npm run dev:fake`). Kod jest w `web/src/ledsim/`, a strona w `web/led-sim.html`. Symulator nie łączy się z serwerem ani z WLED. Od 2026-10-28 ma dwa zestawy: „Now” to ledy z `server/effects/leds.ts`, te same co na kontrolerze, a „LED lab” to wcześniejsze presety do porównania. Zakładka Sound check, zestawy A–D i propozycje dźwięków zostały usunięte po decyzjach, więc ich opisy niżej są historyczne.
+Otwiera `http://localhost:5173/led-sim.html` (strona działa też przy `npm run dev` i `npm run dev:fake`). Kod jest w `web/src/ledsim/`, a strona w `web/led-sim.html`. Od 2026-10-29 to sam podgląd: Momenty i sekwencje z ledami z `server/effects/leds.ts`, tymi samymi co na kontrolerze, z dźwiękiem i przełącznikiem „Play on the ring”, który gra je też na prawdziwym ringu (przez „Try”, więc aplikacja musi działać). Zestawy do porównania, wybory i notatki zostały usunięte. Zakładka Sound check, zestawy A–D i propozycje dźwięków zostały usunięte po decyzjach, więc ich opisy niżej są historyczne.
 
 - **Dwa ringi** (poprawka z 2026-10-28): kontroler steruje dwoma ringami po mniej więcej 50 ledów, a segmenty 0–48 i 48–100 to właśnie one. Jeden ring oświetla tarczę, a drugi, bliżej ściany, robi poświatę na ścianie wokół niej. Oba grają ten sam efekt, każdy od swojego pierwszego leda. Patrząc od linii rzutu, ring ściany jest wewnętrzny, tuż przy tarczy, i świeci na ciemną ścianę, a ring tarczy jest zewnętrzny, bliżej gracza, i świeci na tarczę. Tak samo rysuje je symulator, z odstępem między ringami. Ustawienia „Rings”, „Lights the board” i „Second ring reversed” pozwalają dobrać podział (48 lub 50), który ring jest który i kierunek drugiego.
 - **Momenty** z mapy poniżej, w grupach, z siłą, charakterem i dźwiękiem. Kliknięcie nazwy gra moment w wybranym zestawie, a przyciski Today, A, B, C grają go w konkretnym zestawie. Dźwięk to ten sam syntezator co w kiosku (`web/src/sound.ts`).
@@ -135,7 +135,7 @@ Kolory są nasycone i bez przygaszania, zgodnie z wnioskami z LED labu.
   - XL to najdłuższe dźwięki: 180, Big Fish i Match won zostają bez zmian.
 - **Q11:** przyjęte. Jeden motyw „źle”: marimba w dół, a od M także niski zjazd. Miss zostaje bez zmian, No score i Bust przechodzą z tonów trójkątnych na marimbę, a Player out dostaje dłuższy zjazd.
 - **Q12:** tak. Nowych dźwięków nie ma; Life lost i Attempt failed dostają dźwięk No score, a Sector closed dźwięk Hit.
-- **Q13:** zamiast jednego ringu są dwa (opis w sekcji [Symulator ledów](#symulator-ledów)). Połówki idą w tę samą stronę. Gdzie jest pierwszy led, sprawdzimy przy tarczy.
+- **Q13:** zamiast jednego ringu są dwa (opis w sekcji [Symulator ledów](#symulator-ledów)). Połówki idą w tę samą stronę. Sprawdzone przy tarczy 2026-10-29: ring tarczy to segment 0 (ledy 0–48), ściany segment 1 (48–100), podział czysto na 48. Oba ringi zaczynają na godzinie 1 i idą zgodnie ze wskazówkami zegara; symulator ma to domyślnie.
 
 ## Odpowiedzi z rundy 2 (2026-10-28)
 
@@ -149,7 +149,15 @@ Kolory są nasycone i bez przygaszania, zgodnie z wnioskami z LED labu.
 
 ## Przypisania
 
-Stan po rundach 1 i 2, do sprawdzenia na żywo (Q7). Ledy to zestaw D w symulatorze, a kod jest w `web/src/ledsim/actions.ts`.
+Stan po rundach 1 i 2 i po obejrzeniu na ringu (2026-10-29, [#10](https://github.com/jgoliszewski/ITDarts/issues/10)). Ledy są w `server/effects/leds.ts`.
+
+Poprawki z ringu:
+- tęcza na kontrolerze była jednym kolorem, bo efekt Rainbow miał paletę 2; teraz ma paletę 11;
+- Dissolve na kontrolerze migał losowymi pikselami i nie przypominał symulatora, więc czerwone Momenty mają oba ringi w jednym kolorze, bez ruchu;
+- Hit, Miss i czerwone Momenty minigierek były słabo widoczne: grają teraz na obu ringach, Hit i Miss przez 0,8 s;
+- tarcza offline to stała czerwień zamiast Pulse do ciepłej bieli.
+
+Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają. W meczu (detekcja, takeout, dźwięki w kiosku) jeszcze nie sprawdzone.
 - **Ring tarczy** zawsze płynnie przechodzi w kolor i wraca: wejście 0,15 s, wyjście do 0,8 s.
 - **Ring ściany** gra ruch tyle samo czasu co ring tarczy. „Żar” to ciemniejszy pomarańcz (255,40,0), a „morski” to ciemniejsza zieleń (0,200,120).
 - **Pogrubiony dźwięk** jest nowy albo zmieniony.
@@ -167,26 +175,26 @@ Stan po rundach 1 i 2, do sprawdzenia na żywo (Q7). Ledy to zestaw D w symulato
 | 180 | 180 | pomarańcz | białe iskry (Burst) na pomarańczu | 2 s |
 | Clean 20s | **trzy uderzenia bez dzwonka** | pomarańcz | Run: pomarańcz na żarze | 0,8 s |
 | Bed and breakfast | Bed and breakfast | magenta | Ripple: fiolet na magencie | 0,8 s |
-| No score | **marimba w dół** | czerwień | Dissolve: czerwień na karminie, jak Bust | 1,4 s |
-| Bust | **marimba w dół i zjazd** | czerwień | Dissolve: czerwień na karminie | 1,4 s |
+| No score | **marimba w dół** | czerwień | czerwień, bez ruchu, jak Bust | 1,4 s |
+| Bust | **marimba w dół i zjazd** | czerwień | czerwień, bez ruchu | 1,4 s |
 | Checkout | Leg won | zieleń | Fill: zieleń na morskim | 2 s |
 | Madhouse | Madhouse | fiolet | Ripple: fiolet na magencie | 2 s |
 | High finish | High finish | zieleń | Ripple: zieleń na morskim | 2 s |
 | Big Fish | Big fish | zieleń | płynąca tęcza | 2 s |
 | Set won | **G → C → C wyżej, z dzwonkami** | zieleń | Run: zieleń na morskim | 2 s |
 | Match won | Match won | płynąca tęcza | białe iskry na pomarańczu | 6 s |
-| Hit | kwinta w górę | pomarańcz | stoi | 0,45 s |
-| Miss | kwinta w dół | czerwień | stoi | 0,45 s |
+| Hit | kwinta w górę | pomarańcz | pomarańcz, bez ruchu | 0,8 s |
+| Miss | kwinta w dół | czerwień | czerwień, bez ruchu | 0,8 s |
 | Sector closed | **Hit** | zieleń | Run: zieleń na morskim | 1,4 s |
 | White Horse | White Horse | fiolet | Run: biel na fiolecie | 2 s |
-| Life lost | **No score** | czerwień | stoi | 1 s |
-| Became killer | brak | karmin | Dissolve: czerwień na karminie | 1,4 s |
-| Attempt failed | **No score** | karmin | Dissolve: czerwień na karminie, jak Became killer | 1,4 s |
-| Player out | **marimba w dół i dłuższy zjazd** | czerwień | Dissolve: czerwień na karminie | 2 s |
+| Life lost | **No score** | czerwień | czerwień, bez ruchu | 1 s |
+| Became killer | brak | karmin | karmin, bez ruchu | 1,4 s |
+| Attempt failed | **No score** | karmin | karmin, bez ruchu, jak Became killer | 1,4 s |
+| Player out | **marimba w dół i dłuższy zjazd** | czerwień | czerwień, bez ruchu | 2 s |
 | New record | New record | płynąca tęcza | Ripple: pomarańcz na żarze | 3 s |
 | Stany: lobby, mecz | | ciepła biel (Gameon) | ciepła biel | stan |
 | Stan: takeout | | bez zmiany | bez zmiany | |
-| Stan: tarcza offline | | czerwony Pulse | czerwony Pulse | stan |
+| Stan: tarcza offline | | czerwień, bez ruchu | czerwień, bez ruchu | stan |
 
 ## Do zrobienia
 

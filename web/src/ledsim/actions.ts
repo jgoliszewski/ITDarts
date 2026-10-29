@@ -1,6 +1,6 @@
 // The Momenty for the LED simulator (docs/MAPA.md): each with its strength, mood and built-in sound, and its LEDs from
-// server/effects/leds.ts, the same list the controller gets. The LED lab looks from before issue #9 stay to compare.
-import { LEDS, WARM, type Effect, type LedKey, type Rgb } from '../../../server/effects/leds.ts';
+// server/effects/leds.ts, the same list the controller gets.
+import { LEDS, WARM, type Effect, type LedKey } from '../../../server/effects/leds.ts';
 
 export type Strength = 'S' | 'M' | 'L' | 'XL';
 export type Mood = 'neutral' | 'good' | 'bad' | 'fun';
@@ -59,55 +59,11 @@ export const MOMENTS: Moment[] = [
 ];
 
 export { WARM };
-const WHITE: Rgb = [255, 255, 255];
-const ORANGE: Rgb = [255, 115, 0];
-const RED: Rgb = [255, 0, 0];
-
-export interface LookSet {
-  id: string;
-  name: string;
-  /** One line on the idea, shown above the list. */
-  idea: string;
-  looks: Partial<Record<string, Effect>>;
-}
-
-// ---- Before: the LED lab presets of 2026-10-28 (round 7), copied as closely as the simulator can, to compare. ----
-const BEFORE: LookSet = {
-  id: 'before',
-  name: 'LED lab',
-  idea: 'What the ring played before issue #9 (LED lab, 2026-10-28): hard switches, colours over warm white, motion clocked by the controller.',
-  looks: {
-    'game-on': { kind: 'fill', color: WHITE, dur: 2.2, rate: 1.125, clock: true },
-    treble: { kind: 'solid', color: WHITE, dur: 0.5 },
-    'treble-20': { kind: 'solid', color: ORANGE, dur: 0.5 },
-    bull: { kind: 'solid', color: ORANGE, dur: 1 },
-    ton: { kind: 'pulse', color: WHITE, dur: 1.5, rate: 1.87, clock: true },
-    'ton-40': { kind: 'run', color: ORANGE, dur: 1.5 },
-    '180': { kind: 'burst', color: ORANGE, bg: WHITE, dur: 4 },
-    'clean-20s': { kind: 'run', color: WHITE, dur: 1.5 },
-    bnb: { kind: 'ripple', color: WHITE, dur: 1.5 },
-    'no-score': { kind: 'solid', color: RED, dur: 0.5 },
-    bust: { kind: 'dissolve', color: RED, dur: 1.4 },
-    checkout: { kind: 'rainbow', color: 'rainbow', dur: 1.5, rate: 0.8 },
-    madhouse: { kind: 'run', color: 'rainbow', dur: 1.5 },
-    'high-finish': { kind: 'fill', color: 'rainbow', dur: 2.2, rate: 1.125, clock: true },
-    'big-fish': { kind: 'burst', color: 'rainbow', bg: WHITE, dur: 4 },
-    'set-won': { kind: 'ripple', color: ORANGE, dur: 3 },
-    'match-won': { kind: 'burst', color: 'rainbow', bg: WHITE, dur: 6 },
-    'white-horse': { kind: 'burst', color: WHITE, dur: 2 },
-    'player-out': { kind: 'pulse', color: RED, dur: 1.5, rate: 1.87, clock: true },
-    'new-record': { kind: 'pulse', color: 'rainbow', dur: 3, rate: 1.87, clock: true },
-    offline: { kind: 'pulse', color: RED, dur: 60, rate: 1.87, clock: true },
-  },
-};
 
 /** The base states loop in the simulator; on the controller they stay until the next change. */
 const looping = (e: Effect): Effect => ('kind' in e && e.dur === 0 ? { ...e, dur: 60 } : e);
-const NOW: LookSet = {
-  id: 'now',
-  name: 'Now',
-  idea: 'Chosen in issue #9: the board ring washes into one colour, the wall ring moves in the same colour, both the same length, at most 2 s; only the end of a game runs longer.',
-  looks: Object.fromEntries(Object.entries(LEDS).map(([k, v]) => [k, looping(v.effect)])) as Record<LedKey, Effect>,
+/** A Moment's LEDs, as the controller gets them; none for Next player. */
+export const lookOf = (id: string): Effect | undefined => {
+  const led = LEDS[id as LedKey];
+  return led && looping(led.effect);
 };
-
-export const SETS: LookSet[] = [NOW, BEFORE];

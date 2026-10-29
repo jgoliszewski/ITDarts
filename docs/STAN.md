@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
+Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -98,7 +98,8 @@ Stan na 2026-10-28. Aktualizuj przy każdym większym kroku.
 
 - [ ] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
 - [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła. Pobieranie `presets.json` działa (WLED 0.15.4).
-- [ ] Ledy i dźwięki Momentów (2026-10-28, [#9](https://github.com/jgoliszewski/ITDarts/issues/9), [EFEKTY.md](EFEKTY.md#presety-momentów-2026-10-28)): presety wgrać na kontroler (`npm run leds:upload`), ustalić przy tarczy, który segment to ring tarczy i gdzie jest pierwszy led, a potem obejrzeć i posłuchać w meczu. Lista kroków jest w [#10](https://github.com/jgoliszewski/ITDarts/issues/10).
+- [x] Ledy Momentów na ringu (2026-10-29, [#10](https://github.com/jgoliszewski/ITDarts/issues/10)): presety 100–128 są na kontrolerze, ring tarczy to segment 0, podział na 48, oba ringi startują na godzinie 1 i idą zgodnie ze wskazówkami. Obejrzane w podglądzie `led-sim.html` z „Play on the ring”, poprawki z ringu w [MAPA.md](MAPA.md#przypisania).
+- [ ] Ledy i dźwięki Momentów w meczu: czy efekty po lotce nie psują detekcji i takeoutu, dźwięki w kiosku (lista w [#10](https://github.com/jgoliszewski/ITDarts/issues/10), punkt 4).
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
 - [ ] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.

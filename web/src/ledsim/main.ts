@@ -1,9 +1,9 @@
-// LED simulator page (web/led-sim.html, docs/MAPA.md): the ring around a lit board, every moment with its sound and
-// its LEDs from server/effects/leds.ts (and the LED lab looks from before, to compare), sequences of a real visit, and
-// picks saved in the browser to copy out.
+// LED simulator page (web/led-sim.html, docs/MAPA.md): a preview of the ring around a lit board. Every Moment plays
+// its sound and its LEDs from server/effects/leds.ts, alone or in sequences of a real visit, and, with “Play on the
+// ring”, on the real controller too.
 import { builtinSound } from '../sound.ts';
-import { rings, type Effect } from '../../../server/effects/leds.ts';
-import { MOMENTS, SETS, WARM, type Moment } from './actions.ts';
+import { BOARD_SEGMENT, LEDS, SPLIT_AT, effectSeconds, rings, type Effect, type LedKey } from '../../../server/effects/leds.ts';
+import { MOMENTS, WARM, lookOf, type Moment } from './actions.ts';
 import { render, type Look, type Rgb, type Seg } from './looks.ts';
 
 const N = 100;
@@ -11,33 +11,14 @@ const $ = <T extends HTMLElement>(s: string) => document.querySelector(s) as T;
 
 // ---------- settings, kept in the browser ----------
 
-interface Prefs {
-  set: string;
-  fade: number;
-  sound: boolean;
-  volume: number;
-  start: number;
-  dir: 1 | -1;
-  /** The controller drives two rings, one per segment: one lights the board, the other the wall behind it. */
-  split: 48 | 50;
-  boardRing: 'first' | 'second';
-  rev2: boolean;
-  base: 'warm' | 'white';
-  picks: Record<string, string>;
-  notes: Record<string, string>;
-}
-const DEFAULTS: Prefs = { set: 'now', fade: 1, sound: true, volume: 0.8, start: 180, dir: 1, split: 48, boardRing: 'first', rev2: false, base: 'warm', picks: {}, notes: {} };
+const prefs = { sound: true, volume: 0.8, live: false };
 const KEY = 'itdarts-led-sim';
-function loadPrefs(): Prefs {
-  try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
-  } catch {
-    return { ...DEFAULTS };
-  }
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+  for (const k of Object.keys(prefs) as (keyof typeof prefs)[]) if (typeof saved[k] === typeof prefs[k]) Object.assign(prefs, { [k]: saved[k] });
+} catch {
+  // A broken entry: the defaults do.
 }
-const prefs = loadPrefs();
-// A set from an older version of the page is gone.
-if (!SETS.some(s => s.id === prefs.set)) prefs.set = DEFAULTS.set;
 function savePrefs() {
   try {
     localStorage.setItem(KEY, JSON.stringify(prefs));
@@ -46,35 +27,32 @@ function savePrefs() {
   }
 }
 
-const baseColour = (): Rgb => (prefs.base === 'warm' ? WARM : [255, 255, 255]);
-/** Both rings play the same effect, each from its own LED 0 (the controller's segments 0–48 and 48–100). */
-const segments = (): Seg[] => [{ start: 0, stop: prefs.split }, { start: prefs.split, stop: N, rev: prefs.rev2 }];
+/** The controller's segments: LEDs 0–47 and 48–99. */
+const SEGMENTS: Seg[] = [{ start: 0, stop: SPLIT_AT }, { start: SPLIT_AT, stop: N }];
 
 // ---------- what plays ----------
 
 /** What plays: one look per segment, in segment order, and when the longest one ends. */
-let current: { looks: (Look | null)[]; dur: number; start: number; seed: number; label: string } | null = null;
-const lookOf = (setId: string, id: string) => SETS.find(s => s.id === setId)?.looks[id];
+let current: { looks: (Look | null)[]; dur: number; start: number; seed: number } | null = null;
 
-/** The look with the page's fade factor applied (0 = hard switches like today). */
-function faded(look: Look): Look {
-  return { ...look, fadeIn: (look.fadeIn ?? 0) * prefs.fade, fadeOut: (look.fadeOut ?? 0) * prefs.fade };
-}
-
-/** The effect per segment: the board ring is the first or the second segment. */
-function perSegment(e: Effect): (Look | null)[] {
-  const { board, wall } = rings(e);
-  return prefs.boardRing === 'first' ? [board, wall] : [wall, board];
-}
-
-function play(m: Moment, setId = prefs.set, withSound = true) {
-  const look = lookOf(setId, m.id);
-  const looks = look ? perSegment(look).map(l => (l && setId !== 'before' ? faded(l) : l)) : [];
-  current = look
-    ? { looks, dur: Math.max(...looks.map(l => l?.dur ?? 0)), start: clock, seed: Math.floor(Math.random() * 1e6), label: `${m.name} · ${SETS.find(s => s.id === setId)!.name}` }
-    : null;
+function play(m: Moment, withSound = true) {
+  const look = lookOf(m.id);
+  if (look) {
+    const { board, wall } = rings(look);
+    const looks = BOARD_SEGMENT === 0 ? [board, wall] : [wall, board];
+    current = { looks, dur: Math.max(...looks.map(l => l?.dur ?? 0)), start: clock, seed: Math.floor(Math.random() * 1e6) };
+  } else current = null;
   if (withSound && prefs.sound && m.sound) builtinSound(m.sound, prefs.volume);
-  $('#now').textContent = look ? `${current!.label} — ${describe(look)}` : `${m.name}: no LEDs in this set`;
+  $('#now').textContent = look ? `${m.name} — ${describe(look)}` : `${m.name}: no LEDs`;
+  const led = LEDS[m.id as LedKey];
+  if (prefs.live && led) toRing(led.preset, effectSeconds(led.effect) || 4);
+}
+
+/** Plays a preset on the controller for a while, then the app puts its base back (POST /api/wled/preview, “Try”). */
+function toRing(preset: number, seconds: number) {
+  fetch('/api/wled/preview', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ preset, seconds }) })
+    .then(async r => { if (!r.ok) throw new Error((await r.json().catch(() => null))?.error ?? `HTTP ${r.status}`); })
+    .catch((e: Error) => ($('#now').textContent += ` · ring: ${e.message}`));
 }
 
 const MOVING = new Set<Look['kind']>(['fill', 'run', 'ripple', 'burst', 'rainbow', 'dissolve', 'blink']);
@@ -149,12 +127,13 @@ function resize() {
   drawBoard(size * 0.4);
 }
 
-/** LED j's ring and place on it: each ring's first LED at `start` degrees (0 = top), counted clockwise or not. */
+/** LED j's ring and place on it: both rings start at 1 o'clock and run clockwise (checked at the board, issue #10). */
+const START_DEG = 30;
 function ledPlace(j: number): { onBoard: boolean; angle: number } {
-  const second = j >= prefs.split;
-  const [from, len] = second ? [prefs.split, N - prefs.split] : [0, prefs.split];
-  const angle = ((prefs.start + (prefs.dir * ((j - from) * 360)) / len) * Math.PI) / 180 - Math.PI / 2;
-  return { onBoard: second === (prefs.boardRing === 'second'), angle };
+  const second = j >= SPLIT_AT;
+  const [from, len] = second ? [SPLIT_AT, N - SPLIT_AT] : [0, SPLIT_AT];
+  const angle = ((START_DEG + ((j - from) * 360) / len) * Math.PI) / 180 - Math.PI / 2;
+  return { onBoard: second === (BOARD_SEGMENT === 1), angle };
 }
 
 const leds: Rgb[] = Array.from({ length: N }, () => WARM);
@@ -172,7 +151,7 @@ function frame(now: number) {
 function draw() {
   const t = current ? (clock - current.start) / 1000 : 0;
   if (current && t >= current.dur) current = null;
-  render(current?.looks ?? [], t, baseColour(), segments(), current?.seed ?? 0, leds);
+  render(current?.looks ?? [], t, WARM, SEGMENTS, current?.seed ?? 0, leds);
   // Seen from the oche the wall ring is the inner one, right round the board, and lights a halo on the wall; the board
   // ring is the outer one, nearer the player, and faces the board.
   const c = size / 2, R = size * 0.47, RW = size * 0.415;
@@ -226,7 +205,7 @@ function draw() {
   ctx.font = `${Math.round(size * 0.022)}px system-ui`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  for (const j of [0, prefs.split]) {
+  for (const j of [0, SPLIT_AT]) {
     const { onBoard, angle } = ledPlace(j), r = onBoard ? R + size * 0.018 : RW - size * 0.022;
     ctx.fillText(String(j), c + Math.cos(angle) * r, c + Math.sin(angle) * r);
   }
@@ -262,143 +241,64 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string,
   return e;
 }
 
-const MOOD: Record<Moment['mood'], string> = { neutral: 'neutral', good: 'good', bad: 'bad', fun: 'fun' };
-const swatch = (e: Effect | undefined) => {
-  const l = e && (rings(e).board ?? rings(e).wall);
+function swatch(m: Moment) {
+  const e = lookOf(m.id), l = e && (rings(e).board ?? rings(e).wall);
   return !l ? 'transparent' : l.color === 'rainbow' ? 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' : `rgb(${l.color.join(',')})`;
-};
-
-function renderList() {
-  const root = $('#list');
-  root.innerHTML = '';
-  for (const group of new Set(MOMENTS.map(m => m.group))) {
-    const list = MOMENTS.filter(m => m.group === group);
-    root.append(el('h3', { textContent: group }));
-    for (const m of list) {
-      const pick = prefs.picks[m.id];
-      const row = el('div', { className: 'moment' + (pick ? ' picked' : '') });
-      const head = el('button', { className: 'name', title: 'Play in the selected set' },
-        el('b', { textContent: m.name }),
-        el('span', { className: `chip s-${m.strength}`, textContent: m.strength }),
-        el('span', { className: `chip m-${m.mood}`, textContent: MOOD[m.mood] }));
-      head.onclick = () => play(m);
-      const meta = el('div', { className: 'meta', textContent: `${m.when} · ${m.often} · sound: ${m.sound ?? '—'}${m.note ? ` · ${m.note}` : ''}` });
-      const variants = el('div', { className: 'variants' });
-      for (const s of SETS) {
-        const l = s.looks[m.id];
-        const dot = el('i');
-        dot.style.background = swatch(l);
-        const b = el('button', { className: 'variant' + (s.id === prefs.set ? ' current' : '') + (pick === s.id ? ' chosen' : ''), title: l ? describe(l) : 'No LEDs' },
-          dot, s.name.split(' · ')[0]);
-        if (!l) b.classList.add('none');
-        b.onclick = () => play(m, s.id);
-        variants.append(b);
-      }
-      const choose = el('select', { title: 'Your pick for this moment' });
-      choose.append(el('option', { value: '', textContent: 'Pick…' }), ...SETS.map(s => el('option', { value: s.id, textContent: s.name })), el('option', { value: 'none', textContent: 'No LEDs' }));
-      choose.value = pick ?? '';
-      choose.onchange = () => {
-        if (choose.value) prefs.picks[m.id] = choose.value;
-        else delete prefs.picks[m.id];
-        savePrefs();
-        renderList();
-      };
-      const note = el('input', { type: 'text', placeholder: 'Note', value: prefs.notes[m.id] ?? '' });
-      note.oninput = () => {
-        prefs.notes[m.id] = note.value;
-        savePrefs();
-      };
-      variants.append(choose, note);
-      row.append(head, meta, variants);
-      root.append(row);
-    }
-  }
-  $('#idea').textContent = SETS.find(s => s.id === prefs.set)!.idea;
-  renderPicked();
 }
 
-function renderPicked() {
-  $('#picked').textContent = `${Object.keys(prefs.picks).length} of ${MOMENTS.length} moments picked`;
-}
-
-
-function renderControls() {
-  const tabs = $('#sets');
-  tabs.innerHTML = '';
-  for (const s of SETS) {
-    const b = el('button', { textContent: s.name, className: s.id === prefs.set ? 'on' : '' });
-    b.onclick = () => {
-      prefs.set = s.id;
-      savePrefs();
-      renderControls();
-      renderList();
-    };
-    tabs.append(b);
-  }
-  const seqs = $('#sequences');
-  seqs.innerHTML = '';
-  for (const s of SEQUENCES) {
-    const b = el('button', { textContent: '▶ ' + s.name });
-    b.onclick = () => runSequence(s.steps);
-    seqs.append(b);
+const list = $('#list');
+for (const group of new Set(MOMENTS.map(m => m.group))) {
+  list.append(el('h3', { textContent: group }));
+  for (const m of MOMENTS.filter(x => x.group === group)) {
+    const dot = el('i');
+    dot.style.background = swatch(m);
+    const b = el('button', { className: 'moment', title: m.note ?? '' },
+      dot, el('b', { textContent: m.name }), el('span', { className: 'meta', textContent: m.when }));
+    b.onclick = () => play(m);
+    list.append(b);
   }
 }
-
-function bind<T extends HTMLInputElement | HTMLSelectElement>(id: string, get: () => string, set: (v: string) => void) {
-  const e = $<T>(id);
-  if (e instanceof HTMLInputElement && e.type === 'checkbox') {
-    e.checked = get() === 'true';
-    e.onchange = () => { set(String(e.checked)); savePrefs(); };
-  } else {
-    e.value = get();
-    e.oninput = () => { set(e.value); savePrefs(); };
-  }
+const seqs = $('#sequences');
+for (const s of SEQUENCES) {
+  const b = el('button', { textContent: '▶ ' + s.name });
+  b.onclick = () => runSequence(s.steps);
+  seqs.append(b);
 }
 
-function copyPicks() {
-  const lines = ['| Moment | Pick | Note |', '|---|---|---|', ...MOMENTS.map(m => {
-    const p = prefs.picks[m.id];
-    return `| ${m.name} | ${p ? (SETS.find(s => s.id === p)?.name ?? 'No LEDs') : ''} | ${prefs.notes[m.id] ?? ''} |`;
-  })];
-  const text = lines.join('\n') + `\n\nFade ×${prefs.fade}, LED 0 at ${prefs.start}°, ${prefs.dir === 1 ? 'clockwise' : 'anticlockwise'}, rings split at ${prefs.split}, board ring: ${prefs.boardRing}, second ring ${prefs.rev2 ? 'reversed' : 'same way'}\n`;
-  void navigator.clipboard.writeText(text).then(() => ($('#copy').textContent = 'Copied'), () => ($('#copy').textContent = 'Copy failed'));
-  setTimeout(() => ($('#copy').textContent = 'Copy picks'), 1500);
+function bind(id: keyof typeof prefs) {
+  const e = $<HTMLInputElement>('#' + id);
+  if (e.type === 'checkbox') e.checked = prefs[id] as boolean;
+  else e.value = String(prefs[id]);
+  e.oninput = () => {
+    Object.assign(prefs, { [id]: e.type === 'checkbox' ? e.checked : Number(e.value) });
+    savePrefs();
+  };
 }
-
-bind('#fade', () => String(prefs.fade), v => { prefs.fade = Number(v); $('#fadeOut').textContent = `×${prefs.fade}`; });
-$('#fadeOut').textContent = `×${prefs.fade}`;
-bind('#sound', () => String(prefs.sound), v => (prefs.sound = v === 'true'));
-bind('#volume', () => String(prefs.volume), v => (prefs.volume = Number(v)));
-bind('#start', () => String(prefs.start), v => (prefs.start = Number(v)));
-bind('#dir', () => String(prefs.dir), v => (prefs.dir = Number(v) as 1 | -1));
-bind('#split', () => String(prefs.split), v => (prefs.split = Number(v) as Prefs['split']));
-bind('#boardRing', () => prefs.boardRing, v => (prefs.boardRing = v as Prefs['boardRing']));
-bind('#rev2', () => String(prefs.rev2), v => (prefs.rev2 = v === 'true'));
-bind('#base', () => prefs.base, v => (prefs.base = v as Prefs['base']));
-$('#copy').onclick = copyPicks;
+bind('sound');
+bind('volume');
+bind('live');
 $('#stop').onclick = () => {
   timers.forEach(clearTimeout);
   current = null;
   $('#now').textContent = 'Base';
+  if (prefs.live) toRing(LEDS.base.preset, 0.1);
 };
-window.addEventListener('resize', resize);
-renderControls();
-renderList();
-resize();
-requestAnimationFrame(frame);
 $('#pause').onclick = () => {
   paused = !paused;
   $('#pause').textContent = paused ? 'Resume' : 'Pause';
 };
 $<HTMLSelectElement>('#speed').onchange = e => (speed = Number((e.target as HTMLSelectElement).value));
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(frame);
 
-/** For scripts and screenshots: show `moment` in `set` frozen `seconds` after its start. */
+/** For scripts and screenshots: show `moment` frozen `seconds` after its start. */
 Object.assign(window, {
   ledSim: {
-    at(moment: string, set: string, seconds: number) {
+    at(moment: string, seconds: number) {
       const m = MOMENTS.find(x => x.id === moment);
       if (!m) return;
-      play(m, set, false);
+      play(m, false);
       if (current) current.start = clock - seconds * 1000;
       paused = true;
       draw();
