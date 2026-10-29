@@ -1,6 +1,7 @@
 // Game catalog: every playable game and its module.
 import { oneTwentyOne } from './121.ts';
 import { cricket } from './cricket.ts';
+import { gotcha } from './gotcha.ts';
 import { hol } from './hol.ts';
 import { killer } from './killer.ts';
 import { atc, fullBoard } from './race.ts';
@@ -11,10 +12,10 @@ import { x01 } from './x01/index.ts';
 
 export type { GameGroup, GameId, GameModule } from './turns.ts';
 
-export const GAMES: Record<GameId, GameModule> = { x01, atc, fullboard: fullBoard, '121': oneTwentyOne, cricket, killer, hol, randomco: randomCheckouts, shanghai };
+export const GAMES: Record<GameId, GameModule> = { x01, atc, fullboard: fullBoard, '121': oneTwentyOne, cricket, killer, hol, randomco: randomCheckouts, shanghai, gotcha };
 
 /** In the order of the setup tiles within their groups (object keys would put '121' first). */
-export const GAME_IDS: GameId[] = ['x01', 'atc', 'fullboard', '121', 'randomco', 'cricket', 'killer', 'hol', 'shanghai'];
+export const GAME_IDS: GameId[] = ['x01', 'atc', 'fullboard', '121', 'randomco', 'cricket', 'killer', 'hol', 'shanghai', 'gotcha'];
 
 const GROUP_TITLES: [GameGroup, string][] = [['classic', 'Classic'], ['practice', 'Practice'], ['versus', 'Versus']];
 

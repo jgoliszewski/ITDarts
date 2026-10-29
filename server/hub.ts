@@ -13,6 +13,7 @@ import { callerLines121 } from '../games/121.ts';
 import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { RcView } from '../games/randomco.ts';
+import { callerLinesGotcha } from '../games/gotcha.ts';
 import { callerLinesRc } from '../games/randomco.ts';
 import type { MiniView } from '../games/turns.ts';
 import { dartCue, newSeed } from '../games/turns.ts';
@@ -301,10 +302,11 @@ export class Hub {
     if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
-  /** The caller speaks in X01, 121 and Random Checkouts only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01, 121, Random Checkouts and Gotcha only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
     if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
     if (l.rec.game === 'randomco') return callerLinesRc(cs, l.view as RcView, turnStart);
+    if (l.rec.game === 'gotcha') return callerLinesGotcha(cs);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 

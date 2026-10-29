@@ -56,6 +56,7 @@ Otwiera `http://localhost:5173/led-sim.html` (strona działa też przy `npm run 
 | | Sector closed | Cricket: zamknięty sektor | M | dobry | kilka na grę | brak | brak |
 | | White Horse | trzy różne treble | L | dobry | bardzo rzadko | White Horse | Burst · biel |
 | | Shanghai | Shanghai: S, D i T sektora rundy w jednej Turze | XL | dobry | rzadko | White Horse | jak White Horse |
+| | Gotcha | Gotcha: rywal wraca do zera | L | zabawny | kilka na grę | Bed and breakfast | jak Bed and breakfast |
 | | Life lost | Killer, 121: utrata życia | M | zły | kilka na grę | brak | brak |
 | | Became killer | Killer: gracz zostaje killerem | M | dobry | raz na gracza | brak | brak |
 | | Attempt failed | 121: nieudane podejście | M | zły | kilka na grę | brak | brak |
@@ -189,6 +190,7 @@ Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają
 | Sector closed | **Hit** | zieleń | Run: zieleń na morskim | 1,4 s |
 | White Horse | White Horse | fiolet | Run: biel na fiolecie | 2 s |
 | Shanghai | **White Horse** | fiolet | jak White Horse (preset 123) | 2 s |
+| Gotcha | **Bed and breakfast** | magenta | jak Bed and breakfast (preset 111) | 0,8 s |
 | Life lost | **No score** | czerwień | czerwień, bez ruchu | 1 s |
 | Became killer | brak | karmin | karmin, bez ruchu | 1,4 s |
 | Attempt failed | **No score** | karmin | karmin, bez ruchu, jak Became killer | 1,4 s |

@@ -144,6 +144,7 @@ const PICKER: [string, [KindChoice, string, string][]][] = [
     ['game:marks', 'Marks in visit', 'Cricket: 5 to 9 marks in one visit'],
     ['game:whiteHorse', 'White Horse', 'Cricket: three fresh trebles'],
     ['game:shanghai', 'Shanghai', 'Shanghai: single, double and treble in one visit'],
+    ['game:gotcha', 'Gotcha', 'Gotcha: a rival is sent back to zero'],
     ['game:sectorClosed', 'Sector closed', 'Cricket'],
     ['game:becameKiller', 'Became killer', 'Killer'],
     ['game:lifeLost', 'Life lost', 'Killer'],

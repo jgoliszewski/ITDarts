@@ -14,7 +14,7 @@ describe('minigame dart tile colour', () => {
   });
 
   it('dims darts that did nothing in scoring games', () => {
-    for (const game of ['hol', '121', 'randomco']) {
+    for (const game of ['hol', '121', 'randomco', 'gotcha']) {
       expect(tone(game, true)).toBe('');
       expect(tone(game, false)).toBe('dead');
     }

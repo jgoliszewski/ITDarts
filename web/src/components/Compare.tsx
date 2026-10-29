@@ -14,6 +14,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
   switch (game) {
     case 'atc':
     case 'fullboard': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Darts', String(t.darts ?? 0)]];
+    case 'gotcha': return [['Gotchas', String(t.gotchas ?? 0), 'rivals sent back to 0']];
     case 'shanghai': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Shanghais', String(t.shanghais ?? 0)]];
     case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
     case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];

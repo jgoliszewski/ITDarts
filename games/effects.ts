@@ -6,7 +6,7 @@ import { label } from './darts.ts';
 
 export type GameEvent =
   | 'newRecord' | 'eliminated' | 'lifeLost' | 'becameKiller' | 'attemptFailed'
-  | 'whiteHorse' | 'shanghai' | 'marks' | 'sectorClosed' | 'sectorCleared' | 'targetHit';
+  | 'whiteHorse' | 'shanghai' | 'gotcha' | 'marks' | 'sectorClosed' | 'sectorCleared' | 'targetHit';
 
 export type Fact =
   | { kind: 'dart'; dart: Dart }
@@ -114,7 +114,7 @@ export function matches(t: Trigger, f: Fact): boolean {
 /** Most important first. Game events and the hub's own triggers are not in the list from the grilling, so they sit around it. */
 const ORDER = [
   'newRecord', 'matchWon', 'setWon', 'onlyCheckout', 'checkout', 'bust',
-  'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'shanghai', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
+  'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'shanghai', 'gotcha', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
   'combo', 'total', 'range', 'left', 'dart', 'hit', 'miss', 'matchStart', 'legStart', 'nextPlayer', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
 ] as const;
 
@@ -148,7 +148,7 @@ export function pickRule<R extends RuleLike>(rules: R[], cs: Change[]): R | null
 
 // ---------- validation and wording ----------
 
-const GAME_EVENTS: GameEvent[] = ['newRecord', 'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'shanghai', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit'];
+const GAME_EVENTS: GameEvent[] = ['newRecord', 'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'shanghai', 'gotcha', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit'];
 
 const isPattern = (p: unknown): p is DartPattern => {
   if (!p || typeof p !== 'object') return false;
@@ -207,6 +207,7 @@ export const GAME_EVENT_LABELS: Record<GameEvent, string> = {
   attemptFailed: 'Attempt failed',
   whiteHorse: 'White Horse',
   shanghai: 'Shanghai',
+  gotcha: 'Gotcha',
   marks: 'Marks in visit',
   sectorClosed: 'Sector closed',
   sectorCleared: 'Sector cleared',

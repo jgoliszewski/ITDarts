@@ -52,6 +52,7 @@ export const MOMENTS: Moment[] = [
   { id: 'sector-closed', name: 'Sector closed', group: 'Minigames', when: 'Cricket: sector closed', strength: 'M', mood: 'good', often: 'a few a game', sound: 'hit' },
   { id: 'white-horse', name: 'White Horse', group: 'Minigames', when: 'Cricket: three different trebles', strength: 'L', mood: 'good', often: 'very rare', sound: 'white-horse' },
   { id: 'shanghai', led: 'white-horse', name: 'Shanghai', group: 'Minigames', when: 'Shanghai: single, double and treble of the round number in one visit', strength: 'XL', mood: 'good', often: 'rare', sound: 'white-horse', note: 'Sound and LEDs of White Horse' },
+  { id: 'gotcha', led: 'bnb', name: 'Gotcha', group: 'Minigames', when: 'Gotcha: a rival is sent back to zero', strength: 'L', mood: 'fun', often: 'a few a game', sound: 'bed-and-breakfast', note: 'Sound and LEDs of Bed and breakfast' },
   { id: 'life-lost', name: 'Life lost', group: 'Minigames', when: 'Killer, 121: a life goes', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
   { id: 'killer', name: 'Became killer', group: 'Minigames', when: 'Killer: player becomes a killer', strength: 'M', mood: 'good', often: 'once per player', sound: null },
   { id: 'attempt-failed', name: 'Attempt failed', group: 'Minigames', when: '121: no checkout in the attempt', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },

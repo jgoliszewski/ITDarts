@@ -20,13 +20,18 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
   - Shanghai (`games/shanghai.ts`): 7 albo 20 rund, punkty z sektora rundy, Shanghai kończy grę od 2 graczy (solo tylko Moment), dogrywka na 20 tylko dla remisujących, do skutku; stan z logu, więc Undo i Poprawka działają. Rekord: najwyższa suma solo, osobno dla 7 i 20 rund. Statystyki: wygrane, Shanghai, hit rate;
   - nowy Moment „Shanghai” (reguła bazowa `b-shanghai`, dźwięk i ledy z White Horse) dopisany w regułach, edytorze, symulatorze ledów i [MAPA.md](MAPA.md);
   - sprawdzone testami (`games/shanghai.test.ts`) i skryptem z `dev:fake` na osobnej bazie: pełna gra na 3 graczy, dogrywka z drugą rundą, ekran wyników 1920×1080 i setup 375 px w `.scratch/shanghai-gotcha/`. Niesprawdzone: dźwięk i ledy Momentu w kiosku, `/stats` Shanghai w przeglądarce, Shanghai w dogrywce na ekranie.
+- **Gotcha** (2026-10-29, [GRY.md](GRY.md#gotcha)): `games/gotcha.ts`, grupa Versus, 2–8 graczy.
+  - Wynik od 0 w górę do 101, 201 (domyślnie) albo 301, dokładnie w cel, bez double. Bust jak w X01, dokładny cel wygrywa od razu, także w środku Tury. Na koniec Tury, jeśli wynik gracza się zmienił, rywale z takim samym wynikiem spadają do 0 (bust, 0 → 0 i Tura bez punktów nikogo nie zerują). Stan z logu, więc Undo i Poprawka działają;
+  - Ekran wyników: hero z wynikiem i „Left”, karta Tury z „Gotcha! Kuba → 0”, kafelki lotek przygaszone tylko przy buście. Caller: wynik Tury i „busted”, bez „you require” i „game shot”. Statystyki: wygrane i liczba Gotcha (każdy wyzerowany rywal to jedna), bez rekordu;
+  - nowy Moment „Gotcha” (reguła bazowa `b-gotcha`, dźwięk i ledy z Bed and breakfast) dopisany w tych samych miejscach co „Shanghai” i w [MAPA.md](MAPA.md);
+  - sprawdzone testami (`games/gotcha.test.ts`) i skryptem z `dev:fake` na osobnej bazie: Gotcha, bust bez zerowania i wygrana dokładnie w cel, zrzuty 1920×1080 w `.scratch/shanghai-gotcha/` (`gotcha-*`). Niesprawdzone: dźwięk i ledy Momentu i caller w kiosku, `/stats` Gotcha w przeglądarce, mecz na 3+ graczy na ekranie.
 - **Grilling hostingu** ([#8](https://github.com/jgoliszewski/ITDarts/issues/8), 2026-10-28): plan w [HOSTING.md](HOSTING.md), jeszcze nic nie zaimplementowane.
 - **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
   - serwer z adapterem Board Managera i SQLite;
   - Ekran wyników, Pilot, setup, Players, Board panel, `/stats`.
-- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts i Shanghai.
+- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai i Gotcha.
   - Gry dzielą log tur z `games/turns.ts`. Każda jest czystą funkcją logu, więc Poprawka i Undo działają wszędzie.
   - Gotowe są też Co-op, Ekran rekordu ze „Skip”, „New record” na ekranie wygranej, „How to play” w setupie i w menu Pilota razem z „Show on screen”, podpowiedzi „i” przy opcjach i Reroll numerów w Killer.
   - Setup pamięta opcje osobno dla każdej gry i domyślnie wybiera ostatnio graną.

@@ -952,6 +952,24 @@
         "preset": 123,
         "seconds": 2
       }
+    },
+    {
+      "id": "b-gotcha",
+      "name": "Gotcha",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "gotcha"
+        }
+      ],
+      "sounds": [
+        "builtin:bed-and-breakfast"
+      ],
+      "led": {
+        "preset": 111,
+        "seconds": 0.8
+      }
     }
   ]
 }

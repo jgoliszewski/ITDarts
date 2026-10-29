@@ -4,6 +4,7 @@ import type { CricketOptions, CricketView } from '../games/cricket.ts';
 import type { Coords, Dart } from '../games/darts.ts';
 import type { Fx } from './effects/index.ts';
 import type { MatchReport, PlayerHeat } from '../games/report.ts';
+import type { GotchaOptions, GotchaView } from '../games/gotcha.ts';
 import type { HolOptions, HolView } from '../games/hol.ts';
 import type { KillerOptions, KillerView } from '../games/killer.ts';
 import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
@@ -53,6 +54,7 @@ interface Games {
   hol: { options: HolOptions; view: HolView };
   randomco: { options: RcOptions; view: RcView };
   shanghai: { options: ShanghaiOptions; view: ShanghaiView };
+  gotcha: { options: GotchaOptions; view: GotchaView };
 }
 
 /** The office record of the variant being played, for the record screen. */
