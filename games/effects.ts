@@ -113,8 +113,8 @@ export function matches(t: Trigger, f: Fact): boolean {
 
 /** Most important first. Game events and the hub's own triggers are not in the list from the grilling, so they sit around it. */
 const ORDER = [
-  'newRecord', 'matchWon', 'setWon', 'onlyCheckout', 'checkout', 'bust',
-  'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'shanghai', 'gotcha', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
+  'newRecord', 'shanghai', 'matchWon', 'setWon', 'onlyCheckout', 'checkout', 'bust',
+  'eliminated', 'lifeLost', 'becameKiller', 'attemptFailed', 'whiteHorse', 'gotcha', 'marks', 'sectorClosed', 'sectorCleared', 'targetHit',
   'combo', 'total', 'range', 'left', 'dart', 'hit', 'miss', 'matchStart', 'legStart', 'nextPlayer', 'takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline',
 ] as const;
 

@@ -83,7 +83,7 @@ describe('shanghai', () => {
     expect(fx).toEqual([{ slot: 'V1:shanghai', fact: { kind: 'game', event: 'shanghai' } }]);
   });
 
-  it('fires the Shanghai Moment for each player once the visit is complete', () => {
+  it('fires the Shanghai Moment, and the win with it, once the third dart is in', () => {
     const before = shanghai.happenings([d('S1'), d('D1')], 2, o7);
     const after = shanghai.happenings([d('S1'), d('D1'), d('T1')], 2, o7);
     expect(changes(before, after, 'other').some(c => c.fact.kind === 'game' && c.fact.event === 'shanghai')).toBe(true);
@@ -175,6 +175,38 @@ describe('shanghai tiebreak', () => {
   });
 });
 
+describe('shanghai screen', () => {
+  it('keeps the round and sector of the last visit until Takeout', () => {
+    const third = [...visit('S1'), d('S1'), d('Miss'), d('Miss')];
+    const open = shanghai.view(third, 2, o7);
+    expect(open.round).toBe(1);
+    expect(open.sector).toBe(1);
+    expect(open.hero.caption).toBe('Round 1 / 7');
+    expect(open.visit.good).toEqual([true, false, false]);
+    const closed = shanghai.view([...third, next], 2, o7);
+    expect(closed.round).toBe(2);
+    expect(closed.sector).toBe(2);
+  });
+
+  it('keeps the last round, and everyone in, until Takeout when the round ends in a tie', () => {
+    const tie = [...blanks(6, 3), ...visit('S7'), ...visit('S7'), d('Miss'), d('Miss'), d('Miss')];
+    const open = shanghai.view(tie, 3, o7);
+    expect(open.tiebreak).toBe(false);
+    expect(open.sector).toBe(7);
+    expect(open.rows.map(r => r.out)).toEqual([false, false, false]);
+    const closed = shanghai.view([...tie, next], 3, o7);
+    expect(closed.tiebreak).toBe(true);
+    expect(closed.rows.map(r => r.out)).toEqual([false, false, true]);
+  });
+
+  it('keeps players who sat out the tiebreak greyed on the win screen', () => {
+    const tie = [...blanks(6, 3), ...visit('S7'), ...visit('S7'), ...visit('Miss')];
+    const won = shanghai.view([...tie, ...visit('S20'), ...visit('D20')], 3, o7);
+    expect(won.phase).toBe('matchWon');
+    expect(won.rows.map(r => r.out)).toEqual([false, false, true]);
+  });
+});
+
 describe('shanghai undo and fix', () => {
   it('recomputes from the log: undo takes back a win and a tiebreak', () => {
     const win = [...blank, ...visit('T1', 'T1', 'T1'), ...blank, ...visit('T2', 'T2', 'T2'), ...visit('S3', 'T3', 'D3')];
@@ -198,8 +230,7 @@ describe('shanghai undo and fix', () => {
 
   it('a fix can break a tie', () => {
     const tie = [...blanks(6, 2), ...visit('S7'), d('S7'), d('Miss'), d('Miss')];
-    const v = shanghai.view(tie, 2, o7);
-    expect(v.tiebreak).toBe(true);
+    expect(shanghai.view([...tie, next], 2, o7).tiebreak).toBe(true);
     const fixed = shanghai.view([...tie, { t: 'fix', index: 1, dart: parseDart('D7')! }], 2, o7);
     expect(fixed.phase).toBe('matchWon');
     expect(fixed.winners).toEqual([1]);

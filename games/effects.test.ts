@@ -155,6 +155,9 @@ describe('minigame occurrences', () => {
     expect(matches({ kind: 'game', event: 'whiteHorse' }, cs[1].fact)).toBe(false);
     expect(isValidTrigger({ kind: 'game', event: 'shanghai' })).toBe(true);
     expect(triggerLabel({ kind: 'game', event: 'shanghai' })).toBe('Shanghai');
+    // With rivals the win comes with the same dart: the Shanghai rule must beat Match won.
+    const rules = [rule(1, { kind: 'matchWon' }), rule(2, { kind: 'game', event: 'shanghai' })];
+    expect(pickRule(rules, cs)?.id).toBe(2);
     // S1 D1 S1 fixed to T1 on the third dart.
     const made = fired(shanghai, [d('S1'), d('D1'), d('S1'), fix(2, 'T1')], shanghai.defaults, 2);
     expect(kinds(made)).toContain('shanghai');

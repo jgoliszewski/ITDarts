@@ -37,6 +37,8 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
   const fx: Happening[] = [];
   let round = 1, queue: number[] = [], pos = 0, left = 3;
   let over = false, winner: number | null = null, byShanghai = false;
+  /** The round and who plays it, kept on screen while the last visit is open: the next round shows after Takeout. */
+  let held: { round: number; queue: number[] } | null = null;
 
   // A round: those still playing throw once, in order from the starter.
   const newRound = (who: number[]) => {
@@ -83,6 +85,7 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
     if (++pos < queue.length) continue;
 
     // End of the round.
+    held = vi === t.visits.length - 1 && !v.closed ? { round, queue: [...queue] } : null;
     const best = Math.max(...queue.map(q => points[q]));
     const leaders = queue.filter(q => points[q] === best);
     if (round >= o.rounds && leaders.length === 1) {
@@ -101,15 +104,17 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
   const shown = last && (!last.closed || over) ? visitPts.at(-1) ?? 0 : 0;
-  const tiebreak = round > o.rounds;
+  const shownRound = held && !over ? held.round : round;
+  const shownQueue = held && !over ? held.queue : queue;
+  const tiebreak = shownRound > o.rounds;
   return {
     over,
     current: open ? open.player : over ? last!.player : queue[pos],
     dartsLeft: over ? 0 : open ? left : 3,
     goods, fx, points, darts, hits, shanghais,
-    round,
-    sector: sectorOf(round, o),
-    playing: [...Array(players).keys()].map(q => !tiebreak || over || queue.includes(q)),
+    round: shownRound,
+    sector: sectorOf(shownRound, o),
+    playing: [...Array(players).keys()].map(q => !tiebreak || shownQueue.includes(q)),
     visitPoints: shown,
     winners: winner === null ? [] : [winner],
     byShanghai,

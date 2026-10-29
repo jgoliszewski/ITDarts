@@ -58,7 +58,8 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   Reguła z kilkoma wyzwalaczami dostaje priorytet najbardziej konkretnego dopasowanego wyzwalacza.
 - **Wyzwalacze spoza tej listy** dostały miejsce przy implementacji (2026-10-26), bo grilling ich nie ustawił:
   - „New record” jest przed wygranym meczem, bo pada tą samą lotką i inaczej nigdy by nie zagrał;
-  - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, killer, nieudane podejście, White Horse, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
+  - „Shanghai” też jest przed wygranym meczem, z tego samego powodu: przy 2+ graczach wygrana pada tą samą lotką, więc bez tego Moment zagrałby tylko solo;
+  - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, killer, nieudane podejście, White Horse, Gotcha, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
   - start meczu, start legu, takeout i tarcza są na samym końcu.
   - Przy remisie priorytetów gra starsza reguła.
 - **„Dowolna liczba”** w lotce i kombinacji to 1–20, bez bulla i pudła. Bull i 25 wybiera się osobno.
