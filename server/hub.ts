@@ -395,8 +395,8 @@ export class Hub {
         this.broadcast();
       }, INTRO_MS);
     }
-    // Darts still sitting in the board belong to no one.
-    void this.board.action('reset').catch(() => undefined);
+    // Detection on, and darts still sitting in the board belong to no one.
+    void this.board.prepare().catch(() => undefined);
   }
 
   /** Saves or drops the live match, with `report` also keeping its summary on screen. Returns the saved setup for a rematch. */

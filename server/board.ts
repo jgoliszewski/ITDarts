@@ -202,6 +202,12 @@ export class Board extends EventEmitter<BoardEvents> {
     }
   }
 
+  /** Before a match: start detection if it is stopped (Board Manager is often found stopped), then clear old darts. */
+  async prepare(): Promise<void> {
+    if (!this.status.detecting) await this.action('start');
+    await this.action('reset');
+  }
+
   async action(a: BoardAction): Promise<void> {
     const req: Record<BoardAction, [string, string]> = {
       reset: ['POST', '/api/reset'],
