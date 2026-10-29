@@ -13,7 +13,7 @@ export interface GotchaOptions {
 interface State extends Turn {
   totals: number[];
   gotchas: number[];
-  /** Players sent to zero by the visit on screen. */
+  /** Players sent to zero by the last visit. */
   zeroed: number[];
   /** Points of the visit on screen, 0 before its first dart or after a bust. */
   visitScore: number;
@@ -68,14 +68,16 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
   const current = !last ? t.starter! : open ? open.player : over ? last.player : (last.player + 1) % players;
-  // The zeroed list and the visit's points stay on screen only while that visit does.
+  // `zeroed` is the last visit's, also after its Takeout, until the next visit's first dart: a visit cut short by Next player
+  // is only decided then. The visit's points stay on screen only while the visit does.
   const shown = !!last && (!last.closed || over);
-  return { over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx, totals, gotchas, zeroed: shown ? zeroed : [], visitScore: shown ? visitScore : 0, winners: winner === null ? [] : [winner] };
+  return { over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx, totals, gotchas, zeroed, visitScore: shown ? visitScore : 0, winners: winner === null ? [] : [winner] };
 }
 
 export interface GotchaView extends MiniView {
   target: number;
   totals: number[];
+  /** Players sent to zero by the last visit, kept until the next visit's first dart. */
   zeroed: number[];
   visitScore: number;
 }

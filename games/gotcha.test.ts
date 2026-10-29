@@ -121,7 +121,15 @@ describe('gotcha reset', () => {
 
   it('keeps showing who was zeroed until the next visit starts', () => {
     expect(gotcha.view(landing, 2, o201).zeroed).toEqual([0]);
-    expect(gotcha.view([...landing, next], 2, o201).zeroed).toEqual([]);
+    expect(gotcha.view([...landing, next], 2, o201).zeroed).toEqual([0]);
+    expect(gotcha.view([...landing, next, d('S1')], 2, o201).zeroed).toEqual([]);
+  });
+
+  it('also reports it when Next player ends the visit before the third dart', () => {
+    const short = [...visit('T20'), d('D20'), d('S20'), next];
+    const v = gotcha.view(short, 2, o201);
+    expect(v.totals).toEqual([0, 60]);
+    expect(v.zeroed).toEqual([0]);
   });
 
   it('zeroes only a rival with exactly the same score', () => {

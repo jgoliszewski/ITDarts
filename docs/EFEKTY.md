@@ -237,7 +237,7 @@ Z implementacji (2026-10-26):
 
 Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/jgoliszewski/ITDarts/issues/5) (2026-10-26). Wszystko poza tym, co mówi sędzia (pojedyncze lotki, okrzyki, dźwięki pod konkretne wyniki), to Reguły.
 
-- **X01 i 121.** W pozostałych minigierkach caller milczy. W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
+- **X01, 121, Random Checkouts i Gotcha.** W pozostałych minigierkach caller milczy. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
 - **Co mówi** (stały zestaw, bez kategorii do wyłączania):
   - „game on” na starcie każdego legu, a przy pierwszym legu po bull-offie;
   - wynik tury, 1–180;

@@ -74,6 +74,10 @@ function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' | 
   return <TargetBoard cleared={targets.slice(0, i)} target={target} ring={ring} darts={darts} label={target === null ? 'All targets cleared' : `Target ${v.hero.big}`} />;
 }
 
+/** Gotcha: who the last visit sent to zero, on the hero once that visit's card is gone (docs/GRY.md). */
+export const gotchaNote = (m: MiniMatch): string | null =>
+  m.game === 'gotcha' && m.view.zeroed.length && m.view.visit.darts.length === 0 ? `Gotcha! ${m.view.zeroed.map(i => m.roster[i].name).join(', ')} → 0` : null;
+
 export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
@@ -99,7 +103,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
       </div>
       {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
-      {v.hero.note && <div className="hero-note">{v.hero.note}</div>}
+      {(gotchaNote(m) ?? v.hero.note) && <div className="hero-note">{gotchaNote(m) ?? v.hero.note}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
           const d = visit.darts[i];
