@@ -9,10 +9,15 @@ const PORT = Number(process.argv[2] ?? 3180);
 const app = Fastify();
 await app.register(fastifyWebsocket);
 
+// Board Manager 2.1.0 format: flat throw, camelCase events, `event` stays until the next one.
 interface Throw {
-  segment: { name: string; number: number; multiplier: number; bed: string };
-  coords: { x: number; y: number };
+  bed: string; bouncer: boolean; coordsX: number; coordsY: number; failed: boolean; method: string;
+  multiplier: number; segmentName: string; segmentNumber: number;
 }
+type Seg = Pick<Throw, 'segmentName' | 'segmentNumber' | 'multiplier' | 'bed'>;
+
+const mkThrow = (seg: Seg, c: { x: number; y: number }): Throw =>
+  ({ ...seg, bouncer: false, coordsX: c.x, coordsY: c.y, failed: false, method: 'UnanimousCam' });
 
 const sockets = new Set<WebSocket>();
 let throws: Throw[] = [];
@@ -32,20 +37,25 @@ function coordsFor(n: number, m: number) {
 }
 
 /** What Board Manager reports for a hit at normalized coords (1 = outer edge of the double ring, y up). */
-function segmentAt(x: number, y: number): Throw['segment'] {
+function segmentAt(x: number, y: number): Seg {
   const mm = Math.hypot(x, y) * 170;
   const deg = ((Math.atan2(x, y) * 180) / Math.PI + 369) % 360;
   const n = BOARD_ORDER[Math.floor(deg / 18)];
-  if (mm <= 6.35) return { name: 'Bull', number: 25, multiplier: 2, bed: 'Bull' };
-  if (mm <= 15.9) return { name: '25', number: 25, multiplier: 1, bed: 'Single' };
-  if (mm > 170) return { name: `M${n}`, number: n, multiplier: 0, bed: 'Outside' };
-  if (mm >= 162) return { name: `D${n}`, number: n, multiplier: 2, bed: 'Double' };
-  if (mm >= 99 && mm <= 107) return { name: `T${n}`, number: n, multiplier: 3, bed: 'Triple' };
-  return { name: `S${n}`, number: n, multiplier: 1, bed: mm < 99 ? 'SingleInner' : 'SingleOuter' };
+  if (mm <= 6.35) return { segmentName: 'Bull', segmentNumber: 25, multiplier: 2, bed: 'Bull' };
+  if (mm <= 15.9) return { segmentName: '25', segmentNumber: 25, multiplier: 1, bed: 'Single' };
+  if (mm > 170) return { segmentName: `M${n}`, segmentNumber: n, multiplier: 0, bed: 'Outside' };
+  if (mm >= 162) return { segmentName: `D${n}`, segmentNumber: n, multiplier: 2, bed: 'Double' };
+  if (mm >= 99 && mm <= 107) return { segmentName: `T${n}`, segmentNumber: n, multiplier: 3, bed: 'Triple' };
+  return { segmentName: `S${n}`, segmentNumber: n, multiplier: 1, bed: mm < 99 ? 'SingleInner' : 'SingleOuter' };
 }
 
-function send(event: string) {
-  const msg = JSON.stringify({ type: 'state', data: { connected: true, running, status: running ? 'Throw' : 'Stopped', event, numThrows: throws.length, throws } });
+let event = 'started';
+let takeoutBusy = false;
+
+function send(e?: string) {
+  if (e) event = e; // sticky, like the real one
+  const status = !running ? 'stopped' : takeoutBusy ? 'takeoutInProgress' : throws.length >= 3 ? 'takeout' : 'throw';
+  const msg = JSON.stringify({ type: 'state', data: { connected: true, running, status, event, throws } });
   for (const ws of sockets) ws.send(msg);
 }
 
@@ -53,13 +63,13 @@ app.get('/api/events', { websocket: true }, socket => {
   if (offline) return socket.close();
   sockets.add(socket);
   socket.on('close', () => sockets.delete(socket));
-  send('Connected');
+  send();
 });
 
-app.get('/api/version', async () => '2.0.2-fake');
-app.post('/api/reset', async () => { throws = []; send('Manual reset'); return { ok: true }; });
-app.put('/api/start', async () => { running = true; send('Started'); return { ok: true }; });
-app.put('/api/stop', async () => { running = false; send('Stopped'); return { ok: true }; });
+app.get('/api/version', async () => '2.1.0-fake');
+app.post('/api/reset', async () => { throws = []; send('manualReset'); return { ok: true }; });
+app.put('/api/start', async () => { running = true; send('started'); return { ok: true }; });
+app.put('/api/stop', async () => { running = false; send('stopped'); return { ok: true }; });
 app.post('/api/config/calibration/auto', async () => { await new Promise(r => setTimeout(r, 3000)); return { ok: true }; });
 app.post('/api/restart', async () => {
   offline = true;
@@ -73,22 +83,24 @@ app.post('/api/restart', async () => {
 app.post<{ Querystring: { d?: string; x?: string; y?: string } }>('/fake/throw', async (req, reply) => {
   const x = Number(req.query.x), y = Number(req.query.y);
   if (req.query.x !== undefined && Number.isFinite(x) && Number.isFinite(y)) {
-    throws.push({ segment: segmentAt(x, y), coords: { x, y } });
-    send('Throw detected');
-    return { ok: true, throws: throws.length, segment: throws.at(-1)!.segment.name };
+    throws.push(mkThrow(segmentAt(x, y), { x, y }));
+    send('throwDetected');
+    return { ok: true, throws: throws.length, segment: throws.at(-1)!.segmentName };
   }
   const d = parseDart(req.query.d ?? '');
   if (!d) return reply.code(400).send({ error: 'Use e.g. ?d=T20' });
   const name = d.n === 0 ? 'Miss' : d.n === 25 ? (d.m === 2 ? 'Bull' : '25') : `${'SDT'[d.m - 1]}${d.n}`;
-  throws.push({ segment: { name, number: d.n, multiplier: d.m, bed: name }, coords: coordsFor(d.n, d.m) });
-  send('Throw detected');
+  throws.push(mkThrow({ segmentName: name, segmentNumber: d.n, multiplier: d.m, bed: name }, coordsFor(d.n, d.m)));
+  send('throwDetected');
   return { ok: true, throws: throws.length };
 });
-app.post('/fake/takeout-start', async () => { send('Takeout started'); return { ok: true }; });
-app.post('/fake/takeout-finish', async () => { throws = []; send('Takeout finished'); return { ok: true }; });
+const takeoutStart = () => { takeoutBusy = true; send('takeoutStarted'); };
+const takeoutFinish = () => { takeoutBusy = false; throws = []; send('takeoutFinished'); };
+app.post('/fake/takeout-start', async () => { takeoutStart(); return { ok: true }; });
+app.post('/fake/takeout-finish', async () => { takeoutFinish(); return { ok: true }; });
 app.post('/fake/takeout', async () => {
-  send('Takeout started');
-  setTimeout(() => { throws = []; send('Takeout finished'); }, 1500);
+  takeoutStart();
+  setTimeout(takeoutFinish, 1500);
   return { ok: true };
 });
 

@@ -10,9 +10,15 @@ export interface BoardEvents {
   status: [];
 }
 
+/** A throw as Board Manager sends it: nested in 2.0.2, flat in 2.1.0 (`bouncer` and `failed` are ignored). */
 interface BmThrow {
   segment?: { number?: number; multiplier?: number; name?: string };
   coords?: { x: number; y: number };
+  segmentNumber?: number;
+  multiplier?: number;
+  segmentName?: string;
+  coordsX?: number;
+  coordsY?: number;
 }
 
 interface BmState {
@@ -26,8 +32,8 @@ const RECONNECT_MS = 2000;
 const LOG_SIZE = 30;
 
 export function toDart(t: BmThrow): Dart {
-  const n = t.segment?.number ?? 0;
-  const m = t.segment?.multiplier ?? 1;
+  const n = t.segment?.number ?? t.segmentNumber ?? 0;
+  const m = t.segment?.multiplier ?? t.multiplier ?? 1;
   if (n === 0 || m === 0) return { n: 0, m: 1 };
   if (n === 25) return { n: 25, m: m >= 2 ? 2 : 1 };
   return { n, m: (m >= 1 && m <= 3 ? m : 1) as 1 | 2 | 3 };
@@ -37,6 +43,8 @@ export class Board extends EventEmitter<BoardEvents> {
   readonly status: BoardStatus;
   private ws: WebSocket | null = null;
   private processed = 0;
+  /** `event` of the previous frame: it is sticky in 2.1.0, so takeout events count only when it changes. */
+  private lastEvent = '';
   /** After (re)connecting, the first state only sets the baseline: darts already counted are not replayed. */
   private synced = false;
   /** `processed` is still right after a reconnect; only the first connection to a board has to ask the hub. */
@@ -90,6 +98,7 @@ export class Board extends EventEmitter<BoardEvents> {
     ws.onopen = () => {
       this.status.connected = true;
       this.synced = false;
+      this.lastEvent = '';
       this.event('Connected');
       void this.fetchVersion();
     };
@@ -141,17 +150,19 @@ export class Board extends EventEmitter<BoardEvents> {
     if (this.status.detecting !== detecting) this.event(this.status.detecting ? 'Detection started' : 'Detection stopped');
 
     const ev = s.event ?? '';
-    if (/takeout started/i.test(ev) && !this.status.takeout.active) {
+    const changed = ev !== this.lastEvent;
+    this.lastEvent = ev;
+    if (changed && /takeout ?started/i.test(ev) && !this.status.takeout.active) {
       this.status.takeout = { active: true, since: Date.now() };
       this.event('Takeout started');
       this.emit('takeoutStarted');
     }
-    if (/takeout finished/i.test(ev)) {
+    if (changed && /takeout ?finished/i.test(ev)) {
       this.processed = 0;
       this.status.takeout = { active: false, since: null };
       this.event('Takeout finished');
       this.emit('takeoutFinished');
-      return;
+      // No return: the first dart after a takeout arrives in a frame that still says "takeoutFinished".
     }
     if (!this.synced) {
       this.synced = true;
@@ -164,12 +175,13 @@ export class Board extends EventEmitter<BoardEvents> {
     for (; this.processed < throws.length; this.processed++) {
       const t = throws[this.processed];
       const dart = toDart(t);
-      const coords = t.coords && Number.isFinite(t.coords.x) && Number.isFinite(t.coords.y) ? { x: t.coords.x, y: t.coords.y } : undefined;
-      this.event(`Throw detected · ${t.segment?.name ?? ''}`.trim(), coords);
+      const x = t.coords?.x ?? t.coordsX, y = t.coords?.y ?? t.coordsY;
+      const coords = typeof x === 'number' && typeof y === 'number' && Number.isFinite(x) && Number.isFinite(y) ? { x, y } : undefined;
+      this.event(`Throw detected · ${t.segment?.name ?? t.segmentName ?? ''}`.trim(), coords);
       this.emit('throw', dart, coords);
     }
     // Reset clears the board, also from Board Manager's own page, so a takeout it never finished ends here.
-    if (/manual reset/i.test(ev)) {
+    if (changed && /manual ?reset/i.test(ev)) {
       this.status.takeout = { active: false, since: null };
       this.event('Manual reset');
     }
@@ -204,7 +216,7 @@ export class Board extends EventEmitter<BoardEvents> {
 
   /**
    * Before a match: start detection and clear old darts. Always both, since the board often does not detect at the
-   * start of a match even though it looks like it does; a second start is harmless (Board Manager 2.0.2 answers 200).
+   * start of a match even though it looks like it does; a second start is harmless (Board Manager answers 200).
    */
   async prepare(): Promise<void> {
     await this.action('start');

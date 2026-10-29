@@ -120,6 +120,7 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 - [x] `ws://BOARD/api/events` wysyła `{type:'state', data:{throws, event, status}}`, rzut to `{segment:{name, number, multiplier, bed}, coords:{x, y}}`, coords: 1 = 170 mm, y w górę. Poza tarczą: `bed: 'Outside'`, `multiplier: 0`.
 - [x] Takeout w polu `event`: „Takeout started”, „Takeout finished”. Po 3 lotkach `status: 'Takeout'`.
 - [x] `GET /api/version` zwraca `2.0.2`.
+- [x] Od 2026-10-29 tarcza ma Board Managera 2.1.0, format websocketu sprawdzony podsłuchem 2.1.0: płaski rzut `{segmentNumber, multiplier, segmentName, coordsX, coordsY, bed, bouncer, failed, method}`, zdarzenia camelCase (`throwDetected`, `takeoutStarted`, `takeoutFinished`), `status` `throw`/`takeout`/`takeoutInProgress`, a `event` jest lepki (pierwsza lotka po takeoucie przychodzi jeszcze z `takeoutFinished`). Adapter czyta oba formaty (2.0.2 i 2.1.0); `bouncer` i `failed` ignorujemy, nazwa ręcznego resetu w 2.1.0 niepotwierdzona.
 - [ ] Bull-off na prawdziwej tarczy: kolejność, takeout po lotce, odległości w mm zgodne z rzeczywistością.
 - [ ] Pełny mecz X01 i jedna minigierka na prawdziwej tarczy.
 - [ ] Reset, start i stop detekcji, kalibracja i restart przez API.
