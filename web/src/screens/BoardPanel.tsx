@@ -137,7 +137,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
         </div>
       </section>
       <button className="btn" disabled={!b.connected} onClick={() => void act({ type: 'boardTest', on: true })}>Test board</button>
-      {!b.fake && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${b.address}/`} target="_blank" rel="noreferrer">Open Board Manager</a>}
+      {!b.fake && !s.you.isLocal && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${b.address}/`} target="_blank" rel="noreferrer">Open Board Manager</a>}
       <section className="box">
         <div className="option-row">
           <div>
@@ -146,7 +146,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
           </div>
           <Switch on={b.fake} label="Fake board" onChange={on => void act({ type: 'fakeBoard', on })} />
         </div>
-        {b.fake && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${location.hostname}:${b.address.split(':')[1]}/`} target="_blank" rel="noreferrer">Open fake board</a>}
+        {b.fake && !s.you.isLocal && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${location.hostname}:${b.address.split(':')[1]}/`} target="_blank" rel="noreferrer">Open fake board</a>}
       </section>
       {controls}
       {!wide && (
