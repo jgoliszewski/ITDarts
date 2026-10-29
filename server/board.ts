@@ -167,7 +167,10 @@ export class Board extends EventEmitter<BoardEvents> {
     if (!this.synced) {
       this.synced = true;
       // The hub only knows the current visit, so darts left in the board after "Next player" would come back.
-      // ponytail: a takeout during the disconnect is invisible here; new darts up to the old count are then skipped.
+      // ponytail: a takeout during the disconnect is seen only if the first frame after the reconnect still carries
+      // the sticky takeoutFinished (the real 2.1.0 sends no state on connect). If it is already throwDetected, no
+      // takeoutFinished fires and new darts up to the old count are skipped. A sticky takeoutFinished right after a
+      // reconnect also fires once more for a takeout already handled.
       this.processed = Math.min(throws.length, this.known ? this.processed : this.countedOnBoard());
       this.known = true;
     }

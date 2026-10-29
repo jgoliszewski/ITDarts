@@ -57,6 +57,36 @@ describe('Board', () => {
     expect(log).toEqual(['20x3', 'started', 'finished']);
   });
 
+  it('treats a sticky takeoutFinished after a reconnect as new and counts its dart once', () => {
+    let ws: any;
+    vi.stubGlobal('WebSocket', class { constructor() { ws = this; } close() {} });
+    vi.stubGlobal('fetch', async () => new Response(''));
+    const board = new Board('localhost:1');
+    const log: string[] = [];
+    board.on('throw', d => log.push(`${d.n}x${d.m}`));
+    board.on('takeoutFinished', () => log.push('finished'));
+    board.countedOnBoard = () => 0;
+    board.start();
+    ws.onopen();
+    const d = { segmentNumber: 7, multiplier: 1, segmentName: 'S7', coordsX: 0.1, coordsY: 0.2 };
+    const state = (event: string, throws: object[]) => (board as any).onState({ event, throws });
+    state('takeoutFinished', []);
+    ws.onopen(); // reconnect: the previous event is forgotten
+    state('takeoutFinished', [d]);
+    state('throwDetected', [d]);
+    expect(log).toEqual(['finished', 'finished', '7x1']);
+    board.stop();
+  });
+
+  it('ends a takeout on manualReset', () => {
+    const board = new Board('localhost:1');
+    const state = (event: string) => (board as any).onState({ event, throws: [] });
+    state('takeoutStarted');
+    expect(board.status.takeout.active).toBe(true);
+    state('manualReset');
+    expect(board.status.takeout.active).toBe(false);
+  });
+
   afterEach(() => vi.unstubAllGlobals());
 
   it('starts detection before a match, even when it looks on, then clears the board', async () => {

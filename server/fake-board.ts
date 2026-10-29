@@ -59,6 +59,15 @@ function send(e?: string) {
   for (const ws of sockets) ws.send(msg);
 }
 
+/** Like the real board: the first dart after a takeout comes in a frame that still says takeoutFinished, then in throwDetected. */
+function addThrow(t: Throw) {
+  throws.push(t);
+  if (event === 'takeoutFinished') send();
+  send('throwDetected');
+}
+
+let takeoutTimer: NodeJS.Timeout | undefined;
+
 app.get('/api/events', { websocket: true }, socket => {
   if (offline) return socket.close();
   sockets.add(socket);
@@ -67,7 +76,7 @@ app.get('/api/events', { websocket: true }, socket => {
 });
 
 app.get('/api/version', async () => '2.1.0-fake');
-app.post('/api/reset', async () => { throws = []; send('manualReset'); return { ok: true }; });
+app.post('/api/reset', async () => { throws = []; takeoutBusy = false; clearTimeout(takeoutTimer); send('manualReset'); return { ok: true }; });
 app.put('/api/start', async () => { running = true; send('started'); return { ok: true }; });
 app.put('/api/stop', async () => { running = false; send('stopped'); return { ok: true }; });
 app.post('/api/config/calibration/auto', async () => { await new Promise(r => setTimeout(r, 3000)); return { ok: true }; });
@@ -83,15 +92,13 @@ app.post('/api/restart', async () => {
 app.post<{ Querystring: { d?: string; x?: string; y?: string } }>('/fake/throw', async (req, reply) => {
   const x = Number(req.query.x), y = Number(req.query.y);
   if (req.query.x !== undefined && Number.isFinite(x) && Number.isFinite(y)) {
-    throws.push(mkThrow(segmentAt(x, y), { x, y }));
-    send('throwDetected');
+    addThrow(mkThrow(segmentAt(x, y), { x, y }));
     return { ok: true, throws: throws.length, segment: throws.at(-1)!.segmentName };
   }
   const d = parseDart(req.query.d ?? '');
   if (!d) return reply.code(400).send({ error: 'Use e.g. ?d=T20' });
   const name = d.n === 0 ? 'Miss' : d.n === 25 ? (d.m === 2 ? 'Bull' : '25') : `${'SDT'[d.m - 1]}${d.n}`;
-  throws.push(mkThrow({ segmentName: name, segmentNumber: d.n, multiplier: d.m, bed: name }, coordsFor(d.n, d.m)));
-  send('throwDetected');
+  addThrow(mkThrow({ segmentName: name, segmentNumber: d.n, multiplier: d.m, bed: name }, coordsFor(d.n, d.m)));
   return { ok: true, throws: throws.length };
 });
 const takeoutStart = () => { takeoutBusy = true; send('takeoutStarted'); };
@@ -100,7 +107,7 @@ app.post('/fake/takeout-start', async () => { takeoutStart(); return { ok: true 
 app.post('/fake/takeout-finish', async () => { takeoutFinish(); return { ok: true }; });
 app.post('/fake/takeout', async () => {
   takeoutStart();
-  setTimeout(takeoutFinish, 1500);
+  takeoutTimer = setTimeout(takeoutFinish, 1500);
   return { ok: true };
 });
 
