@@ -36,7 +36,7 @@ const SEGMENTS: Seg[] = [{ start: 0, stop: SPLIT_AT }, { start: SPLIT_AT, stop: 
 let current: { looks: (Look | null)[]; dur: number; start: number; seed: number } | null = null;
 
 function play(m: Moment, withSound = true) {
-  const look = lookOf(m.id);
+  const look = lookOf(m.led ?? m.id);
   if (look) {
     const { board, wall } = rings(look);
     const looks = BOARD_SEGMENT === 0 ? [board, wall] : [wall, board];
@@ -44,7 +44,7 @@ function play(m: Moment, withSound = true) {
   } else current = null;
   if (withSound && prefs.sound && m.sound) builtinSound(m.sound, prefs.volume);
   $('#now').textContent = look ? `${m.name} — ${describe(look)}` : `${m.name}: no LEDs`;
-  const led = LEDS[m.id as LedKey];
+  const led = LEDS[(m.led ?? m.id) as LedKey];
   if (prefs.live && led) toRing(led.preset, effectSeconds(led.effect) || 4);
 }
 
@@ -242,7 +242,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string,
 }
 
 function swatch(m: Moment) {
-  const e = lookOf(m.id), l = e && (rings(e).board ?? rings(e).wall);
+  const e = lookOf(m.led ?? m.id), l = e && (rings(e).board ?? rings(e).wall);
   return !l ? 'transparent' : l.color === 'rainbow' ? 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' : `rgb(${l.color.join(',')})`;
 }
 

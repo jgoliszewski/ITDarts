@@ -88,6 +88,7 @@ export const BASE_RULES: BaseRule[] = [
   { id: 'b-game-on', name: 'Game on', triggers: [{ kind: 'matchStart' }], sound: builtinId('game-on'), led: 'game-on' },
   { id: 'b-new-record', name: 'New record', triggers: [{ kind: 'game', event: 'newRecord' }], sound: builtinId('new-record'), led: 'new-record' },
   { id: 'b-white-horse', name: 'White Horse', triggers: [{ kind: 'game', event: 'whiteHorse' }], sound: builtinId('white-horse'), led: 'white-horse' },
+  { id: 'b-shanghai', name: 'Shanghai', triggers: [{ kind: 'game', event: 'shanghai' }], sound: builtinId('white-horse'), led: 'white-horse' },
   { id: 'b-player-out', name: 'Player out', triggers: [{ kind: 'game', event: 'eliminated' }], sound: builtinId('player-out'), led: 'player-out' },
   // Added 2026-10-28 (docs/MAPA.md): the minigame events, Leg start, and the sounds that were hard-coded before.
   { id: 'b-life-lost', name: 'Life lost', triggers: [{ kind: 'game', event: 'lifeLost' }], sound: builtinId('no-score'), led: 'life-lost' },

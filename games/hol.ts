@@ -152,6 +152,7 @@ export const hol: GameModule<HolOptions, HolView> = {
   id: 'hol',
   name: 'Higher or Lower',
   blurb: 'Throw above or below the red range. It only grows.',
+  group: 'versus',
   minPlayers: 2,
   defaults: DEFAULTS,
   options: OPTIONS,

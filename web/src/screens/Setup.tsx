@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
-import { GAMES, GAME_IDS, MAX_PLAYERS } from '../../../games/index.ts';
+import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../../../games/index.ts';
 import type { RcOptions } from '../../../games/randomco.ts';
 import { RANGE_PRESETS, highestNumber, lowestNumber } from '../../../games/randomco.ts';
 import type { OptionDef } from '../../../games/turns.ts';
@@ -204,8 +204,8 @@ function MiniSection({ game, options, players, setOptions: save }: { game: GameI
 }
 
 export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
-  const [first] = useState(lastGame);
-  const [game, setGame] = useState<GameId>(first);
+  // The last game played is preselected; the tiles keep their fixed groups.
+  const [game, setGame] = useState<GameId>(lastGame);
   const [allOptions, setAllOptions] = useState<Partial<Record<GameId, Record<string, unknown>>>>({});
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [adding, setAdding] = useState(false);
@@ -223,8 +223,6 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
   const active = s.players.filter(p => !p.archived && !inRoster.has(p.id));
   const recent = s.recentPlayerIds.map(id => active.find(p => p.id === id)).filter(p => !!p);
   const others = active.filter(p => !s.recentPlayerIds.includes(p.id));
-  // The last game played comes first; the order stays put while this screen is open.
-  const tiles = [first, ...GAME_IDS.filter(id => id !== first)];
 
   const add = (r: RosterEntry) => {
     if (roster.length >= MAX_PLAYERS) return toast({ text: `At most ${MAX_PLAYERS} players`, kind: 'error' });
@@ -280,18 +278,23 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
       <div className="phone-body" style={{ gap: 24 }}>
         <section className="section setup-games">
           <div className="caps">Game</div>
-          <div className="game-grid">
-            {tiles.map(id => {
-              const t = GAMES[id];
-              return (
-                <button key={id} className={`game-tile ${id === game ? 'on' : ''}`} aria-pressed={id === game} onClick={() => setGame(id)}>
-                  <b>{t.name}</b>
-                  <span>{t.blurb}</span>
-                  <small>{t.minPlayers}–{MAX_PLAYERS} players</small>
-                </button>
-              );
-            })}
-          </div>
+          {GAME_GROUPS.map(({ group, title, ids }) => (
+            <div key={group} className="game-group">
+              <h3 className="caps game-group-title">{title}</h3>
+              <div className="game-grid">
+                {ids.map(id => {
+                  const t = GAMES[id];
+                  return (
+                    <button key={id} className={`game-tile ${id === game ? 'on' : ''}`} aria-pressed={id === game} onClick={() => setGame(id)}>
+                      <b>{t.name}</b>
+                      <span>{t.blurb}</span>
+                      <small>{t.minPlayers}–{MAX_PLAYERS} players</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </section>
 
         <section className="section setup-options">

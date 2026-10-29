@@ -58,6 +58,7 @@ export const x01: GameModule<X01Options, X01View> = {
   id: 'x01',
   name: 'X01',
   blurb: 'Count down from 501 and finish on a double.',
+  group: 'classic',
   minPlayers: 1,
   defaults: DEFAULT_OPTIONS,
   options: X01_OPTIONS,

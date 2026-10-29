@@ -15,16 +15,21 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
   - „End match” z „Save” dopisuje do logu `{ t: 'end' }`: gra kończy się jak wygrana (najwięcej punktów, remis dzielą, bez punktów i w Co-op bez zwycięzcy), ekran wygranej ma „Summary”, Undo cofa koniec.
   - Statystyki gracza: checkouty, lotki na checkout (własne lotki zamykającego przy tej liczbie) i % w pierwszej Turze.
   - Sprawdzone: testy `games/randomco.test.ts` i ATC w `games/minigames.test.ts`; skryptem przez websocket z symulatorem tarczy na osobnej bazie: start, bust, checkout z punktem i nową liczbą, Undo przywraca liczbę i ponowny checkout daje tę samą następną, End match z Save i ekran wygranej, Summary i zapis meczu, ATC Random. Zrzuty w `.scratch/random-checkouts/`. Niesprawdzone: caller na żywo w kiosku i `/stats` dla nowej gry w przeglądarce.
+- **Grupy gier i Shanghai** (2026-10-29, [GRY.md](GRY.md#shanghai)):
+  - kafelki w setupie i wybór gry na `/stats` są w grupach Classic, Practice i Versus w stałej kolejności (`group` w module gry, `GAME_GROUPS` w `games/index.ts`); ostatnio grana gra jest tylko domyślnie wybrana;
+  - Shanghai (`games/shanghai.ts`): 7 albo 20 rund, punkty z sektora rundy, Shanghai kończy grę od 2 graczy (solo tylko Moment), dogrywka na 20 tylko dla remisujących, do skutku; stan z logu, więc Undo i Poprawka działają. Rekord: najwyższa suma solo, osobno dla 7 i 20 rund. Statystyki: wygrane, Shanghai, hit rate;
+  - nowy Moment „Shanghai” (reguła bazowa `b-shanghai`, dźwięk i ledy z White Horse) dopisany w regułach, edytorze, symulatorze ledów i [MAPA.md](MAPA.md);
+  - sprawdzone testami (`games/shanghai.test.ts`) i skryptem z `dev:fake` na osobnej bazie: pełna gra na 3 graczy, dogrywka z drugą rundą, ekran wyników 1920×1080 i setup 375 px w `.scratch/shanghai-gotcha/`. Niesprawdzone: dźwięk i ledy Momentu w kiosku, `/stats` Shanghai w przeglądarce, Shanghai w dogrywce na ekranie.
 - **Grilling hostingu** ([#8](https://github.com/jgoliszewski/ITDarts/issues/8), 2026-10-28): plan w [HOSTING.md](HOSTING.md), jeszcze nic nie zaimplementowane.
 - **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
   - serwer z adapterem Board Managera i SQLite;
   - Ekran wyników, Pilot, setup, Players, Board panel, `/stats`.
-- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower i Random Checkouts.
+- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts i Shanghai.
   - Gry dzielą log tur z `games/turns.ts`. Każda jest czystą funkcją logu, więc Poprawka i Undo działają wszędzie.
   - Gotowe są też Co-op, Ekran rekordu ze „Skip”, „New record” na ekranie wygranej, „How to play” w setupie i w menu Pilota razem z „Show on screen”, podpowiedzi „i” przy opcjach i Reroll numerów w Killer.
-  - Setup pamięta opcje osobno dla każdej gry i stawia ostatnio graną grę na początku listy.
+  - Setup pamięta opcje osobno dla każdej gry i domyślnie wybiera ostatnio graną.
   - Migracja 2 bazy dodaje `matches.variant` oraz `match_players.score` i `stats`.
   - `/stats` ma wybór gry, top 10 per wariant i statystyki gracza w danej grze. Profil X01, winrate i head-to-head liczą tylko X01.
 

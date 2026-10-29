@@ -205,6 +205,7 @@ export function verdictOf(fx: Happening[], vi: number): Verdict | null {
   if (game('attemptFailed')) return { text: 'Life lost', tone: 'bad' };
   if (mine.some(f => f.kind === 'bust')) return { text: 'Bust', tone: 'bad' };
   if (game('eliminated')) return { text: 'Out', tone: 'bad' };
+  if (game('shanghai')) return { text: 'Shanghai', tone: 'good' };
   const marks = game('marks');
   if (marks?.kind === 'game') return { text: marks.whiteHorse ? 'White Horse' : `${marks.marks} marks`, tone: 'good' };
   return null;
@@ -266,7 +267,10 @@ export function nextIn(p: number, players: number, out: (q: number) => boolean =
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai';
+
+/** The setup and /stats tiles come in these groups, in this order (docs/GRY.md, Setup na Pilocie). */
+export type GameGroup = 'classic' | 'practice' | 'versus';
 
 /** One setup option. The same text feeds the “i” hint and the Options part of “How to play”. */
 export interface OptionDef<O> {
@@ -296,6 +300,7 @@ export interface GameModule<O = any, V = any> {
   id: GameId;
   name: string;
   blurb: string;
+  group: GameGroup;
   minPlayers: number;
   defaults: O;
   options: OptionDef<O>[];
@@ -358,7 +363,7 @@ export const livesLabel = (n: number) => `${n} ${n === 1 ? 'life' : 'lives'}`;
 export function dartCue(game: GameId, view: { phase: string; visit?: MiniView['visit'] }, before: number): 'hit' | 'miss' | null {
   const v = view.visit;
   if (game === 'x01' || view.phase === 'bulloff' || !v || v.darts.length !== before + 1) return null;
-  if (game === 'atc' || game === 'fullboard' || game === 'cricket') return v.good.at(-1) ? 'hit' : 'miss';
+  if (game === 'atc' || game === 'fullboard' || game === 'cricket' || game === 'shanghai') return v.good.at(-1) ? 'hit' : 'miss';
   if (game === 'hol' && v.dartsLeft === 0) return v.verdict?.tone === 'bad' ? 'miss' : 'hit';
   return null;
 }

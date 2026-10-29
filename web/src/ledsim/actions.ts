@@ -8,6 +8,8 @@ export type Mood = 'neutral' | 'good' | 'bad' | 'fun';
 export interface Moment {
   /** The LED key in leds.ts, where there is one. */
   id: string;
+  /** The LED look when it is borrowed from another Moment (Shanghai plays White Horse's). */
+  led?: LedKey;
   name: string;
   group: string;
   /** When it plays. */
@@ -45,10 +47,11 @@ export const MOMENTS: Moment[] = [
   { id: 'set-won', name: 'Set won', group: 'Leg end', when: 'Set won', strength: 'L', mood: 'good', often: 'matches on sets', sound: 'set-won' },
   { id: 'match-won', name: 'Match won', group: 'Leg end', when: 'Match won', strength: 'XL', mood: 'good', often: 'once a match', sound: 'match-won' },
 
-  { id: 'hit', name: 'Hit', group: 'Minigames', when: 'A dart that counts (ATC, Full Board, Cricket, Higher or Lower)', strength: 'S', mood: 'good', often: 'every dart', sound: 'hit' },
+  { id: 'hit', name: 'Hit', group: 'Minigames', when: 'A dart that counts (ATC, Full Board, Cricket, Shanghai, Higher or Lower)', strength: 'S', mood: 'good', often: 'every dart', sound: 'hit' },
   { id: 'miss', name: 'Miss', group: 'Minigames', when: 'A dart that does not count', strength: 'S', mood: 'bad', often: 'every dart', sound: 'miss' },
   { id: 'sector-closed', name: 'Sector closed', group: 'Minigames', when: 'Cricket: sector closed', strength: 'M', mood: 'good', often: 'a few a game', sound: 'hit' },
   { id: 'white-horse', name: 'White Horse', group: 'Minigames', when: 'Cricket: three different trebles', strength: 'L', mood: 'good', often: 'very rare', sound: 'white-horse' },
+  { id: 'shanghai', led: 'white-horse', name: 'Shanghai', group: 'Minigames', when: 'Shanghai: single, double and treble of the round number in one visit', strength: 'XL', mood: 'good', often: 'rare', sound: 'white-horse', note: 'Sound and LEDs of White Horse' },
   { id: 'life-lost', name: 'Life lost', group: 'Minigames', when: 'Killer, 121: a life goes', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
   { id: 'killer', name: 'Became killer', group: 'Minigames', when: 'Killer: player becomes a killer', strength: 'M', mood: 'good', often: 'once per player', sound: null },
   { id: 'attempt-failed', name: 'Attempt failed', group: 'Minigames', when: '121: no checkout in the attempt', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },

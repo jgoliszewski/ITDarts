@@ -167,6 +167,7 @@ export const oneTwentyOne: GameModule<O121, View121> = {
   id: '121',
   name: '121',
   blurb: 'Check out 121, then 122, and on. Solo or together.',
+  group: 'practice',
   minPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,

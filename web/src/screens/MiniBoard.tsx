@@ -56,11 +56,13 @@ function AttemptTile({ left, of }: { left: number; of: number }) {
 }
 
 /** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
-export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: 'atc' | 'fullboard' }> => m.game === 'atc' || m.game === 'fullboard';
+export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: 'atc' | 'fullboard' | 'shanghai' }> => m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai';
 
-function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' }> }) {
+function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' | 'shanghai' }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i] }));
+  // Shanghai lights the round's sector; nothing is crossed off.
+  if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
   const ring = m.options.target === 'doubles' ? 2 : m.options.target === 'trebles' ? 3 : null;
   if (m.game === 'fullboard') {
     const cleared = m.view.cleared[v.current];

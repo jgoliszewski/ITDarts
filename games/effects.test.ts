@@ -6,6 +6,7 @@ import { changes, isValidTrigger, matches, pickRule, triggerLabel } from './effe
 import type { GameModule } from './index.ts';
 import { killer } from './killer.ts';
 import { atc } from './race.ts';
+import { shanghai } from './shanghai.ts';
 import type { X01Options } from './x01/index.ts';
 import { x01 } from './x01/index.ts';
 
@@ -145,6 +146,18 @@ describe('minigame occurrences', () => {
     expect(kinds(cs)).toEqual(['dart', 'sectorClosed', 'marks']);
     expect(cs[2].fact).toMatchObject({ marks: 9, whiteHorse: true });
     expect(matches({ kind: 'game', event: 'whiteHorse' }, cs[2].fact)).toBe(true);
+  });
+
+  it('fires the Shanghai Moment, visit-level, so a fix can make one', () => {
+    const cs = fired(shanghai, [d('S1'), d('D1'), d('T1')], shanghai.defaults, 2);
+    expect(kinds(cs)).toEqual(['dart', 'shanghai', 'matchWon']);
+    expect(matches({ kind: 'game', event: 'shanghai' }, cs[1].fact)).toBe(true);
+    expect(matches({ kind: 'game', event: 'whiteHorse' }, cs[1].fact)).toBe(false);
+    expect(isValidTrigger({ kind: 'game', event: 'shanghai' })).toBe(true);
+    expect(triggerLabel({ kind: 'game', event: 'shanghai' })).toBe('Shanghai');
+    // S1 D1 S1 fixed to T1 on the third dart.
+    const made = fired(shanghai, [d('S1'), d('D1'), d('S1'), fix(2, 'T1')], shanghai.defaults, 2);
+    expect(kinds(made)).toContain('shanghai');
   });
 
   it('fires killer, lives and elimination in Killer', () => {

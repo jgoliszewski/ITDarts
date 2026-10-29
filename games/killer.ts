@@ -126,6 +126,7 @@ export const killer: GameModule<KillerOptions, KillerView> = {
   id: 'killer',
   name: 'Killer',
   blurb: 'Become a killer on your double, then take lives.',
+  group: 'versus',
   minPlayers: 2,
   defaults: DEFAULTS,
   options: OPTIONS,

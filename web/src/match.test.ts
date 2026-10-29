@@ -7,7 +7,7 @@ describe('minigame dart tile colour', () => {
   const tone = (game: string, good: boolean) => dartTone({ game } as MiniMatch, good);
 
   it('shows hits green and misses red in games counted in hits', () => {
-    for (const game of ['atc', 'cricket', 'fullboard']) {
+    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai']) {
       expect(tone(game, true)).toBe('hit');
       expect(tone(game, false)).toBe('miss');
     }

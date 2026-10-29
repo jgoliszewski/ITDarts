@@ -15,6 +15,10 @@ describe('dart sounds', () => {
     expect(cue('cricket', 'T20')).toBe('hit');
     expect(cue('cricket', 'S14')).toBe('miss');
   });
+  it('sounds every dart in Shanghai: a hit on the round number, a miss elsewhere', () => {
+    expect(cue('shanghai', 'D1')).toBe('hit');
+    expect(cue('shanghai', 'D1', 'S2')).toBe('miss');
+  });
   it('sounds Higher or Lower once, when the visit is decided', () => {
     expect(cue('hol', 'S20', 'S20')).toBeNull();
     expect(cue('hol', 'S20', 'S20', 'S20')).toBe('hit');

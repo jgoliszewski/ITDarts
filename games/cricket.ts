@@ -128,6 +128,7 @@ export const cricket: GameModule<CricketOptions, CricketView> = {
   id: 'cricket',
   name: 'Cricket',
   blurb: 'Close 15 to 20 and the bull, score on open ones.',
+  group: 'versus',
   minPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,

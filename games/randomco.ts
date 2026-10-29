@@ -244,6 +244,7 @@ export const randomCheckouts: GameModule<RcOptions, RcView> = {
   id: 'randomco',
   name: 'Random Checkouts',
   blurb: 'Check out random numbers. Most checkouts wins.',
+  group: 'practice',
   minPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,
