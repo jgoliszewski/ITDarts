@@ -9,6 +9,7 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Grilling Random Checkouts i ATC „Order: Random”** (2026-10-29, w sesji): postanowienia w [GRY.md](GRY.md#random-checkouts), jeszcze nic nie zaimplementowane.
 - **Grilling hostingu** ([#8](https://github.com/jgoliszewski/ITDarts/issues/8), 2026-10-28): plan w [HOSTING.md](HOSTING.md), jeszcze nic nie zaimplementowane.
 - **Grillingi:** UI ([#1](https://github.com/jgoliszewski/ITDarts/issues/1)), efekty ([#2](https://github.com/jgoliszewski/ITDarts/issues/2)), historia i statystyki ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)), minigierki ([#3](https://github.com/jgoliszewski/ITDarts/issues/3), [GRY.md](GRY.md)).
 - **Kod v1:**

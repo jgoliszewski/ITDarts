@@ -4,14 +4,14 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 6 minigierek: Around the Clock, Full Board, 121, Cricket, Killer i Higher or Lower.
+Gramy w X01 oraz 7 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower i Random Checkouts (od 2026-10-29).
 
 Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Grillujemy je dopiero wtedy, gdy ktoś w biurze o nie poprosi.
 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem jest Higher or Lower z opcją „First to”.
-- **Bez limitu rund** w żadnej grze. Grę, która się zawiesi, kończy „End match” z Pilota.
+- **Bez limitu rund** w żadnej grze. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy.
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
 - **Tura** jak w X01: 3 lotki i Takeout. Po trafieniu celu następna lotka w tej samej Turze idzie już w kolejny cel.
@@ -20,7 +20,7 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 ### Setup na Pilocie
 
 - Kolejność kroków: gra, opcje, gracze.
-- **Kafelki gier:** X01, ATC, Full Board, 121, Cricket, Killer, Higher or Lower. Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Ostatnio grana gra jest pierwsza.
+- **Kafelki gier:** X01, ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts. Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Ostatnio grana gra jest pierwsza.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
@@ -59,9 +59,9 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 
 - **Cele:** po kolei 1–20, na końcu zawsze bull.
 - **Opcje:**
-  - „Order”: „1–20” (domyślnie) albo „Clockwise” (20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5);
+  - „Order”: „1–20” (domyślnie), „Clockwise” (20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5) albo „Random” (od 2026-10-29): kolejność 1–20 losowana na start gry, jedna dla wszystkich graczy, bull zostaje na końcu, a Rematch losuje od nowa. Z „Target” daje to losowe sektory, double albo treble;
   - „Target”: „Any” (domyślnie), „Doubles” albo „Trebles”;
-  - „Multiplier skips”, tylko przy „Any”, domyślnie włączone: D przesuwa o 2 cele, T o 3;
+  - „Multiplier skips”, tylko przy „Any”, domyślnie włączone: D przesuwa o 2 cele, T o 3, także w wylosowanej kolejności;
   - „Co-op”.
 - **Trafienie:** w „Any” każdy segment celu, a bull to 25 albo 50. W „Doubles” tylko D, w „Trebles” tylko T, a bull w obu tylko 50.
 - **Koniec:** gdy ktoś zaliczy bulla, dogrywamy rundę, żeby wszyscy mieli tyle samo Tur. Wygrywa najmniej lotek. Przy tej samej liczbie lotek wygrywają wszyscy remisujący. Pozostali są sklasyfikowani według postępu.
@@ -144,9 +144,30 @@ Shanghai, Bob's 27, Halve-It, Count Up, Bermuda Triangle i Gotcha są w backlogu
 - **Statystyki:** wygrane. Bez rekordu.
 - **Znany przypadek brzegowy:** gdy zakres dojdzie do 180 na górze i 3 na dole, nikt nie da rady go ominąć. Nie obsługujemy tego osobno, bo to praktycznie niemożliwe. Taką grę kończy „End match”.
 
+## Random Checkouts
+
+Postanowienia z grillingu z 2026-10-29. Losowe sektory, double i treble są opcją „Order: Random” w [ATC](#around-the-clock-atc), a nie osobną grą.
+
+- **Liczba do zamknięcia** jest losowana z zakresu. Liczb, których nie da się zamknąć przy wybranej regule (np. 169, 168, 166, 165, 163, 162, 159 przy Double), nigdy nie losujemy.
+- **Do skutku:** reszta schodzi przez kolejne Tury jak w X01, bez limitu lotek. Bust cofa resztę do stanu sprzed Tury.
+- **Bez końca:** nie ma limitu checkoutów ani Tur. Grę kończy „End match”, a „Save” pokazuje ekran wygranej z „Summary”. Liczba, której nikt nie zamknął, przepada.
+- **Gracze:** 1–8.
+  - **Rywalizacja:** wszyscy dostają tę samą liczbę, a każdy ma własną resztę i rzuca swoje Tury po kolei. Kto pierwszy zamknie, dostaje punkt od razu, bez dogrywania rundy. Potem wszyscy dostają nową liczbę, a zaczyna następny w kolejności.
+  - **Co-op:** jedna wspólna reszta, gracze rzucają Tury na zmianę. Punkt dostaje ten, kto zamknie, a drużyna ma wspólny licznik checkoutów. Po checkoucie losujemy nową liczbę i rzuca następny gracz.
+- **Wygrana:** najwięcej punktów w chwili „End match”. Przy remisie wygrywają wszyscy remisujący.
+- **Opcje:**
+  - „Range”: Min i Max z presetami „2–40”, „41–80”, „81–120”, „121–170” i „Any”. Max to 170 przy Double i 180 przy Single i Master, Min to 2 przy Double i 1 przy pozostałych;
+  - „Check-out”: Single, Double (domyślnie) albo Master, jak w X01;
+  - „Hints”, domyślnie włączone: podpowiedź checkoutu z X01;
+  - „Co-op”.
+- **Ekran wyników:** hero jak w 121, czyli reszta, podpowiedź checkoutu (gdy „Hints” włączone) i kafelki lotek. Lista graczy pokazuje punkty i resztę każdego. Nagłówek np. „Random Checkouts · 41–80 · Double out”.
+- **Caller** jak w 121: wynik Tury, „no score” i „you require”, także po nowej liczbie, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
+- **Wyzwalacze:** „Checkout” i „Bust” (istnieją), „Game won” przy zapisie.
+- **Statystyki:** liczba checkoutów, średnia liczba lotek na checkout i % checkoutów zamkniętych w pierwszej Turze. Bez rekordu, bo gra nie ma końca.
+
 ## Statystyki na `/stats`
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts.
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).
