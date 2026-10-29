@@ -44,10 +44,10 @@ export const effectSeconds = (e: Effect) => Math.max(rings(e).board?.dur ?? 0, r
 
 // ---------- the ring ----------
 
-/** LEDs on the controller and where the second ring starts. To confirm at the board (issue #9, Q13). */
+/** LEDs on the controller and where the second ring starts, checked at the board (issue #10). */
 export const LED_COUNT = 100;
 export const SPLIT_AT = 48;
-/** Which segment lights the board: 0 is LEDs 0–47. To confirm at the board (issue #9, Q13). */
+/** Which segment lights the board: 0 is LEDs 0–47, checked at the board (issue #10). */
 export const BOARD_SEGMENT: 0 | 1 = 0;
 
 // ---------- colours (docs/MAPA.md, Q8): no gold, no black, no dimmed colours ----------
@@ -77,7 +77,8 @@ const pair = (colour: Paint, dur: number, wall: Motion | null): Split =>
 const run = (color: Rgb, bg: Rgb, rate = 1.4): Motion => ({ kind: 'run', color, bg, size: 2.5, rate });
 const ripple = (color: Rgb, bg: Rgb): Motion => ({ kind: 'ripple', color, bg, rate: 3 });
 const fill = (color: Rgb, bg: Rgb): Motion => ({ kind: 'fill', color, bg, rate: 0.8 });
-const dissolve = (color: Rgb, bg: Rgb): Motion => ({ kind: 'dissolve', color, bg });
+/** The wall ring in the board ring's colour, still: Dissolve flickered on the controller (issue #10). */
+const still = (color: Rgb): Motion => ({ kind: 'solid', color });
 const flow = (rate: number): Motion => ({ kind: 'rainbow', color: 'rainbow', rate });
 const sparks = (color: Rgb, bg: Rgb): Motion => ({ kind: 'burst', color, bg, rate: 3 });
 
@@ -90,7 +91,8 @@ export type LedKey =
 export const LEDS: Record<LedKey, { preset: number; name: string; effect: Effect }> = {
   // Base states stay still: the cameras read moving light as a takeout.
   base: { preset: 100, name: 'Base', effect: { kind: 'solid', color: WARM, dur: 0 } },
-  offline: { preset: 101, name: 'Board offline', effect: { kind: 'pulse', color: RED, dur: 0, rate: 3 } },
+  // Breathe over warm white was hard to see; nothing is detected while the board is offline, so plain red.
+  offline: { preset: 101, name: 'Board offline', effect: { kind: 'solid', color: RED, dur: 0 } },
   'game-on': { preset: 102, name: 'Game on', effect: pair(WHITE, 2, fill(WHITE, WARM)) },
   'leg-start': { preset: 103, name: 'Leg start', effect: wash(WHITE, 0.9) },
   treble: { preset: 104, name: 'Treble 15-19', effect: pair(ORANGE, 0.7, run(ORANGE, EMBER)) },
@@ -101,8 +103,8 @@ export const LEDS: Record<LedKey, { preset: number; name: string; effect: Effect
   '180': { preset: 109, name: '180', effect: pair(ORANGE, 2, sparks(WHITE, ORANGE)) },
   'clean-20s': { preset: 110, name: 'Clean 20s', effect: pair(ORANGE, 0.8, run(ORANGE, EMBER, 1.2)) },
   bnb: { preset: 111, name: 'Bed and breakfast', effect: pair(MAGENTA, 0.8, ripple(PURPLE, MAGENTA)) },
-  'no-score': { preset: 112, name: 'No score', effect: pair(RED, 1.4, dissolve(RED, CRIMSON)) },
-  bust: { preset: 113, name: 'Bust', effect: pair(RED, 1.4, dissolve(RED, CRIMSON)) },
+  'no-score': { preset: 112, name: 'No score', effect: pair(RED, 1.4, still(RED)) },
+  bust: { preset: 113, name: 'Bust', effect: pair(RED, 1.4, still(RED)) },
   checkout: { preset: 114, name: 'Checkout', effect: pair(GREEN, 2, fill(GREEN, TEAL)) },
   madhouse: { preset: 115, name: 'Madhouse', effect: pair(PURPLE, 2, ripple(PURPLE, MAGENTA)) },
   'high-finish': { preset: 116, name: 'High finish', effect: pair(GREEN, 2, ripple(GREEN, TEAL)) },
@@ -113,14 +115,15 @@ export const LEDS: Record<LedKey, { preset: number; name: string; effect: Effect
     preset: 119, name: 'Match won',
     effect: { board: { kind: 'rainbow', color: 'rainbow', dur: 6, fadeIn: FADE_IN, fadeOut: FADE_OUT, rate: 0.3 }, wall: { ...sparks(WHITE, ORANGE), size: 8, dur: 6, fadeIn: FADE_IN, fadeOut: FADE_OUT } },
   },
-  hit: { preset: 120, name: 'Hit', effect: pair(ORANGE, 0.45, null) },
-  miss: { preset: 121, name: 'Miss', effect: pair(RED, 0.45, null) },
+  // Both rings, long enough to reach full colour: 0.45 s on the board ring alone was hard to see.
+  hit: { preset: 120, name: 'Hit', effect: pair(ORANGE, 0.8, still(ORANGE)) },
+  miss: { preset: 121, name: 'Miss', effect: pair(RED, 0.8, still(RED)) },
   'sector-closed': { preset: 122, name: 'Sector closed', effect: pair(GREEN, 1.4, run(GREEN, TEAL, 1.2)) },
   'white-horse': { preset: 123, name: 'White Horse', effect: pair(PURPLE, 2, run(WHITE, PURPLE)) },
-  'life-lost': { preset: 124, name: 'Life lost', effect: pair(RED, 1, null) },
-  killer: { preset: 125, name: 'Became killer', effect: pair(CRIMSON, 1.4, dissolve(RED, CRIMSON)) },
-  'attempt-failed': { preset: 126, name: 'Attempt failed', effect: pair(CRIMSON, 1.4, dissolve(RED, CRIMSON)) },
-  'player-out': { preset: 127, name: 'Player out', effect: pair(RED, 2, dissolve(RED, CRIMSON)) },
+  'life-lost': { preset: 124, name: 'Life lost', effect: pair(RED, 1, still(RED)) },
+  killer: { preset: 125, name: 'Became killer', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
+  'attempt-failed': { preset: 126, name: 'Attempt failed', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
+  'player-out': { preset: 127, name: 'Player out', effect: pair(RED, 2, still(RED)) },
   'new-record': {
     preset: 128, name: 'New record',
     effect: { board: { kind: 'rainbow', color: 'rainbow', dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT, rate: 0.4 }, wall: { ...ripple(ORANGE, EMBER), dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT } },
@@ -168,7 +171,8 @@ function segment(id: number, start: number, stop: number, look: Look | null) {
   const { fx, sx, ix } = wledFx(l, stop - start);
   const rainbow = l.color === 'rainbow';
   const col = [rainbow ? WHITE : l.color, l.bg ?? WARM, WARM];
-  return { id, start, stop, ...SEGMENT, col, fx, sx, ix, pal: rainbow && l.kind !== 'rainbow' ? 11 : 2 };
+  // Palette 2 (primary colour) turns WLED's Rainbow effect into one colour, so every rainbow needs palette 11.
+  return { id, start, stop, ...SEGMENT, col, fx, sx, ix, pal: rainbow ? 11 : 2 };
 }
 
 /**

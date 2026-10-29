@@ -915,7 +915,7 @@
       ],
       "led": {
         "preset": 120,
-        "seconds": 0.5
+        "seconds": 0.8
       }
     },
     {
@@ -932,7 +932,7 @@
       ],
       "led": {
         "preset": 121,
-        "seconds": 0.5
+        "seconds": 0.8
       }
     }
   ]

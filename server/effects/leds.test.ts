@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BASE_RULES } from './builtin.ts';
-import { effectSeconds, LED_COUNT, LEDS, PRESET_RANGE, rings, SPLIT_AT, wledPreset, type LedKey } from './leds.ts';
+import { BOARD_SEGMENT, effectSeconds, LED_COUNT, LEDS, PRESET_RANGE, rings, SPLIT_AT, wledPreset, type LedKey } from './leds.ts';
 
 const keys = Object.keys(LEDS) as LedKey[];
 
@@ -29,5 +29,17 @@ describe('LEDs of the Momenty', () => {
     expect(p.seg.slice(0, 2).map(s => 'fx' in s && s.fx)).toEqual([0, 89]);
     expect(p.transition).toBe(2);
     expect(wledPreset('base').transition).toBe(7);
+  });
+
+  it('paints every rainbow with the rainbow palette and never uses Dissolve', () => {
+    for (const k of keys) {
+      const segs = wledPreset(k).seg.slice(0, 2) as unknown as { fx: number; pal: number }[];
+      const { board, wall } = rings(LEDS[k].effect);
+      const bySegment = BOARD_SEGMENT === 0 ? [board, wall] : [wall, board];
+      bySegment.forEach((l, i) => {
+        if (l?.color === 'rainbow') expect(segs[i].pal, k).toBe(11);
+        expect(segs[i].fx, k).not.toBe(18);
+      });
+    }
   });
 });
