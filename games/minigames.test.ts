@@ -5,7 +5,7 @@ import { cricket } from './cricket.ts';
 import { parseDart } from './darts.ts';
 import { hol } from './hol.ts';
 import { killer } from './killer.ts';
-import { atc, fullBoard } from './race.ts';
+import { atc, atcTargets, fullBoard } from './race.ts';
 import type { TurnEvent } from './turns.ts';
 
 let clock = 0;
@@ -34,6 +34,21 @@ describe('around the clock', () => {
 
   it('follows the clockwise order', () => {
     expect(atc.view([d('S20'), d('S1')], 1, { ...o, order: 'clockwise', skips: false }).progress).toEqual([2]);
+  });
+
+  it('draws a random order from the logged seed, with the bull last', () => {
+    const random = { ...o, order: 'random' as const };
+    const seed = (n: number): TurnEvent => ({ t: 'seed', seed: n });
+    const targets = atc.view([seed(3)], 1, random).targets;
+    expect([...targets].slice(0, 20).sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+    expect(targets[20]).toBe(25);
+    expect(atc.view([seed(3)], 1, random).targets).toEqual(targets);
+    expect(atc.view([seed(4)], 1, random).targets).not.toEqual(targets);
+    expect(targets).not.toEqual(atcTargets(o));
+    // Skips go along the drawn order: a treble on the first target moves three targets on.
+    const v = atc.view([seed(3), d(`T${targets[0]}`)], 1, random);
+    expect(v.targets[v.progress[0]]).toBe(targets[3]);
+    expect(atc.describe(random, 1)).toBe('ATC · Any · Random · Skips');
   });
 
   it('never skips past the bull', () => {

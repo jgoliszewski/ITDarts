@@ -16,6 +16,10 @@ export type TurnEvent =
   | { t: 'next'; at?: number }
   /** Killer numbers, drawn by the server before the first dart. */
   | { t: 'numbers'; numbers: number[] }
+  /** Seed for the game's random draws (ATC Order: Random, Random Checkouts), logged by the server at the start. */
+  | { t: 'seed'; seed: number }
+  /** End match with Save in a game with no natural end (Random Checkouts): the game ends as won. */
+  | { t: 'end' }
   | BullEvent;
 
 export interface Visit {
@@ -30,6 +34,9 @@ export interface Turns {
   starter: number | null;
   visits: Visit[];
   numbers: number[];
+  seed: number;
+  /** Ended by End match with Save; an undo right after takes it back. */
+  ended: boolean;
   bull: BullDart[];
   bullOff: BullOffView | null;
 }
@@ -79,7 +86,8 @@ export const isValidTurnEvent = (e: TurnEvent): boolean => {
     case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
     case 'start': return Number.isInteger(e.starter);
     case 'numbers': return Array.isArray(e.numbers) && e.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 20);
-    default: return e.t === 'undo' || e.t === 'next';
+    case 'seed': return Number.isInteger(e.seed);
+    default: return e.t === 'undo' || e.t === 'next' || e.t === 'end';
   }
 };
 
@@ -92,10 +100,22 @@ function reopenLast(t: Turns) {
 }
 
 export function replayTurns(events: TurnEvent[], players: number, bullOff: BullOff, play: (t: Turns) => Turn): Turns {
-  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [], bull: [], bullOff: null };
+  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [], seed: 0, ended: false, bull: [], bullOff: null };
   for (const e of events) {
     if (e.t === 'numbers') {
       if (t.visits.length === 0) t.numbers = e.numbers;
+      continue;
+    }
+    if (e.t === 'seed') {
+      if (t.visits.length === 0) t.seed = e.seed;
+      continue;
+    }
+    if (t.ended) {
+      if (e.t === 'undo') t.ended = false;
+      continue;
+    }
+    if (e.t === 'end') {
+      t.ended = t.starter !== null;
       continue;
     }
     if (t.starter === null) {
@@ -246,7 +266,7 @@ export function nextIn(p: number, players: number, out: (q: number) => boolean =
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco';
 
 /** One setup option. The same text feeds the “i” hint and the Options part of “How to play”. */
 export interface OptionDef<O> {
@@ -310,6 +330,21 @@ export const choiceLabel = <O>(defs: OptionDef<O>[], o: O, key: keyof O & string
 
 export const ON_OFF: [unknown, string][] = [[true, 'On'], [false, 'Off']];
 export const OFF_ON: [unknown, string][] = [[false, 'Off'], [true, 'On']];
+
+/** Deterministic random numbers in [0, 1) from a logged seed (mulberry32), so every replay draws the same. */
+export function seeded(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A fresh seed for the log. */
+export const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 

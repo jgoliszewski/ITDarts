@@ -128,15 +128,18 @@ function view(events: TurnEvent[], players: number, o: O121): View121 {
   };
 }
 
-/** The caller in 121 (docs/EFEKTY.md#caller): like X01, but a checkout is called as its score, with no game shot. */
-export function callerLines121(cs: Change[], view: View121, turnStart: boolean): string[] {
+/**
+ * The caller in 121 and Random Checkouts (docs/EFEKTY.md#caller): like X01, but a checkout is called as its score, with no
+ * game shot. `reach`: a checkout is on, so a visit starts with “you require”.
+ */
+export function callerLines121(cs: Change[], view: Pick<View121, 'phase' | 'visit' | 'remaining' | 'checkout'>, turnStart: boolean, reach = view.checkout !== null): string[] {
   const out: string[] = [];
   if (cs.some(c => c.fact.kind === 'legStart' && !c.before)) out.push('gameon');
   for (const { fact } of cs) {
     if (fact.kind === 'calledTotal') out.push(fact.total > 0 ? String(fact.total) : 'busted');
     if (fact.kind === 'bust') out.push('busted');
   }
-  if (turnStart && view.phase === 'throwing' && view.visit.darts.length === 0 && view.checkout !== null) {
+  if (turnStart && view.phase === 'throwing' && view.visit.darts.length === 0 && reach) {
     out.push(`require_${view.remaining}`);
   }
   return out;

@@ -1,17 +1,18 @@
 // Around the Clock and Full Board: race through the targets, fewest darts wins (docs/GRY.md). Pure, no I/O.
 import type { Dart } from './darts.ts';
 import { BOARD_ORDER } from './darts.ts';
+import { drawNumbers } from './killer.ts';
 import type { GameEvent, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
 import {
-  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk,
+  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk,
 } from './turns.ts';
 
 export type TargetMode = 'any' | 'doubles' | 'trebles';
 
 export interface AtcOptions {
-  order: 'numeric' | 'clockwise';
+  order: 'numeric' | 'clockwise' | 'random';
   target: TargetMode;
   skips: boolean;
   coop: boolean;
@@ -127,10 +128,12 @@ export interface AtcView extends MiniView {
   teamDarts: number | null;
 }
 
-export const atcTargets = (o: AtcOptions) => [...(o.order === 'clockwise' ? BOARD_ORDER : BOARD_ORDER.map((_, i) => i + 1)), 25];
+/** The targets in order; Random shuffles 1–20 from the match's logged seed, the bull stays last. */
+export const atcTargets = (o: AtcOptions, seed = 0) => [
+  ...(o.order === 'clockwise' ? BOARD_ORDER : o.order === 'random' ? drawNumbers(20, seeded(seed)) : BOARD_ORDER.map((_, i) => i + 1)), 25];
 
-function atcRules(o: AtcOptions): Rules<{ i: number }> {
-  const targets = atcTargets(o);
+function atcRules(o: AtcOptions, seed: number): Rules<{ i: number }> {
+  const targets = atcTargets(o, seed);
   return {
     event: 'targetHit',
     init: () => ({ i: 0 }),
@@ -146,13 +149,13 @@ function atcRules(o: AtcOptions): Rules<{ i: number }> {
   };
 }
 
-const atcPlay = (t: Turns, players: number, o: AtcOptions) => playRace(t, players, o.coop && players > 1, atcRules(o));
+const atcPlay = (t: Turns, players: number, o: AtcOptions) => playRace(t, players, o.coop && players > 1, atcRules(o, t.seed));
 
 function atcView(events: TurnEvent[], players: number, o: AtcOptions): AtcView {
   const coop = o.coop && players > 1;
   const t = replayTurns(events, players, o.bullOff, x => atcPlay(x, players, o));
   const s = atcPlay(t, players, o);
-  const targets = atcTargets(o);
+  const targets = atcTargets(o, t.seed);
   const progress = s.sides.map(p => p.i);
   const of = targets.length;
   const tl = (i: number) => (i >= of ? 'Done' : targetLabel(targets[i], o.target));
@@ -177,8 +180,8 @@ const ATC_OPTIONS: OptionDef<AtcOptions>[] = [
   {
     key: 'order',
     label: 'Order',
-    info: '1–20 goes up the numbers. Clockwise follows the board from the top: 20, 1, 18, 4…',
-    choices: [['numeric', '1–20'], ['clockwise', 'Clockwise']],
+    info: '1–20 goes up the numbers. Clockwise follows the board from the top: 20, 1, 18, 4… Random draws a new order of 1–20 each game.',
+    choices: [['numeric', '1–20'], ['clockwise', 'Clockwise'], ['random', 'Random']],
   },
   TARGET as OptionDef<AtcOptions>,
   {
@@ -202,7 +205,7 @@ export const atc: GameModule<AtcOptions, AtcView> = {
   defaults: ATC_DEFAULTS,
   options: ATC_OPTIONS,
   howTo: {
-    goal: 'Hit every number from 1 to 20 in order (or clockwise round the board), then the bull.',
+    goal: 'Hit every number from 1 to 20 in order (clockwise round the board, or in a random order drawn at the start), then the bull.',
     turn: 'Three darts per visit. After a hit your next dart already goes at the next target.',
     counts: 'Any segment of the target counts, and the bull is 25 or 50. With Doubles or Trebles only that ring counts, and only the bullseye (50) for the bull.',
     win: 'When someone hits the bull the round is played out, so everyone has the same number of visits. Fewest darts wins; equal darts share the win. In Co-op the team clears one board together.',
@@ -216,7 +219,7 @@ export const atc: GameModule<AtcOptions, AtcView> = {
     format: v => plural(v, 'dart'),
   },
   normalizeOptions: input => normalizeByDefs(ATC_OPTIONS, ATC_DEFAULTS, input),
-  describe: (o, players) => ['ATC', choiceLabel(ATC_OPTIONS, o, 'target'), o.order === 'clockwise' ? 'Clockwise' : '1–20',
+  describe: (o, players) => ['ATC', choiceLabel(ATC_OPTIONS, o, 'target'), choiceLabel(ATC_OPTIONS, o, 'order'),
     ...(o.target === 'any' && o.skips ? ['Skips'] : []), ...(o.coop && players > 1 ? ['Co-op'] : [])].join(' · '),
   view: atcView,
   compact: (events, players, o) => {
