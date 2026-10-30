@@ -33,6 +33,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - W 121 na ostatniej turze próby nie ma „Setup”, bo cel i tak wraca do początku.
 - **Drabinka celów w 121** (od 2026-10-30): taśma celów pod wynikiem z chorągiewką rekordu i odometr celu, opisane w [GRY.md](GRY.md#121).
 - **Lista graczy:** stała kolejność rzucania. Aktywny gracz ma pomarańczowy wiersz. W wierszu: imię, legi, średnia z meczu i wynik.
+- **Serca** (od 2026-10-30): życia w 121, Knockout i Killer to wszędzie konturowe serca, czerwone póki są, przygaszone po stracie. W tekstach (lista, telefon) znak ♡. Pełnych serc nie używamy.
 - **Kropki legów** (od 2026-10-27, ze zgłoszenia o nieczytelnym wyniku): trochę większe niż na początku. W pomarańczowym wierszu aktywnego gracza niewygrany leg jest jaśniejszą kropką, żeby nie zlewał się z wygranym. Liczby setów i legów obok kropek próbowaliśmy i odrzuciliśmy.
 - **Statystyki, do 4 graczy** (od 2026-10-28, ze zgłoszenia; wcześniej tylko przy 2):
   - karta z 6 ostatnimi wizytami aktywnego gracza;

@@ -138,7 +138,7 @@ export function roundEndText(e: RoundEnd, names: string[]): string {
   return parts.join(' · ');
 }
 
-const hearts = (n: number) => '♥'.repeat(Math.max(0, n));
+const hearts = (n: number) => '♡'.repeat(Math.max(0, n));
 
 function view(events: TurnEvent[], players: number, o: KnockoutOptions): KnockoutView {
   const t = replayTurns(events, players, o.bullOff, x => play(x, players));

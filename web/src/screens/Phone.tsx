@@ -1,7 +1,6 @@
 import { label } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
-import { LIVES } from '../../../games/121.ts';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
@@ -39,7 +38,7 @@ function Players({ m }: { m: LiveMatch }) {
           ({ meta, value: big, out } = m.view.rows[i]);
           // The active player's line shows what the hero shows on the big screen.
           if (active) meta = [m.view.hero.caption, m.view.hero.note].filter(Boolean).join(' · ');
-          if (active && m.game === '121') meta += ` · ${m.view.attemptLeft} darts left in attempt · ${'♥'.repeat(m.view.lives)}${'♡'.repeat(LIVES - m.view.lives)}`;
+          if (active && m.game === '121') meta += ` · ${m.view.attemptLeft} darts left in attempt · ${'♡'.repeat(m.view.lives)}`;
         }
         return (
           <div key={i} className={`p-player ${active ? 'active' : ''} ${out ? 'out' : ''}`}>

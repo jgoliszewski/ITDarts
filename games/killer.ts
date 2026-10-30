@@ -80,7 +80,7 @@ export interface KillerView extends MiniView {
   canReroll: boolean;
 }
 
-const hearts = (n: number) => '♥'.repeat(Math.max(0, n));
+const hearts = (n: number) => '♡'.repeat(Math.max(0, n));
 
 function view(events: TurnEvent[], players: number, o: KillerOptions): KillerView {
   const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));

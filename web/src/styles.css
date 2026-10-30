@@ -454,7 +454,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .mini-big .num { font-size: calc(340 * var(--u)); line-height: 0.85; white-space: nowrap; }
 .mini-big .num.long { font-size: calc(220 * var(--u)); }
 .attempt-tile { margin-left: calc(16 * var(--u)); padding: calc(18 * var(--u)) calc(28 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--raised); display: flex; flex-direction: column; justify-content: center; gap: calc(10 * var(--u)); }
-.attempt-tile .caps { font-size: calc(18 * var(--u)); }
 .attempt-tile .row { display: flex; align-items: center; gap: calc(24 * var(--u)); }
 .attempt-tile .num { font-size: calc(96 * var(--u)); line-height: 1; }
 .attempt-pips { display: flex; flex-direction: column; gap: calc(8 * var(--u)); }
@@ -508,6 +507,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .hero-top { position: relative; }
 /* Centred over the hero, not next to the name. */
 .hearts { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: calc(10 * var(--u)); font-size: calc(72 * var(--u)); line-height: 1; color: #3A3A40; }
+.hearts span, .list-hearts span { display: inline-flex; }
+.hearts svg, .list-hearts svg { width: 1em; height: 1em; stroke-width: 1.8; }
 .hearts .on { color: var(--red); }
 
 /* ---------- effects: scoreboard animations (docs/EFEKTY.md) ---------- */
