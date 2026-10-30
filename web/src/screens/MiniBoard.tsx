@@ -142,7 +142,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
   // 121 holds the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not.
   const attemptEnd = m.game === '121' && m.view.attemptLeft === 0 && v.phase !== 'matchWon' ? (m.view.remaining === 0 ? 'out' : 'failed') : null;
   return (
-    <section className={`hero ${board ? 'with-board' : ''}`}>
+    <section className={`hero ${board ? 'with-board' : ''} ${m.game === '121' ? 'with-ladder' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>

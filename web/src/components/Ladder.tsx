@@ -1,4 +1,4 @@
-// 121 ladder of targets with the record flag, and the odometer for the target (docs/GRY.md#121).
+// 121 ladder of targets as a vertical chain of numbered dots with the record flag, and the odometer for the target (docs/GRY.md#121).
 import { useRef } from 'react';
 import { START_TARGET } from '../../../games/121.ts';
 
@@ -38,19 +38,18 @@ function useStep(value: number): number {
 }
 
 export function Ladder({ target, record }: { target: number; record: number | null }) {
-  // A checkout moves the ladder one field left; the field sliding out stays in the track so there is no gap.
+  // A checkout moves the ladder one step up; the step going out stays in the track so there is no gap.
   const slide = useStep(target) === 1;
   const rungs = ladderWindow(target, record);
   const outgoing = target - 2 >= START_TARGET ? target - 2 : null;
   return (
     <div className="ladder" aria-label={`Target ${target}${record ? `, office record ${record}` : ''}`}>
       <div key={slide ? target : 'still'} className={`track ${slide ? 'slide' : ''}`}>
-        <div className="rung done out">{outgoing !== null && <><span className="num">{outgoing}</span><span className="check">✓</span></>}</div>
+        <div className={`rung done ${outgoing === null ? 'blank' : ''}`}>{outgoing !== null && <span className="dot">{outgoing}</span>}</div>
         {rungs.map((r, i) => (
-          <div key={i} className={`rung ${r.done ? 'done' : ''} ${r.current ? 'current' : ''}`}>
-            {r.flag && <span className={`flag ${r.flag}`}>Best {record}{r.flag === 'far' ? ' →' : ''}</span>}
-            {r.target !== null && <span className="num">{r.target}</span>}
-            {r.done && <span className="check">✓</span>}
+          <div key={i} className={`rung ${r.done ? 'done' : ''} ${r.current ? 'current' : ''} ${r.target === null ? 'blank' : ''}`}>
+            {r.target !== null && <span className="dot">{r.target}</span>}
+            {r.flag && <span className={`flag ${r.flag}`}>Best {record}{r.flag === 'far' ? ' ↓' : ''}</span>}
           </div>
         ))}
       </div>
