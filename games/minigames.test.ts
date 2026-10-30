@@ -165,6 +165,15 @@ describe('121', () => {
     expect(v.current).toBe(1);
     expect(v.remaining).toBe(10);
   });
+
+  it('counts a co-op attempt and its checkout for everyone who threw in it', () => {
+    const log = [
+      ...visit('T20'), ...visit('T17', 'D5'), // 121 out together
+      ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), // 122 failed together
+      ...visit('T20', 'T20', 'D1'), // 122 out by the second player alone
+    ];
+    expect(oneTwentyOne.view(log, 2, o).stats).toEqual([{ attempts: 2, checkouts: 1 }, { attempts: 3, checkouts: 2 }]);
+  });
 });
 
 describe('cricket', () => {

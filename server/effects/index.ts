@@ -12,8 +12,8 @@ export const CALLER_DIR = 'assets/caller';
 export type Anim = '180' | '140' | 'bust' | 'confetti' | 'tile';
 
 /**
- * What the kiosk browser plays; `gain` already includes the effects volume. `url` is a file under /sounds/ or
- * `builtin:<key>`, which the kiosk synthesizes. The caller's files play in order, after the sound.
+ * What the kiosk browser plays; `gain` already includes the effects volume. `url` is a file under /sounds/ (with its
+ * version) or `builtin:<key>`, which the kiosk synthesizes. The caller's files play in order, after the sound.
  */
 export interface Fx {
   sound: { url: string; gain: number } | null;
@@ -86,7 +86,7 @@ export class Effects {
     const options = rule.sounds.map(id => lib.find(s => s.id === id)).filter(s => !!s);
     if (options.length === 0) return null;
     const s = options[Math.floor(Math.random() * options.length)];
-    return { url: s.builtin ? s.id : `/sounds/${s.file}`, gain: (this.store.settings().volume / 100) * (s.volume / 100) };
+    return { url: s.url, gain: (this.store.settings().volume / 100) * (s.volume / 100) };
   }
 
   private basePreset(): number | null {

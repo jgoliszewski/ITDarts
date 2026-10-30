@@ -34,6 +34,15 @@ function play(t: Turns, players: number, o: O121): State {
   let target = START_TARGET, remaining = target, lives = LIVES, used = 0, best: number | null = null;
   let over = false, left = 3, visitStart = remaining;
   const attempts = Array(players).fill(0), checkouts = Array(players).fill(0);
+  /** In Co-op an attempt and its checkout count for everyone who threw in it. */
+  const inAttempt = new Set<number>();
+  const endAttempt = (out: boolean) => {
+    for (const p of inAttempt) {
+      attempts[p]++;
+      if (out) checkouts[p]++;
+    }
+    inAttempt.clear();
+  };
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
   /** What the screen keeps until the takeout, while the finished visit is still open. */
@@ -59,6 +68,7 @@ function play(t: Turns, players: number, o: O121): State {
     goods.push(w.good);
     left = w.dartsLeft;
     if (!w.complete || over) continue;
+    inAttempt.add(v.player);
     const V = `V${vi + 1}`;
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
     else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: start - remaining } });
@@ -66,16 +76,15 @@ function play(t: Turns, players: number, o: O121): State {
     else if (lastVisit) fx.push({ slot: `${V}:failed`, fact: { kind: 'game', event: 'attemptFailed' } });
     if (!v.closed) held = { target, remaining, lives, attemptLeft: out ? 0 : (o.visits - used - 1) * 3 };
     if (out) {
-      attempts[v.player]++;
+      endAttempt(true);
       // The rest of the attempt's darts are gone; the next target starts with a fresh attempt.
       best = target;
-      checkouts[v.player]++;
       target++;
       if (o.refill) lives = LIVES;
       remaining = target;
       used = 0;
     } else if (++used >= o.visits) {
-      attempts[v.player]++;
+      endAttempt(false);
       lives--;
       remaining = target;
       used = 0;

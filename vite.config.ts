@@ -11,7 +11,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      '/ws': { target: 'ws://localhost:3000', ws: true },
+      // xfwd: the server tells the kiosk from phones by the browser's address (server/index.ts).
+      '/ws': { target: 'ws://localhost:3000', ws: true, xfwd: true },
       '/api': 'http://localhost:3000',
       '/sounds': 'http://localhost:3000',
       '/caller': 'http://localhost:3000',

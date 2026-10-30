@@ -57,7 +57,7 @@ describe('Board', () => {
     expect(log).toEqual(['20x3', 'started', 'finished']);
   });
 
-  it('treats a sticky takeoutFinished after a reconnect as new and counts its dart once', () => {
+  it('does not repeat a sticky takeoutFinished after a reconnect and counts its dart once', () => {
     let ws: any;
     vi.stubGlobal('WebSocket', class { constructor() { ws = this; } close() {} });
     vi.stubGlobal('fetch', async () => new Response(''));
@@ -71,10 +71,30 @@ describe('Board', () => {
     const d = { segmentNumber: 7, multiplier: 1, segmentName: 'S7', coordsX: 0.1, coordsY: 0.2 };
     const state = (event: string, throws: object[]) => (board as any).onState({ event, throws });
     state('takeoutFinished', []);
-    ws.onopen(); // reconnect: the previous event is forgotten
+    ws.onopen(); // reconnect
     state('takeoutFinished', [d]);
     state('throwDetected', [d]);
-    expect(log).toEqual(['finished', 'finished', '7x1']);
+    expect(log).toEqual(['finished', '7x1']);
+    board.stop();
+  });
+
+  it('sees a takeout missed while disconnected and keeps the new darts', () => {
+    let ws: any;
+    vi.stubGlobal('WebSocket', class { constructor() { ws = this; } close() {} });
+    vi.stubGlobal('fetch', async () => new Response(''));
+    const board = new Board('localhost:1');
+    const log: string[] = [];
+    board.on('throw', d => log.push(`${d.n}x${d.m}`));
+    board.on('takeoutFinished', () => log.push('finished'));
+    board.countedOnBoard = () => 0;
+    board.start();
+    ws.onopen();
+    const dart = (n: number, x: number) => ({ segmentNumber: n, multiplier: 1, segmentName: `S${n}`, coordsX: x, coordsY: 0.3 });
+    const state = (event: string, throws: object[]) => (board as any).onState({ event, throws });
+    state('throwDetected', [dart(20, 0.1), dart(20, 0.12)]);
+    ws.onopen(); // takeout and two new darts in the same segments while disconnected; 2.1.0 sends nothing on connect
+    state('throwDetected', [dart(20, 0.15), dart(20, 0.11), dart(5, -0.2)]);
+    expect(log).toEqual(['20x1', '20x1', 'finished', '20x1', '20x1', '5x1']);
     board.stop();
   });
 

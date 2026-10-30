@@ -1,13 +1,18 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
+Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
-- **`main`:** dokumentacja do `f996e74` (wizja, UI, statystyki).
-- **`feat/v1`:** cała aplikacja v1, minigierki i dokumentacja efektów ([EFEKTY.md](EFEKTY.md)). PR do `main` otwieramy po testach z prawdziwą tarczą.
+- **`main`:** cała aplikacja v1, minigierki i efekty. `feat/v1` jest w niej w całości wmergowana.
 
 ## Gotowe
+
+- **Poprawki „Znanych problemów”** (2026-10-30):
+  - w `npm run dev` proxy Vite przekazuje adres przeglądarki (`xfwd`), a serwer bierze go zamiast adresu proxy, więc telefon nie jest już kiosk. Sprawdzone połączeniem przez `localhost:5173` (kiosk) i `192.168.1.94:5173` (telefon);
+  - dźwięk z biblioteki ma adres z wersją pliku (`url` w `Sound`, `/sounds/<plik>?v=<mtime>`), więc kiosk nie gra starego dźwięku po podmianie pliku o tej samej nazwie. Przy okazji przyciski odtwarzania plików na `/effects` grają z tego adresu; wcześniej pobierały stronę zamiast dźwięku i milczały. Sprawdzone w przeglądarce na `/effects/sounds`;
+  - w Co-op 121 podejście i checkout liczą się każdemu, kto rzucał w podejściu ([GRY.md](GRY.md#121));
+  - po ponownym połączeniu z Board Managerem adapter porównuje lotki w tarczy (segment i coords) z już policzonymi. Gdy się nie zgadzają, był takeout w czasie rozłączenia: hub dostaje „takeout finished”, a nowe lotki wchodzą wszystkie. Lepki `takeoutFinished` po reconnect nie odpala już drugiego takeoutu. Test w `server/board.test.ts`; na prawdziwej tarczy jeszcze nie sprawdzone.
 
 - **Random Checkouts i ATC „Order: Random”** (2026-10-29, [GRY.md](GRY.md#random-checkouts)): zaimplementowane.
   - Losowość z ziarna w logu: hub dopisuje `{ t: 'seed' }` na start i przy Rematch, gra losuje z niego deterministycznie (`seeded` w `games/turns.ts`), więc Undo i Poprawka przywracają te same liczby. ATC tasuje 1–20 tak jak numery w Killer, bull zostaje na końcu.
@@ -104,7 +109,7 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
   - po „Next player” przed takeoutem i ponownym połączeniu z Board Managerem stare lotki nie wpadają następnemu graczowi: `Board` pamięta przetworzone lotki przez reconnect, hub pyta tylko przy pierwszym połączeniu (test w `server/board.test.ts`);
   - większe napisy na przyciskach Board panelu na laptopie. Nie oglądane jeszcze na ekranie.
 
-  Testy: `npm test` (134), `npm run typecheck`.
+  Testy: `npm test` (229 na 2026-10-30), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -113,14 +118,16 @@ Stan na 2026-10-29. Aktualizuj przy każdym większym kroku.
 
 ## Do sprawdzenia przy efektach
 
-- [ ] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
-- [ ] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła. Pobieranie `presets.json` działa (WLED 0.15.4).
+Pozycje z `[x]` bez daty potwierdzone przy tarczy 2026-10-30.
+
+- [x] Dźwięk z prawdziwego pliku w kiosku Edge bez kliknięcia (flaga autoplay), także po kilku godzinach bezczynności.
+- [x] Prawdziwy kontroler WLED: czy `"end"` z presetem bazowym wraca do tła. Pobieranie `presets.json` działa (WLED 0.15.4).
 - [x] Ledy Momentów na ringu (2026-10-29, [#10](https://github.com/jgoliszewski/ITDarts/issues/10)): presety 100–128 są na kontrolerze, ring tarczy to segment 0, podział na 48, oba ringi startują na godzinie 1 i idą zgodnie ze wskazówkami. Obejrzane w podglądzie `led-sim.html` z „Play on the ring”, poprawki z ringu w [MAPA.md](MAPA.md#przypisania).
-- [ ] Ledy i dźwięki Momentów w meczu: czy efekty po lotce nie psują detekcji i takeoutu, dźwięki w kiosku (lista w [#10](https://github.com/jgoliszewski/ITDarts/issues/10), punkt 4).
+- [x] Ledy i dźwięki Momentów w meczu: czy efekty po lotce nie psują detekcji i takeoutu, dźwięki w kiosku (lista w [#10](https://github.com/jgoliszewski/ITDarts/issues/10), punkt 4).
 - [ ] Upload dźwięku z telefonu (iOS Safari i Android) i odczyt długości pliku w przeglądarce.
 - [ ] Czy animacje 180, 140+ i bust nie przeszkadzają na dużym ekranie przy prawdziwej grze.
-- [ ] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.
-- [ ] Dźwięki wbudowane w meczu: głośność względem plików i callera, czy Treble po każdej trójce nie męczy w X01, czy 180 i Match won nie przesterowują na głośnikach.
+- [x] Caller na żywo w kiosku: czy słychać go wyraźnie obok efektów, czy „you require” nie wchodzi na arpeggio zmiany gracza i czy domyślne 80% głośności pasuje.
+- [x] Dźwięki wbudowane w meczu: głośność względem plików i callera, czy Treble po każdej trójce nie męczy w X01, czy 180 i Match won nie przesterowują na głośnikach.
 - [ ] Przeniesienie konfiguracji: push z domu, pull w pracy przy działającym serwerze. Stany bazowe wskazują presety atrapy (1–4), więc w pracy trzeba je raz ustawić pod prawdziwy kontroler.
 
 ## Do sprawdzenia z prawdziwą tarczą
@@ -131,28 +138,26 @@ Format websocketu sprawdzony podsłuchem Board Managera v2.0.2 (2026-10-26):
 - [x] Takeout w polu `event`: „Takeout started”, „Takeout finished”. Po 3 lotkach `status: 'Takeout'`.
 - [x] `GET /api/version` zwraca `2.0.2`.
 - [x] Od 2026-10-29 tarcza ma Board Managera 2.1.0, format websocketu sprawdzony podsłuchem 2.1.0: płaski rzut `{segmentNumber, multiplier, segmentName, coordsX, coordsY, bed, bouncer, failed, method}`, zdarzenia camelCase (`throwDetected`, `takeoutStarted`, `takeoutFinished`), `status` `throw`/`takeout`/`takeoutInProgress`, a `event` jest lepki (pierwsza lotka po takeoucie przychodzi jeszcze z `takeoutFinished`). Adapter czyta oba formaty (2.0.2 i 2.1.0); `bouncer` i `failed` ignorujemy, nazwa ręcznego resetu w 2.1.0 niepotwierdzona.
-- [ ] Bull-off na prawdziwej tarczy: kolejność, takeout po lotce, odległości w mm zgodne z rzeczywistością.
-- [ ] Pełny mecz X01 i jedna minigierka na prawdziwej tarczy.
-- [ ] Reset, start i stop detekcji, kalibracja i restart przez API.
-- [ ] Czy Board Manager wstaje sam po `sudo reboot` Raspberry Pi.
-- [ ] `start.bat` i tryb kiosku w Edge (nigdy nie odpalony), otwarty port 3000 w zaporze, wejście z telefonu przez QR.
+Wszystko z tej listy potwierdzone przy tarczy 2026-10-30.
+
+- [x] Bull-off na prawdziwej tarczy: kolejność, takeout po lotce, odległości w mm zgodne z rzeczywistością.
+- [x] Pełny mecz X01 i jedna minigierka na prawdziwej tarczy.
+- [x] Reset, start i stop detekcji, kalibracja i restart przez API.
+- [x] Czy Board Manager wstaje sam po `sudo reboot` Raspberry Pi.
+- [x] `start.bat` i tryb kiosku w Edge, otwarty port 3000 w zaporze, wejście z telefonu przez QR.
 
 ## Znane problemy
 
-- W `npm run dev` Vite łączy się z serwerem z localhost, więc serwer bierze każdą przeglądarkę, także telefon, za kiosk. Dźwięki reguł grają wtedy też na telefonie. W `npm start` i w kiosku tego problemu nie ma.
-- Kiosk trzyma zdekodowane dźwięki po nazwie pliku. Gdy dźwięk zostanie usunięty i w jego miejsce wgrany inny o tej samej nazwie, kiosk gra stary aż do przeładowania strony.
-- W Co-op 121 podejście liczy się graczowi, który je zakończył: checkoutem albo ostatnią Turą.
-- Gdy takeout i nowe lotki zdarzą się w czasie rozłączenia z Board Managerem, nowe lotki do liczby lotek sprzed rozłączenia przepadną (trzeba je wpisać ręcznie).
+Brak otwartych. Ostatnie cztery poprawione 2026-10-30 (wyżej, w „Gotowe”).
 
 ## Następne kroki
 
-1. Testy z tarczą według listy powyżej (`npm run dev`, tarcza z `config.json` albo domyślnie `192.168.1.183:3180`), potem PR `feat/v1` → `main`.
-2. Sprawdzenie efektów i callera z listy „Do sprawdzenia przy efektach”.
-3. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
+1. Sprawdzić przy tarczy, co zostało w „Do sprawdzenia przy efektach”, i odzyskanie lotek po rozłączeniu z Board Managerem.
+2. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
+3. Przeróbka strony Effects i konfiguratora według [MAPA.md](MAPA.md#do-zrobienia).
 4. Otwarte issues:
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
-   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek;
-   - [#9](https://github.com/jgoliszewski/ITDarts/issues/9): mapa Momentów, dźwięki i ledy. Postanowienia są w [MAPA.md](MAPA.md), a kod jest gotowy: nowe dźwięki, Reguły bazowe Next player, Hit, Miss i minigierek, presety ledów z kodu i symulator (`npm run led-sim`). Czeka na sprawdzenie przy tarczy, a potem na przeróbkę strony Effects i konfiguratora ([MAPA.md](MAPA.md#do-zrobienia)).
+   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
 5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo

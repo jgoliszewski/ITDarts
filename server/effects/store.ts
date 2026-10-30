@@ -1,7 +1,7 @@
 // Effects storage (docs/EFEKTY.md, Konfiguracja w repo). Rules, the Biblioteka dźwięków and the shared settings live in
 // effects/effects.json and effects/sounds/ in the repo, so a setup made at home works at the office too. The WLED
 // address and the pilot switches belong to one laptop and stay in SQLite.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, watch, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, watch, writeFileSync } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { join } from 'node:path';
 import type { Trigger } from '../../games/effects.ts';
@@ -43,6 +43,11 @@ export interface Sound {
   name: string;
   /** Empty for a built-in sound. */
   file: string;
+  /**
+   * What to play: `/sounds/<file>?v=<mtime>`, or the id of a built-in sound. The version changes when another file
+   * takes the same name (deleted and uploaded again, or changed by git), so the kiosk does not play the old one.
+   */
+  url: string;
   /** The key of a built-in sound, with what it was made for; its volume is the only thing to change. */
   builtin: { key: string; info: string } | null;
   /** 0–200 %: files from different sources differ in loudness. */
@@ -408,12 +413,22 @@ export class EffectsStore {
   sounds(): Sound[] {
     const used = (id: string) => this.data.rules.filter(r => r.sounds.includes(id)).length;
     const builtin: Sound[] = BUILTIN_SOUNDS.map(b => ({
-      id: builtinId(b.key), name: b.name, file: '', builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? defaultVolume(b.key), durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
+      id: builtinId(b.key), name: b.name, file: '', url: builtinId(b.key), builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? defaultVolume(b.key), durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
     }));
     const files: Sound[] = this.data.sounds
-      .map(s => ({ id: s.file, name: s.name, file: s.file, builtin: null, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
+      .map(s => ({ id: s.file, name: s.name, file: s.file, url: this.fileUrl(s.file), builtin: null, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }) || a.file.localeCompare(b.file));
     return [...builtin, ...files];
+  }
+
+  private fileUrl(file: string): string {
+    let v = 0;
+    try {
+      v = Math.round(statSync(join(this.soundsDir, file)).mtimeMs);
+    } catch {
+      // a missing file answers 404 either way
+    }
+    return `/sounds/${file}?v=${v}`;
   }
 
   sound(id: string): Sound | null {

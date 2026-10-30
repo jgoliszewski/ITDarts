@@ -74,6 +74,15 @@ describe('effects store', () => {
     expect(existsSync(join(store.soundsDir, s.file))).toBe(false);
   });
 
+  it('gives a sound uploaded again under the same name a new url, so the kiosk does not play the old one', async () => {
+    const id = store.addSound(WAV, 'Horn', 1000);
+    const before = store.sound(id)!.url;
+    store.deleteSound(id);
+    await new Promise(r => setTimeout(r, 20));
+    expect(store.addSound(WAV, 'Horn', 1000)).toBe(id);
+    expect(store.sound(id)!.url).not.toBe(before);
+  });
+
   it('checks rules and gives them short random ids', () => {
     expect(() => store.createRule({ triggers: [], sounds: [] })).toThrow('at least one trigger');
     expect(() => store.createRule({ triggers: [{ kind: 'nope' }], led: { preset: 1, seconds: 1 } })).toThrow('Invalid trigger');
@@ -224,7 +233,8 @@ describe('effects service', () => {
     store.updateSettings({ volume: 50 });
     store.createRule({ triggers: [t180], sounds: [s] });
     fx.fire(visit180);
-    expect(sent).toEqual([{ sound: { url: `/sounds/${store.sound(s)!.file}`, gain: 0.75 }, anim: '180', caller: null }]);
+    expect(sent).toEqual([{ sound: { url: store.sound(s)!.url, gain: 0.75 }, anim: '180', caller: null }]);
+    expect(store.sound(s)!.url).toMatch(/^\/sounds\/one-hundred-and-eighty\.wav\?v=\d+$/);
   });
 
   it('sends a built-in sound as its id, with both volumes', () => {
@@ -241,7 +251,7 @@ describe('effects service', () => {
     fx.fire(visit180);
     expect(sent).toEqual([{ sound: null, anim: '180', caller: null }]);
     // Test hands the sound of an unsaved rule back to the page instead of the kiosk.
-    expect(fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }))).toMatchObject({ url: `/sounds/${s}` });
+    expect(fx.test(store.checkRule({ triggers: [{ kind: 'bust' }], sounds: [s] }))).toMatchObject({ url: store.sound(s)!.url });
     expect(sent).toHaveLength(1);
   });
 

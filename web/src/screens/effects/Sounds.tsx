@@ -164,7 +164,7 @@ function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu?: () => v
   return (
     <div className="fx-sound">
       <div className="fx-sound-top">
-        <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (volume / 100))}>{Icon.play(18)}</button>
+        <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.url, (d.settings.volume / 100) * (volume / 100))}>{Icon.play(18)}</button>
         <span className="grow">
           <b>{s.name}</b>
           <span className="muted">{s.builtin ? `${s.builtin.info} · ${used}` : `${(s.durationMs / 1000).toFixed(1)} s · ${used}`}</span>

@@ -59,9 +59,13 @@ effectsStore.watch();
 await app.register(fastifyWebsocket);
 effectsRoutes(app, effects, () => hub.broadcast());
 
+const isLoopback = (ip: string) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+
 app.get('/ws', { websocket: true }, (socket, req) => {
   const ip = req.socket.remoteAddress ?? '';
-  hub.connect(socket, ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1');
+  // In npm run dev every browser comes through the Vite proxy on this machine, which passes the browser's address on.
+  const forwarded = isLoopback(ip) ? String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() : '';
+  hub.connect(socket, isLoopback(forwarded || ip));
 });
 
 app.get('/api/stats/players', async () => stats.list());

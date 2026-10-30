@@ -251,7 +251,7 @@ function SoundPicker({ d, wide, taken, onPick, onClose }: { d: EffectsData; wide
       <div className="fx-list">
         {shown.map(s => (
           <div key={s.id} className="fx-pick">
-            <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
+            <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.url, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
             <button className="fx-pick-main" onClick={() => { onPick(s.id); onClose(); }}>
               <span className="grow">{s.name}</span><span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
             </button>
@@ -348,7 +348,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
             if (!s) return null;
             return (
               <div key={id} className="fx-variant">
-                <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.id, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
+                <button className="icon-btn" aria-label={`Play ${s.name}`} onClick={() => playSound(s.url, (d.settings.volume / 100) * (s.volume / 100))}>{Icon.play(16)}</button>
                 <span className="grow">{s.name}</span>
                 <span className="muted">{(s.durationMs / 1000).toFixed(1)} s</span>
                 <button className="icon-btn" aria-label={`Remove ${s.name}`} onClick={() => set({ sounds: r.sounds.filter(x => x !== id) })}>{Icon.close(16)}</button>

@@ -39,15 +39,22 @@ export function toDart(t: BmThrow): Dart {
   return { n, m: (m >= 1 && m <= 3 ? m : 1) as 1 | 2 | 3 };
 }
 
+/** A dart as one frame tells it from another; coords make darts in the same segment differ. */
+function throwKey(t: BmThrow): string {
+  const d = toDart(t);
+  return `${d.n}x${d.m}@${t.coords?.x ?? t.coordsX},${t.coords?.y ?? t.coordsY}`;
+}
+
 export class Board extends EventEmitter<BoardEvents> {
   readonly status: BoardStatus;
   private ws: WebSocket | null = null;
-  private processed = 0;
+  /** Darts in the board already handled, by `throwKey`, so a reconnect can tell whether the board was cleared meanwhile. */
+  private seen: string[] = [];
   /** `event` of the previous frame: it is sticky in 2.1.0, so takeout events count only when it changes. */
   private lastEvent = '';
   /** After (re)connecting, the first state only sets the baseline: darts already counted are not replayed. */
   private synced = false;
-  /** `processed` is still right after a reconnect; only the first connection to a board has to ask the hub. */
+  /** `seen` is still right after a reconnect; only the first connection to a board has to ask the hub. */
   private known = false;
   /** How many of the darts sitting in the board ITDarts already has (set by the hub). */
   countedOnBoard: () => number = () => Infinity;
@@ -98,7 +105,8 @@ export class Board extends EventEmitter<BoardEvents> {
     ws.onopen = () => {
       this.status.connected = true;
       this.synced = false;
-      this.lastEvent = '';
+      // lastEvent stays: a sticky takeoutFinished seen before the drop is not a new takeout. One missed meanwhile
+      // shows in the darts (onState).
       this.event('Connected');
       void this.fetchVersion();
     };
@@ -157,26 +165,24 @@ export class Board extends EventEmitter<BoardEvents> {
       this.event('Takeout started');
       this.emit('takeoutStarted');
     }
-    if (changed && /takeout ?finished/i.test(ev)) {
-      this.processed = 0;
-      this.status.takeout = { active: false, since: null };
-      this.event('Takeout finished');
-      this.emit('takeoutFinished');
-      // No return: the first dart after a takeout arrives in a frame that still says "takeoutFinished".
-    }
+    if (changed && /takeout ?finished/i.test(ev)) this.takeoutFinished();
+    // No return above: the first dart after a takeout arrives in a frame that still says "takeoutFinished".
     if (!this.synced) {
       this.synced = true;
-      // The hub only knows the current visit, so darts left in the board after "Next player" would come back.
-      // ponytail: a takeout during the disconnect is seen only if the first frame after the reconnect still carries
-      // the sticky takeoutFinished (the real 2.1.0 sends no state on connect). If it is already throwDetected, no
-      // takeoutFinished fires and new darts up to the old count are skipped. A sticky takeoutFinished right after a
-      // reconnect also fires once more for a takeout already handled.
-      this.processed = Math.min(throws.length, this.known ? this.processed : this.countedOnBoard());
-      this.known = true;
+      if (!this.known) {
+        // The hub only knows the current visit, so darts left in the board after "Next player" would come back.
+        this.seen = throws.slice(0, Math.min(throws.length, this.countedOnBoard())).map(throwKey);
+        this.known = true;
+      } else if (this.seen.some((k, i) => k !== (throws[i] && throwKey(throws[i])))) {
+        // The darts handled before the drop are gone: a takeout happened while disconnected (the real 2.1.0 sends
+        // no state on connect, so this frame may already be a new dart).
+        this.takeoutFinished();
+      }
     }
-    if (throws.length < this.processed) this.processed = throws.length; // board was reset
-    for (; this.processed < throws.length; this.processed++) {
-      const t = throws[this.processed];
+    if (throws.length < this.seen.length) this.seen.length = throws.length; // board was reset
+    while (this.seen.length < throws.length) {
+      const t = throws[this.seen.length];
+      this.seen.push(throwKey(t));
       const dart = toDart(t);
       const x = t.coords?.x ?? t.coordsX, y = t.coords?.y ?? t.coordsY;
       const coords = typeof x === 'number' && typeof y === 'number' && Number.isFinite(x) && Number.isFinite(y) ? { x, y } : undefined;
@@ -190,10 +196,17 @@ export class Board extends EventEmitter<BoardEvents> {
     }
   }
 
+  private takeoutFinished() {
+    this.seen = [];
+    this.status.takeout = { active: false, since: null };
+    this.event('Takeout finished');
+    this.emit('takeoutFinished');
+  }
+
   /** Ends a stuck takeout by hand: resets Board Manager without firing takeoutFinished. */
   async takeoutDone() {
     this.status.takeout = { active: false, since: null };
-    this.processed = 0;
+    this.seen = [];
     this.event('Takeout done by hand');
     await this.action('reset').catch(() => undefined);
   }
@@ -250,7 +263,7 @@ export class Board extends EventEmitter<BoardEvents> {
       }
       if (a === 'start') this.status.detecting = true;
       if (a === 'stop') this.status.detecting = false;
-      if (a === 'reset') this.processed = 0;
+      if (a === 'reset') this.seen = [];
       this.event({ reset: 'Reset', start: 'Detection started', stop: 'Detection stopped', calibrate: 'Calibrated', restart: 'Restarting' }[a]);
     } catch (e) {
       this.event(`${a[0].toUpperCase()}${a.slice(1)} failed: ${e instanceof Error ? e.message : e}`);
