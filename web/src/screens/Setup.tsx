@@ -7,6 +7,7 @@ import type { OptionDef } from '../../../games/turns.ts';
 import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
+import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
@@ -286,6 +287,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
                   const t = GAMES[id];
                   return (
                     <button key={id} className={`game-tile ${id === game ? 'on' : ''}`} aria-pressed={id === game} onClick={() => setGame(id)}>
+                      <GameIcon game={id} className="tile-icon" stroke={1.25} />
                       <b>{t.name}</b>
                       <span>{t.blurb}</span>
                       <small>{t.minPlayers}–{MAX_PLAYERS} players</small>

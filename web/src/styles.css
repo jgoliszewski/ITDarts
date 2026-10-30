@@ -100,6 +100,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .big-header .logo { font-size: calc(24 * var(--u)); }
 .big-header .sep { width: 1px; height: calc(28 * var(--u)); background: #2A2A2E; }
 .big-header .sub { font-size: calc(22 * var(--u)); color: var(--muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.big-header .sub-icon { width: calc(26 * var(--u)); height: calc(26 * var(--u)); flex-shrink: 0; margin-right: calc(-8 * var(--u)); color: var(--muted); }
 .big-header .pill { height: calc(48 * var(--u)); padding: 0 calc(20 * var(--u)); background: var(--card); font-size: calc(18 * var(--u)); }
 .big-header .icon-btn { width: calc(48 * var(--u)); height: calc(48 * var(--u)); }
 .big-header .icon-btn svg { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
@@ -423,6 +424,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .game-tile small { margin-top: auto; font-size: 12px; font-weight: 700; color: var(--muted2); }
 .game-tile.on { background: var(--accent); color: var(--on-accent); }
 .game-tile.on span, .game-tile.on small { color: var(--accent-ink); }
+/* The game's icon as the tile's background, a sixth cut off by the corner (docs/UI.md, Ikony gier). */
+.game-tile { position: relative; overflow: hidden; }
+.game-tile > b, .game-tile > span, .game-tile > small { position: relative; }
+.game-tile .tile-icon { position: absolute; right: -16px; bottom: -16px; width: 96px; height: 96px; color: #3A3A40; pointer-events: none; }
+.game-tile.on .tile-icon { color: rgba(17, 17, 17, 0.2); }
+.chip .chip-icon { margin-right: 6px; flex-shrink: 0; }
 .howto-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px 0 8px; border-radius: 9999px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; font-size: 16px; white-space: nowrap; }
 .howto-btn .q { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
 .opt-label { position: relative; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }

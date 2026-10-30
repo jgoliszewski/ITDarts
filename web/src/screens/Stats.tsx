@@ -4,6 +4,7 @@ import { GAMES, GAME_GROUPS, isGameId } from '../../../games/index.ts';
 import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
 import type { Row } from '../components/Compare.tsx';
 import { CompareTable, fmtKm, gameRows, gameStats, playerColor, x01Rows } from '../components/Compare.tsx';
+import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Dropdown, Icon, Logo } from '../components/ui.tsx';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
@@ -290,7 +291,7 @@ function GamePicker({ game, setGame }: { game: GameId; setGame: (g: GameId) => v
         <div key={group} className="stats-group">
           <h3 className="caps">{title}</h3>
           <div className="stats-game">
-            {ids.map(g => <button key={g} className={`chip ${g === game ? 'on' : ''}`} aria-pressed={g === game} onClick={() => setGame(g)}>{GAMES[g].name}</button>)}
+            {ids.map(g => <button key={g} className={`chip ${g === game ? 'on' : ''}`} aria-pressed={g === game} onClick={() => setGame(g)}><GameIcon game={g} size={16} className="chip-icon" />{GAMES[g].name}</button>)}
           </div>
         </div>
       ))}

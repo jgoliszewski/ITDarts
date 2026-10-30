@@ -23,6 +23,32 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 - Czcionki: Barlow Condensed dla liczb, Inter dla reszty. Obie dołączone lokalnie, bo aplikacja działa offline.
 - Duże cele dotykowe i przyciski w kształcie pigułki.
 
+### Ikony gier
+
+Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać wzrokiem.
+
+- **Styl:** liniowe, jak reszta ikon aplikacji (siatka 24, kreska w kolorze tekstu), jedna na grę, w `web/src/components/GameIcon.tsx`. Bez emoji, bo różnie wyglądają na Windowsie, Androidzie i iOS.
+- **Symbole:**
+
+  | Gra | Symbol |
+  |---|---|
+  | X01 | tarcza z celownikiem |
+  | ATC | okrągła strzałka wokół bulla |
+  | Full Board | tarcza w ćwiartkach z ptaszkiem |
+  | 121 | drabinka |
+  | Random Checkouts | kostka do gry |
+  | Cricket | X w kółku |
+  | Killer | czaszka |
+  | Higher or Lower | strzałki góra i dół |
+  | Shanghai | trzy rosnące słupki |
+  | Gotcha | strzałka zawracająca na zero |
+  | Knockout | serce |
+  | Football | piłka |
+
+- **Kafelek gry w setupie:** ikona jest tłem w prawym dolnym rogu, 96 px, ucięta krawędzią o około 1/6. Mocniejsze ucięcie (1/4 i 1/2) odrzuciliśmy, bo ikony przestawały być rozpoznawalne. Ikony bez ucięcia (80 px) też, bo przy niskim kafelku wchodziła pod opis. Na zwykłym kafelku jest szara (`#3A3A40`), a na zaznaczonym przyciemnia pomarańcz. Tekst leży nad nią.
+- **Małe ikony:** przed nazwą gry na chipach wyboru gry na `/stats` i w nagłówku Ekranu wyników, w kolorze tekstu obok. Pomarańcz zostaje tylko dla stanu „zaznaczone i aktywne”.
+- **Bez ikon:** na karcie ostatniego meczu w lobby i w „How to play”, bo tam nazwa gry stoi dużym tekstem.
+
 ## Ekran wyników
 
 - **Układ:** hero aktywnego gracza po lewej, lista wszystkich graczy po prawej. Działa dla 2–8 graczy bez zmiany układu.

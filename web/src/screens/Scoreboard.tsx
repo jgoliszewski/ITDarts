@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import { label, value } from '../../../games/darts.ts';
+import type { GameId } from '../../../games/index.ts';
 import type { Verdict } from '../../../games/turns.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
+import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
@@ -25,12 +27,12 @@ export function boardPill(s: ClientState): { dot: string; text: string } {
   return { dot: 'green', text: s.match ? 'Ready · throw' : 'Board ready' };
 }
 
-export function BigHeader({ s, sub, onQr, onBoard, onMenu }: { s: ClientState; sub?: string; onQr: () => void; onBoard?: () => void; onMenu: () => void }) {
+export function BigHeader({ s, sub, game, onQr, onBoard, onMenu }: { s: ClientState; sub?: string; game?: GameId; onQr: () => void; onBoard?: () => void; onMenu: () => void }) {
   const pill = boardPill(s);
   return (
     <header className="big-header">
       <Logo />
-      {sub && <><span className="sep" /><div className="sub">{sub}</div></>}
+      {sub && <><span className="sep" />{game && <GameIcon game={game} className="sub-icon" />}<div className="sub">{sub}</div></>}
       <div className="spacer" />
       <div className="pill"><span className={`dot ${pill.dot}`} />{pill.text}</div>
       {onBoard && <button className="icon-btn" aria-label="Board panel" onClick={onBoard}>{Icon.board()}</button>}
@@ -337,7 +339,7 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: 
 
   return (
     <div className="big">
-      <BigHeader s={s} sub={m.description} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
+      <BigHeader s={s} sub={m.description} game={m.game} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
       <main className={`board-main ${!isX01(m) && hasBoard(m) ? 'with-board' : ''} ${isX01(m) && m.roster.length > 2 && m.roster.length <= 4 ? 'wide-side' : ''}`}>
         {isX01(m) ? (
