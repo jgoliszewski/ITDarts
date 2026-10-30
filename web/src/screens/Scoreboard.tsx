@@ -51,8 +51,8 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
   const p = v.current;
   const target = legTarget(m);
   const visit = v.visit;
-  const left = visit.bust ? 'Bust' : visit.checkout ? 'Checked out' : !v.checkedIn[p] ? 'Needs a double to start'
-    : visit.dartsLeft === 0 ? 'Pull the darts' : `${visit.dartsLeft} ${visit.dartsLeft === 1 ? 'dart' : 'darts'} left`;
+  // Only states worth words; the dart tiles show how many darts are left.
+  const left = visit.bust ? 'Bust' : visit.checkout ? 'Checked out' : !v.checkedIn[p] ? 'Needs a double to start' : null;
   return (
     <section className="hero">
       <div className="hero-top">
@@ -60,7 +60,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
         <div className="hero-name">{m.roster[p].name}</div>
         {target ? <Pips won={v.legs[p]} of={target} /> : null}
         <div className="spacer" />
-        <div className="hero-left">{left}</div>
+        {left && <div className="hero-left">{left}</div>}
       </div>
       <div className="hero-score-row">
         <div className="hero-score num">{v.scores[p]}</div>
