@@ -1,4 +1,5 @@
 // Scoreboard parts for the minigames: hero, player list, game widgets, record screen and end screen.
+import { useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label } from '../../../games/darts.ts';
@@ -6,6 +7,7 @@ import { roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
 import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
+import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
 import { dartTone, dartValue, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
@@ -24,11 +26,24 @@ function Scale({ lo, hi, sum }: { lo: number; hi: number; sum: number | null }) 
   );
 }
 
-/** 121 and Knockout lives (3 in both): full hearts left, empty ones lost. */
-export function Hearts({ lives }: { lives: number }) {
+/**
+ * 121 and Knockout lives (3 in both): full hearts left, empty ones lost. `losing` shakes the heart a failed attempt is
+ * about to take while the visit is still held on screen; hearts a refill gives back pop in (docs/GRY.md#121).
+ */
+export function Hearts({ lives, losing = false }: { lives: number; losing?: boolean }) {
+  const prev = useRef(lives);
+  const gained = lives > prev.current ? prev.current : lives;
+  prev.current = lives;
   return (
     <div className="hearts" aria-label={`${lives} of ${LIVES} lives`}>
-      {Array.from({ length: LIVES }, (_, i) => <span key={i} className={i < lives ? 'on' : ''}>{i < lives ? '♥' : '♡'}</span>)}
+      {Array.from({ length: LIVES }, (_, i) => {
+        const gain = i >= gained && i < lives;
+        return (
+          <span key={gain ? `${i}-${lives}` : i} className={`${i < lives ? 'on' : ''} ${losing && i === lives - 1 ? 'losing' : ''} ${gain ? 'gain' : ''}`}>
+            {i < lives ? '♥' : '♡'}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -39,14 +54,17 @@ export function RouteHint({ checkout, setup }: { checkout: string | null; setup:
   return <div className={`hero-checkout ${checkout ? '' : 'setup'}`}><div className="caps">{checkout ? 'Checkout' : 'Setup'}</div><div className="num">{checkout ?? setup}</div></div>;
 }
 
-/** 121: darts left in the attempt, as a number and one pip per dart, grouped by visit. */
-function AttemptTile({ left, of }: { left: number; of: number }) {
+/**
+ * 121: darts left in the attempt, as a number and one pip per dart, grouped by visit. The pips go green on a checkout
+ * and flash red on a failed attempt, while the finished visit is held on screen; a new attempt's pips fade in.
+ */
+function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end: 'out' | 'failed' | null; attempt: string }) {
   return (
     <div className="attempt-tile">
       <div className="caps">Darts left in attempt</div>
       <div className="row">
         <div className="num">{left}</div>
-        <div className="attempt-pips">
+        <div key={attempt} className={`attempt-pips ${end ?? ''}`}>
           {Array.from({ length: of / 3 }, (_, v) => (
             <div key={v}>{[0, 1, 2].map(i => <span key={i} className={v * 3 + i < of - left ? 'used' : ''} />)}</div>
           ))}
@@ -110,19 +128,21 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
   const visit = v.visit;
   const left = visit.dartsLeft === 0 && visit.darts.length ? 'Pull the darts' : `${visit.dartsLeft} ${visit.dartsLeft === 1 ? 'dart' : 'darts'} left`;
   const board = hasBoard(m);
+  // 121 holds the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not.
+  const attemptEnd = m.game === '121' && m.view.attemptLeft === 0 && v.phase !== 'matchWon' ? (m.view.remaining === 0 ? 'out' : 'failed') : null;
   return (
     <section className={`hero ${board ? 'with-board' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>
         <div className="spacer" />
-        {m.game === '121' && <Hearts lives={m.view.lives} />}
+        {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         <div className="hero-left">{left}</div>
       </div>
       <div className="hero-score-row">
         <div className="mini-big">
-          <div className="caps">{v.hero.caption}</div>
+          <div className="caps">{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
@@ -131,6 +151,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
       </div>
       {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
+      {m.game === '121' && <Ladder target={m.view.target} record={m.record?.raw ?? null} />}
       {heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
@@ -147,7 +168,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
         })}
-        {m.game === '121' && <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} />}
+        {m.game === '121' && <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} end={attemptEnd} attempt={`${m.view.target}:${m.view.lives}`} />}
       </div>
     </section>
   );

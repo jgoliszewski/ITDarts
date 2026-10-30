@@ -747,3 +747,35 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .pick-list li { padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; }
 .pick-list li:hover { background: var(--raised, #26262a); }
 .pick-list li.on { color: var(--accent, #F58224); }
+
+/* ---------- 121: ladder of targets and odometer (docs/GRY.md#121) ---------- */
+/* Six fields in a track 120% wide, shifted one field left: a checkout slides the track from 0 to that shift, so the field going out stays visible. */
+.ladder { overflow: hidden; margin: calc(8 * var(--u)) 0 calc(16 * var(--u)); }
+.ladder .track { display: grid; grid-template-columns: repeat(6, 1fr); width: 120%; transform: translateX(-16.667%); }
+.ladder .track.slide { animation: ladder-slide 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes ladder-slide { from { transform: translateX(0); } to { transform: translateX(-16.667%); } }
+.ladder .rung { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: calc(150 * var(--u)); padding-bottom: calc(10 * var(--u)); margin: 0 calc(6 * var(--u)); border-radius: calc(24 * var(--u)); color: var(--muted2); }
+.ladder .rung .num { font-size: calc(72 * var(--u)); line-height: 1; }
+.ladder .rung.done { color: var(--soft); }
+.ladder .rung .check { font-size: calc(26 * var(--u)); color: var(--green); margin-top: calc(4 * var(--u)); }
+.ladder .rung.current { background: var(--accent); color: var(--on-accent); }
+.ladder .rung.current .num { font-size: calc(96 * var(--u)); font-weight: 700; }
+.ladder .rung .flag { position: absolute; top: calc(8 * var(--u)); left: 50%; transform: translateX(-50%); white-space: nowrap; padding: calc(2 * var(--u)) calc(14 * var(--u)); border-radius: 9999px; background: var(--card2); color: var(--accent); font-size: calc(20 * var(--u)); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.ladder .rung.current .flag { background: var(--on-accent); }
+.ladder .rung .flag.far { left: auto; right: 0; transform: none; }
+.mini-big .caps:has(.odometer) { display: flex; align-items: center; gap: 0.3em; }
+.odometer { display: inline-flex; line-height: 1; font-variant-numeric: tabular-nums; }
+.odometer .digit { display: block; height: 1em; overflow: hidden; }
+.odometer .digit.roll .stack { display: flex; flex-direction: column; animation: odo-roll 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.odometer .digit.roll .stack span { display: block; height: 1em; }
+@keyframes odo-roll { to { transform: translateY(-1em); } }
+
+/* 121 attempt pips: green after a checkout, a red flash after a failed attempt, a quiet fade-in for a new attempt. */
+.attempt-pips { animation: fade-in 0.4s ease-out both; }
+@keyframes fade-in { from { opacity: 0; } }
+.attempt-pips.out span.used { background: var(--green); box-shadow: none; }
+.attempt-pips.failed span.used { animation: pips-fail 0.9s ease-out both; }
+@keyframes pips-fail { 0%, 40% { background: var(--red); box-shadow: none; } 100% { background: transparent; box-shadow: inset 0 0 0 2px var(--muted2); } }
+.hearts .losing { animation: heart-break 0.9s ease-out both; }
+@keyframes heart-break { 0%, 10% { transform: none; color: var(--red); } 20%, 60% { color: var(--red); } 25% { transform: translateX(-8%) rotate(-8deg); } 35% { transform: translateX(8%) rotate(8deg); } 45% { transform: translateX(-6%); } 55% { transform: translateX(6%); } 65%, 100% { transform: none; color: #3A3A40; } }
+.hearts .gain { animation: pop 0.45s ease-out both; }

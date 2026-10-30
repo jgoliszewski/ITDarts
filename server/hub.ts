@@ -327,7 +327,7 @@ export class Hub {
     const v = this.variant(rec);
     if (!v) return null;
     const best = this.db.records(v.key, v.better, 1)[0];
-    return { label: v.label, value: best ? v.format(best.value) : null, by: best?.who ?? null, at: best?.at ?? null };
+    return { label: v.label, value: best ? v.format(best.value) : null, raw: best?.value ?? null, by: best?.who ?? null, at: best?.at ?? null };
   }
 
   /** Scores that count for records: finished games only, registered players only, and no co-op with guests. */

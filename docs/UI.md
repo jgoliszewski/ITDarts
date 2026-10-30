@@ -31,6 +31,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
   - Przy double out trasy są z tabeli checkoutów PDC (41–170). Dopóki lotki trafiają w zaplanowaną trasę, podpowiedź ją kontynuuje (130: T20, dalej „T20 · D5”, a nie trasa z tabeli dla 70). Po zejściu z planu bierze trasę z tabeli dla nowego wyniku, jeśli mieści się w lotkach, które zostały.
   - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
   - W 121 na ostatniej turze próby nie ma „Setup”, bo cel i tak wraca do początku.
+- **Drabinka celów w 121** (od 2026-10-30): taśma celów pod wynikiem z chorągiewką rekordu i odometr celu, opisane w [GRY.md](GRY.md#121).
 - **Lista graczy:** stała kolejność rzucania. Aktywny gracz ma pomarańczowy wiersz. W wierszu: imię, legi, średnia z meczu i wynik.
 - **Kropki legów** (od 2026-10-27, ze zgłoszenia o nieczytelnym wyniku): trochę większe niż na początku. W pomarańczowym wierszu aktywnego gracza niewygrany leg jest jaśniejszą kropką, żeby nie zlewał się z wygranym. Liczby setów i legów obok kropek próbowaliśmy i odrzuciliśmy.
 - **Statystyki, do 4 graczy** (od 2026-10-28, ze zgłoszenia; wcześniej tylko przy 2):

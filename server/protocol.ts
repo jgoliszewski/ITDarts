@@ -65,6 +65,8 @@ interface Games {
 export interface RecordInfo {
   label: string;
   value: string | null;
+  /** The record as a number, for the 121 ladder. */
+  raw: number | null;
   by: string | null;
   at: number | null;
 }
