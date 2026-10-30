@@ -59,7 +59,7 @@ export const dartValue = (m: LiveMatch, d: Dart): number => (m.game === 'hol' ? 
 
 /** Tile colour for a minigame dart: games counted in hits show green or red; scoring games dim the darts that did nothing. */
 export const dartTone = (m: MiniMatch, good: boolean): 'hit' | 'miss' | '' | 'dead' =>
-  m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
+  m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
 
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {

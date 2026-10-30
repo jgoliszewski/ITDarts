@@ -3,6 +3,7 @@ import { cricket } from './cricket.ts';
 import { parseDart } from './darts.ts';
 import type { Change, Fact, Trigger } from './effects.ts';
 import { changes, isValidTrigger, matches, pickRule, triggerLabel } from './effects.ts';
+import { football } from './football.ts';
 import type { GameModule } from './index.ts';
 import { killer } from './killer.ts';
 import { atc } from './race.ts';
@@ -167,5 +168,15 @@ describe('minigame occurrences', () => {
     const log: object[] = [{ t: 'numbers', numbers: [1, 2] }, d('D1'), d('D2')];
     expect(kinds(fired(killer, log.slice(0, 2), { lives: 1, bullOff: 'off' }, 2))).toEqual(['dart', 'becameKiller']);
     expect(kinds(fired(killer, log, { lives: 1, bullOff: 'off' }, 2))).toEqual(['dart', 'lifeLost', 'eliminated', 'matchWon']);
+  });
+
+  it('fires Goal on each goal, and it beats Match won on the winning dart', () => {
+    const o = { ...football.defaults, goals: 3 as const };
+    expect(kinds(fired(football, [d('S25'), d('D5')], o, 2))).toEqual(['dart', 'goal']);
+    const cs = fired(football, [d('S25'), d('D5'), d('D6'), next, d('S1'), next, d('D7')], o, 2);
+    expect(kinds(cs)).toEqual(['dart', 'goal', 'matchWon']);
+    expect(triggerLabel({ kind: 'game', event: 'goal' })).toBe('Goal');
+    const rules = [rule(1, { kind: 'matchWon' }), rule(2, { kind: 'game', event: 'goal' })];
+    expect(pickRule(rules, cs)?.id).toBe(2);
   });
 });

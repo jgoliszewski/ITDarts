@@ -80,7 +80,8 @@ const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 
  */
 export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   cleared: number[];
-  target: number | null;
+  /** A sector or the bull (25), or 'ring': the whole of `ring` all round (Football with the ball). */
+  target: number | 'ring' | null;
   /** The ring that counts on the target: null for any segment, 2 doubles, 3 trebles. */
   ring: 2 | 3 | null;
   darts: { dart: Dart; good: boolean }[];
@@ -91,10 +92,11 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   const S = SHOWN;
   const done = new Set(cleared);
   const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
-  const tk = target === null || target === 25 ? -1 : BOARD_ORDER.indexOf(target);
+  const tk = typeof target === 'number' && target !== 25 ? BOARD_ORDER.indexOf(target) : -1;
   const [o1, o2] = ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
   // Only the bullseye counts for the bull with Doubles or Trebles.
   const outline = target === null ? null
+    : target === 'ring' ? <><circle className="tb-outline" cx="0" cy="0" r={o1} /><circle className="tb-outline" cx="0" cy="0" r={o2} /></>
     : target === 25 ? <circle className="tb-outline" cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
     : <path className="tb-outline" d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
   return (

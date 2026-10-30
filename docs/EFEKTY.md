@@ -59,6 +59,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 - **Wyzwalacze spoza tej listy** dostały miejsce przy implementacji (2026-10-26), bo grilling ich nie ustawił:
   - „New record” jest przed wygranym meczem, bo pada tą samą lotką i inaczej nigdy by nie zagrał;
   - „Shanghai” też jest przed wygranym meczem, z tego samego powodu: przy 2+ graczach wygrana pada tą samą lotką, więc bez tego Moment zagrałby tylko solo;
+  - „Goal” (Football, od 2026-10-30) jest zaraz po „Shanghai”, bo gol rozstrzygający mecz pada tą samą lotką co wygrana;
   - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, killer, nieudane podejście, White Horse, Gotcha, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
   - start meczu, start legu, takeout i tarcza są na samym końcu.
   - Przy remisie priorytetów gra starsza reguła.
@@ -237,7 +238,7 @@ Z implementacji (2026-10-26):
 
 Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/jgoliszewski/ITDarts/issues/5) (2026-10-26). Wszystko poza tym, co mówi sędzia (pojedyncze lotki, okrzyki, dźwięki pod konkretne wyniki), to Reguły.
 
-- **X01, 121, Random Checkouts i Gotcha.** W pozostałych minigierkach caller milczy. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
+- **X01, 121, Random Checkouts, Gotcha i Knockout.** W pozostałych minigierkach caller milczy. W Knockout (od 2026-10-30) mówi jak w Gotcha: tylko wynik Tury. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
 - **Co mówi** (stały zestaw, bez kategorii do wyłączania):
   - „game on” na starcie każdego legu, a przy pierwszym legu po bull-offie;
   - wynik tury, 1–180;

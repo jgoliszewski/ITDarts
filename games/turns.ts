@@ -267,7 +267,7 @@ export function nextIn(p: number, players: number, out: (q: number) => boolean =
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football';
 
 /** The setup and /stats tiles come in these groups, in this order (docs/GRY.md, Setup na Pilocie). */
 export type GameGroup = 'classic' | 'practice' | 'versus';

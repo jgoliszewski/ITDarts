@@ -102,7 +102,7 @@ function view(events: TurnEvent[], players: number, o: GotchaOptions): GotchaVie
   };
 }
 
-/** The caller: the visit's score as in X01, busted, and nothing else (no “you require”, no game shot). */
+/** The caller in Gotcha and Knockout: the visit's score as in X01, busted, and nothing else (no “you require”, no game shot). */
 export const callerLinesGotcha = (cs: Change[]): string[] =>
   cs.flatMap(({ fact, before }) => {
     if (fact.kind === 'legStart' && !before) return ['gameon'];

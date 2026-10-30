@@ -9,7 +9,7 @@ import type { X01Match } from '../match.ts';
 import { controls, dartTone, dartValue, isX01, legTarget } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
-import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, RecordIntro, RouteHint, ballWonNote, hasBoard, knockoutNote } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -159,6 +159,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
   const scored = isX01(m) ? m.view.visit.total
     : m.game === 'hol' ? m.view.sum ?? 0
     : m.game === 'shanghai' ? m.view.visitPoints
+    : m.game === 'knockout' ? m.view.visitScore
     : m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
@@ -169,9 +170,12 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
     : m.game === 'hol' ? [['Range', `${m.view.lo}–${m.view.hi}`]]
     : m.game === 'gotcha' ? [['Score', m.view.hero.big], ['Left', String(m.view.target - m.view.totals[v.current])]]
     : m.game === 'shanghai' ? [['Round', m.view.tiebreak ? 'Tiebreak' : `${m.view.round} / ${m.view.rounds}`], ['Total', String(m.view.points[v.current])]]
+    : m.game === 'knockout' ? [['Lowest so far', m.view.lowest === null ? '–' : String(m.view.lowest)], ['Lives', String(m.view.lives[v.current])]]
+    : m.game === 'football' ? [['Goals', String(m.view.goals[v.current])]]
     : [[m.view.hero.caption, m.view.hero.big]];
   const gotchaNote = m.game === 'gotcha' && m.view.zeroed.length ? `Gotcha! ${m.view.zeroed.map(i => m.roster[i].name).join(', ')} → 0` : null;
-  const note = m.game === 'gotcha' ? gotchaNote : isX01(m) || m.game === '121' || m.game === 'randomco' || m.game === 'hol' || m.game === 'shanghai' ? null : m.view.hero.note;
+  const note = m.game === 'gotcha' ? gotchaNote : m.game === 'knockout' ? knockoutNote(m) : m.game === 'football' ? ballWonNote(m)
+    : isX01(m) || m.game === '121' || m.game === 'randomco' || m.game === 'hol' || m.game === 'shanghai' ? null : m.view.hero.note;
   return (
     <div className="overlay">
       <div className="overlay-card">

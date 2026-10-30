@@ -2,6 +2,7 @@
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label } from '../../../games/darts.ts';
+import { roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
 import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
@@ -23,7 +24,7 @@ function Scale({ lo, hi, sum }: { lo: number; hi: number; sum: number | null }) 
   );
 }
 
-/** 121 lives: full hearts left, empty ones lost. */
+/** 121 and Knockout lives (3 in both): full hearts left, empty ones lost. */
 export function Hearts({ lives }: { lives: number }) {
   return (
     <div className="hearts" aria-label={`${lives} of ${LIVES} lives`}>
@@ -55,14 +56,23 @@ function AttemptTile({ left, of }: { left: number; of: number }) {
   );
 }
 
-/** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
-export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: 'atc' | 'fullboard' | 'shanghai' }> => m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai';
+type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football';
 
-function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' | 'shanghai' }> }) {
+/** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
+export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football';
+
+function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i] }));
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
+  // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles score.
+  if (m.game === 'football') {
+    return m.view.ball === v.current
+      ? <TargetBoard cleared={[]} target="ring" ring={2} darts={darts} label="Doubles score" />
+      : <TargetBoard cleared={[]} target={25} ring={m.options.kickOff === 'bullseye' ? 2 : null} darts={darts} label="The bull wins the ball" />;
+  }
   const ring = m.options.target === 'doubles' ? 2 : m.options.target === 'trebles' ? 3 : null;
   if (m.game === 'fullboard') {
     const cleared = m.view.cleared[v.current];
@@ -78,6 +88,23 @@ function RaceBoard({ m }: { m: Extract<MiniMatch, { game: 'atc' | 'fullboard' | 
 export const gotchaNote = (m: MiniMatch): string | null =>
   m.game === 'gotcha' && m.view.zeroed.length && m.view.visit.darts.length === 0 ? `Gotcha! ${m.view.zeroed.map(i => m.roster[i].name).join(', ')} → 0` : null;
 
+/** Knockout: how the last round ended, in words, or null when no round has ended since the last dart. */
+export const knockoutNote = (m: MiniMatch): string | null =>
+  m.game === 'knockout' && m.view.roundEnd ? roundEndText(m.view.roundEnd, m.roster.map(r => r.name)) : null;
+
+/** Football: whom the visit on screen won the ball from, for the turn card. */
+export const ballWonNote = (m: MiniMatch): string | null =>
+  m.game === 'football' && typeof m.view.wonFrom === 'number' ? `Ball won from ${m.roster[m.view.wonFrom].name}` : null;
+
+/** The hero's line under the score: the game's own, with names where the game module has none. */
+function heroNote(m: MiniMatch): string {
+  if (m.game === 'knockout' && m.view.visit.darts.length === 0) return knockoutNote(m) ?? m.view.hero.note;
+  if (m.game === 'football' && m.view.ball !== null && m.view.ball !== m.view.current) {
+    return `${m.roster[m.view.ball].name} has the ball · hit ${m.options.kickOff === 'any' ? 'the bull' : 'the bullseye'}`;
+  }
+  return gotchaNote(m) ?? m.view.hero.note;
+}
+
 export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
@@ -90,6 +117,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         <div className="hero-name">{m.roster[v.current].name}</div>
         <div className="spacer" />
         {m.game === '121' && <Hearts lives={m.view.lives} />}
+        {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         <div className="hero-left">{left}</div>
       </div>
       <div className="hero-score-row">
@@ -103,7 +131,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
       </div>
       {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
-      {(gotchaNote(m) ?? v.hero.note) && <div className="hero-note">{gotchaNote(m) ?? v.hero.note}</div>}
+      {heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
           const d = visit.darts[i];

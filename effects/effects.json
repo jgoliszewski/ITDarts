@@ -970,6 +970,24 @@
         "preset": 111,
         "seconds": 0.8
       }
+    },
+    {
+      "id": "b-goal",
+      "name": "Goal",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "goal"
+        }
+      ],
+      "sounds": [
+        "builtin:ton"
+      ],
+      "led": {
+        "preset": 107,
+        "seconds": 1.4
+      }
     }
   ]
 }

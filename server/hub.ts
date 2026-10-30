@@ -302,11 +302,11 @@ export class Hub {
     if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
-  /** The caller speaks in X01, 121, Random Checkouts and Gotcha only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01, 121, Random Checkouts, Gotcha and Knockout only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
     if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
     if (l.rec.game === 'randomco') return callerLinesRc(cs, l.view as RcView, turnStart);
-    if (l.rec.game === 'gotcha') return callerLinesGotcha(cs);
+    if (l.rec.game === 'gotcha' || l.rec.game === 'knockout') return callerLinesGotcha(cs);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
@@ -569,8 +569,8 @@ export class Hub {
         this.apply({ t: 'nextLeg' });
         return {};
       case 'endMatch':
-        // Random Checkouts has no end of its own: Save ends it as won, with the win screen first.
-        if (cmd.save && this.live?.rec.game === 'randomco' && v?.phase === 'throwing') {
+        // Random Checkouts has no end of its own, and Football counts goals: Save ends them as won, with the win screen first.
+        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football') && v?.phase === 'throwing') {
           this.apply({ t: 'end' });
           return {};
         }

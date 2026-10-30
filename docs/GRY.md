@@ -4,9 +4,9 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 9 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai i Gotcha (dwie ostatnie od 2026-10-29).
+Gramy w X01 oraz 11 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout i Football (od 2026-10-30).
 
-Bob's 27, Halve-It, Count Up i Bermuda Triangle są w backlogu ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Grillujemy je dopiero wtedy, gdy ktoś w biurze o nie poprosi.
+Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30, razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
 ## Wspólne zasady
 
@@ -23,7 +23,7 @@ Bob's 27, Halve-It, Count Up i Bermuda Triangle są w backlogu ([#7](https://git
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
   - **Practice:** ATC, Full Board, 121, Random Checkouts;
-  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha.
+  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football.
 
   Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
@@ -197,9 +197,42 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 - **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won”. Bez „Hit” i „Miss”.
 - **Statystyki:** wygrane i liczba Gotcha (ile razy gracz kogoś wyzerował). Bez rekordu.
 
+## Knockout
+
+Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+
+- **Runda:** każdy, kto jest jeszcze w grze, rzuca jedną Turę. Zaczynający przesuwa się co rundę o jedno miejsce w kolejności (wyeliminowanych pomijamy). Kolejność pierwszej rundy ustalają Shuffle albo Bull-off.
+- **Suma Tury** jak w X01: S/D/T × sektor, bull 25 albo 50. Pudło i odbita lotka dają 0, ale same nie przegrywają.
+- **Najniższa suma rundy traci życie**, także przy remisie: tracą je wszyscy z najniższą sumą. Życia odbieramy na koniec rundy, po Turze ostatniego gracza.
+- **Życia:** zawsze 3, bez opcji. Po stracie ostatniego gracz odpada, a kolejka go pomija.
+- **Wszyscy odpadliby naraz:** jeśli najniższą sumę mają wszyscy pozostali i każdy ma ostatnie życie, runda się nie liczy. Nikt nie traci życia i gramy następną rundę, jak w Higher or Lower.
+- **Wygrana:** ostatni gracz z życiem. „End match” z „Save” zapisuje grę bez zwycięzcy, jak w Killer.
+- **Gracze:** 2–8.
+- **Ekran wyników:** hero pokazuje imię, życia, dużą sumę Tury, kafelki lotek (przygaszone przy 0) i „Lowest so far”, czyli wynik do pobicia w tej rundzie. Lista graczy pokazuje sumę w bieżącej rundzie i życia, a wyeliminowani są wyszarzeni. Karta Tury po ostatniej Turze rundy pokazuje, kto stracił życie („Kuba loses a life”, „Kuba is out”, „Round replayed: everyone would be out”). Nagłówek „Knockout · 3 lives”.
+- **Caller** podaje sumę Tury jak w X01, bez „you require” i bez „game shot”.
+- **Wyzwalacze:** „Life lost”, „Player eliminated” i „Game won” (istnieją), bez nowego Momentu.
+- **Statystyki:** wygrane i średnia Tura. Bez rekordu.
+
+## Football
+
+Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+
+- **Piłka:** jedna na wszystkich, na starcie na środku (nikt jej nie ma). Bull przejmuje piłkę ze środka albo od posiadacza. Bull posiadacza nic nie robi.
+- **Gol:** z piłką każdy double 1–20 to gol, a strzelec zatrzymuje piłkę i strzela dalej, aż ktoś mu ją odbierze. Bull nigdy nie jest golem. Po przejęciu piłki następna lotka tej samej Tury może już być golem.
+- **Opcje:**
+  - „Kick-off”: „25/50” (domyślnie, piłkę daje każdy bull) albo „Bull only” (tylko 50);
+  - „Goals”: 3, 5 (domyślnie) albo 10;
+  - Bull-off.
+- **Wygrana:** kto pierwszy dobije do liczby goli, wygrywa od razu, także w środku Tury. „End match” z „Save” kończy grę jak wygraną: wygrywa najwięcej goli, remisujący dzielą wygraną, a przy 0 goli nie ma zwycięzcy.
+- **Gracze:** 2–8, każdy na siebie.
+- **Ekran wyników:** hero pokazuje imię, dużą liczbę goli, kafelki lotek (zielone dla przejęcia i gola, czerwone dla reszty) i gdzie jest piłka. Prawą połowę hero zajmuje tarcza z ATC: bez piłki podświetlony bull (przy „Bull only” sam środek), z piłką pierścień doubles. Lista graczy pokazuje gole i piłkę przy posiadaczu. Karta Tury: „Goal!”, „2 goals!” albo „Ball won”, z dopiskiem, komu piłka została odebrana. Nagłówek np. „Football · 25/50 · First to 5”.
+- **Caller** milczy.
+- **Wyzwalacze:** nowy „Goal” (M, dobry, na start dźwięk i ledy z Ton) i „Game won”. „Goal” jest w kolejności przed „Game won”, bo wygrana pada tą samą lotką. Przejęcie piłki nie ma Momentu.
+- **Statystyki:** wygrane i liczba goli. Bez rekordu.
+
 ## Statystyki na `/stats`
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football.
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

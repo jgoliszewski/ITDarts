@@ -8,6 +8,11 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Knockout i Football** (2026-10-30, grilling w [#7](https://github.com/jgoliszewski/ITDarts/issues/7), [GRY.md](GRY.md#knockout)):
+  - Knockout (`games/knockout.ts`): runda po jednej Turze, najniższa suma traci życie (remisujący wszyscy), 3 życia, zaczynający przesuwa się co rundę, runda się nie liczy, gdy odpadliby wszyscy. Caller podaje sumę Tury, statystyki: wygrane i średnia Tura;
+  - Football (`games/football.ts`): jedna piłka, bull ją przejmuje (opcja Kick-off 25/50 albo Bull only), z piłką double 1–20 to gol, opcja Goals 3/5/10, „Save” kończy grę wygraną najwięcej goli (jak w Random Checkouts). Tarcza na hero obrysowuje bull albo cały pierścień doubles (`target="ring"` w `TargetBoard`). Nowy Moment „Goal” (reguła bazowa `b-goal`, dźwięk i ledy z Ton) przed „Match won” w `ORDER`;
+  - backlog minigierek z #7 odrzucony, issue zamknięte;
+  - sprawdzone testami (`games/knockout.test.ts`, `games/football.test.ts`, test `pickRule` dla „Goal”) i skryptem przez websocket z symulatorem tarczy na osobnej bazie: Knockout na 3 graczy od utraty życia przez eliminację do wygranej, Football z golem, odebraniem piłki, „End match” z „Save” i zapisem goli w statystykach, setup na telefonie. Zrzuty 1920×1080 w `.scratch/knockout-football/`. Niesprawdzone: dźwięk i ledy „Goal” w kiosku, caller Knockout na żywo, `/stats` obu gier w przeglądarce.
 - **Poprawki „Znanych problemów”** (2026-10-30):
   - w `npm run dev` proxy Vite przekazuje adres przeglądarki (`xfwd`), a serwer bierze go zamiast adresu proxy, więc telefon nie jest już kiosk. Sprawdzone połączeniem przez `localhost:5173` (kiosk) i `192.168.1.94:5173` (telefon);
   - dźwięk z biblioteki ma adres z wersją pliku (`url` w `Sound`, `/sounds/<plik>?v=<mtime>`), więc kiosk nie gra starego dźwięku po podmianie pliku o tej samej nazwie. Przy okazji przyciski odtwarzania plików na `/effects` grają z tego adresu; wcześniej pobierały stronę zamiast dźwięku i milczały. Sprawdzone w przeglądarce na `/effects/sounds`;
@@ -36,7 +41,7 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
   - silnik X01 z logiem zdarzeń, setami, bull-offem i checkoutami;
   - serwer z adapterem Board Managera i SQLite;
   - Ekran wyników, Pilot, setup, Players, Board panel, `/stats`.
-- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai i Gotcha.
+- **Minigierki** według [GRY.md](GRY.md): ATC, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha, Knockout i Football.
   - Gry dzielą log tur z `games/turns.ts`. Każda jest czystą funkcją logu, więc Poprawka i Undo działają wszędzie.
   - Gotowe są też Co-op, Ekran rekordu ze „Skip”, „New record” na ekranie wygranej, „How to play” w setupie i w menu Pilota razem z „Show on screen”, podpowiedzi „i” przy opcjach i Reroll numerów w Killer.
   - Setup pamięta opcje osobno dla każdej gry i domyślnie wybiera ostatnio graną.
@@ -109,7 +114,7 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
   - po „Next player” przed takeoutem i ponownym połączeniu z Board Managerem stare lotki nie wpadają następnemu graczowi: `Board` pamięta przetworzone lotki przez reconnect, hub pyta tylko przy pierwszym połączeniu (test w `server/board.test.ts`);
   - większe napisy na przyciskach Board panelu na laptopie. Nie oglądane jeszcze na ekranie.
 
-  Testy: `npm test` (229 na 2026-10-30), `npm run typecheck`.
+  Testy: `npm test` (247 na 2026-10-30), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;
@@ -155,9 +160,8 @@ Brak otwartych. Ostatnie cztery poprawione 2026-10-30 (wyżej, w „Gotowe”).
 1. Sprawdzić przy tarczy, co zostało w „Do sprawdzenia przy efektach”, i odzyskanie lotek po rozłączeniu z Board Managerem.
 2. Zagrać w minigierki na prawdziwej tarczy i poprawić teksty „How to play” po pierwszych grach.
 3. Przeróbka strony Effects i konfiguratora według [MAPA.md](MAPA.md#do-zrobienia).
-4. Otwarte issues:
-   - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking;
-   - [#7](https://github.com/jgoliszewski/ITDarts/issues/7): backlog minigierek.
+4. Otwarte issues (backlog minigierek z #7 zamknięty 2026-10-30):
+   - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking.
 5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo
