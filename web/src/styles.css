@@ -123,6 +123,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .hero-checkout .caps { color: var(--accent); font-size: calc(18 * var(--u)); }
 .hero-checkout .num { font-size: calc(64 * var(--u)); line-height: 1; }
 .hero-checkout.setup .caps { color: var(--muted); }
+.hero-checkout.ko-beat .num { font-size: calc(140 * var(--u)); }
+.hero-checkout.ko-beat.safe .caps, .hero-checkout.ko-beat.safe .num { color: var(--green); }
+.prow .meta.list-hearts { gap: calc(6 * var(--u)); font-size: calc(60 * var(--u)); line-height: 1; color: #3A3A40; }
+.prow.compact .meta.list-hearts { font-size: calc(52 * var(--u)); }
+.prow .meta.list-hearts .on { color: var(--red); }
+.prow.active .meta.list-hearts { color: rgba(17, 17, 17, 0.3); }
+.prow.active .meta.list-hearts .on { color: #111; }
 .hero-bust { margin-bottom: calc(24 * var(--u)); font-size: calc(120 * var(--u)); color: var(--red); line-height: 0.9; }
 .hero-darts { display: flex; align-items: stretch; gap: calc(16 * var(--u)); }
 .dart-tile { width: calc(230 * var(--u)); height: calc(160 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--accent); color: var(--on-accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: box-shadow 0.3s; }

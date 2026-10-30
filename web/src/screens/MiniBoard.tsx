@@ -48,6 +48,17 @@ export function Hearts({ lives, losing = false }: { lives: number; losing?: bool
   );
 }
 
+/** Knockout: the round's lowest visit so far, big next to the visit, green once the visit is past it (bug report 2026-10-30). */
+function ToBeat({ lowest, visit }: { lowest: number | null; visit: number }) {
+  if (lowest === null) return <div className="hero-checkout ko-beat"><div className="caps">First to throw</div></div>;
+  return (
+    <div className={`hero-checkout ko-beat ${visit > lowest ? 'safe' : ''}`}>
+      <div className="caps">{visit > lowest ? 'Beaten' : 'To beat'}</div>
+      <div className="num">{lowest}</div>
+    </div>
+  );
+}
+
 /** Checkout route, or setup darts for the next visit when no checkout is on. */
 export function RouteHint({ checkout, setup }: { checkout: string | null; setup: string | null }) {
   if (!checkout && !setup) return null;
@@ -148,6 +159,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
         {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
+        {m.game === 'knockout' && <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} />}
       </div>
       {board && <RaceBoard m={m} />}
       {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
@@ -186,7 +198,9 @@ export function MiniList({ m }: { m: MiniMatch }) {
           <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${row.out ? 'out' : ''}`}>
             <div className="info">
               <div className="name">{r.name}</div>
-              <div className="meta"><span>{row.meta}</span></div>
+              {m.game === 'knockout' && !row.out
+                ? <div className="meta list-hearts" aria-label={row.meta}>{[0, 1, 2].map(k => <span key={k} className={k < m.view.lives[i] ? 'on' : ''}>{k < m.view.lives[i] ? '♥' : '♡'}</span>)}</div>
+                : <div className="meta"><span>{row.meta}</span></div>}
             </div>
             <div className="score num">{row.value}</div>
           </div>

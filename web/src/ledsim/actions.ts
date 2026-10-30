@@ -55,6 +55,7 @@ export const MOMENTS: Moment[] = [
   { id: 'gotcha', led: 'bnb', name: 'Gotcha', group: 'Minigames', when: 'Gotcha: a rival is sent back to zero', strength: 'L', mood: 'fun', often: 'a few a game', sound: 'bed-and-breakfast', note: 'Sound and LEDs of Bed and breakfast' },
   { id: 'goal', led: 'ton', name: 'Goal', group: 'Minigames', when: 'Football: a double with the ball', strength: 'M', mood: 'good', often: 'a few a game', sound: 'ton', note: 'Sound and LEDs of Ton' },
   { id: 'life-lost', name: 'Life lost', group: 'Minigames', when: 'Killer, 121, Knockout: a life goes', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
+  { id: 'lowest', led: 'life-lost', name: 'Lowest visit', group: 'Minigames', when: 'Knockout: your visit is the lowest of the round so far', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score', note: 'Sound and LEDs of Life lost' },
   { id: 'killer', name: 'Became killer', group: 'Minigames', when: 'Killer: player becomes a killer', strength: 'M', mood: 'good', often: 'once per player', sound: null },
   { id: 'attempt-failed', name: 'Attempt failed', group: 'Minigames', when: '121: no checkout in the attempt', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
   { id: 'player-out', name: 'Player out', group: 'Minigames', when: 'Player eliminated', strength: 'L', mood: 'bad', often: 'a few a game', sound: 'player-out' },

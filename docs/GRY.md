@@ -211,9 +211,12 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 - **Wszyscy odpadliby naraz:** jeśli najniższą sumę mają wszyscy pozostali i każdy ma ostatnie życie, runda się nie liczy. Nikt nie traci życia i gramy następną rundę, jak w Higher or Lower.
 - **Wygrana:** ostatni gracz z życiem. „End match” z „Save” zapisuje grę bez zwycięzcy, jak w Killer.
 - **Gracze:** 2–8.
-- **Ekran wyników:** hero pokazuje imię, życia, dużą sumę Tury, kafelki lotek (przygaszone przy 0) i „Lowest so far”, czyli wynik do pobicia w tej rundzie. Lista graczy pokazuje sumę w bieżącej rundzie i życia, a wyeliminowani są wyszarzeni. Karta Tury po ostatniej Turze rundy pokazuje, kto stracił życie („Kuba loses a life”, „Kuba is out”, „Round replayed: everyone would be out”). Nagłówek „Knockout · 3 lives”.
+- **Ekran wyników:** hero pokazuje imię, życia, dużą sumę Tury i kafelki lotek (przygaszone przy 0). Obok sumy jest duży kafelek „To beat” z najniższą sumą rundy do tej pory, zielony („Beaten”), gdy Tura ją przebije; pierwszy w rundzie widzi „First to throw” (od 2026-10-30, ze zgłoszenia: wynik do pobicia był za mało widoczny). Lista graczy pokazuje sumę w bieżącej rundzie i życia jako duże serca, a wyeliminowani są wyszarzeni. Karta Tury po ostatniej Turze rundy pokazuje, kto stracił życie („Kuba loses a life”, „Kuba is out”, „Round replayed: everyone would be out”). Nagłówek „Knockout · 3 lives”.
 - **Caller** podaje sumę Tury jak w X01, bez „you require” i bez „game shot”.
-- **Wyzwalacze:** „Life lost”, „Player eliminated” i „Game won” (istnieją), bez nowego Momentu.
+- **Wyzwalacze** (od 2026-10-30, ze zgłoszenia: smutny dźwięk na koniec rundy słyszał ostatni gracz, choć odpadał ktoś inny):
+  - nowy „Lowest visit” (M, zły, dźwięk i ledy z Life lost): Tura jest najniższa spośród rzuconych w tej rundzie, remis też. Nie odpala dla pierwszej Tury rundy;
+  - „Life lost” i „Player eliminated” na koniec rundy odpalają tylko wtedy, gdy dotyczą gracza, który właśnie rzucał. Pozostali usłyszeli „Lowest visit” przy swojej Turze;
+  - „Game won”.
 - **Statystyki:** wygrane i średnia Tura. Bez rekordu.
 
 ## Football

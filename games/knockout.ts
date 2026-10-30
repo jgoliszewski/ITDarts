@@ -70,6 +70,9 @@ function play(t: Turns, players: number): State {
     if (!w.complete || over) continue;
 
     const p = v.player;
+    // Lowest so far in the round, ties included, is bad news at once; the first visit of a round has nothing to be below.
+    const before = lowestOf(totals);
+    if (before !== null && total <= before) fx.push({ slot: `V${vi + 1}:lowest`, fact: { kind: 'game', event: 'lowest' } });
     totals[p] = total;
     points[p] += total;
     visits[p]++;
@@ -77,7 +80,7 @@ function play(t: Turns, players: number): State {
     if (++pos < queue.length) continue;
 
     // End of the round: the lowest total loses a life, ties included, unless that would put everyone out.
-    const R = `R${round + 1}`;
+    // Only the player who just threw hears about it; the others heard it when their visit was the lowest.
     const lowest = lowestOf(totals)!;
     const losers = queue.filter(q => totals[q] === lowest);
     const replayed = losers.length === queue.length && losers.every(q => lives[q] === 1);
@@ -86,10 +89,10 @@ function play(t: Turns, players: number): State {
     if (!replayed) {
       for (const q of losers) {
         lives[q]--;
-        fx.push({ slot: `${R}:life:${q}`, fact: { kind: 'game', event: 'lifeLost' } });
+        if (q === p) fx.push({ slot: `V${vi + 1}:life`, fact: { kind: 'game', event: 'lifeLost' } });
         if (lives[q] === 0) {
           roundEnd.out.push(q);
-          fx.push({ slot: `${R}:out:${q}`, fact: { kind: 'game', event: 'eliminated' } });
+          if (q === p) fx.push({ slot: `V${vi + 1}:out`, fact: { kind: 'game', event: 'eliminated' } });
         }
       }
     }
@@ -144,11 +147,8 @@ function view(events: TurnEvent[], players: number, o: KnockoutOptions): Knockou
   return {
     ...f,
     winners: s.winners,
-    hero: {
-      big: String(s.visitScore),
-      caption: 'Visit',
-      note: s.lowest === null ? 'First to throw this round' : `Lowest so far: ${s.lowest}`,
-    },
+    // The score to beat is a tile next to the visit (web/src/screens/MiniBoard.tsx), so the note stays free for the round's end.
+    hero: { big: String(s.visitScore), caption: 'Visit', note: '' },
     rows: s.lives.map((l, i) => ({
       value: s.roundTotals[i] === null ? '–' : String(s.roundTotals[i]),
       meta: s.out[i] ? 'Out' : hearts(l),

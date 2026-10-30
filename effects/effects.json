@@ -988,6 +988,24 @@
         "preset": 107,
         "seconds": 1.4
       }
+    },
+    {
+      "id": "b-lowest",
+      "name": "Lowest visit",
+      "enabled": true,
+      "triggers": [
+        {
+          "kind": "game",
+          "event": "lowest"
+        }
+      ],
+      "sounds": [
+        "builtin:no-score"
+      ],
+      "led": {
+        "preset": 124,
+        "seconds": 1
+      }
     }
   ]
 }

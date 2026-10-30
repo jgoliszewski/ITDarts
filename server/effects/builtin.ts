@@ -94,6 +94,7 @@ export const BASE_RULES: BaseRule[] = [
   { id: 'b-player-out', name: 'Player out', triggers: [{ kind: 'game', event: 'eliminated' }], sound: builtinId('player-out'), led: 'player-out' },
   // Added 2026-10-28 (docs/MAPA.md): the minigame events, Leg start, and the sounds that were hard-coded before.
   { id: 'b-life-lost', name: 'Life lost', triggers: [{ kind: 'game', event: 'lifeLost' }], sound: builtinId('no-score'), led: 'life-lost' },
+  { id: 'b-lowest', name: 'Lowest visit', triggers: [{ kind: 'game', event: 'lowest' }], sound: builtinId('no-score'), led: 'life-lost' },
   { id: 'b-attempt-failed', name: 'Attempt failed', triggers: [{ kind: 'game', event: 'attemptFailed' }], sound: builtinId('no-score'), led: 'attempt-failed' },
   { id: 'b-became-killer', name: 'Became killer', triggers: [{ kind: 'game', event: 'becameKiller' }], sound: null, led: 'killer' },
   { id: 'b-sector-closed', name: 'Sector closed', triggers: [{ kind: 'game', event: 'sectorClosed' }], sound: builtinId('hit'), led: 'sector-closed' },

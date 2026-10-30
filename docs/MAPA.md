@@ -59,6 +59,7 @@ Otwiera `http://localhost:5173/led-sim.html` (strona działa też przy `npm run 
 | | Gotcha | Gotcha: rywal wraca do zera | L | zabawny | kilka na grę | Bed and breakfast | jak Bed and breakfast |
 | | Goal | Football: double z piłką | M | dobry | kilka na grę | Ton | jak Ton |
 | | Life lost | Killer, 121, Knockout: utrata życia | M | zły | kilka na grę | brak | brak |
+| | Lowest visit | Knockout: najniższa Tura rundy do tej pory | M | zły | kilka na grę | No score | jak Life lost |
 | | Became killer | Killer: gracz zostaje killerem | M | dobry | raz na gracza | brak | brak |
 | | Attempt failed | 121: nieudane podejście | M | zły | kilka na grę | brak | brak |
 | | Player out | eliminacja | L | zły | kilka na grę | Player out | Pulse · czerwień |
@@ -194,6 +195,7 @@ Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają
 | Gotcha | **Bed and breakfast** | magenta | jak Bed and breakfast (preset 111) | 0,8 s |
 | Goal | **Ton** | pomarańcz | jak Ton | 1,4 s |
 | Life lost | **No score** | czerwień | czerwień, bez ruchu | 1 s |
+| Lowest visit | **No score** | czerwień | jak Life lost (preset 124) | 1 s |
 | Became killer | brak | karmin | karmin, bez ruchu | 1,4 s |
 | Attempt failed | **No score** | karmin | karmin, bez ruchu, jak Became killer | 1,4 s |
 | Player out | **marimba w dół i dłuższy zjazd** | czerwień | czerwień, bez ruchu | 2 s |

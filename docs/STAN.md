@@ -13,6 +13,7 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
   - Knockout (`games/knockout.ts`): runda po jednej Turze, najniższa suma traci życie (remisujący wszyscy), 3 życia, zaczynający przesuwa się co rundę, runda się nie liczy, gdy odpadliby wszyscy. Caller podaje sumę Tury, statystyki: wygrane i średnia Tura;
   - Football (`games/football.ts`): jedna piłka, bull ją przejmuje (opcja Kick-off 25/50 albo Bull only), z piłką double 1–20 to gol, opcja Goals 3/5/10, „Save” kończy grę wygraną najwięcej goli (jak w Random Checkouts). Tarcza na hero obrysowuje bull albo cały pierścień doubles (`target="ring"` w `TargetBoard`). Nowy Moment „Goal” (reguła bazowa `b-goal`, dźwięk i ledy z Ton) przed „Match won” w `ORDER`;
   - backlog minigierek z #7 odrzucony, issue zamknięte;
+  - po pierwszych testach (2026-10-30): w Knockout większe serca na liście, kafelek „To beat” obok sumy Tury i nowy Moment „Lowest visit” (reguła bazowa `b-lowest`). Smutny dźwięk słyszy tylko ten, czyja Tura jest najniższa do tej pory, a „Life lost” i „Player eliminated” na koniec rundy tylko wtedy, gdy dotyczą ostatniego rzucającego;
   - sprawdzone testami (`games/knockout.test.ts`, `games/football.test.ts`, test `pickRule` dla „Goal”) i skryptem przez websocket z symulatorem tarczy na osobnej bazie: Knockout na 3 graczy od utraty życia przez eliminację do wygranej, Football z golem, odebraniem piłki, „End match” z „Save” i zapisem goli w statystykach, setup na telefonie. Zrzuty 1920×1080 w `.scratch/knockout-football/`. Niesprawdzone: dźwięk i ledy „Goal” w kiosku, caller Knockout na żywo, `/stats` obu gier w przeglądarce.
 - **Poprawki „Znanych problemów”** (2026-10-30):
   - w `npm run dev` proxy Vite przekazuje adres przeglądarki (`xfwd`), a serwer bierze go zamiast adresu proxy, więc telefon nie jest już kiosk. Sprawdzone połączeniem przez `localhost:5173` (kiosk) i `192.168.1.94:5173` (telefon);
@@ -115,7 +116,7 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
   - po „Next player” przed takeoutem i ponownym połączeniu z Board Managerem stare lotki nie wpadają następnemu graczowi: `Board` pamięta przetworzone lotki przez reconnect, hub pyta tylko przy pierwszym połączeniu (test w `server/board.test.ts`);
   - większe napisy na przyciskach Board panelu na laptopie. Nie oglądane jeszcze na ekranie.
 
-  Testy: `npm test` (247 na 2026-10-30), `npm run typecheck`.
+  Testy: `npm test` (253 na 2026-10-30), `npm run typecheck`.
 - **Sprawdzone z symulatorem tarczy** (`npm run dev:fake`):
   - lobby, setup, rzuty, Poprawka, Undo, takeout, koniec legu i meczu, rematch;
   - przejęcie Pilota, End match z Save i Discard;

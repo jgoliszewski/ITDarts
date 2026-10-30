@@ -60,7 +60,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - „New record” jest przed wygranym meczem, bo pada tą samą lotką i inaczej nigdy by nie zagrał;
   - „Shanghai” też jest przed wygranym meczem, z tego samego powodu: przy 2+ graczach wygrana pada tą samą lotką, więc bez tego Moment zagrałby tylko solo;
   - „Goal” (Football, od 2026-10-30) jest zaraz po „Shanghai”, bo gol rozstrzygający mecz pada tą samą lotką co wygrana;
-  - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, killer, nieudane podejście, White Horse, Gotcha, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
+  - zdarzenia minigierek są między bustem a kombinacją, w kolejności: eliminacja, utrata życia, najniższa Tura (Knockout), killer, nieudane podejście, White Horse, Gotcha, znaczniki w turze, zamknięty sektor, zaliczony sektor, trafiony cel;
   - start meczu, start legu, takeout i tarcza są na samym końcu.
   - Przy remisie priorytetów gra starsza reguła.
 - **„Dowolna liczba”** w lotce i kombinacji to 1–20, bez bulla i pudła. Bull i 25 wybiera się osobno.

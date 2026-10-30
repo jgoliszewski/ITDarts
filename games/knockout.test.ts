@@ -16,11 +16,20 @@ describe('knockout', () => {
     const mid = knockout.view(log.slice(0, 8), 3, o);
     expect(mid.lives).toEqual([3, 3, 3]);
     expect(mid.lowest).toBe(7);
-    expect(mid.hero.note).toBe('Lowest so far: 7');
     const v = knockout.view(log, 3, o);
     expect(v.lives).toEqual([3, 2, 3]);
     expect(v.roundEnd).toEqual({ losers: [1], out: [], replayed: false });
-    expect(events(log, 3)).toEqual(['R1:life:1 lifeLost']);
+    // The lowest visit is bad news when it is thrown; the round's end says nothing to the last player, who was safe.
+    expect(events(log, 3)).toEqual(['V2:lowest lowest']);
+  });
+
+  it('gives bad news only to a visit that is the lowest so far, not to the first one of a round', () => {
+    // Kuba throws first and low: nothing yet. Ola goes lower (tie counts). Ada is safe and hears nothing when Kuba and Ola lose.
+    const log = [...visit('S5'), ...visit('S5'), ...visit('S20')];
+    expect(events(log, 3)).toEqual(['V2:lowest lowest']);
+    expect(knockout.view(log, 3, o).lives).toEqual([2, 2, 3]);
+    // The last player lowest of all hears it once more as the life goes.
+    expect(events([...visit('S20'), ...visit('S5')], 2)).toEqual(['V2:lowest lowest', 'V2:life lifeLost']);
   });
 
   it('takes a life from everyone tied on the lowest visit', () => {
@@ -47,7 +56,7 @@ describe('knockout', () => {
     expect(v.winners).toEqual([0]);
     expect(v.rows[1]).toMatchObject({ meta: 'Out', out: true });
     expect(v.roundEnd).toEqual({ losers: [1], out: [1], replayed: false });
-    expect(events(log, 2).slice(-2)).toEqual(['R3:life:1 lifeLost', 'R3:out:1 eliminated']);
+    expect(events(log, 2).slice(-3)).toEqual(['V6:lowest lowest', 'V6:life lifeLost', 'V6:out eliminated']);
   });
 
   it('does not count a round that would put everyone out', () => {
