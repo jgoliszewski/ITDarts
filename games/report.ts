@@ -84,7 +84,8 @@ export function matchReport(m: {
     line = won.some(x => x > 0) ? [...won].sort((a, b) => b - a).join('–') : '';
     const best = Math.max(...v.legs);
     const leader = v.matchWinner ?? (v.legs.filter(x => x === best).length === 1 ? v.legs.indexOf(best) : null);
-    kicker = m.ended ? 'MATCH ENDED' : 'MATCH WON';
+    // The same words as the minigames (docs/UI.md, Start i koniec meczu).
+    kicker = m.ended ? 'MATCH ENDED' : 'WINNER';
     title = !m.ended && leader !== null ? m.names[leader] : m.names.join(' vs ');
   }
   return {

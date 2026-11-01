@@ -19,7 +19,7 @@ describe('match report', () => {
       game: 'x01', description: 'X01', names: ['Ann', 'Guest 1'], legs: x01.compact(events, 2, o), view,
       checkOut: 'double', ended: false, ocheMeters: 2.5,
     });
-    expect([r.kicker, r.title, r.line]).toEqual(['MATCH WON', 'Ann', '1–0']);
+    expect([r.kicker, r.title, r.line]).toEqual(['WINNER', 'Ann', '1–0']);
     expect(r.x01!.map(x => x.darts)).toEqual([4, 3]);
     expect(r.x01![0].highestCheckout).toBe(20);
     expect(r.heat.map(h => [h.darts.length, h.noPos, h.visits])).toEqual([[4, 0, 2], [2, 1, 1]]);

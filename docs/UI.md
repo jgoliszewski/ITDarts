@@ -52,7 +52,13 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 ## Ekran wyników
 
 - **Układ:** hero aktywnego gracza po lewej, lista wszystkich graczy po prawej. Działa dla 2–8 graczy bez zmiany układu.
-- **Hero:** imię, wygrane legi, ogromny wynik i 3 kafelki lotek. Bez licznika „N darts left” (od 2026-10-30, kafelki to pokazują); w rogu zostają tylko „Bust”, „Checked out” i „Needs a double to start”. Kafelek pokazuje dużą wartość i mały segment (60 / T20). Puste miejsca są obrysowane.
+- **Jeden układ dla wszystkich gier** (od 2026-11-01, z przeglądu zrzutów wszystkich gier w tych samych chwilach):
+  - Duża liczba w hero ma ten sam rozmiar w X01 i minigierkach. Mniejsza jest tylko w grach z tarczą, bo dzieli hero z tarczą.
+  - Kafelek lotki wszędzie pokazuje duże pole i małą wartość (T20 / 60), także w X01, i ma tę samą szerokość. W grach z tarczą kafelki leżą pod tarczą przez całą szerokość hero.
+  - Prawa kolumna ma jedną szerokość (620), bez względu na grę i liczbę graczy. Wyjątkiem jest siatka Cricketa. Wiersze listy są pełnowymiarowe do 4 graczy, a kompaktowe od 5, też w minigierkach.
+  - Pod listą minigierki mają kartę „IMIĘ · THIS MATCH” z liczbami aktywnego gracza, tymi samymi co w podsumowaniu (np. ATC: hit rate i lotki), do 4 graczy. Higher or Lower nie zbiera liczb, więc nie ma karty. W 121 pierwszym kafelkiem jest „Darts left” z lotkami do końca podejścia. Tekst w kafelkach statystyk jest wyśrodkowany, też w X01.
+  - Zaliczone sektory na tarczy (ATC, Full Board) są zakreskowane o ok. 15% ciemniej niż żywe pola, żeby od razu odróżniały się od reszty tarczy.
+- **Hero:** imię, wygrane legi, ogromny wynik i 3 kafelki lotek. Bez licznika „N darts left” (od 2026-10-30, kafelki to pokazują); w rogu zostają tylko „Bust”, „Checked out” i „Needs a double to start”. Puste miejsca są obrysowane.
 - **Checkout:** gdy da się skończyć leg lotkami, które zostały w turze, obok wyniku jest ścieżka (np. „T19 · D12”). Gdy się nie da (bogey, za mało lotek, pudło w trakcie), jest „Setup”: lotki, które najlepiej ustawiają checkout pod następną turę (np. „T20 · S14”). Samo punktowanie w T20 daleko od końca nie ma podpowiedzi.
   - Przy double out trasy są z tabeli checkoutów PDC (41–170). Dopóki lotki trafiają w zaplanowaną trasę, podpowiedź ją kontynuuje (130: T20, dalej „T20 · D5”, a nie trasa z tabeli dla 70). Po zejściu z planu bierze trasę z tabeli dla nowego wyniku, jeśli mieści się w lotkach, które zostały.
   - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
@@ -64,7 +70,7 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 - **Statystyki, do 4 graczy** (od 2026-10-28, ze zgłoszenia; wcześniej tylko przy 2):
   - karta z 6 ostatnimi wizytami aktywnego gracza;
   - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 60+, 80+, 100+ (od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura).
-  - Przy 3–4 graczach bez karty ostatnich wizyt, a lista jest szersza (760 zamiast 620) i ma pełnowymiarowe wiersze. Przy 5+ graczach zostaje sama lista, w wersji kompaktowej. Bez first 9, checkout % i liczby lotek w legu.
+  - Przy 3–4 graczach bez karty ostatnich wizyt. Przy 5+ graczach zostaje sama lista, w wersji kompaktowej. Bez first 9, checkout % i liczby lotek w legu. Szerszą listę przy 3–4 graczach (760) zdjęliśmy 2026-11-01, żeby kolumna miała tę samą szerokość we wszystkich grach.
 - **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
 - **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).
@@ -73,10 +79,10 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 
 - **Takeout** kończy turę automatycznie. Lotki, których brakuje do trzech, wpadają jako Miss.
 - **Karta tury** (z testów 2026-10-26): gdy Tura się skończy (trzecia lotka, bust, checkout, utrata życia), ekran nie przeskakuje dalej, tylko od razu pokazuje kartę tury. Przy krótszej Turze karta pojawia się z początkiem takeoutu.
-  - Na karcie: imię, duży werdykt i lotki. Werdykt to „CHECKOUT”, „BUST” (czerwony) albo zdarzenie gry, np. „LIFE LOST”. Bez werdyktu jest wynik tury: suma w X01, 121 i Higher or Lower, w Cricket liczba marków („4 MARKS”, od 2026-10-28, ze zgłoszenia: po poprawce S2 na T17 liczba trafień się nie zmieniała), a w pozostałych minigierkach liczba trafień („2 HITS”).
+  - Na karcie jest tylko imię, duży werdykt i lotki (od 2026-11-01). Nad liczbą jest samo imię, bez „scored”. Werdykt to „CHECKOUT”, „BUST” (czerwony) albo zdarzenie gry, np. „LIFE LOST”. Bez werdyktu jest wynik tury: suma w X01, 121 i Higher or Lower, w Cricket liczba marków („4 MARKS”, od 2026-10-28, ze zgłoszenia: po poprawce S2 na T17 liczba trafień się nie zmieniała), a w pozostałych minigierkach liczba trafień („2 HITS”).
   - Karta i inne nakładki mieszczą się nad paskiem Pilota (od 2026-10-28, ze zgłoszenia: pasek „Removing darts” wystawał pod pasek).
-  - Lotki to duże kafelki jak na ekranie gry (od 2026-10-27, ze zgłoszenia o nieczytelnej karcie). W minigierkach na górze jest pole (np. „S7”). W grach liczonych trafieniami (ATC, Full Board, Cricket, Killer) kafelek jest zielony przy trafieniu i czerwony przy pudle (od 2026-10-27). W 121 i Higher or Lower lotka, która nic nie dała, jest wygaszona. Niedorzucone lotki to puste kafelki.
-  - Pod lotkami są kafelki ze stanem po Turze: X01 „Left”, 121 „Target”, „Left” i „Darts in attempt”, Higher or Lower „Range”, reszta minigierek to samo co hero (np. „Target 7”) i jego notka (np. „2 / 21 · 3 darts”).
+  - Lotki to duże kafelki jak na ekranie gry (od 2026-10-27, ze zgłoszenia o nieczytelnej karcie), z polem na górze (np. „S7”). W grach liczonych trafieniami (ATC, Full Board, Cricket, Killer) kafelek jest zielony przy trafieniu i czerwony przy pudle (od 2026-10-27). W 121 i Higher or Lower lotka, która nic nie dała, jest wygaszona. Niedorzucone lotki to puste kafelki.
+  - Bez kafelków ze stanem po Turze („Left”, „Target”, „Range” itd.) i bez notek gry pod lotkami (zdjęte 2026-11-01): nikt ich nie czytał, a hero pokazuje to samo po końcu takeoutu. Zostaje „Pull the darts” i pasek takeoutu.
   - Hero pod kartą trzyma stan z chwili końca Tury, np. w 121 nadal „Target 121”. Nowy cel, nowe życie i następny gracz pojawiają się dopiero po końcu takeoutu.
   - Checkout kończący leg X01 pokazuje od razu ekran końca legu, jak dotąd.
 - W czasie takeoutu ekran jest przyszarzony. Pod kartą tury jest bursztynowy pasek „Removing darts” ze spinnerem i ostrzeżeniem, że rzuty przed „Ready” się nie liczą.
@@ -110,10 +116,11 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   - match mode: Off, Legs lub Sets, z „First to N”;
   - bull-off: Off, „Closest to bull” lub zasady PDC.
 - **Gracze i goście:** opisani w [STATYSTYKI.md](STATYSTYKI.md).
+- **Wspólny wygląd kart** (od 2026-11-01): koniec legu, koniec meczu i Ekran rekordu mają duży napis nad zwycięzcą, duże imię i duże kafelki z liczbami. Pod kafelkami nie ma linijek tekstu („Legs so far”, „Next leg starts after the takeout”, „The summary opens from the pilot”, „Game on in a moment”): co dalej, mówi pasek Pilota.
 - **Koniec legu:** ekran ze zwycięzcą, checkoutem, liczbą lotek i średnią z legu.
   - W match mode trzyma się do końca takeoutu, potem następny leg startuje sam.
   - Bez match mode czeka na „Next leg” albo „End match”.
-- **Koniec meczu:** karta wygranej („MATCH WON”, w minigrach „WINNER” albo „GAME OVER”) ma na Pilocie jeden przycisk „Summary”, który zapisuje mecz i otwiera [podsumowanie](#podsumowanie-meczu). „End match” ze „Save to stats” i zwykłe zakończenie po legu bez match mode też prowadzą do podsumowania, „Discard” prosto do lobby.
+- **Koniec meczu:** karta wygranej („WINNER” we wszystkich grach, w minigierkach też „SHARED WIN” albo „GAME OVER”; od 2026-11-01 zamiast „MATCH WON” w X01) pokazuje zwycięzcę i kafelki: w X01 legi, średnią i checkout, w minigierkach wynik gry i liczby zwycięzcy z podsumowania. Status tarczy w nagłówku to wtedy „Game over” w każdej grze. Karta ma na Pilocie jeden przycisk „Summary”, który zapisuje mecz i otwiera [podsumowanie](#podsumowanie-meczu). „End match” ze „Save to stats” i zwykłe zakończenie po legu bez match mode też prowadzą do podsumowania, „Discard” prosto do lobby.
 
 ## Podsumowanie meczu
 

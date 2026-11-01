@@ -5,11 +5,13 @@ import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label } from '../../../games/darts.ts';
 import { roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
+import { gameStats } from '../components/Compare.tsx';
+import { DartFace } from '../components/DartFace.tsx';
 import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
-import { dartTone, dartValue, winnersOf } from '../match.ts';
+import { dartTone, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
 /** Range bar for Higher or Lower: 0–180 with the forbidden range in red and the visit sum. */
@@ -66,7 +68,7 @@ export function RouteHint({ checkout, setup }: { checkout: string | null; setup:
 }
 
 /**
- * 121: darts left in the attempt, as a number and one pip per dart, grouped by visit, with no caption (the pips say it). The pips go green on a checkout
+ * 121: darts left in the attempt, as a number and one pip per dart, grouped by visit, in a card under the player list. The pips go green on a checkout
  * and flash red on a failed attempt, while the finished visit is held on screen; a new attempt's pips fade in.
  */
 function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end: 'out' | 'failed' | null; attempt: string }) {
@@ -120,10 +122,6 @@ export const gotchaNote = (m: MiniMatch): string | null =>
 export const knockoutNote = (m: MiniMatch): string | null =>
   m.game === 'knockout' && m.view.roundEnd ? roundEndText(m.view.roundEnd, m.roster.map(r => r.name)) : null;
 
-/** Football: whom the visit on screen won the ball from, for the turn card. */
-export const ballWonNote = (m: MiniMatch): string | null =>
-  m.game === 'football' && typeof m.view.wonFrom === 'number' ? `Ball won from ${m.roster[m.view.wonFrom].name}` : null;
-
 /** The hero's line under the score: the game's own, with names where the game module has none. */
 function heroNote(m: MiniMatch): string {
   if (m.game === 'knockout' && m.view.visit.darts.length === 0) return knockoutNote(m) ?? m.view.hero.note;
@@ -137,15 +135,13 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
   const v = m.view;
   const visit = v.visit;
   const board = hasBoard(m);
-  // 121 holds the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not.
-  const attemptEnd = m.game === '121' && m.view.attemptLeft === 0 && v.phase !== 'matchWon' ? (m.view.remaining === 0 ? 'out' : 'failed') : null;
   return (
     <section className={`hero ${board ? 'with-board' : ''} ${m.game === '121' ? 'with-ladder' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>
         <div className="spacer" />
-        {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd === 'failed'} />}
+        {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd(m) === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
       </div>
       <div className="hero-score-row">
@@ -171,21 +167,51 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
               ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
               : <div key={i} className="dart-tile empty" />;
           }
-          const tile = <><span className="num">{label(d.dart)}</span><span className="lbl">{dartValue(m, d.dart)}</span></>;
+          const tile = <DartFace m={m} dart={d.dart} />;
           const cls = `dart-tile ${dartTone(m, visit.good[i])} ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
         })}
-        {m.game === '121' && <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} end={attemptEnd} attempt={`${m.view.target}:${m.view.lives}`} />}
       </div>
     </section>
   );
 }
 
+/** 121 holds the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not. */
+const attemptEnd = (m: Extract<MiniMatch, { game: '121' }>): 'out' | 'failed' | null =>
+  m.view.attemptLeft === 0 && m.view.phase !== 'matchWon' ? (m.view.remaining === 0 ? 'out' : 'failed') : null;
+
+/**
+ * Under the player list, like X01's stats card: the current player's numbers for this match, the same ones as the summary,
+ * and in 121 the darts left in the attempt first (docs/UI.md, Ekran wyników).
+ */
+export function MiniSide({ m }: { m: MiniMatch }) {
+  const p = m.view.current;
+  const stats = m.roster.length <= 4 ? gameStats(m.game, m.view.stats[p] ?? {}) : [];
+  const n = stats.length + (m.game === '121' ? 1 : 0);
+  if (n === 0) return null;
+  return (
+    <div className="card" style={{ flex: 1, minHeight: 0 }}>
+      <div className="caps">{m.roster[p].name.toUpperCase()} · This match</div>
+      <div className={`mstats few ${n > 2 ? 'three' : ''}`} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, gridTemplateRows: 'minmax(0, 1fr)' }}>
+        {m.game === '121' && (
+          <div>
+            <span className="l">Darts left</span>
+            <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} end={attemptEnd(m)} attempt={`${m.view.target}:${m.view.lives}`} />
+          </div>
+        )}
+        {/* Three tiles leave no room for the small line under the number. */}
+        {stats.map(([l, val, sub]) => <div key={l}><span className="l">{l}</span><span className="num">{val}</span>{sub && n < 3 && <span className="l">{sub}</span>}</div>)}
+      </div>
+    </div>
+  );
+}
+
 export function MiniList({ m }: { m: MiniMatch }) {
   const v = m.view;
-  const compact = m.roster.length > 2;
+  // Same as X01: full-size rows up to 4 players.
+  const compact = m.roster.length > 4;
   return (
     <div className="plist">
       {m.roster.map((r, i) => {
@@ -249,9 +275,7 @@ export function RecordIntro({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) 
             <div className="so-far">{r.by}{r.at ? ` · ${shortDate(r.at)}` : ''}</div>
           </>
         ) : <div className="winner">No record yet</div>}
-        {isPilot
-          ? <div className="actions"><button className="btn" onClick={() => act({ type: 'skipIntro' })}>Skip</button></div>
-          : <div className="note">Game on in a moment.</div>}
+        {isPilot && <div className="actions"><button className="btn" onClick={() => act({ type: 'skipIntro' })}>Skip</button></div>}
       </div>
     </div>
   );
@@ -268,21 +292,27 @@ export function NewRecord({ m }: { m: MiniMatch }) {
   );
 }
 
+/** Like X01's match end: kicker, winner, the game's result and the winner's numbers in big tiles (docs/UI.md, Start i koniec meczu). */
 export function MiniEnd({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) {
   const v = m.view;
-  const shared = v.winners.length !== 1;
+  const tiles = v.winners.length === 1 ? gameStats(m.game, v.stats[v.winners[0]] ?? {}) : [];
   return (
     <div className="overlay">
       <div className="result-card">
         <div className="kicker">{v.winners.length > 1 ? 'SHARED WIN' : v.winners.length === 1 ? 'WINNER' : 'GAME OVER'}</div>
         <div className="winner">{winnersOf(m)}</div>
         <div className="so-far">{v.result}</div>
+        {tiles.length > 0 && (
+          <div className="result-grid" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
+            {tiles.map(([l, val]) => <div key={l}><div className="l">{l}</div><div className="num">{val}</div></div>)}
+          </div>
+        )}
         <NewRecord m={m} />
-        {isPilot ? (
+        {isPilot && (
           <div className="actions">
             <button className="btn primary" onClick={() => act({ type: 'closeMatch', then: 'summary' })}>Summary</button>
           </div>
-        ) : <div className="note">{shared ? 'Well played. ' : ''}The summary opens from the pilot.</div>}
+        )}
       </div>
     </div>
   );

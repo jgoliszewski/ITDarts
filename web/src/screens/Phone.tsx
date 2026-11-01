@@ -120,7 +120,7 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   if (v.phase === 'matchWon') {
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>{isX01(m) ? 'Match won' : 'Game over'}</div>
+        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Game over</div>
         <b style={{ fontSize: 24 }}>{isX01(m) ? m.roster[m.view.matchWinner!].name : winnersOf(m)}</b>
         {!isX01(m) && <span className="muted" style={{ fontSize: 14 }}>{m.view.result}</span>}
         {!isX01(m) && <NewRecord m={m} />}

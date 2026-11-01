@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-01. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -8,6 +8,7 @@ Stan na 2026-10-30. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Wyrównanie widoków gier** (2026-11-01, z przeglądu zrzutów wszystkich 12 gier w sesji, [UI.md](UI.md#ekran-wyników)): ta sama duża liczba w hero, kafelek lotki „pole / wartość” wszędzie (`DartFace`), kafelki pod tarczą przez całą szerokość, prawa kolumna 620 we wszystkich grach, karta „THIS MATCH” pod listą minigierek z liczbami z podsumowania (`MiniSide`), w 121 kafelek „Darts left” w tej karcie zamiast obok lotek. Karta Tury bez kafelków stanu i notek, sam napis z imieniem. Koniec legu, koniec meczu i Ekran rekordu bez linijek pod kafelkami i z większym tekstem, minigierki z kafelkami liczb zwycięzcy, „WINNER” i „Game over” w każdej grze. Zaliczone sektory na tarczy ciemniejsze. Sprawdzone zrzutami z bota (osobna instancja, 3 graczy, wszystkie gry do końca) w `.scratch/align/index.html`. Niesprawdzone: 5–8 graczy, 2 graczy i telefon. Do zrobienia osobno: podsumowanie minigierek ma pustą połowę ekranu.
 - **Ikony gier** (2026-10-30, grilling w sesji, [UI.md](UI.md#ikony-gier)): liniowa ikona dla każdej gry (`GameIcon`). Na kafelkach w setupie jest szarym tłem uciętym o 1/6, a na chipach `/stats` i w nagłówku Ekranu wyników stoi przed nazwą. Sprawdzone w przeglądarce: setup na telefonie (375 px), `/stats` i nagłówek meczu Knockout na 1920×1080, zrzuty w `.scratch/game-icons/`.
 - **Drabinka celów w 121** (2026-10-30, po grillingu, [GRY.md](GRY.md#121)): pionowy łańcuch kółek z numerami celów przy prawej krawędzi hero (zaliczony zielony, bieżący pomarańczowy) z etykietą „Best N” rekordu biurowego (`raw` w `RecordInfo`), odometr celu w podpisie, przesunięcie taśmy i przewinięcie cyfry po takeoucie, zielone kropki po checkoucie, czerwony błysk kropek i pęknięcie serca przy „Life lost”, wyskok serc przy refill (`web/src/components/Ladder.tsx`). Z przeglądu: konturowe serca w całej aplikacji, hero minigierek bez „N darts left”, kafelek podejścia bez podpisu. Sprawdzone testem okna drabinki i w przeglądarce na osobnej instancji z symulatorem: checkout, przesunięcie, nieudane podejście, chorągiewka wstrzyknięta w DOM. Zrzuty w `.scratch/121-ladder/`. Niesprawdzone: chorągiewka z prawdziwego rekordu (wymaga zarejestrowanego gracza) i animacje na żywo w kiosku.
 - **Knockout i Football** (2026-10-30, grilling w [#7](https://github.com/jgoliszewski/ITDarts/issues/7), [GRY.md](GRY.md#knockout)):

@@ -102,10 +102,10 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **Opcje:**
   - „Visits per target”: 3 (domyślnie) albo 4;
   - „Refill lives on checkout”, domyślnie włączone: sukces przywraca 3 życia. Wyłączone oznacza 3 życia na całą grę.
-- **Ekran wyników:** hero pokazuje cel, ile zostało do zamknięcia, życia i podpowiedź checkoutu z X01. Lotki do końca podejścia są kafelkiem obok lotek Tury: duża liczba i kropka na każdą lotkę, po trzy na Turę, zużyte puste (od 2026-10-27, ze zgłoszenia). Caller mówi jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
+- **Ekran wyników:** hero pokazuje cel, ile zostało do zamknięcia, życia i podpowiedź checkoutu z X01. Lotki do końca podejścia to duża liczba i kropka na każdą lotkę, po trzy na Turę, zużyte puste (od 2026-10-27, ze zgłoszenia). Od 2026-11-01 są w karcie „Darts left” pod listą graczy, bo tam było puste miejsce, a nie obok lotek Tury. Caller mówi jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
   - **Drabinka celów** (od 2026-10-30, po grillingu): pionowy łańcuch kółek z numerami przy prawej krawędzi hero, jak pasek etapów procesu w Dynamics 365, połączony linią: ostatni zaliczony cel na górze (zielone kółko, na starcie puste miejsce), bieżący większy i pomarańczowy, trzy następne obrysowane w dół. Etykieta „Best N” pod kółkiem rekordu biurowego wariantu; gdy rekord jest dalej niż okno, pod ostatnim kółkiem ze strzałką w dół, a po pobiciu zostaje pod zaliczonym kółkiem, póki jest w oknie. Etykieta jest też w grze z gośćmi, choć taki wynik nie wchodzi do rekordów. Kółko celu nie powtarza serc ani liczby podejść. Pierwsza wersja, pozioma taśma dużych liczb pod wynikiem, odrzucona tego samego dnia jako za duża.
   - **Ruch po checkoucie:** gdy po takeoucie hero przełącza cel, łańcuch przesuwa się o jedno kółko w górę, a liczba celu w podpisie przewija się jak licznik (tylko cyfry, które się zmieniają). Oba ruchy startują razem i trwają 0,5 s. Undo i Poprawka cofają bez animacji.
-  - **Hero bez tekstu „N darts left”** i kafelek podejścia bez podpisu, sama liczba z kropkami (od 2026-10-30, z przeglądu ekranu: kafelki lotek pokazują, ile rzucono).
+  - **Hero bez tekstu „N darts left”** (od 2026-10-30, z przeglądu ekranu: kafelki lotek pokazują, ile rzucono).
   - **Kropki i serca:** przy checkoucie kropki podejścia zielenieją razem z kartą tury. Nieudane podejście błyska kropkami na czerwono i trzęsie traconym sercem w chwili końca Tury, razem z kartą „ATTEMPT FAILED”; po takeoucie kropki zapalają się od nowa po cichu, a przy „Refill lives” odzyskane serca wyskakują. Drabinka i odometr są tylko w hero, nie na karcie tury ani na telefonie.
 - **Wyzwalacze:** „Checkout” i „Bust” (istnieją), „Attempt failed”.
 - **Statystyki:** skuteczność podejść w %. W Co-op podejście i checkout liczą się każdemu, kto rzucał w tym podejściu (od 2026-10-30). Rekordem jest najwyższy zaliczony cel, osobno dla każdej kombinacji Visits × Refill, solo albo Co-op.
@@ -196,7 +196,7 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 - **Wygrana:** kto pierwszy trafi dokładnie w cel, wygrywa od razu, także w środku Tury.
 - **Gotcha:** na koniec Tury, jeśli wynik gracza się zmienił, każdy rywal z takim samym wynikiem spada do 0. Bust nikogo nie zeruje, bo wynik wraca do stanu sprzed Tury.
 - **Gracze:** 2–8.
-- **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki. Karta Tury pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany. Nagłówek np. „Gotcha · 201”.
+- **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki. Po karcie Tury notka w hero pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany (od 2026-11-01 już nie na samej karcie). Nagłówek np. „Gotcha · 201”.
 - **Caller** podaje wynik Tury jak w X01, bez „you require” i bez „game shot”.
 - **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won”. Bez „Hit” i „Miss”.
 - **Statystyki:** wygrane i liczba Gotcha (ile razy gracz kogoś wyzerował). Bez rekordu.

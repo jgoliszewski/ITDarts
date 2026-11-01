@@ -103,8 +103,9 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
     <svg className="target-board" viewBox="-380 -380 760 760" role="img" aria-label={label}>
       <defs>
         <pattern id="tb-hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="14" height="14" fill="#26262A" />
-          <rect width="5" height="14" fill="#4A4A50" />
+          {/* About 15% darker than the live singles, so cleared sectors drop back (docs/UI.md, Ekran wyników). */}
+          <rect width="14" height="14" fill="#1C1C1F" />
+          <rect width="5" height="14" fill="#3B3B40" />
         </pattern>
       </defs>
       <circle cx="0" cy="0" r="380" fill="#141416" />

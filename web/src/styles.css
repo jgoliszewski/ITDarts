@@ -108,8 +108,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 .board-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) calc(620 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)); }
 /* X01 with 3–4 players: a wider list with full-size rows, then the match stats (docs/UI.md). */
-.board-main.wide-side { grid-template-columns: minmax(0, 1fr) calc(760 * var(--u)); }
-.board-main.wide-side .prow { padding: calc(16 * var(--u)) calc(28 * var(--u)); }
 .hero { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(48 * var(--u)) calc(56 * var(--u)); display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .hero-top { display: flex; align-items: center; gap: calc(20 * var(--u)); }
 .hero-top svg { width: calc(26 * var(--u)); height: calc(26 * var(--u)); flex-shrink: 0; }
@@ -169,10 +167,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .visits div.bust { color: var(--red); font-size: calc(26 * var(--u)); }
 .visits div.none { background: transparent; border: 2px dashed #26262A; }
 .mstats { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(12 * var(--u)); }
-.mstats div { border-radius: calc(20 * var(--u)); background: var(--tile); padding: calc(14 * var(--u)) calc(18 * var(--u)); display: flex; flex-direction: column; justify-content: center; }
+.mstats > div { border-radius: calc(20 * var(--u)); background: var(--tile); padding: calc(14 * var(--u)) calc(18 * var(--u)); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
 .mstats .l { font-size: calc(16 * var(--u)); color: var(--muted); font-weight: 600; }
 .mstats .num { font-size: calc(52 * var(--u)); line-height: 1.05; }
-
+/* Minigames have one to three numbers, in tiles the height of the card. */
+.mstats.few > div { gap: calc(8 * var(--u)); padding: calc(24 * var(--u)); min-width: 0; }
+.mstats.few .l { font-size: calc(22 * var(--u)); }
+.mstats.few .num { font-size: calc(96 * var(--u)); line-height: 1; white-space: nowrap; }
+.mstats.few.three > div { padding: calc(24 * var(--u)) calc(16 * var(--u)); }
+.mstats.few.three .num { font-size: calc(64 * var(--u)); }
 .pilot-bar { height: calc(120 * var(--u)); flex-shrink: 0; padding: 0 calc(40 * var(--u)); display: flex; align-items: center; gap: calc(16 * var(--u)); background: #111113; position: relative; z-index: 30; }
 .pilot-bar .hint { flex: 1; color: var(--muted); font-size: calc(20 * var(--u)); }
 .pilot-bar .btn { height: calc(72 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(22 * var(--u)); }
@@ -193,11 +196,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .overlay-card .bigscore.verdict { font-size: calc(180 * var(--u)); text-transform: uppercase; }
 .overlay-card .bigscore.verdict.bad { color: var(--red); }
 .overlay-card .card-darts { display: flex; gap: calc(16 * var(--u)); margin-top: calc(24 * var(--u)); }
-.overlay-card .card-stats { display: flex; gap: calc(16 * var(--u)); margin-top: calc(16 * var(--u)); }
-.overlay-card .card-stats > div { min-width: calc(230 * var(--u)); padding: calc(16 * var(--u)) calc(28 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--raised); display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--u)); }
-.overlay-card .card-stats .caps { color: var(--muted); font-size: calc(20 * var(--u)); }
-.overlay-card .card-stats .num { font-size: calc(64 * var(--u)); line-height: 1; }
-.overlay-card .card-note { margin-top: calc(8 * var(--u)); font-size: calc(28 * var(--u)); color: var(--soft); }
 .overlay-card .pull { margin-top: calc(16 * var(--u)); font-size: calc(24 * var(--u)); color: var(--muted); }
 .takeout-band { padding: calc(28 * var(--u)) calc(56 * var(--u)); background: var(--amber-bg); display: flex; align-items: center; justify-content: center; gap: calc(24 * var(--u)); text-align: left; }
 .takeout-band svg { width: calc(56 * var(--u)); height: calc(56 * var(--u)); animation: spin 1s linear infinite; flex-shrink: 0; }
@@ -206,13 +204,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .stuck { padding: calc(18 * var(--u)); background: var(--red-bg); color: var(--red-soft); font-size: calc(24 * var(--u)); font-weight: 700; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .result-card { width: calc(980 * var(--u)); border-radius: calc(40 * var(--u)); background: var(--sheet); padding: calc(64 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(28 * var(--u)); text-align: center; }
-.result-card .kicker { font-size: calc(20 * var(--u)); font-weight: 700; color: var(--green); letter-spacing: 0.12em; }
-.result-card .winner { font-size: calc(96 * var(--u)); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+/* Leg end, match end and the record screen share one look, sized to read from the oche (docs/UI.md). */
+.result-card .kicker { font-size: calc(30 * var(--u)); font-weight: 700; color: var(--green); letter-spacing: 0.12em; }
+.result-card .winner { font-size: calc(120 * var(--u)); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
 .result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(16 * var(--u)); width: 100%; }
-.result-grid div { border-radius: calc(24 * var(--u)); background: var(--raised); padding: calc(20 * var(--u)); }
-.result-grid .l { font-size: calc(18 * var(--u)); color: var(--muted); font-weight: 600; }
-.result-grid .num { font-size: calc(64 * var(--u)); }
-.result-card .so-far { font-size: calc(28 * var(--u)); color: var(--soft); }
+.result-grid > div { border-radius: calc(24 * var(--u)); background: var(--raised); padding: calc(28 * var(--u)) calc(20 * var(--u)); display: flex; flex-direction: column; justify-content: space-between; gap: calc(12 * var(--u)); }
+.result-grid .l { font-size: calc(30 * var(--u)); color: var(--soft); font-weight: 600; }
+.result-grid .num { font-size: calc(96 * var(--u)); line-height: 1; white-space: nowrap; }
+.result-card .so-far { font-size: calc(40 * var(--u)); color: var(--soft); }
 .result-card .note { font-size: calc(22 * var(--u)); color: var(--muted); }
 .result-card .actions { display: flex; gap: calc(16 * var(--u)); }
 .result-card .btn { height: calc(80 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(24 * var(--u)); }
@@ -458,9 +457,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 .mini-big { display: flex; flex-direction: column; gap: calc(8 * var(--u)); min-width: 0; }
 .mini-big .caps { font-size: calc(26 * var(--u)); color: var(--accent); }
-.mini-big .num { font-size: calc(340 * var(--u)); line-height: 0.85; white-space: nowrap; }
-.mini-big .num.long { font-size: calc(220 * var(--u)); }
-.attempt-tile { margin-left: calc(16 * var(--u)); padding: calc(18 * var(--u)) calc(28 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--raised); display: flex; flex-direction: column; justify-content: center; gap: calc(10 * var(--u)); }
+/* The same size as X01's score (docs/UI.md, Ekran wyników). */
+.mini-big .num { font-size: calc(400 * var(--u)); line-height: 0.8; white-space: nowrap; }
+.mini-big .num.long { font-size: calc(260 * var(--u)); }
+.attempt-tile { display: flex; flex-direction: column; justify-content: center; gap: calc(10 * var(--u)); }
 .attempt-tile .row { display: flex; align-items: center; gap: calc(24 * var(--u)); }
 .attempt-tile .num { font-size: calc(96 * var(--u)); line-height: 1; }
 .attempt-pips { display: flex; flex-direction: column; gap: calc(8 * var(--u)); }
@@ -468,17 +468,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .attempt-pips span { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%; background: var(--accent); }
 .attempt-pips span.used { background: transparent; box-shadow: inset 0 0 0 2px var(--muted2); }
 .hero-note { font-size: calc(30 * var(--u)); color: var(--soft); font-weight: 600; }
-/* ATC and Full Board: the board takes the right half of the hero, darts and target on the left. */
-.board-main.with-board { grid-template-columns: minmax(0, 1fr) calc(480 * var(--u)); }
+/* Games with a board: the board takes the right half of the hero, the target on the left and the darts across the bottom as in every game. */
 .hero.with-board { display: grid; grid-template-columns: minmax(calc(460 * var(--u)), 1fr) auto; grid-template-rows: auto 1fr auto auto; column-gap: calc(40 * var(--u)); row-gap: calc(24 * var(--u)); }
 .hero.with-board > :not(.target-board) { grid-column: 1; }
 .hero.with-board .hero-score-row { align-self: center; }
 .hero.with-board .mini-big .num { font-size: calc(280 * var(--u)); }
 .hero.with-board .mini-big .num.long { font-size: calc(200 * var(--u)); }
 .mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
-.hero.with-board .dart-tile { flex: 1; width: auto; height: calc(130 * var(--u)); }
-.hero.with-board .dart-tile .num { font-size: calc(76 * var(--u)); }
-.target-board { grid-column: 2; grid-row: 1 / -1; align-self: center; height: 100%; max-height: calc(780 * var(--u)); aspect-ratio: 1; }
+.hero.with-board .hero-darts { grid-column: 1 / -1; grid-row: 4; }
+.target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; height: 100%; max-height: calc(780 * var(--u)); aspect-ratio: 1; }
 .tb-outline { fill: none; stroke: #F58224; stroke-width: 6; stroke-linejoin: round; stroke-dasharray: 18 6; animation: tb-march 1.2s linear infinite; }
 @keyframes tb-march { to { stroke-dashoffset: -48; } }
 .hol-scale { position: relative; height: calc(56 * var(--u)); margin: calc(8 * var(--u)) 0 calc(24 * var(--u)); }
