@@ -484,9 +484,7 @@ export class Hub {
   }
 
   private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[]) {
-    // The next player in order starts, so no bull-off.
-    const rotated = [...roster.slice(1), roster[0]];
-    this.startMatch(game, { ...options, bullOff: 'off' }, rotated);
+    this.startMatch(game, ...rematchSetup(options, roster));
   }
 
   private player(c: PlayerCommand): { playerId?: number } {
@@ -626,4 +624,14 @@ export class Hub {
         return {};
     }
   }
+}
+
+/**
+ * Setup of a rematch (docs/UI.md, Podsumowanie meczu): with a bull-off on, the same setup and a new bull-off decides
+ * the order; with it off, the next player in the setup order starts.
+ */
+export function rematchSetup(options: LiveRecord['options'], roster: RosterEntry[]): [LiveRecord['options'], RosterEntry[]] {
+  const bullOff = (options as { bullOff?: string } | null)?.bullOff;
+  if (bullOff === 'closest' || bullOff === 'pdc') return [options, roster];
+  return [options, [...roster.slice(1), roster[0]]];
 }

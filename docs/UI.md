@@ -126,7 +126,7 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 
 Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie graczy, distance walked).
 
-- Pełny ekran zamiast lobby na dużym ekranie i w telefonach, aż Pilot wybierze „Rematch” (zaczyna następny w kolejności), „New match” albo „Back to lobby”. Bez kontroli widać podsumowanie bez przycisków. Serwer trzyma je w pamięci, restart wraca do lobby.
+- Pełny ekran zamiast lobby na dużym ekranie i w telefonach, aż Pilot wybierze „Rematch” (z bull-offem w opcjach zaczyna się od nowego bull-offu w kolejności z setupu, bez bull-offu zaczyna następny w kolejności z setupu), „New match” albo „Back to lobby”. Bez kontroli widać podsumowanie bez przycisków. Serwer trzyma je w pamięci, restart wraca do lobby.
 - Od góry:
   - nagłówek: „MATCH WON” i zwycięzca z wynikiem w legach albo setach, w minigrach wynik gry, a po przerwaniu „MATCH ENDED”;
   - porównanie w stylu Autodarts: przy dwóch graczach nazwa statystyki pośrodku, wartości po bokach, a pod nimi paski od środka na zewnątrz w kolorach graczy, długie według udziału w sumie (przy „lower” według odwrotności). Najlepsza wartość jest w pigułce koloru gracza. Przy 3–4 graczach każdy ma kolumnę z wartością i paskiem. Szerokość jest ograniczona (560 px przy dwóch), żeby liczby były blisko siebie. X01: średnia, pierwsze 9, checkout %, najwyższy checkout, najkrótszy leg, 60+, 80+, 100+, lotki. Minigry: liczby z modułu gry, jak w profilu na `/stats`. Ostatni wiersz to „Distance walked” w metrach;

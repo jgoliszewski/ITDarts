@@ -56,7 +56,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - Rekordów osobistych na tym ekranie nie pokazujemy.
   - W Co-op pokazuje rekord co-op wariantu z imionami składu.
   - Bez rekordu pokazuje „No record yet”.
-  - Pilot ma „Skip”. Ekran wraca przy każdym Rematch. Bull-off, jeśli jest włączony, idzie po nim.
+  - Pilot ma „Skip”. Ekran wraca przy każdym Rematch. Bull-off, jeśli jest włączony, idzie po nim, także w Rematch (nowy bull-off ustala kolejność gry).
 - **Nowy rekord** (biura albo osobisty) sprawdzamy na końcu gry, a nie w trakcie. Odpala Wyzwalacz „New record” i animację na ekranie wygranej.
 - Goście nie mają rekordów.
 
