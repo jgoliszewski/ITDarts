@@ -6,10 +6,10 @@ import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import { DartFace } from '../components/DartFace.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
-import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
+import { BullOffPanel } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartTone, isX01, legTarget } from '../match.ts';
+import { controls, dartTone, isX01, legTarget, playOrder } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
@@ -100,7 +100,8 @@ function PlayerList({ m }: { m: X01Match }) {
   const sets = m.options.matchMode.kind === 'sets';
   return (
     <div className="plist">
-      {m.roster.map((r, i) => {
+      {playOrder(m).map(i => {
+        const r = m.roster[i];
         const active = i === v.current && v.phase !== 'bulloff';
         return (
           <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''}`}>
@@ -250,30 +251,10 @@ function MatchEnd({ m, isPilot }: { m: X01Match; isPilot: boolean }) {
 
 function BullOff({ m, isPilot }: { m: LiveMatch; isPilot: boolean }) {
   const b = m.view.bullOff;
-  const pdc = m.options.bullOff === 'pdc';
+  if (!b) return null;
   return (
     <div className="overlay">
-      <div className="result-card bulloff-card">
-        <div className="kicker" style={{ color: 'var(--accent)' }}>BULL-OFF</div>
-        {b && (
-          <div className="bulloff-main">
-            <BullZoom m={m} b={b} size={520} />
-            <div className="bulloff-side">
-              <div className="winner">{bullStatus(m, b)}</div>
-              <BullRows m={m} b={b} />
-              <div className="note">
-                {pdc ? 'One dart each at the bull, closest starts. The same bull or 25 as the leader means throwing again in reverse order.'
-                  : 'One dart each at the bull, closest to the centre starts. Take the dart out before the next throw.'}
-              </div>
-            </div>
-          </div>
-        )}
-        {isPilot && b?.winner == null && (
-          <div className="bulloff-players">
-            {m.roster.map((r, i) => <button key={i} className="btn" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
-          </div>
-        )}
-      </div>
+      <div className="bulloff-card"><BullOffPanel m={m} b={b} picks={isPilot} /></div>
     </div>
   );
 }

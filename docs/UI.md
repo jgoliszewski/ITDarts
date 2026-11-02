@@ -172,13 +172,19 @@ Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikon
 Gdy opcja bull-off to „Closest to bull” albo PDC, mecz zaczyna się od rzutów w bulla. Serwer liczy odległość od środka z coords Board Managera (1 = 170 mm, zewnętrzna krawędź double).
 
 - Każdy rzuca jedną lotkę, w kolejności z setupu. Po każdej lotce takeout. Lotka rzucona przed takeoutem jest ignorowana.
-- **Closest:** wygrywa najmniejsza odległość. **PDC:** to samo, ale trafienie w to samo pole co lider (bull albo 25) to remis.
-- Remis: rzucają ponownie tylko remisujący liderzy, w odwrotnej kolejności. Tak samo przy 3+ graczach.
+- **Closest:** wygrywa najmniejsza odległość. Każdy, kto jest mniej niż 5 mm od lidera, remisuje z nim (próg `TIE_MM` w `games/bulloff.ts`). **PDC:** bez progu, remis to ta sama odległość albo to samo pole co lider (bull albo 25).
+- Remis: rzucają ponownie tylko remisujący z liderem, w odwrotnej kolejności. Tak samo przy 3+ graczach. Dogrywka jest tylko o pierwsze miejsce, dalsze miejsca się nie dogrywają.
 - Lotka poza tarczą liczy się po odległości. Lotka bez coords jest ostatnia. Niewykryta lotka: rzuca się jeszcze raz.
+- **Kolejność gry** to ranking bull-offu, nie rotacja z setupu: zwycięzca, potem pozostali uczestnicy dogrywek (kto doszedł do późniejszej rundy, jest wyżej, a w tej samej rundzie decyduje odległość z niej), potem reszta według odległości z pierwszej rundy. Przy równej odległości albo bez coords decyduje kolejność z setupu, a lotka bez coords jest za wszystkimi z coords. Tak samo w PDC.
+- W X01 zaczynający kolejny leg (i set) przesuwa się o jedno miejsce w kolejności gry. Minigierki, w których zaczynający przesuwa się co rundę (Knockout, Higher or Lower), też idą po kolejności gry.
+- Kolejność wynika z logu meczu, więc Undo i Poprawka ją przywracają. Lista graczy na Ekranie wyników i na telefonie pokazuje graczy w kolejności gry.
 - Przy jednym graczu bull-offu nie ma, nawet gdy opcja jest włączona. Serwer zapisuje wtedy mecz z bull-offem „Off”.
-- Undo zdejmuje ostatnią lotkę bull-offu. Przyciski „X starts” na Pilocie zostają jako ręczne nadpisanie.
-- Ekran pokazuje przybliżonego bulla z ringiem trebli i sektorami, kropki lotek z imionami i przerywany okrąg wokół bulla dla każdej lotki (obszar do pobicia), obok listę od najbliższej z mm i kto rzuca.
-- Po rozstrzygnięciu ekran mówi „X starts”, a pierwszy leg rusza po takeoucie.
+- Undo zdejmuje ostatnią lotkę bull-offu. Przyciski „X starts” na Pilocie zostają jako ręczne nadpisanie: X zaczyna, a reszta idzie po kolejności z setupu.
+- **Ekran** (kiosk): karta o stałej wysokości. U góry kicker „BULL-OFF”, w dogrywce „BULL-OFF · ROUND 2”. Z lewej tarcza 740 px przycięta do koła, z zoomem `R = clamp(1,1 × najdalsza lotka, 112, 185)` mm: ring trebli prawie na styk, a lotka za treblem oddala widok aż do całej tarczy. Kropki lotek z imionami (imiona nie nachodzą na siebie) i przerywany okrąg dla każdej lotki. Lider na pomarańczowo, remisujący na żółto.
+- Z prawej status o stałej wysokości (2 linie nagłówka i podpis; długi tekst się zmniejsza, ale nie rozpycha karty): „X, throw at the bull”, „Take out the dart” z „X next”, „Too close: 3.0 mm” na żółto z „Ola and Ania throw again · take out the dart” (PDC: „Tie in the Bull”), w dogrywce podpis „Rethrow: Ania vs Ola were 3.0 mm apart”, po rozstrzygnięciu „X starts” na zielono z „Take out the dart”.
+- Pod statusem lista rundy, zawsze od tej samej wysokości: miejsce, imię, pole i mm, od najbliższej. Ci, co jeszcze nie rzucali, mają „–” na dole, a rzucający ▶ i obwódkę (oprócz czasu takeoutu). W dogrywce odpadli z wcześniejszych rund są przygaszeni na dole z podpisem „round 1”. Po rozstrzygnięciu lista staje się kolejnością gry („PLAYING ORDER”, 1., 2., …). Pod listą przyciski „X starts” dla Pilota.
+- Telefon: te same części jedna pod drugą (status, tarcza, lista, przyciski).
+- Po rozstrzygnięciu pierwszy leg rusza po takeoucie.
 - Lotki bull-offu są w logu meczu z coords, ale nie liczą się do statystyk.
 - Działa we wszystkich grach (X01 i minigierki przez `games/turns.ts`).
 

@@ -9,6 +9,9 @@ export type MiniMatch = Exclude<LiveMatch, { game: 'x01' }>;
 
 export const isX01 = (m: LiveMatch): m is X01Match => m.game === 'x01';
 
+/** Players in the playing order (from the bull-off or the pilot's pick); setup order until it is known. */
+export const playOrder = (m: LiveMatch): number[] => m.view.order ?? m.roster.map((_, i) => i);
+
 export interface Controls {
   hint: string;
   primary: { label: string; cmd: Command } | null;

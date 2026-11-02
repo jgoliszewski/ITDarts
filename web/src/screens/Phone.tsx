@@ -1,10 +1,10 @@
 import { label } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
-import { BullRows, BullZoom, bullStatus } from '../components/BullOff.tsx';
+import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, dartValue, isX01, shortDescription, winnersOf } from '../match.ts';
+import { controls, dartValue, isX01, playOrder, shortDescription, winnersOf } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -27,7 +27,8 @@ function Players({ m }: { m: LiveMatch }) {
   const legsWord = (n: number) => `${n} ${n === 1 ? 'leg' : 'legs'}`;
   return (
     <div className="p-players">
-      {m.roster.map((r, i) => {
+      {playOrder(m).map(i => {
+        const r = m.roster[i];
         const active = i === v.current && v.phase !== 'bulloff';
         let meta: string, big: string, out = false;
         if (isX01(m)) {
@@ -96,16 +97,7 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   }
   const b = v.bullOff;
   if (b && (v.phase === 'bulloff' || m.bullTakeout)) {
-    return (
-      <div className="box p-bull">
-        <div className="caps" style={{ color: 'var(--accent)', fontSize: 13 }}>Bull-off</div>
-        <b style={{ fontSize: 20 }}>{bullStatus(m, b)}</b>
-        <BullZoom m={m} b={b} size={320} />
-        <BullRows m={m} b={b} />
-        {b.winner === null && <span className="muted" style={{ fontSize: 14 }}>Detection wrong? Pick who starts:</span>}
-        {b.winner === null && m.roster.map((r, i) => <button key={i} className="btn block" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
-      </div>
-    );
+    return <div className="box p-bull"><BullOffPanel m={m} b={b} picks /></div>;
   }
   const leg = isX01(m) && m.view.phase === 'legWon' ? m.view.lastLeg : null;
   if (isX01(m) && leg) {

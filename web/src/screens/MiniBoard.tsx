@@ -11,7 +11,7 @@ import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
-import { dartTone, winnersOf } from '../match.ts';
+import { dartTone, playOrder, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
 /** Range bar for Higher or Lower: 0–180 with the forbidden range in red and the visit sum. */
@@ -214,7 +214,8 @@ export function MiniList({ m }: { m: MiniMatch }) {
   const compact = m.roster.length > 4;
   return (
     <div className="plist">
-      {m.roster.map((r, i) => {
+      {playOrder(m).map(i => {
+        const r = m.roster[i];
         const row = v.rows[i];
         const active = i === v.current && v.phase !== 'bulloff';
         return (
@@ -247,16 +248,16 @@ export function CricketGrid({ m }: { m: Extract<MiniMatch, { game: 'cricket' }> 
   return (
     <div className="cricket" style={{ gridTemplateColumns: `calc(110 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
-      {m.roster.map((r, i) => (
+      {playOrder(m).map(i => (
         <div key={i} className={`ch ${i === v.current ? 'active' : ''}`}>
-          <span className="n">{r.name}</span>
+          <span className="n">{m.roster[i].name}</span>
           {!v.solo && <span className="num">{v.points[i]}</span>}
         </div>
       ))}
       {CRICKET_SECTORS.map((s, k) => (
         <div key={s} className={`crow ${v.dead[k] ? 'dead' : ''}`} style={{ display: 'contents' }}>
           <span className="sector num">{s === 25 ? 'Bull' : s}</span>
-          {m.roster.map((_, i) => <span key={i} className={`mk num ${i === v.current ? 'active' : ''}`}>{MARK[v.marks[i][k]]}</span>)}
+          {playOrder(m).map(i => <span key={i} className={`mk num ${i === v.current ? 'active' : ''}`}>{MARK[v.marks[i][k]]}</span>)}
         </div>
       ))}
     </div>
