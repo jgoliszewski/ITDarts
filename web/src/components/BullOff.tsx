@@ -184,7 +184,7 @@ export function BullOffPanel({ m, b, picks }: { m: LiveMatch; b: BullOffView; pi
       {picks && b.winner === null && (
         <div className="bo-picks">
           <span className="hint">Detection wrong? Pick who starts:</span>
-          {m.roster.map((r, i) => <button key={i} className="btn" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name} starts</button>)}
+          {m.roster.map((r, i) => <button key={i} className="btn" onClick={() => act({ type: 'bullOff', starter: i })}>{r.name}<span className="starts"> starts</span></button>)}
         </div>
       )}
     </div>

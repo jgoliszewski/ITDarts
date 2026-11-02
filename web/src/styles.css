@@ -250,8 +250,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .bulloff-card .bull-rows:has(> :nth-child(6)) .bull-row .mm { font-size: calc(36 * var(--u)); }
 .bo-picks { grid-area: picks; display: flex; gap: calc(10 * var(--u)); min-width: 0; }
 .bo-picks .hint { display: none; }
-/* One row whatever the names: a long name is cut, not wrapped onto the list. */
-.bo-picks .btn { flex: 0 1 auto; min-width: 0; height: calc(56 * var(--u)); padding: 0 calc(20 * var(--u)); font-size: calc(22 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(56 * var(--u)); }
+.bo-picks .starts { display: none; }
+/* One row of bare names on the kiosk (no hint, no "starts"): a long name is cut, never wrapped onto the list. */
+.bo-picks .btn { flex: 0 1 auto; min-width: 0; height: calc(56 * var(--u)); padding: 0 calc(16 * var(--u)); font-size: calc(22 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(56 * var(--u)); }
 /* Phone: the same parts one under the other. */
 .p-bull .bulloff { display: flex; flex-direction: column; gap: 12px; height: auto; }
 .p-bull .bo-kicker { font-size: 13px; }
@@ -269,6 +270,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .p-bull .bull-row .mm { font-size: 22px; }
 .p-bull .bo-picks { flex-direction: column; gap: 8px; }
 .p-bull .bo-picks .hint { display: block; font-size: 14px; color: var(--muted); }
+.p-bull .bo-picks .starts { display: inline; }
 .p-bull .bo-picks .btn { width: 100%; height: 48px; line-height: 48px; font-size: 16px; flex: none; }
 
 .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(600px, 100vw); background: #121214; padding: 32px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow: auto; }
@@ -716,7 +718,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-base .btn { height: 44px; }
 .fx-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
 .fx-preset { height: 52px; border-radius: 16px; border: 1px solid var(--line); display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 14px; font-weight: 600; }
-.fx-preset .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(56 * var(--u)); }
+.fx-preset .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .fx-setting { min-height: 64px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--raised); }
 .fx-setting b { font-size: 16px; }
 .fx-setting .icon-btn { background: transparent; color: var(--accent); }
