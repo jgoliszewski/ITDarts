@@ -37,6 +37,15 @@ Uruchamia symulator Board Managera (`http://localhost:3180`, przyciski do rzucan
 
 `dev:fake` uruchamia też atrapę WLED na `http://localhost:3190`, a sama atrapa startuje przez `npm run fake-wled`. Na stronie `/effects` wpisz adres `localhost:3190`.
 
+### Zrzuty ekranu i testy na żywo: `npm run dev:shot`
+
+Jednorazowa instancja obok Twojego deva, bez jego bazy i bez `effects/` z repo: atrapa tarczy na `3380`, atrapa WLED na `3390` i serwer na `3300` z gotowym webem (bez Vite). Dane i kopia `effects/` leżą w nowym folderze tymczasowym, adres WLED jest ustawiony, a presety wgrane. Po starcie skrypt wypisuje adresy i folder.
+
+- **Koniec:** Ctrl+C zamyka trzy procesy, które sam uruchomił, i usuwa folder. Ze skryptu, bez konsoli: utwórz plik `stop` w folderze tymczasowym (Windows nie pozwala wysłać procesowi sygnału, na który mógłby odpowiedzieć).
+- **Porty:** gdy 3300, 3380 lub 3390 jest zajęty, kończy się błędem i niczego nie zatrzymuje.
+- **Flagi serwera:** `--effects <folder>` i `--web <folder>` (domyślnie `effects` i `dist/web`), obok `--data`, `--port` i `--board`.
+- **Przełącznik atrapy w panelu tarczy:** startuje atrapę na porcie z adresu `--board`, gdy jest lokalny (w `dev:shot` 3380, więc nic nie wchodzi na 3180 Twojego deva), a w pozostałych przypadkach na 3180.
+
 ```bash
 npm test
 npm run typecheck

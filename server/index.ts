@@ -6,7 +6,7 @@ import fastifyWebsocket from '@fastify/websocket';
 import Fastify from 'fastify';
 import { isGameId } from '../games/index.ts';
 import { Board } from './board.ts';
-import { loadConfig } from './config.ts';
+import { fakeBoardPort, loadConfig } from './config.ts';
 import { Db } from './db.ts';
 import { CALLER_DIR, Effects } from './effects/index.ts';
 import { effectsRoutes } from './effects/routes.ts';
@@ -20,7 +20,7 @@ const board = new Board(cfg.board);
 const stats = new Stats(db, undefined, cfg.ocheMeters);
 let browser: ChildProcess | null = null;
 let fakeBoard: ChildProcess | null = null;
-const FAKE_BOARD_PORT = '3180';
+const FAKE_BOARD_PORT = fakeBoardPort(cfg.board);
 
 /** The switch in Panel tarczy: runs the fake Board Manager next to the server and points the adapter at it. */
 function useFakeBoard(on: boolean) {
@@ -93,7 +93,7 @@ app.get<{ Querystring: { a?: string; b?: string; window?: string } }>('/api/stat
 // The caller's recordings are part of the app, not of the effects setup (docs/EFEKTY.md#caller).
 await app.register(fastifyStatic, { root: resolve(CALLER_DIR), prefix: '/caller/', decorateReply: false });
 
-const webRoot = resolve('dist/web');
+const webRoot = cfg.webDir;
 if (existsSync(join(webRoot, 'index.html'))) {
   await app.register(fastifyStatic, { root: webRoot });
   // Client-side routes (/stats) fall back to the SPA.

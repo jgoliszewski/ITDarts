@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "concurrently -k -n server,web -c yellow,cyan \"tsx watch server/index.ts\" \"vite\"",
+    "dev:shot": "tsx server/dev-shot.ts",
     "dev:fake": "concurrently -k -n board,wled,server,web -c magenta,green,yellow,cyan \"tsx server/fake-board.ts\" \"tsx server/fake-wled.ts\" \"tsx watch server/index.ts --board localhost:3180\" \"vite\"",
     "fake-board": "tsx server/fake-board.ts",
     "fake-wled": "tsx server/fake-wled.ts",
