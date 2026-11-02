@@ -66,10 +66,10 @@ export function effectsRoutes(app: FastifyInstance, fx: Effects, changed: () => 
     }
   });
 
-  app.post<{ Querystring: { name?: string; duration?: string } }>('/api/sounds', async (req, reply) => {
+  app.post<{ Querystring: { name?: string; duration?: string; group?: string } }>('/api/sounds', async (req, reply) => {
     if (!Buffer.isBuffer(req.body)) return reply.code(400).send({ error: 'Send the file as the request body' });
     const body = req.body;
-    return guard(reply, () => ({ id: store.addSound(body, req.query.name, Number(req.query.duration)) }));
+    return guard(reply, () => ({ id: store.addSound(body, req.query.name, Number(req.query.duration), req.query.group) }));
   });
   app.put<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.updateSound(req.params.id, req.body)));
   app.delete<{ Params: { id: string } }>('/api/sounds/:id', async (req, reply) => guard(reply, () => store.deleteSound(req.params.id)));

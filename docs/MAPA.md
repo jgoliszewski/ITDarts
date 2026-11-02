@@ -209,7 +209,7 @@ Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają
 - **Dźwięki i ledy w kodzie** (zrobione 2026-10-28): nowe dźwięki w `web/src/sound.ts`, nowe Reguły bazowe w `server/effects/builtin.ts`, ledy w `server/effects/leds.ts` z presetami 100–128 i skryptem `npm run leds:upload`. LED lab usunięty, a propozycje dźwięków wyleciały z symulatora. Opis jest w [EFEKTY.md](EFEKTY.md#presety-momentów-2026-10-28).
 - **Sprawdzenie przy tarczy:** lista kroków jest w [#10](https://github.com/jgoliszewski/ITDarts/issues/10).
 - **Strona Effects i konfigurator w aplikacji do przerobienia w całości** (prośba z 2026-10-28). Dzisiejsze zakładki Rules, Sounds, LEDs i Playback ([EFEKTY.md](EFEKTY.md#układ-strony)) nie pasują do mapy Momentów. Osobny grilling po rundzie z ledami. Na pewno w nim:
-  - grupowanie według Momentów i ich grup z mapy;
+  - ~~grupowanie według Momentów i ich grup z mapy~~ (zrobione 2026-11-02: grupy Match, Darts, Visits, Leg end, Minigames i Board w Rules, Sounds, LEDs i pickerach, plan w `.scratch/fx-groups/PLAN.md`, opis w [EFEKTY.md](EFEKTY.md#układ-strony));
   - dźwięk i ledy Momentu w jednym wierszu;
   - miejsce na podgląd ringu z symulatora.
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cricket } from './cricket.ts';
 import { parseDart } from './darts.ts';
 import type { Change, Fact, Trigger } from './effects.ts';
-import { changes, isValidTrigger, matches, pickRule, triggerLabel } from './effects.ts';
+import { FX_GROUPS, changes, groupOfTrigger, isValidTrigger, matches, pickRule, triggerLabel } from './effects.ts';
 import { football } from './football.ts';
 import type { GameModule } from './index.ts';
 import { killer } from './killer.ts';
@@ -178,5 +178,41 @@ describe('minigame occurrences', () => {
     expect(triggerLabel({ kind: 'game', event: 'goal' })).toBe('Goal');
     const rules = [rule(1, { kind: 'matchWon' }), rule(2, { kind: 'game', event: 'goal' })];
     expect(pickRule(rules, cs)?.id).toBe(2);
+  });
+});
+
+describe('groupOfTrigger', () => {
+  const T20 = { n: 20, m: 3 as const };
+  const g = (t: Trigger) => groupOfTrigger(t);
+  it('puts darts and "left on" in Darts', () => {
+    expect(g({ kind: 'dart', dart: T20 })).toBe('darts');
+    expect(g({ kind: 'left', score: 2 })).toBe('darts');
+  });
+  it('puts visit triggers in Visits, bust and no score included', () => {
+    expect(g({ kind: 'total', total: 180, checkout: 'any' })).toBe('visits');
+    expect(g({ kind: 'total', total: 0, checkout: 'no' })).toBe('visits');
+    expect(g({ kind: 'range', min: 100, max: 139, checkout: 'any' })).toBe('visits');
+    expect(g({ kind: 'combo', darts: [T20, T20, T20], ordered: false, checkout: 'any' })).toBe('visits');
+    expect(g({ kind: 'bust' })).toBe('visits');
+  });
+  it('puts checkout-only visit triggers in Leg end', () => {
+    expect(g({ kind: 'total', total: 170, checkout: 'only' })).toBe('legEnd');
+    expect(g({ kind: 'range', min: 100, max: 170, checkout: 'only' })).toBe('legEnd');
+    expect(g({ kind: 'combo', darts: [T20, T20, T20], ordered: false, checkout: 'only' })).toBe('legEnd');
+  });
+  it('puts leg, set and match results in Leg end', () => {
+    for (const kind of ['checkout', 'setWon', 'matchWon'] as const) expect(g({ kind }), kind).toBe('legEnd');
+  });
+  it('puts minigame triggers in Minigames', () => {
+    expect(g({ kind: 'game', event: 'newRecord' })).toBe('minigames');
+    expect(g({ kind: 'hit' })).toBe('minigames');
+    expect(g({ kind: 'miss' })).toBe('minigames');
+  });
+  it('puts match flow in Match and the board in Board', () => {
+    for (const kind of ['matchStart', 'legStart', 'nextPlayer'] as const) expect(g({ kind }), kind).toBe('match');
+    for (const kind of ['takeoutStart', 'takeoutEnd', 'boardOffline', 'boardOnline'] as const) expect(g({ kind }), kind).toBe('board');
+  });
+  it('lists the groups in map order', () => {
+    expect(FX_GROUPS.map(([, title]) => title)).toEqual(['Match', 'Darts', 'Visits', 'Leg end', 'Minigames', 'Board']);
   });
 });

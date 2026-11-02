@@ -1,11 +1,14 @@
 // Small pieces shared by the Effects tabs.
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { CheckoutCond, DartPattern } from '../../../../games/effects.ts';
 import { patternLabel } from '../../../../games/effects.ts';
 import { Icon } from '../../components/ui.tsx';
+import { store } from '../../util.ts';
 import type { EffectsData } from './api.ts';
 import { tryLed } from './api.ts';
+import type { Section } from './groups.ts';
+import { presetSections } from './groups.ts';
 
 export function Switch({ on, label, onChange }: { on: boolean; label: string; onChange: (on: boolean) => void }) {
   return (
@@ -18,6 +21,43 @@ export function Switch({ on, label, onChange }: { on: boolean; label: string; on
 export const Chevron = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
 );
+
+/**
+ * Collapsible groups, the same in the tabs and in the pickers. `storeKey` makes the browser remember what was opened
+ * or closed; without it the state starts from `shutByDefault` each time. A search shows every group that has a hit.
+ */
+export function GroupList<T>({ sections, noun, storeKey, shutByDefault, searching, render }: {
+  sections: Section<T>[]; noun: [string, string]; storeKey?: string; shutByDefault: (s: Section<T>) => boolean; searching: boolean; render: (items: T[]) => ReactNode;
+}) {
+  const [shut, setShut] = useState<Record<string, boolean>>(() => {
+    try {
+      return storeKey ? JSON.parse(store.get(storeKey) ?? '{}') : {};
+    } catch {
+      return {};
+    }
+  });
+  const isShut = (s: Section<T>) => shut[s.id] ?? shutByDefault(s);
+  const toggle = (s: Section<T>) => {
+    const next = { ...shut, [s.id]: !isShut(s) };
+    setShut(next);
+    if (storeKey) store.set(storeKey, JSON.stringify(next));
+  };
+  return (
+    <>
+      {sections.map(s => {
+        const closed = isShut(s) && !searching;
+        return (
+          <section key={s.id} className="section">
+            <button className={`option-row fx-group ${closed ? 'shut' : ''}`} aria-expanded={!closed} onClick={() => toggle(s)}>
+              <span className="caps">{s.title}</span><span className="muted">{s.items.length} {s.items.length === 1 ? noun[0] : noun[1]}<Chevron /></span>
+            </button>
+            {!closed && render(s.items)}
+          </section>
+        );
+      })}
+    </>
+  );
+}
 
 /** Lower case without accents, so “papiez” finds “Papież”. */
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase();
@@ -130,25 +170,38 @@ export function PresetPicker({ d, value, none, wide, onPick, onClose }: {
   d: EffectsData; value: number | null; none: string | null; wide: boolean; onPick: (id: number | null) => void; onClose: () => void;
 }) {
   const list = d.presets.list;
+  const [q, setQ] = useState('');
+  const shown = list?.filter(p => matchesQuery(q, p.name, `#${p.id}`));
+  const { mine, itdarts } = presetSections(shown ?? []);
+  const row = (p: NonNullable<typeof list>[number]) => (
+    <div key={p.id} className={`fx-pick ${value === p.id ? 'on' : ''}`}>
+      <button className="fx-pick-main" onClick={() => { onPick(p.id); onClose(); }}>
+        <Dot color={p.color} size={14} /><span className="grow">{p.name}</span><span className="muted">#{p.id}</span>
+      </button>
+      <button className="btn" style={{ height: 40 }} onClick={() => tryLed(p.id, 3, p.name)}>Try</button>
+    </div>
+  );
   return (
     <Sheet title="Pick a preset" wide={wide} onClose={onClose}>
       {!d.settings.wled.address && <p className="muted" style={{ margin: 0 }}>Set the WLED address in the LEDs tab to pick presets by name.</p>}
       {d.presets.error && <p style={{ margin: 0, color: 'var(--red)' }}>{d.presets.error}</p>}
-      <div className="fx-list">
-        {none !== null && (
+      {list && list.length > 0 && <SearchField value={q} onChange={setQ} placeholder="Search presets" />}
+      {none !== null && (
+        <div className="fx-list">
           <button className={`fx-pick ${value === null ? 'on' : ''}`} onClick={() => { onPick(null); onClose(); }}>
             <Dot color={null} /><span className="grow">{none}</span>
           </button>
-        )}
-        {list?.map(p => (
-          <div key={p.id} className={`fx-pick ${value === p.id ? 'on' : ''}`}>
-            <button className="fx-pick-main" onClick={() => { onPick(p.id); onClose(); }}>
-              <Dot color={p.color} size={14} /><span className="grow">{p.name}</span><span className="muted">#{p.id}</span>
-            </button>
-            <button className="btn" style={{ height: 40 }} onClick={() => tryLed(p.id, 3, p.name)}>Try</button>
-          </div>
-        ))}
-      </div>
+        </div>
+      )}
+      {list && shown!.length === 0 && <p className="muted" style={{ margin: 0 }}>No preset matches “{q}”.</p>}
+      {mine.length > 0 && (
+        <section className="section">
+          <span className="caps">Your presets</span>
+          <div className="fx-list">{mine.map(row)}</div>
+        </section>
+      )}
+      {itdarts.length > 0 && <span className="caps">ITDarts presets</span>}
+      <GroupList sections={itdarts} noun={['preset', 'presets']} searching={!!q} shutByDefault={s => !s.items.some(p => p.id === value)} render={items => <div className="fx-list">{items.map(row)}</div>} />
       {!list && (
         <label className="option-row">
           <span>Preset number</span>

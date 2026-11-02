@@ -124,6 +124,24 @@ export function priority(t: Trigger): number {
   return ORDER.indexOf(t.kind === 'game' ? t.event : t.kind);
 }
 
+/** The groups of the Mapa momentów, in order: the same ones in Rules, Sounds, LEDs and the pickers (docs/MAPA.md). */
+export const FX_GROUPS = [['match', 'Match'], ['darts', 'Darts'], ['visits', 'Visits'], ['legEnd', 'Leg end'], ['minigames', 'Minigames'], ['board', 'Board']] as const;
+export type FxGroup = (typeof FX_GROUPS)[number][0];
+export const isFxGroup = (g: unknown): g is FxGroup => FX_GROUPS.some(([id]) => id === g);
+
+/** The group of a trigger. A visit trigger that needs a checkout ends a leg, so Big Fish sits with Leg won. */
+export function groupOfTrigger(t: Trigger): FxGroup {
+  switch (t.kind) {
+    case 'dart': case 'left': return 'darts';
+    case 'total': case 'range': case 'combo': return t.checkout === 'only' ? 'legEnd' : 'visits';
+    case 'bust': return 'visits';
+    case 'checkout': case 'setWon': case 'matchWon': return 'legEnd';
+    case 'game': case 'hit': case 'miss': return 'minigames';
+    case 'takeoutStart': case 'takeoutEnd': case 'boardOffline': case 'boardOnline': return 'board';
+    default: return 'match';
+  }
+}
+
 export interface RuleLike {
   enabled: boolean;
   triggers: Trigger[];

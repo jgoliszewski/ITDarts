@@ -281,8 +281,8 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 - **Laptop (od 1100 px):** zakładki z boku, a pod nimi ten sam status. Rules zajmuje całą szerokość, a edytor otwiera się nad listą (od 2026-10-28; wcześniej stał na stałe obok listy, która przy 35 regułach wymagała długiego scrolla). Sounds, LEDs i Playback to jedna kolumna do 720 px.
 
 **Rules**
-- Reguły są w grupach „Results” (bust, checkout, set, mecz), „Visits” (suma, przedział, kombinacja), „Darts” (lotka, „Left on”), „Minigames” i „Match and board”. Reguła trafia do grupy swojego najważniejszego wyzwalacza.
-- Grupy się zwijają stuknięciem w nagłówek (2026-10-27, gdy reguł zrobiło się dużo). Zwinięte grupy pamięta przeglądarka. Na start wszystkie są rozwinięte.
+- Reguły są w grupach z Mapy momentów (od 2026-11-02): **Match, Darts, Visits, Leg end, Minigames, Board**, te same w Rules, Sounds, LEDs i w pickerach. Reguła trafia do grupy swojego najważniejszego wyzwalacza: lotka i „Left on” to Darts; suma, przedział i kombinacja (bez „Checkout”) oraz bust i no score to Visits; checkout, set i mecz oraz suma, przedział i kombinacja z warunkiem „Checkout” (Madhouse, High finish, Big Fish) to Leg end; „Hit”, „Miss” i zdarzenia minigier to Minigames; start meczu i legu oraz zmiana gracza to Match; takeout i stan tarczy to Board. Definicja grup i przypisanie wyzwalacza są w `games/effects.ts` (`FX_GROUPS`, `groupOfTrigger`). Arkusz „Add trigger” ma te same grupy.
+- Grupy się zwijają stuknięciem w nagłówek (2026-10-27, gdy reguł zrobiło się dużo). Zwinięte grupy pamięta przeglądarka (osobno w każdej zakładce). Na start wszystkie są rozwinięte.
 - **Wyszukiwarka** nad listą reguł (2026-10-27) szuka po nazwie, wyzwalaczach i nazwach dźwięków, tak jak w Sounds. Przy wpisanym zapytaniu trafienia widać też w zwiniętych grupach.
 - W grupie kolejność idzie według priorytetu, a przy remisie od najstarszej.
 - **Kafelki** (2026-10-28): reguły są kafelkami w siatce na całą szerokość, na laptopie ok. 190 px na kafelek, na telefonie dwa w rzędzie. Na 1920×1080 cała lista mieści się bez scrolla. Kafelek pokazuje nazwę (bez nazwy: wyzwalacze), wyzwalacze, dźwięk, kolor i nazwę presetu ledów, a z boku przełącznik i przycisk odtwarzania, który działa jak „Test whole rule”. Stuknięcie w kafelek otwiera edytor. Usuwanie jest tylko w edytorze.
@@ -303,12 +303,15 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 - **Wyszukiwarka** nad listą i w arkuszu „Add a sound” w edytorze reguły (2026-10-26, gdy dźwięków zrobiło się kilkadziesiąt). Szuka po nazwie i pliku, bez względu na wielkość liter i polskie znaki, a słowa mogą być w dowolnej kolejności.
 - **Nazwa nowego dźwięku** (2026-10-26): po wybraniu pliku, a przed wysłaniem, okno „Name the new sound” z odsłuchem i polem nazwy. Pole ma zaznaczoną nazwę wziętą z pliku, więc wpisywanie ją zastępuje. Pod spodem widać nazwę pliku w repo, bo powstaje z tej nazwy i późniejsza zmiana nazwy jej nie rusza.
 - Zmiana nazwy i usuwanie są w menu „⋯”. Przy użytym dźwięku „Delete” jest wyłączone i wymienia te reguły.
-- **Built-in** (2026-10-27): zwijana sekcja pod Biblioteką z dźwiękami wbudowanymi. Wiersz jak przy pliku (odsłuch, opis zamiast długości, liczba reguł, głośność), bez menu „⋯”. Wyszukiwarka szuka też w niej, po nazwie i opisie, i wtedy ją rozwija. Licznik przy zakładce liczy tylko pliki.
+- **Grupy** (2026-11-02): pod uploadem i wyszukiwarką stoi „Your sounds”, czyli pliki w Twoich grupach (alfabetycznie, pliki bez grupy w „Other” na końcu), a pod spodem „Built-in” w grupach z mapy. Każda grupa się zwija, a stan pamięta przeglądarka. Domyślnie rozwinięte są Twoje grupy, a zwinięte Built-in. Wyszukiwarka szuka też po grupie i pokazuje trafienia w zwiniętych grupach.
+- **Grupa pliku** (2026-11-02): opcjonalne pole `group` (tekst do 30 znaków) przy dźwięku z pliku w `effects/effects.json`. Ustawia się je w oknie „Name the new sound” przy uploadzie (`POST /api/sounds?group=`) i w menu „⋯” (`PUT /api/sounds/:id`, pusty tekst czyści): chipy istniejących grup plus pole na nową. Grupa istnieje, dopóki ma ją jakiś plik; nie ma zarządzania grupami, a zmiana nazwy to zmiana pola na każdym pliku. Wpisane „Other” znaczy brak grupy.
+- **Built-in** (2026-10-27; od 2026-11-02 w grupach z mapy, pole `group` przy każdym wpisie `BUILTIN_SOUNDS`): sekcja z dźwiękami wbudowanymi. Wiersz jak przy pliku (odsłuch, opis zamiast długości, liczba reguł, głośność), bez menu „⋯”. Wyszukiwarka szuka też w niej, po nazwie i opisie, i wtedy ją rozwija. Licznik przy zakładce liczy tylko pliki.
 
 **LEDs**
 - Status połączenia z adresem i wersją WLED. „Change” zmienia adres, a bez adresu od razu widać pole adresu.
 - Stany bazowe z kolorem i nazwą presetu oraz „Try”. Preset wybiera się w arkuszu z kolorami, a w nim każdy preset ma też „Try”. Ten sam wybór jest w edytorze reguły.
-- Siatka presetów z kontrolera: stuknięcie gra preset przez 3 s.
+- **Pickery w edytorze reguły** (2026-11-02): arkusze „Add a sound” i „Pick a preset” mają wyszukiwarkę i te same grupy co zakładki. W pickerze presetu otwarta jest grupa z wybranym presetem, reszta zwinięta; w pickerze dźwięku (nic nie jest wybrane) grupy startują zwinięte, a wyszukiwarka je otwiera.
+- Presety z kontrolera (od 2026-11-02 w grupach): „Your presets” (numery poza 100–149) płasko na górze, a pod nimi „ITDarts presets” (100–149) w grupach z mapy, zwinięte domyślnie. Grupa presetu pochodzi z pola `group` w `LEDS` po numerze presetu, a preset z zakresu spoza `LEDS` trafia do „Other”. Stuknięcie w preset gra go przez 3 s.
 - Kolor kropki to pierwszy kolor pierwszego segmentu z `presets.json`. Bez niego kropka jest pustym szarym okręgiem.
 
 **Playback**

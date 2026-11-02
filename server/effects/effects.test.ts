@@ -57,6 +57,30 @@ describe('effects store', () => {
     expect(store.sound(a)).toMatchObject({ id: 'crowd-roar.wav', name: 'Stadium' });
   });
 
+  it('keeps the group of a file: set at upload, changed, cleared with empty text, and in effects.json', () => {
+    const a = store.addSound(WAV, 'Crowd roar', 1000, ' Crowd  noises ');
+    const b = store.addSound(WAV, 'Plain', 1000);
+    expect(store.sound(a)!.group).toBe('Crowd noises');
+    expect(store.sound(b)!.group).toBe('');
+    expect(fileText()).toContain('"group": "Crowd noises"');
+    expect(fileText().match(/"group"/g)).toHaveLength(1);
+    store.updateSound(b, { group: 'Jokes' });
+    expect(store.sound(b)!.group).toBe('Jokes');
+    store.updateSound(b, { volume: 80 });
+    expect(store.sound(b)!.group).toBe('Jokes');
+    store.updateSound(a, { group: '   ' });
+    expect(store.sound(a)!.group).toBe('');
+    expect(fileText().match(/"group"/g)).toHaveLength(1);
+    expect(parseEffectsFile(fileText()).sounds.map(x => x.group)).toEqual([undefined, 'Jokes']);
+    expect(() => store.updateSound(a, { group: 'x'.repeat(31) })).toThrow('too long');
+    expect(() => store.addSound(WAV, 'Other', 1000, 'x'.repeat(31))).toThrow('too long');
+  });
+
+  it('gives a built-in sound the group from code and does not let it change', () => {
+    expect(store.sound(builtinId('treble-20'))!.group).toBe('darts');
+    expect(() => store.updateSound(builtinId('bull'), { group: 'Jokes' })).toThrow('keeps its group');
+  });
+
   it('keeps sounds and refuses to delete one a rule uses', () => {
     const id = store.addSound(WAV, ' Big   fish ', 1200);
     const s = store.sound(id)!;

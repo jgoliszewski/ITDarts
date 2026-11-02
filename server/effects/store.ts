@@ -50,6 +50,8 @@ export interface Sound {
   url: string;
   /** The key of a built-in sound, with what it was made for; its volume is the only thing to change. */
   builtin: { key: string; info: string } | null;
+  /** A built-in sound: its group of the map (FX_GROUPS). A file: the text it was given, empty for none. */
+  group: string;
   /** 0–200 %: files from different sources differ in loudness. */
   volume: number;
   durationMs: number;
@@ -77,7 +79,7 @@ export type RuleInput = Omit<Rule, 'id' | 'base'>;
 interface EffectsFile {
   version: 1;
   settings: { volume: number; callerVolume: number; callerVoice: string; builtinVolume: Record<string, number>; base: Record<BaseState, number | null> };
-  sounds: { file: string; name: string; volume: number; durationMs: number }[];
+  sounds: { file: string; name: string; volume: number; durationMs: number; group?: string }[];
   rules: Rule[];
 }
 
@@ -92,6 +94,7 @@ interface LocalSettings {
 export const MAX_SOUND_BYTES = 2 * 1024 * 1024;
 export const MAX_SOUND_MS = 10_000;
 export const SOUND_FILE = /^[a-z0-9][a-z0-9-]*\.(mp3|wav|ogg)$/;
+export const MAX_GROUP = 30;
 const RULE_ID = /^[a-z0-9][a-z0-9-]{0,23}$/;
 export const CALLER_VOICE = /^[a-z0-9-]{1,32}$/;
 
@@ -127,6 +130,13 @@ function cleanSoundName(name: unknown): string {
   const n = typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
   if (!n) throw new UserError('Name is empty');
   if (n.length > 40) throw new UserError('Name is too long (max 40)');
+  return n;
+}
+
+/** A file's group: free text, empty for none. */
+function cleanGroup(g: unknown): string {
+  const n = typeof g === 'string' ? g.trim().replace(/\s+/g, ' ') : '';
+  if (n.length > MAX_GROUP) fail(`Group is too long (max ${MAX_GROUP})`);
   return n;
 }
 
@@ -188,7 +198,8 @@ export function parseEffectsFile(text: string): EffectsFile {
     where(`sound ${JSON.stringify(x?.file)}`, () => {
       const file = typeof x.file === 'string' && SOUND_FILE.test(x.file) ? x.file : fail('file must be like crowd-roar.mp3');
       if (sounds.some(o => o.file === file)) fail('listed twice');
-      sounds.push({ file, name: cleanSoundName(x.name), volume: int(x.volume, 0, 200) ?? fail('volume is 0–200'), durationMs: int(x.durationMs, 1, MAX_SOUND_MS) ?? fail('durationMs is 1–10000') });
+      const group = cleanGroup(x.group);
+      sounds.push({ file, name: cleanSoundName(x.name), volume: int(x.volume, 0, 200) ?? fail('volume is 0–200'), durationMs: int(x.durationMs, 1, MAX_SOUND_MS) ?? fail('durationMs is 1–10000'), ...(group && { group }) });
     });
   }
   const files = new Set(sounds.map(x => x.file));
@@ -208,7 +219,7 @@ export function formatEffectsFile(f: EffectsFile): string {
   const out: EffectsFile = {
     version: 1,
     settings: { volume: f.settings.volume, callerVolume: f.settings.callerVolume, callerVoice: f.settings.callerVoice, builtinVolume: Object.fromEntries(Object.entries(f.settings.builtinVolume).filter(([k, v]) => v !== defaultVolume(k)).sort()), base: { lobby: f.settings.base.lobby, match: f.settings.base.match, takeout: f.settings.base.takeout, offline: f.settings.base.offline } },
-    sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs })),
+    sounds: f.sounds.map(s => ({ file: s.file, name: s.name, volume: s.volume, durationMs: s.durationMs, ...(s.group && { group: s.group }) })),
     rules: f.rules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, triggers: r.triggers.map(normalizeTrigger), sounds: r.sounds, led: r.led && { preset: r.led.preset, seconds: r.led.seconds } })),
   };
   return `${JSON.stringify(out, null, 2)}\n`;
@@ -413,10 +424,10 @@ export class EffectsStore {
   sounds(): Sound[] {
     const used = (id: string) => this.data.rules.filter(r => r.sounds.includes(id)).length;
     const builtin: Sound[] = BUILTIN_SOUNDS.map(b => ({
-      id: builtinId(b.key), name: b.name, file: '', url: builtinId(b.key), builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? defaultVolume(b.key), durationMs: b.durationMs, usedBy: used(builtinId(b.key)),
+      id: builtinId(b.key), name: b.name, file: '', url: builtinId(b.key), builtin: { key: b.key, info: b.info }, volume: this.data.settings.builtinVolume[b.key] ?? defaultVolume(b.key), durationMs: b.durationMs, group: b.group, usedBy: used(builtinId(b.key)),
     }));
     const files: Sound[] = this.data.sounds
-      .map(s => ({ id: s.file, name: s.name, file: s.file, url: this.fileUrl(s.file), builtin: null, volume: s.volume, durationMs: s.durationMs, usedBy: used(s.file) }))
+      .map(s => ({ id: s.file, name: s.name, file: s.file, url: this.fileUrl(s.file), builtin: null, volume: s.volume, durationMs: s.durationMs, group: s.group ?? '', usedBy: used(s.file) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }) || a.file.localeCompare(b.file));
     return [...builtin, ...files];
   }
@@ -444,15 +455,16 @@ export class EffectsStore {
   }
 
   /** The browser measures the length before uploading; the server checks size and format. Returns the file name. */
-  addSound(buf: Buffer, name: unknown, durationMs: unknown): string {
+  addSound(buf: Buffer, name: unknown, durationMs: unknown, group?: unknown): string {
     if (buf.length > MAX_SOUND_BYTES) fail('File is larger than 2 MB');
     const type = soundType(buf);
     if (!type) fail('Use an mp3, wav or ogg file');
     const ms = int(durationMs, 1, MAX_SOUND_MS) ?? fail('Sound is longer than 10 s');
     const clean = cleanSoundName(name);
+    const g = cleanGroup(group);
     const file = this.freeName(clean, type);
     writeFileSync(join(this.soundsDir, file), buf);
-    this.data.sounds.push({ file, name: clean, volume: 100, durationMs: ms });
+    this.data.sounds.push({ file, name: clean, volume: 100, durationMs: ms, ...(g && { group: g }) });
     this.save();
     return file;
   }
@@ -463,12 +475,17 @@ export class EffectsStore {
     if (key !== null) {
       if (!isBuiltinSound(id)) fail('No such sound');
       if ('name' in p) fail('A built-in sound keeps its name');
+      if ('group' in p) fail('A built-in sound keeps its group');
       if ('volume' in p) this.data.settings.builtinVolume[key] = int(p.volume, 0, 200) ?? fail('Volume is 0–200 %');
       this.save();
       return;
     }
     const s = this.data.sounds.find(x => x.file === id) ?? fail('No such sound');
-    if ('name' in p) s.name = cleanSoundName(p.name);
+    // Both checked before either is applied, so a bad group leaves the name alone.
+    const group = 'group' in p ? cleanGroup(p.group) : null;
+    const name = 'name' in p ? cleanSoundName(p.name) : null;
+    if (name !== null) s.name = name;
+    if (group !== null) group ? (s.group = group) : delete s.group;
     if ('volume' in p) s.volume = int(p.volume, 0, 200) ?? fail('Volume is 0–200 %');
     this.save();
   }

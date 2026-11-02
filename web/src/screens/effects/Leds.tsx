@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import type { BaseState } from '../../../../server/effects/store.ts';
 import type { EffectsData } from './api.ts';
 import { call, presetName, presetOf, tryLed } from './api.ts';
-import { Chevron, Dot, PresetPicker } from './parts.tsx';
+import type { WledPreset } from '../../../../server/effects/wled.ts';
+import { presetSections } from './groups.ts';
+import { Chevron, Dot, GroupList, PresetPicker } from './parts.tsx';
 
 const BASE_LABELS: [BaseState, string][] = [['lobby', 'Lobby'], ['match', 'Match in progress'], ['takeout', 'Takeout'], ['offline', 'Board offline']];
 
@@ -55,6 +57,32 @@ function Connection({ d }: { d: EffectsData }) {
   );
 }
 
+const PresetTile = ({ p }: { p: WledPreset }) => (
+  <button className="fx-preset" onClick={() => tryLed(p.id, 3, p.name)}>
+    <Dot color={p.color} size={14} /><span className="grow">{p.name}</span><span className="muted">#{p.id}</span>
+  </button>
+);
+
+/** The user's own presets flat on top, then the ones ITDarts uploaded in the groups of the map. */
+function PresetList({ list }: { list: WledPreset[] }) {
+  const { mine, itdarts } = presetSections(list);
+  return (
+    <>
+      <div className="option-row"><span className="caps">Presets on the controller</span><span className="muted">tap to try 3 s</span></div>
+      {mine.length > 0 && (
+        <section className="section">
+          <span className="caps">Your presets</span>
+          <div className="fx-presets">{mine.map(p => <PresetTile key={p.id} p={p} />)}</div>
+        </section>
+      )}
+      {itdarts.length > 0 && <span className="caps">ITDarts presets</span>}
+      <GroupList sections={itdarts} noun={['preset', 'presets']} storeKey="itdarts.fx.groups.leds" searching={false} shutByDefault={() => true}
+        render={items => <div className="fx-presets">{items.map(p => <PresetTile key={p.id} p={p} />)}</div>} />
+      <span className="muted" style={{ fontSize: 13 }}>Design the presets in the WLED app. Rules pick them by name.</span>
+    </>
+  );
+}
+
 export function LedsTab({ d, wide }: { d: EffectsData; wide: boolean }) {
   const [picking, setPicking] = useState<BaseState | null>(null);
   const base = d.settings.wled.base;
@@ -81,19 +109,7 @@ export function LedsTab({ d, wide }: { d: EffectsData; wide: boolean }) {
               );
             })}
           </section>
-          {d.presets.list && d.presets.list.length > 0 && (
-            <section className="section">
-              <div className="option-row"><span className="caps">Presets on the controller</span><span className="muted">tap to try 3 s</span></div>
-              <div className="fx-presets">
-                {d.presets.list.map(p => (
-                  <button key={p.id} className="fx-preset" onClick={() => tryLed(p.id, 3, p.name)}>
-                    <Dot color={p.color} size={14} /><span className="grow">{p.name}</span><span className="muted">#{p.id}</span>
-                  </button>
-                ))}
-              </div>
-              <span className="muted" style={{ fontSize: 13 }}>Design the presets in the WLED app. Rules pick them by name.</span>
-            </section>
-          )}
+          {d.presets.list && d.presets.list.length > 0 && <PresetList list={d.presets.list} />}
         </>
       )}
       {picking && <PresetPicker d={d} wide={wide} value={base[picking]} none="Leave as is" onClose={() => setPicking(null)} onPick={id => setBase(picking, id)} />}

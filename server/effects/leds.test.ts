@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_RULES } from './builtin.ts';
+import { groupOfTrigger, isFxGroup } from '../../games/effects.ts';
+import { BASE_RULES, BUILTIN_SOUNDS, builtinId } from './builtin.ts';
 import { BOARD_SEGMENT, effectSeconds, LED_COUNT, LEDS, PRESET_RANGE, rings, SPLIT_AT, wledPreset, type LedKey } from './leds.ts';
 
 const keys = Object.keys(LEDS) as LedKey[];
@@ -9,6 +10,22 @@ describe('LEDs of the Momenty', () => {
     const numbers = keys.map(k => LEDS[k].preset);
     expect(new Set(numbers).size).toBe(numbers.length);
     expect(numbers.every(n => n >= PRESET_RANGE[0] && n <= PRESET_RANGE[1])).toBe(true);
+  });
+
+  it('puts every LED look and built-in sound in a group of the map', () => {
+    for (const k of keys) expect(isFxGroup(LEDS[k].group), k).toBe(true);
+    for (const s of BUILTIN_SOUNDS) expect(isFxGroup(s.group), s.key).toBe(true);
+  });
+
+  it('files a base rule sound and LEDs under the group of its trigger', () => {
+    for (const b of BASE_RULES) {
+      const g = groupOfTrigger(b.triggers[0]);
+      const sound = BUILTIN_SOUNDS.find(s => b.sound === builtinId(s.key));
+      // Gotcha, Goal and Shanghai borrow another Moment's sound; the rest match their own.
+      if (['b-shanghai', 'b-gotcha', 'b-goal', 'b-life-lost', 'b-lowest', 'b-attempt-failed', 'b-sector-closed'].includes(b.id)) continue;
+      if (sound) expect(sound.group, b.id).toBe(g);
+      if (b.led && !['b-shanghai', 'b-gotcha', 'b-goal', 'b-lowest'].includes(b.id)) expect(LEDS[b.led].group, b.id).toBe(g);
+    }
   });
 
   it('points every base rule at a look that exists', () => {

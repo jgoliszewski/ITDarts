@@ -6,6 +6,8 @@
 // lights the wall. A Moment's effect is a calm colour wash on the board ring and motion in the same colour on the wall
 // ring, both for the same time, at most 2 s; only the end of a game runs longer (round 2 of issue #9).
 
+import type { FxGroup } from '../../games/effects.ts';
+
 export type Rgb = [number, number, number];
 /** A colour, or the rainbow spread over the ring (WLED palette 11). */
 export type Paint = Rgb | 'rainbow';
@@ -88,44 +90,44 @@ export type LedKey =
   | 'sector-closed' | 'white-horse' | 'life-lost' | 'killer' | 'attempt-failed' | 'player-out' | 'new-record';
 
 /** Every LED look with its preset number; numbers never move, so a preset is overwritten in place by the next upload. */
-export const LEDS: Record<LedKey, { preset: number; name: string; effect: Effect }> = {
+export const LEDS: Record<LedKey, { preset: number; name: string; group: FxGroup; effect: Effect }> = {
   // Base states stay still: the cameras read moving light as a takeout.
-  base: { preset: 100, name: 'Base', effect: { kind: 'solid', color: WARM, dur: 0 } },
+  base: { preset: 100, name: 'Base', group: 'match', effect: { kind: 'solid', color: WARM, dur: 0 } },
   // Breathe over warm white was hard to see; nothing is detected while the board is offline, so plain red.
-  offline: { preset: 101, name: 'Board offline', effect: { kind: 'solid', color: RED, dur: 0 } },
-  'game-on': { preset: 102, name: 'Game on', effect: pair(WHITE, 2, fill(WHITE, WARM)) },
-  'leg-start': { preset: 103, name: 'Leg start', effect: wash(WHITE, 0.9) },
-  treble: { preset: 104, name: 'Treble 15-19', effect: pair(ORANGE, 0.7, run(ORANGE, EMBER)) },
-  'treble-20': { preset: 105, name: 'Treble 20', effect: pair(ORANGE, 1, flow(1.2)) },
-  bull: { preset: 106, name: 'Bullseye', effect: pair(GREEN, 1.4, ripple(GREEN, TEAL)) },
-  ton: { preset: 107, name: 'Ton', effect: pair(ORANGE, 1.4, run(ORANGE, EMBER, 1.2)) },
-  'ton-40': { preset: 108, name: 'Ton 40', effect: pair(ORANGE, 1.6, run(ORANGE, EMBER, 1.8)) },
-  '180': { preset: 109, name: '180', effect: pair(ORANGE, 2, sparks(WHITE, ORANGE)) },
-  'clean-20s': { preset: 110, name: 'Clean 20s', effect: pair(ORANGE, 0.8, run(ORANGE, EMBER, 1.2)) },
-  bnb: { preset: 111, name: 'Bed and breakfast', effect: pair(MAGENTA, 0.8, ripple(PURPLE, MAGENTA)) },
-  'no-score': { preset: 112, name: 'No score', effect: pair(RED, 1.4, still(RED)) },
-  bust: { preset: 113, name: 'Bust', effect: pair(RED, 1.4, still(RED)) },
-  checkout: { preset: 114, name: 'Checkout', effect: pair(GREEN, 2, fill(GREEN, TEAL)) },
-  madhouse: { preset: 115, name: 'Madhouse', effect: pair(PURPLE, 2, ripple(PURPLE, MAGENTA)) },
-  'high-finish': { preset: 116, name: 'High finish', effect: pair(GREEN, 2, ripple(GREEN, TEAL)) },
-  'big-fish': { preset: 117, name: 'Big Fish', effect: pair(GREEN, 2, flow(0.9)) },
-  'set-won': { preset: 118, name: 'Set won', effect: pair(GREEN, 2, run(GREEN, TEAL, 1)) },
+  offline: { preset: 101, name: 'Board offline', group: 'board', effect: { kind: 'solid', color: RED, dur: 0 } },
+  'game-on': { preset: 102, name: 'Game on', group: 'match', effect: pair(WHITE, 2, fill(WHITE, WARM)) },
+  'leg-start': { preset: 103, name: 'Leg start', group: 'match', effect: wash(WHITE, 0.9) },
+  treble: { preset: 104, name: 'Treble 15-19', group: 'darts', effect: pair(ORANGE, 0.7, run(ORANGE, EMBER)) },
+  'treble-20': { preset: 105, name: 'Treble 20', group: 'darts', effect: pair(ORANGE, 1, flow(1.2)) },
+  bull: { preset: 106, name: 'Bullseye', group: 'darts', effect: pair(GREEN, 1.4, ripple(GREEN, TEAL)) },
+  ton: { preset: 107, name: 'Ton', group: 'visits', effect: pair(ORANGE, 1.4, run(ORANGE, EMBER, 1.2)) },
+  'ton-40': { preset: 108, name: 'Ton 40', group: 'visits', effect: pair(ORANGE, 1.6, run(ORANGE, EMBER, 1.8)) },
+  '180': { preset: 109, name: '180', group: 'visits', effect: pair(ORANGE, 2, sparks(WHITE, ORANGE)) },
+  'clean-20s': { preset: 110, name: 'Clean 20s', group: 'visits', effect: pair(ORANGE, 0.8, run(ORANGE, EMBER, 1.2)) },
+  bnb: { preset: 111, name: 'Bed and breakfast', group: 'visits', effect: pair(MAGENTA, 0.8, ripple(PURPLE, MAGENTA)) },
+  'no-score': { preset: 112, name: 'No score', group: 'visits', effect: pair(RED, 1.4, still(RED)) },
+  bust: { preset: 113, name: 'Bust', group: 'visits', effect: pair(RED, 1.4, still(RED)) },
+  checkout: { preset: 114, name: 'Checkout', group: 'legEnd', effect: pair(GREEN, 2, fill(GREEN, TEAL)) },
+  madhouse: { preset: 115, name: 'Madhouse', group: 'legEnd', effect: pair(PURPLE, 2, ripple(PURPLE, MAGENTA)) },
+  'high-finish': { preset: 116, name: 'High finish', group: 'legEnd', effect: pair(GREEN, 2, ripple(GREEN, TEAL)) },
+  'big-fish': { preset: 117, name: 'Big Fish', group: 'legEnd', effect: pair(GREEN, 2, flow(0.9)) },
+  'set-won': { preset: 118, name: 'Set won', group: 'legEnd', effect: pair(GREEN, 2, run(GREEN, TEAL, 1)) },
   // The game is over and nothing is detected: both rings celebrate, longer.
   'match-won': {
-    preset: 119, name: 'Match won',
+    preset: 119, name: 'Match won', group: 'legEnd',
     effect: { board: { kind: 'rainbow', color: 'rainbow', dur: 6, fadeIn: FADE_IN, fadeOut: FADE_OUT, rate: 0.3 }, wall: { ...sparks(WHITE, ORANGE), size: 8, dur: 6, fadeIn: FADE_IN, fadeOut: FADE_OUT } },
   },
   // Both rings, long enough to reach full colour: 0.45 s on the board ring alone was hard to see.
-  hit: { preset: 120, name: 'Hit', effect: pair(ORANGE, 0.8, still(ORANGE)) },
-  miss: { preset: 121, name: 'Miss', effect: pair(RED, 0.8, still(RED)) },
-  'sector-closed': { preset: 122, name: 'Sector closed', effect: pair(GREEN, 1.4, run(GREEN, TEAL, 1.2)) },
-  'white-horse': { preset: 123, name: 'White Horse', effect: pair(PURPLE, 2, run(WHITE, PURPLE)) },
-  'life-lost': { preset: 124, name: 'Life lost', effect: pair(RED, 1, still(RED)) },
-  killer: { preset: 125, name: 'Became killer', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
-  'attempt-failed': { preset: 126, name: 'Attempt failed', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
-  'player-out': { preset: 127, name: 'Player out', effect: pair(RED, 2, still(RED)) },
+  hit: { preset: 120, name: 'Hit', group: 'minigames', effect: pair(ORANGE, 0.8, still(ORANGE)) },
+  miss: { preset: 121, name: 'Miss', group: 'minigames', effect: pair(RED, 0.8, still(RED)) },
+  'sector-closed': { preset: 122, name: 'Sector closed', group: 'minigames', effect: pair(GREEN, 1.4, run(GREEN, TEAL, 1.2)) },
+  'white-horse': { preset: 123, name: 'White Horse', group: 'minigames', effect: pair(PURPLE, 2, run(WHITE, PURPLE)) },
+  'life-lost': { preset: 124, name: 'Life lost', group: 'minigames', effect: pair(RED, 1, still(RED)) },
+  killer: { preset: 125, name: 'Became killer', group: 'minigames', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
+  'attempt-failed': { preset: 126, name: 'Attempt failed', group: 'minigames', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },
+  'player-out': { preset: 127, name: 'Player out', group: 'minigames', effect: pair(RED, 2, still(RED)) },
   'new-record': {
-    preset: 128, name: 'New record',
+    preset: 128, name: 'New record', group: 'minigames',
     effect: { board: { kind: 'rainbow', color: 'rainbow', dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT, rate: 0.4 }, wall: { ...ripple(ORANGE, EMBER), dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT } },
   },
 };

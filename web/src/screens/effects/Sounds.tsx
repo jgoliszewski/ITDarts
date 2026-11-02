@@ -1,4 +1,5 @@
 // Sounds tab: the Biblioteka dźwięków with upload, preview and per-file volume.
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { Sound } from '../../../../server/effects/store.ts';
 import { Dialog, Icon, toast } from '../../components/ui.tsx';
@@ -6,7 +7,8 @@ import { playFile, playSound } from '../../sound.ts';
 import type { EffectsData } from './api.ts';
 import { call } from './api.ts';
 import { slug } from '../../../../server/effects/slug.ts';
-import { Chevron, SearchField, Sheet, matchesQuery } from './parts.tsx';
+import { builtinSections, fileSections } from './groups.ts';
+import { GroupList, SearchField, Sheet, matchesQuery } from './parts.tsx';
 
 // Each file stays in the repo's git history (docs/EFEKTY.md, Konfiguracja w repo).
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -30,6 +32,26 @@ function duration(file: File): Promise<number> {
   });
 }
 
+const MAX_GROUP = 30;
+
+/** Chips of the groups that exist, plus a field for a new one. Empty means “Other”. */
+function GroupField({ d, value, onChange }: { d: EffectsData; value: string; onChange: (g: string) => void }) {
+  const existing = fileSections(d.sounds.filter(s => !s.builtin)).filter(s => s.id !== '').map(s => s.title);
+  return (
+    <div className="section">
+      <span className="caps">Group</span>
+      {existing.length > 0 && (
+        <div className="chip-row">
+          {existing.map(g => (
+            <button key={g} className={`fx-chip ${g.toLowerCase() === value.trim().toLowerCase() ? 'on' : ''}`} onClick={() => onChange(g.toLowerCase() === value.trim().toLowerCase() ? '' : g)}>{g}</button>
+          ))}
+        </div>
+      )}
+      <input className="field" aria-label="Group" maxLength={MAX_GROUP} value={value} placeholder="New group, or empty for Other" onChange={e => onChange(e.target.value)} />
+    </div>
+  );
+}
+
 /** A file the browser can read, waiting for its name. */
 interface Picked {
   file: File;
@@ -46,6 +68,7 @@ const extOf = (f: File) => EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase()
  */
 function NameNewSound({ d, picked, wide, onClose }: { d: EffectsData; picked: Picked; wide: boolean; onClose: () => void }) {
   const [name, setName] = useState(() => picked.file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40));
+  const [group, setGroup] = useState('');
   const [busy, setBusy] = useState(false);
   // The name from the file is a guess: selected, so typing replaces it.
   const field = useRef<HTMLInputElement>(null);
@@ -59,7 +82,7 @@ function NameNewSound({ d, picked, wide, onClose }: { d: EffectsData; picked: Pi
     if (!clean || busy) return;
     setBusy(true);
     try {
-      const r = await fetch(`/api/sounds?name=${encodeURIComponent(clean)}&duration=${Math.ceil(picked.seconds * 1000)}`, {
+      const r = await fetch(`/api/sounds?name=${encodeURIComponent(clean)}&duration=${Math.ceil(picked.seconds * 1000)}&group=${encodeURIComponent(group.trim())}`, {
         method: 'POST', headers: { 'content-type': picked.file.type.startsWith('audio/') ? picked.file.type : 'application/octet-stream' }, body: picked.file,
       });
       if (!r.ok) {
@@ -85,6 +108,7 @@ function NameNewSound({ d, picked, wide, onClose }: { d: EffectsData; picked: Pi
         <input ref={field} className="field" maxLength={40} value={name} placeholder="e.g. Crowd roar"
           onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && upload()} />
       </label>
+      <GroupField d={d} value={group} onChange={setGroup} />
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         {clean ? <>File in the repo: <b>effects/sounds/{slug(clean)}.{extOf(picked.file)}</b>. Renaming later keeps this file name.</> : 'Give it a name people will find.'}
         {taken && ' A sound with this name already exists.'}
@@ -126,10 +150,13 @@ function Upload({ d, wide }: { d: EffectsData; wide: boolean }) {
 
 function SoundMenu({ d, s, wide, onClose }: { d: EffectsData; s: Sound; wide: boolean; onClose: () => void }) {
   const [name, setName] = useState(s.name);
+  const [group, setGroup] = useState(s.group);
   const [askDelete, setAskDelete] = useState(false);
   const users = d.rules.filter(r => r.sounds.includes(s.id)).map(r => r.name || 'Unnamed rule');
-  const rename = async () => {
-    if (name.trim() && name.trim() !== s.name && (await call('PUT', `/api/sounds/${s.id}`, { name }))) d.reload();
+  const save = async () => {
+    const patch = { ...(name.trim() && name.trim() !== s.name && { name }), ...(group.trim() !== s.group && { group }) };
+    if (Object.keys(patch).length > 0 && !(await call('PUT', `/api/sounds/${s.id}`, patch))) return;
+    d.reload();
     onClose();
   };
   if (askDelete) {
@@ -146,9 +173,10 @@ function SoundMenu({ d, s, wide, onClose }: { d: EffectsData; s: Sound; wide: bo
     <Sheet title={s.name} wide={wide} onClose={onClose}>
       <label className="section">
         <span className="caps">Name</span>
-        <input className="field" value={name} maxLength={40} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && rename()} />
+        <input className="field" value={name} maxLength={40} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} />
       </label>
-      <button className="btn primary block" onClick={rename}>Rename</button>
+      <GroupField d={d} value={group} onChange={setGroup} />
+      <button className="btn primary block" onClick={save}>Save</button>
       <button className="btn danger block" disabled={users.length > 0} onClick={() => setAskDelete(true)}>Delete</button>
       {users.length > 0 && <p className="muted" style={{ margin: 0, fontSize: 14 }}>Used by {users.join(', ')}. Take it out of {users.length === 1 ? 'that rule' : 'those rules'} to delete it.</p>}
     </Sheet>
@@ -183,34 +211,45 @@ function SoundRow({ d, s, onMenu }: { d: EffectsData; s: Sound; onMenu?: () => v
   );
 }
 
+/** Your files in your groups, then the built-in sounds in the groups of the map; the tab and the picker share it. */
+export function SoundGroups({ sounds, q, persist, row }: {
+  sounds: Sound[]; q: string; persist: boolean; row: (s: Sound) => ReactNode;
+}) {
+  const files = sounds.filter(s => !s.builtin);
+  const builtin = sounds.filter(s => s.builtin);
+  // The tab opens your groups and closes the built-in ones; a picker has no chosen sound, so it starts closed (a search opens it).
+  const shut = (isBuiltin: boolean) => () => !persist || isBuiltin;
+  const list = (items: Sound[]) => <div className="fx-list">{items.map(row)}</div>;
+  return (
+    <>
+      {files.length > 0 && <span className="caps">Your sounds</span>}
+      <GroupList sections={fileSections(files)} noun={['sound', 'sounds']} storeKey={persist ? 'itdarts.fx.groups.sounds' : undefined} searching={!!q} shutByDefault={shut(false)} render={list} />
+      {builtin.length > 0 && <span className="caps">Built-in</span>}
+      <GroupList sections={builtinSections(builtin)} noun={['sound', 'sounds']} storeKey={persist ? 'itdarts.fx.groups.builtin' : undefined} searching={!!q} shutByDefault={shut(true)} render={list} />
+    </>
+  );
+}
+
 export function SoundsTab({ d, wide }: { d: EffectsData; wide: boolean }) {
   const [menu, setMenu] = useState<string | null>(null);
   const [q, setQ] = useState('');
-  const [builtinOpen, setBuiltinOpen] = useState(false);
   const files = d.sounds.filter(s => !s.builtin);
   const builtin = d.sounds.filter(s => s.builtin);
   const open = files.find(s => s.id === menu);
-  const shown = files.filter(s => matchesQuery(q, s.name, s.file));
-  const shownBuiltin = builtin.filter(s => matchesQuery(q, s.name, s.builtin!.info));
+  const shown = d.sounds.filter(s => matchesQuery(q, s.name, s.file, s.builtin?.info ?? '', s.builtin ? '' : s.group));
   return (
     <div className="fx-col">
       {wide && <h2 className="fx-h">Sounds</h2>}
       <Upload d={d} wide={wide} />
       <SearchField value={q} onChange={setQ} placeholder="Search sounds" />
       <div className="option-row">
-        <span className="caps">Library · {q ? `${shown.length} of ${files.length}` : files.length} {files.length === 1 ? 'sound' : 'sounds'}</span>
+        <span className="muted">{files.length} {files.length === 1 ? 'file' : 'files'} · {builtin.length} built-in</span>
         <span className="muted">▶ plays on this device</span>
       </div>
       {files.length === 0 && <p className="muted" style={{ margin: 0 }}>No files yet. Rules pick their sounds from here and from the built-in ones below.</p>}
-      {files.length > 0 && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
-      {shown.map(s => <SoundRow key={s.id} d={d} s={s} onMenu={() => setMenu(s.id)} />)}
+      {q && shown.length === 0 && <p className="muted" style={{ margin: 0 }}>No sound matches “{q}”.</p>}
+      <SoundGroups sounds={shown} q={q} persist row={s => <SoundRow key={s.id} d={d} s={s} onMenu={s.builtin ? undefined : () => setMenu(s.id)} />} />
       {open && <SoundMenu key={open.id} d={d} s={open} wide={wide} onClose={() => setMenu(null)} />}
-      <button className="option-row fx-group" aria-expanded={builtinOpen || !!q} onClick={() => setBuiltinOpen(!builtinOpen)}>
-        <span className="caps">Built-in · {builtin.length} sounds</span>
-        <span className="muted">made by the kiosk, no files<Chevron /></span>
-      </button>
-      {(builtinOpen || q) && shownBuiltin.map(s => <SoundRow key={s.id} d={d} s={s} />)}
-      {(builtinOpen || q) && shownBuiltin.length === 0 && <p className="muted" style={{ margin: 0 }}>No built-in sound matches “{q}”.</p>}
     </div>
   );
 }

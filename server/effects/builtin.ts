@@ -1,6 +1,6 @@
 // Built-in sounds and base rules (docs/EFEKTY.md, Dźwięki wbudowane i reguły bazowe). The list lives in code: the
 // server adds a missing base rule to effects.json on load and refuses to delete one; the kiosk synthesizes the sounds.
-import type { Trigger } from '../../games/effects.ts';
+import type { FxGroup, Trigger } from '../../games/effects.ts';
 import type { LedKey } from './leds.ts';
 
 /** A sound the kiosk makes with WebAudio; rules point at it as `builtin:<key>`. The synthesis is in web/src/sound.ts. */
@@ -10,6 +10,8 @@ export interface BuiltinSound {
   /** What it was made for, shown in the library. */
   info: string;
   durationMs: number;
+  /** The group of the Moment it was made for (docs/MAPA.md). */
+  group: FxGroup;
   /** Volume in % until it is changed on the page; quieter where the sound comes with every visit or dart. */
   volume?: number;
 }
@@ -20,33 +22,33 @@ export const builtinKey = (id: string): string | null => (id.startsWith(BUILTIN_
 
 /** Picked on 2026-10-27 from the proposal pages, one family per ladder; richness follows strength since 2026-10-28 (docs/MAPA.md). */
 export const BUILTIN_SOUNDS: BuiltinSound[] = [
-  { key: 'treble-15', name: 'Treble 15', info: 'Three quick marimba notes, lowest of the treble ladder', durationMs: 400 },
-  { key: 'treble-16', name: 'Treble 16', info: 'Three quick marimba notes, one step up', durationMs: 400 },
-  { key: 'treble-17', name: 'Treble 17', info: 'Three quick marimba notes, two steps up', durationMs: 400 },
-  { key: 'treble-18', name: 'Treble 18', info: 'Three quick marimba notes, three steps up', durationMs: 400 },
-  { key: 'treble-19', name: 'Treble 19', info: 'Three quick marimba notes, four steps up', durationMs: 400 },
-  { key: 'treble-20', name: 'Treble 20', info: 'Three quick marimba notes, top of the treble ladder', durationMs: 400 },
-  { key: 'bull', name: 'Bull', info: 'Low marimba octaves and a bell', durationMs: 1400 },
-  { key: 'ton', name: 'Ton', info: 'Marimba run, three notes and a small bell', durationMs: 950 },
-  { key: 'ton-40', name: 'Ton 40', info: 'Marimba run, four notes and a bell', durationMs: 1300 },
-  { key: '180', name: '180', info: 'Marimba run over two octaves and three bells', durationMs: 2000 },
-  { key: 'leg-won', name: 'Leg won', info: 'Strummed C chord and a bell', durationMs: 1300 },
-  { key: 'high-finish', name: 'High finish', info: 'Strummed G → C cadence with bells', durationMs: 1800 },
-  { key: 'big-fish', name: 'Big fish', info: 'Riser, gong, strummed chord and bells', durationMs: 2300 },
-  { key: 'set-won', name: 'Set won', info: 'Strummed G → C → C a step up, with bells', durationMs: 2100 },
-  { key: 'match-won', name: 'Match won', info: 'Strummed C F G C with marimba and bells', durationMs: 2900 },
-  { key: 'bust', name: 'Bust', info: 'Three marimba notes down and a low slide', durationMs: 600 },
-  { key: 'no-score', name: 'No score', info: 'Three marimba notes down, no slide', durationMs: 500 },
-  { key: 'madhouse', name: 'Madhouse', info: 'Low minor marimba and a high bell', durationMs: 1400 },
-  { key: 'game-on', name: 'Game on', info: 'Three marimba steps up and a bell', durationMs: 1200 },
-  { key: 'clean-20s', name: 'Clean 20s', info: 'Three high marimba taps', durationMs: 500 },
-  { key: 'bed-and-breakfast', name: 'Bed and breakfast', info: 'Kalimba half step down', durationMs: 700 },
-  { key: 'new-record', name: 'New record', info: 'Bells up and a long bell', durationMs: 1800 },
-  { key: 'white-horse', name: 'White Horse', info: 'Marimba gallop and a bell', durationMs: 1500 },
-  { key: 'player-out', name: 'Player out', info: 'Two low marimba notes down and a long slide', durationMs: 1200 },
-  { key: 'turn', name: 'Next player', info: 'The marimba arpeggio of the next player', durationMs: 450, volume: 75 },
-  { key: 'hit', name: 'Hit', info: 'Marimba fifth up', durationMs: 350, volume: 56 },
-  { key: 'miss', name: 'Miss', info: 'Marimba fifth down', durationMs: 350, volume: 56 },
+  { key: 'treble-15', name: 'Treble 15', info: 'Three quick marimba notes, lowest of the treble ladder', durationMs: 400, group: 'darts' },
+  { key: 'treble-16', name: 'Treble 16', info: 'Three quick marimba notes, one step up', durationMs: 400, group: 'darts' },
+  { key: 'treble-17', name: 'Treble 17', info: 'Three quick marimba notes, two steps up', durationMs: 400, group: 'darts' },
+  { key: 'treble-18', name: 'Treble 18', info: 'Three quick marimba notes, three steps up', durationMs: 400, group: 'darts' },
+  { key: 'treble-19', name: 'Treble 19', info: 'Three quick marimba notes, four steps up', durationMs: 400, group: 'darts' },
+  { key: 'treble-20', name: 'Treble 20', info: 'Three quick marimba notes, top of the treble ladder', durationMs: 400, group: 'darts' },
+  { key: 'bull', name: 'Bull', info: 'Low marimba octaves and a bell', durationMs: 1400, group: 'darts' },
+  { key: 'ton', name: 'Ton', info: 'Marimba run, three notes and a small bell', durationMs: 950, group: 'visits' },
+  { key: 'ton-40', name: 'Ton 40', info: 'Marimba run, four notes and a bell', durationMs: 1300, group: 'visits' },
+  { key: '180', name: '180', info: 'Marimba run over two octaves and three bells', durationMs: 2000, group: 'visits' },
+  { key: 'leg-won', name: 'Leg won', info: 'Strummed C chord and a bell', durationMs: 1300, group: 'legEnd' },
+  { key: 'high-finish', name: 'High finish', info: 'Strummed G → C cadence with bells', durationMs: 1800, group: 'legEnd' },
+  { key: 'big-fish', name: 'Big fish', info: 'Riser, gong, strummed chord and bells', durationMs: 2300, group: 'legEnd' },
+  { key: 'set-won', name: 'Set won', info: 'Strummed G → C → C a step up, with bells', durationMs: 2100, group: 'legEnd' },
+  { key: 'match-won', name: 'Match won', info: 'Strummed C F G C with marimba and bells', durationMs: 2900, group: 'legEnd' },
+  { key: 'bust', name: 'Bust', info: 'Three marimba notes down and a low slide', durationMs: 600, group: 'visits' },
+  { key: 'no-score', name: 'No score', info: 'Three marimba notes down, no slide', durationMs: 500, group: 'visits' },
+  { key: 'madhouse', name: 'Madhouse', info: 'Low minor marimba and a high bell', durationMs: 1400, group: 'legEnd' },
+  { key: 'game-on', name: 'Game on', info: 'Three marimba steps up and a bell', durationMs: 1200, group: 'match' },
+  { key: 'clean-20s', name: 'Clean 20s', info: 'Three high marimba taps', durationMs: 500, group: 'visits' },
+  { key: 'bed-and-breakfast', name: 'Bed and breakfast', info: 'Kalimba half step down', durationMs: 700, group: 'visits' },
+  { key: 'new-record', name: 'New record', info: 'Bells up and a long bell', durationMs: 1800, group: 'minigames' },
+  { key: 'white-horse', name: 'White Horse', info: 'Marimba gallop and a bell', durationMs: 1500, group: 'minigames' },
+  { key: 'player-out', name: 'Player out', info: 'Two low marimba notes down and a long slide', durationMs: 1200, group: 'minigames' },
+  { key: 'turn', name: 'Next player', info: 'The marimba arpeggio of the next player', durationMs: 450, group: 'match', volume: 75 },
+  { key: 'hit', name: 'Hit', info: 'Marimba fifth up', durationMs: 350, group: 'minigames', volume: 56 },
+  { key: 'miss', name: 'Miss', info: 'Marimba fifth down', durationMs: 350, group: 'minigames', volume: 56 },
 ];
 
 export const isBuiltinSound = (id: string) => BUILTIN_SOUNDS.some(s => builtinId(s.key) === id);
