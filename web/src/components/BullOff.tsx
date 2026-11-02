@@ -133,7 +133,7 @@ function BullRows({ m, b }: { m: LiveMatch; b: BullOffView }) {
       <div className="bull-rows">
         {b.order.map((p, i) => (
           <div key={p} className={`bull-row ${i === 0 ? 'lead' : ''}`}>
-            <span className="pl num">{i + 1}.</span><span className="who">{name(p)}</span><span className="fd">{i === 0 ? 'starts' : ''}</span><span className="mm num" />
+            <span className="pl num">{i + 1}.</span><span className="who">{name(p)}</span><span className="fd">{i === 0 ? 'starts' : ''}</span><span className="mm num">&nbsp;</span>
           </div>
         ))}
       </div>
@@ -174,7 +174,7 @@ export function BullOffPanel({ m, b, picks }: { m: LiveMatch; b: BullOffView; pi
       <div className="bo-kicker">BULL-OFF{round > 0 ? ` · ROUND ${round + 1}` : ''}</div>
       <div className={`bo-status ${st.tone}`}>
         <div className={`main ${st.main.length > 24 ? 'long' : ''}`}>{st.main}</div>
-        <div className="sub">{st.sub}</div>
+        <div className={`sub ${st.sub.length > 48 ? 'long' : ''}`}>{st.sub}</div>
       </div>
       <div className="bo-board"><BullZoom m={m} b={b} /></div>
       <div className="bo-list">

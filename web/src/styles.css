@@ -217,7 +217,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .result-card .btn { height: calc(80 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(24 * var(--u)); }
 /* Bull-off (docs/UI.md, Bull-off z tarczy): fixed sizes, so nothing moves between throwing, takeout, tie, rethrow and the order. */
 .bulloff-card { width: calc(1640 * var(--u)); height: calc(860 * var(--u)); border-radius: calc(40 * var(--u)); background: var(--sheet); padding: calc(32 * var(--u)) calc(56 * var(--u)); }
-.bulloff { display: grid; height: 100%; grid-template-columns: calc(740 * var(--u)) minmax(0, 1fr); grid-template-rows: auto calc(200 * var(--u)) minmax(0, 1fr) auto;
+.bulloff { display: grid; height: 100%; grid-template-columns: calc(740 * var(--u)) minmax(0, 1fr); grid-template-rows: auto calc(224 * var(--u)) minmax(0, 1fr) auto;
   grid-template-areas: 'kicker kicker' 'board status' 'board list' 'board picks'; column-gap: calc(56 * var(--u)); row-gap: calc(20 * var(--u)); }
 .bo-kicker { grid-area: kicker; font-size: calc(30 * var(--u)); font-weight: 700; letter-spacing: 0.12em; color: var(--accent); }
 .bo-board { grid-area: board; align-self: start; }
@@ -225,11 +225,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .bo-status { grid-area: status; overflow: hidden; }
 .bo-status .main { font-size: calc(72 * var(--u)); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .bo-status .main.long { font-size: calc(60 * var(--u)); }
-.bo-status .sub { font-size: calc(32 * var(--u)); font-weight: 600; color: var(--soft); margin-top: calc(8 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bo-status .sub { font-size: calc(32 * var(--u)); line-height: 1.2; font-weight: 600; color: var(--soft); margin-top: calc(8 * var(--u)); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bo-status .sub.long { font-size: calc(26 * var(--u)); }
 .bo-status.tie .main { color: var(--amber); }
 .bo-status.done .main { color: var(--green); }
 .bo-list { grid-area: list; display: flex; flex-direction: column; gap: calc(12 * var(--u)); min-height: 0; overflow: hidden; }
-.bo-caption { height: calc(32 * var(--u)); font-size: calc(26 * var(--u)); font-weight: 700; letter-spacing: 0.1em; color: var(--muted); }
+.bo-caption { flex: none; height: calc(32 * var(--u)); font-size: calc(26 * var(--u)); font-weight: 700; letter-spacing: 0.1em; color: var(--muted); }
 .bull-rows { display: flex; flex-direction: column; gap: calc(10 * var(--u)); }
 .bull-row { display: grid; grid-template-columns: calc(56 * var(--u)) minmax(0, 1fr) calc(130 * var(--u)) calc(190 * var(--u)); align-items: center; gap: calc(16 * var(--u));
   padding: calc(12 * var(--u)) calc(24 * var(--u)); border-radius: calc(20 * var(--u)); background: var(--card); font-size: calc(36 * var(--u)); outline: calc(4 * var(--u)) solid transparent; outline-offset: calc(-4 * var(--u)); }
@@ -247,9 +248,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .bull-row.out { opacity: 0.45; }
 .bulloff-card .bull-rows:has(> :nth-child(6)) .bull-row { font-size: calc(28 * var(--u)); padding-block: calc(6 * var(--u)); }
 .bulloff-card .bull-rows:has(> :nth-child(6)) .bull-row .mm { font-size: calc(36 * var(--u)); }
-.bo-picks { grid-area: picks; display: flex; gap: calc(10 * var(--u)); flex-wrap: wrap; }
+.bo-picks { grid-area: picks; display: flex; gap: calc(10 * var(--u)); min-width: 0; }
 .bo-picks .hint { display: none; }
-.bo-picks .btn { height: calc(56 * var(--u)); padding: 0 calc(20 * var(--u)); font-size: calc(22 * var(--u)); }
+/* One row whatever the names: a long name is cut, not wrapped onto the list. */
+.bo-picks .btn { flex: 0 1 auto; min-width: 0; height: calc(56 * var(--u)); padding: 0 calc(20 * var(--u)); font-size: calc(22 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(56 * var(--u)); }
 /* Phone: the same parts one under the other. */
 .p-bull .bulloff { display: flex; flex-direction: column; gap: 12px; height: auto; }
 .p-bull .bo-kicker { font-size: 13px; }
@@ -267,7 +269,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .p-bull .bull-row .mm { font-size: 22px; }
 .p-bull .bo-picks { flex-direction: column; gap: 8px; }
 .p-bull .bo-picks .hint { display: block; font-size: 14px; color: var(--muted); }
-.p-bull .bo-picks .btn { width: 100%; height: 48px; font-size: 16px; }
+.p-bull .bo-picks .btn { width: 100%; height: 48px; line-height: 48px; font-size: 16px; flex: none; }
 
 .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(600px, 100vw); background: #121214; padding: 32px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow: auto; }
 .qr-overlay { position: absolute; inset: 0; background: rgba(10, 10, 11, 0.92); z-index: 45; display: flex; align-items: center; justify-content: center; gap: calc(72 * var(--u)); }
@@ -714,7 +716,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-base .btn { height: 44px; }
 .fx-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
 .fx-preset { height: 52px; border-radius: 16px; border: 1px solid var(--line); display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 14px; font-weight: 600; }
-.fx-preset .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.fx-preset .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: calc(56 * var(--u)); }
 .fx-setting { min-height: 64px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--raised); }
 .fx-setting b { font-size: 16px; }
 .fx-setting .icon-btn { background: transparent; color: var(--accent); }

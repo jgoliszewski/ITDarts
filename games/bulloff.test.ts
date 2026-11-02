@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { TIE_MM, bullOff, standings } from './bulloff.ts';
 import type { Dart } from './darts.ts';
 import { cricket } from './cricket.ts';
+import { killer } from './killer.ts';
+import { knockout } from './knockout.ts';
 import { view, replay } from './x01/engine.ts';
 import type { X01Event } from './x01/engine.ts';
 import { DEFAULT_OPTIONS } from './x01/rules.ts';
@@ -107,6 +109,19 @@ describe('bull-off in the log', () => {
     expect(replay([...events, { t: 'dart', dart: { n: 20, m: 2 }, at: 0 }, next], 4, o4).legs.map(l => l.starter)).toEqual([2, 0]);
   });
 
+  it('sets: the first leg of the next set starts with the next player in the playing order', () => {
+    const o4 = { ...o, startScore: 40, matchMode: { kind: 'sets' as const, firstTo: 2, legsPerSet: 2 } };
+    const events: X01Event[] = [bull(10), bull(60), bull(8), bull(30), bull(3), bull(15)];
+    const next: X01Event = { t: 'next', at: 0 };
+    const out: X01Event[] = [{ t: 'dart', dart: { n: 20, m: 2 }, at: 0 }, next];
+    const miss: X01Event[] = [{ t: 'dart', dart: { n: 0, m: 1 }, at: 0 }, next];
+    // Playing order C, A, D, B. C wins leg 1, then leg 2 (A, D and B miss first): set 1 to C.
+    const log = [...events, ...out, ...miss, ...miss, ...miss, out[0]];
+    expect(view(replay(log, 4, o4), 4, o4)).toMatchObject({ phase: 'legWon', set: 1 });
+    expect(view(replay([...log, next], 4, o4), 4, o4)).toMatchObject({ phase: 'throwing', set: 2, legNo: 1, current: 3 });
+    expect(replay([...log, next], 4, o4).legs.map(l => l.starter)).toEqual([2, 0, 3]);
+  });
+
   it('a pick on the pilot starts with that player, then the setup order', () => {
     expect(view(replay([bull(20), { t: 'start', starter: 2 }], 4, o), 4, o).order).toEqual([2, 3, 0, 1]);
   });
@@ -115,6 +130,28 @@ describe('bull-off in the log', () => {
     const co = { ...cricket.defaults, bullOff: 'pdc' as const };
     const v = cricket.view([{ t: 'bull', ...at(30) }, { t: 'bull', ...at(10) }], 2, co);
     expect(v).toMatchObject({ phase: 'throwing', current: 1 });
+  });
+
+  // Closest bull-off of four that ends in the playing order C, A, D, B.
+  const bulls = [10, 60, 8, 30, 3, 15].map(mm => ({ t: 'bull' as const, ...at(mm) }));
+  const next = { t: 'next' as const, at: 0 };
+  const dart = (n: number, m = 1) => ({ t: 'dart' as const, dart: { n, m }, at: 0 });
+
+  it('Knockout: each round starts one place further on in the playing order', () => {
+    const ko = { ...knockout.defaults, bullOff: 'closest' as const };
+    const visits = (k: number) => Array.from({ length: k }, () => [dart(20), next]).flat();
+    const current = (k: number) => knockout.view([...bulls, ...visits(k)], 4, ko).current;
+    // Round 1: C, A, D, B. Round 2 starts with A.
+    expect([0, 1, 2, 3, 4, 5].map(current)).toEqual([2, 0, 3, 1, 0, 3]);
+  });
+
+  it('Killer: skips an eliminated player in the playing order', () => {
+    const kl = { ...killer.defaults, lives: 1, bullOff: 'closest' as const };
+    const numbers = { t: 'numbers' as const, numbers: [5, 9, 13, 17] };
+    // C and A miss; D hits their own double, then takes B out. B is next after D, so C throws.
+    const v = killer.view([numbers, ...bulls, dart(0), next, dart(0), next, dart(17, 2), dart(9, 2), next], 4, kl);
+    expect(v.rows[1].out).toBe(true);
+    expect(v.current).toBe(2);
   });
 
   it('minigames play in the bull-off order too', () => {
