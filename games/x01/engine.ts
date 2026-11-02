@@ -1,6 +1,6 @@
 // X01 match engine: replays the event log of one match into its state. Pure, no I/O.
 import type { BullDart, BullEvent, BullOffView } from '../bulloff.ts';
-import { beforeStart, bullView, undoStart } from '../bulloff.ts';
+import { beforeStart, bullView, fromStarter, undoStart } from '../bulloff.ts';
 import type { Coords, Dart } from '../darts.ts';
 import { MISS } from '../darts.ts';
 import type { Happening } from '../effects.ts';
@@ -38,7 +38,8 @@ interface LegRec {
 }
 
 export interface Raw {
-  starter: number | null;
+  /** Playing order from the bull-off or the pilot's pick; null until it is known. */
+  order: number[] | null;
   legs: LegRec[];
   bull: BullDart[];
 }
@@ -134,15 +135,15 @@ function tally(results: LegResult[], players: number, o: X01Options): Tally {
 
 // ---------- reducer ----------
 
-export function initialRaw(o: X01Options): Raw {
-  return o.bullOff === 'off' ? { starter: 0, legs: [{ set: 1, starter: 0, visits: [] }], bull: [] } : { starter: null, legs: [], bull: [] };
+export function initialRaw(o: X01Options, players: number): Raw {
+  return o.bullOff === 'off' ? { order: fromStarter(0, players), legs: [{ set: 1, starter: 0, visits: [] }], bull: [] } : { order: null, legs: [], bull: [] };
 }
 
-function currentPlayer(r: LegResult, players: number): number {
+function currentPlayer(r: LegResult, order: number[]): number {
   if (r.winner !== null) return r.winner;
   const last = r.visits.at(-1);
   if (!last) return r.starter;
-  return last.closed ? (last.player + 1) % players : last.player;
+  return last.closed ? order[(order.indexOf(last.player) + 1) % order.length] : last.player;
 }
 
 function startNextLeg(raw: Raw, results: LegResult[], players: number, o: X01Options) {
@@ -150,7 +151,8 @@ function startNextLeg(raw: Raw, results: LegResult[], players: number, o: X01Opt
   const last = leg.visits.at(-1);
   if (last) last.closed = true;
   const set = tally(results, players, o).nextSet;
-  raw.legs.push({ set, starter: ((raw.starter ?? 0) + raw.legs.length) % players, visits: [] });
+  // The starter moves on by one place in the playing order each leg.
+  raw.legs.push({ set, starter: raw.order![raw.legs.length % players], visits: [] });
 }
 
 function reopenLast(leg: LegRec) {
@@ -163,11 +165,11 @@ function reopenLast(leg: LegRec) {
 }
 
 export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options): void {
-  if (raw.starter === null) {
-    const s = beforeStart(raw.bull, e, players, o.bullOff);
-    if (s !== null) {
-      raw.starter = s;
-      raw.legs = [{ set: 1, starter: s, visits: [] }];
+  if (raw.order === null) {
+    const order = beforeStart(raw.bull, e, players, o.bullOff);
+    if (order !== null) {
+      raw.order = order;
+      raw.legs = [{ set: 1, starter: order[0], visits: [] }];
     }
     return;
   }
@@ -185,7 +187,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
     case 'dart': {
       if (cur.winner !== null) return;
       if (openResult && (openResult.bust || openResult.checkoutAt >= 0 || open!.darts.length >= 3)) return;
-      const visit = open ?? { player: currentPlayer(cur, players), darts: [], filled: 0, closed: false };
+      const visit = open ?? { player: currentPlayer(cur, raw.order), darts: [], filled: 0, closed: false };
       if (!open) leg.visits.push(visit);
       visit.darts.push({ dart: e.dart, coords: e.coords, at: e.at });
       return;
@@ -207,7 +209,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
         reopenLast(raw.legs.at(-1)!);
       } else if (o.bullOff !== 'off') {
         undoStart(raw.bull, players, o.bullOff);
-        raw.starter = null;
+        raw.order = null;
         raw.legs = [];
       }
       return;
@@ -217,7 +219,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
         if (t.matchWinner === null && o.matchMode.kind !== 'off') startNextLeg(raw, results, players, o);
         return;
       }
-      const visit = open ?? { player: currentPlayer(cur, players), darts: [], filled: 0, closed: false };
+      const visit = open ?? { player: currentPlayer(cur, raw.order), darts: [], filled: 0, closed: false };
       if (!open) leg.visits.push(visit);
       if (!openResult?.bust) {
         while (visit.darts.length < 3) {
@@ -236,7 +238,7 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
 }
 
 export function replay(events: X01Event[], players: number, o: X01Options): Raw {
-  const raw = initialRaw(o);
+  const raw = initialRaw(o, players);
   for (const e of events) applyEvent(raw, e, players, o);
   return raw;
 }
@@ -272,6 +274,8 @@ export interface X01View {
   matchWinner: number | null;
   stats: PlayerMatchStats[];
   bullOff: BullOffView | null;
+  /** Playing order, null during the bull-off. */
+  order: number[] | null;
 }
 
 const avg = (points: number, darts: number) => (darts > 0 ? Math.round((points / darts) * 3 * 100) / 100 : null);
@@ -301,20 +305,20 @@ function playerStats(results: LegResult[], p: number): PlayerMatchStats {
 
 export function view(raw: Raw, players: number, o: X01Options): X01View {
   const stats = Array.from({ length: players }, (_, p) => playerStats([], p));
-  if (raw.starter === null) {
+  if (raw.order === null) {
     return {
       phase: 'bulloff', current: 0, set: 1, legNo: 1,
       scores: Array(players).fill(o.startScore), legs: Array(players).fill(0), sets: Array(players).fill(0),
       checkedIn: Array(players).fill(o.checkIn === 'straight'),
       visit: { player: 0, darts: [], total: 0, bust: false, checkout: false, dartsLeft: 3 },
       checkout: null, setup: null, lastLeg: null, matchWinner: null, stats,
-      bullOff: bullView(raw.bull, players, o.bullOff),
+      bullOff: bullView(raw.bull, players, o.bullOff), order: null,
     };
   }
   const results = raw.legs.map(l => analyzeLeg(l, players, o));
   const cur = results.at(-1)!;
   const t = tally(results, players, o);
-  const current = currentPlayer(cur, players);
+  const current = currentPlayer(cur, raw.order);
   const last = cur.visits.at(-1);
   const openVisit = last && (!last.closed || cur.winner !== null) ? last : null;
   const visitDarts = openVisit ? openVisit.darts : [];
@@ -367,6 +371,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
     matchWinner: t.matchWinner,
     stats: Array.from({ length: players }, (_, p) => playerStats(results, p)),
     bullOff: bullView(raw.bull, players, o.bullOff),
+    order: raw.order,
   };
 }
 
@@ -374,7 +379,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
 
 /** Every Wyzwalacz occurrence so far (games/effects.ts). Slots are leg, visit and dart numbers. */
 export function happenings(raw: Raw, players: number, o: X01Options): Happening[] {
-  if (raw.starter === null) return [];
+  if (raw.order === null) return [];
   const out: Happening[] = [];
   const results = raw.legs.map(l => analyzeLeg(l, players, o));
   let sets = 0;

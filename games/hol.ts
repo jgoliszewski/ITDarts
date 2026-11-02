@@ -4,7 +4,7 @@ import { value } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface HolOptions {
   firstTo: number;
@@ -39,10 +39,9 @@ function play(t: Turns, players: number, o: HolOptions): State {
   /** The range the screen keeps until the takeout, while the finished visit is still open. */
   let held: [number, number] | null = null;
 
-  // A round: everyone still in throws once, in order from this game's starter.
+  // A round: everyone still in throws once, in the playing order from this game's starter.
   const newRound = () => {
-    const from = (t.starter! + game) % players;
-    queue = [...Array(players).keys()].map(k => (from + k) % players).filter(q => alive[q]);
+    queue = rotate(t.order!, game).filter(q => alive[q]);
     pos = 0;
     failed = new Set();
     roundRange = [lo, hi];

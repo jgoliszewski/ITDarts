@@ -65,7 +65,7 @@ function play(t: Turns, players: number, o: KillerOptions): State {
   }
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
-  const current = !last ? t.starter! : !last.closed ? last.player : nextIn(last.player, players, q => out[q]);
+  const current = !last ? t.order![0] : !last.closed ? last.player : nextIn(last.player, t.order!, q => out[q]);
   return {
     over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx,
     numbers, lives, killer, out, taken, winners: over ? out.flatMap((x, i) => (x ? [] : [i])) : [],

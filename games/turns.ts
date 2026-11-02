@@ -1,7 +1,7 @@
 // Turn log shared by the minigames: replays darts, fixes, undo and Next player into visits. Pure, no I/O.
 // Each game only says, for the visits so far, who throws next and how many darts the visit still takes.
 import type { BullDart, BullEvent, BullOffView } from './bulloff.ts';
-import { beforeStart, bullView, undoStart } from './bulloff.ts';
+import { beforeStart, bullView, fromStarter, undoStart } from './bulloff.ts';
 import type { Coords, Dart } from './darts.ts';
 import { MISS, isValidDart } from './darts.ts';
 import type { GameEvent, Happening } from './effects.ts';
@@ -31,7 +31,8 @@ export interface Visit {
 }
 
 export interface Turns {
-  starter: number | null;
+  /** Playing order from the bull-off or the pilot's pick; null until it is known. */
+  order: number[] | null;
   visits: Visit[];
   numbers: number[];
   seed: number;
@@ -64,6 +65,8 @@ export interface MiniView {
   phase: 'bulloff' | 'throwing' | 'matchWon';
   current: number;
   bullOff: BullOffView | null;
+  /** Playing order, null during the bull-off. */
+  order: number[] | null;
   /** `verdict` headlines the turn card once the visit is complete. */
   visit: { player: number; darts: DartRec[]; dartsLeft: number; good: boolean[]; verdict: Verdict | null };
   winners: number[];
@@ -100,7 +103,7 @@ function reopenLast(t: Turns) {
 }
 
 export function replayTurns(events: TurnEvent[], players: number, bullOff: BullOff, play: (t: Turns) => Turn): Turns {
-  const t: Turns = { starter: bullOff === 'off' ? 0 : null, visits: [], numbers: [], seed: 0, ended: false, bull: [], bullOff: null };
+  const t: Turns = { order: bullOff === 'off' ? fromStarter(0, players) : null, visits: [], numbers: [], seed: 0, ended: false, bull: [], bullOff: null };
   for (const e of events) {
     if (e.t === 'numbers') {
       if (t.visits.length === 0) t.numbers = e.numbers;
@@ -115,11 +118,11 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
       continue;
     }
     if (e.t === 'end') {
-      t.ended = t.starter !== null;
+      t.ended = t.order !== null;
       continue;
     }
-    if (t.starter === null) {
-      t.starter = beforeStart(t.bull, e, players, bullOff);
+    if (t.order === null) {
+      t.order = beforeStart(t.bull, e, players, bullOff);
       continue;
     }
     const last = t.visits.at(-1);
@@ -143,7 +146,7 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
         } else if (last) reopenLast(t);
         else if (bullOff !== 'off') {
           undoStart(t.bull, players, bullOff);
-          t.starter = null;
+          t.order = null;
         }
         break;
       case 'next': {
@@ -212,13 +215,14 @@ export function verdictOf(fx: Happening[], vi: number): Verdict | null {
 }
 
 /** Builds the common part of a view: phase and the visit on screen. */
-export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff'> {
-  if (t.starter === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [], verdict: null }, bullOff: t.bullOff };
+export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff' | 'order'> {
+  if (t.order === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [], verdict: null }, bullOff: t.bullOff, order: null };
   const last = t.visits.at(-1);
   const shown = last && (!last.closed || s.over) ? last : null;
   const verdict = shown && s.dartsLeft === 0 ? verdictOf(s.fx, t.visits.length - 1) : null;
   return {
     bullOff: t.bullOff,
+    order: t.order,
     phase: s.over ? 'matchWon' : 'throwing',
     current: s.current,
     visit: { player: s.current, darts: shown?.darts ?? [], dartsLeft: s.over ? 0 : s.dartsLeft, good: shown ? s.goods.at(-1) ?? [] : [], verdict },
@@ -227,7 +231,7 @@ export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | '
 
 /** Every Wyzwalacz occurrence so far: the start and the thrown darts from the log, the rest from the game. */
 export function turnHappenings(t: Turns, s: Turn): Happening[] {
-  if (t.starter === null) return [];
+  if (t.order === null) return [];
   const darts = t.visits.flatMap((v, vi) => v.darts.slice(0, v.darts.length - v.filled)
     .map((d, di): Happening => ({ slot: `V${vi + 1}D${di + 1}`, fact: { kind: 'dart', dart: d.dart } })));
   return [{ slot: 'L1:start', fact: { kind: 'legStart' } }, ...darts, ...s.fx];
@@ -238,7 +242,7 @@ export const dartSlot = (vi: number, di: number, what: string) => `V${vi + 1}D${
 
 /** Compacts the log to one stored leg; `scored` holds the darts that counted. */
 export function compactTurns(t: Turns, s: Turn, players: number, winner: number | null): LegRecord[] {
-  if (t.starter === null) return [];
+  if (t.order === null) return [];
   const counter = Array(players).fill(0);
   const visits = t.visits
     .map((v, i) => ({ v, i }))
@@ -253,17 +257,21 @@ export function compactTurns(t: Turns, s: Turn, players: number, winner: number 
       dartsCount: v.darts.length,
       darts: v.darts,
     }));
-  return visits.length ? [{ set: 1, legNo: 1, starter: t.starter, winner, visits }] : [];
+  return visits.length ? [{ set: 1, legNo: 1, starter: t.order[0], winner, visits }] : [];
 }
 
-/** Next player in throwing order after `p`, skipping those for whom `out` is true. */
-export function nextIn(p: number, players: number, out: (q: number) => boolean = () => false): number {
-  for (let k = 1; k <= players; k++) {
-    const q = (p + k) % players;
+/** Next player in the playing order after `p`, skipping those for whom `out` is true. */
+export function nextIn(p: number, order: number[], out: (q: number) => boolean = () => false): number {
+  const i = order.indexOf(p);
+  for (let k = 1; k <= order.length; k++) {
+    const q = order[(i + k) % order.length];
     if (!out(q)) return q;
   }
   return p;
 }
+
+/** The playing order starting `k` places further on: a round that starts one player later each time. */
+export const rotate = (order: number[], k: number) => order.map((_, i) => order[(i + k) % order.length]);
 
 // ---------- game modules ----------
 

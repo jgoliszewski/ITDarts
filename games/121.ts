@@ -4,7 +4,7 @@ import type { Change, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, ON_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, ON_OFF, compactTurns, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface O121 {
   visits: 3 | 4;
@@ -93,7 +93,7 @@ function play(t: Turns, players: number, o: O121): State {
   }
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.starter! : open ? open.player : (last.player + 1) % players;
+  const current = !last ? t.order![0] : open ? open.player : nextIn(last.player, t.order!);
   const dartsLeft = over ? 0 : open ? left : 3;
   const usedNow = open && left > 0 ? open.darts.length : 0;
   const shown = held && !over ? held : { target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow };

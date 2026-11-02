@@ -3,7 +3,7 @@ import type { Dart } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns, Verdict } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface FootballOptions {
   /** What takes the ball: any bull, or only the bullseye. */
@@ -66,7 +66,7 @@ function play(t: Turns, players: number, o: FootballOptions): State {
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.starter! : open ? open.player : over ? last.player : (last.player + 1) % players;
+  const current = !last ? t.order![0] : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
   return { over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx, goals, ball, visits, winners };
 }
 

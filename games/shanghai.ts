@@ -40,9 +40,9 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
   /** The round and who plays it, kept on screen while the last visit is open: the next round shows after Takeout. */
   let held: { round: number; queue: number[] } | null = null;
 
-  // A round: those still playing throw once, in order from the starter.
+  // A round: those still playing throw once, in the playing order.
   const newRound = (who: number[]) => {
-    queue = [...Array(players).keys()].map(k => (t.starter! + k) % players).filter(q => who.includes(q));
+    queue = t.order!.filter(q => who.includes(q));
     pos = 0;
   };
   newRound([...Array(players).keys()]);

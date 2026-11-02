@@ -3,7 +3,7 @@ import type { Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface KnockoutOptions {
   bullOff: BullOff;
@@ -45,8 +45,7 @@ function play(t: Turns, players: number): State {
 
   // A round: everyone still in throws once, starting one place further on each round.
   const newRound = () => {
-    const from = (t.starter! + round) % players;
-    queue = [...Array(players).keys()].map(k => (from + k) % players).filter(q => lives[q] > 0);
+    queue = rotate(t.order!, round).filter(q => lives[q] > 0);
     pos = 0;
     totals = Array(players).fill(null);
   };

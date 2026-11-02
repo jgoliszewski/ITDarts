@@ -9,7 +9,7 @@ import { hint, hintLines } from './x01/checkout.ts';
 import { X01_OPTIONS } from './x01/index.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
 import {
-  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk,
+  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk,
 } from './turns.ts';
 
 export interface RcOptions {
@@ -137,7 +137,7 @@ function play(t: Turns, players: number, o: RcOptions): State {
   }
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.starter! : open ? open.player : closer ?? (last.player + 1) % players;
+  const current = !last ? t.order![0] : open ? open.player : closer ?? nextIn(last.player, t.order!);
   const shown = held ?? { number, left: [...rest] };
   return {
     over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx,

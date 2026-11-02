@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isValidTurnEvent, nextIn, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -67,7 +67,7 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.starter! : open ? open.player : over ? last.player : (last.player + 1) % players;
+  const current = !last ? t.order![0] : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
   // `zeroed` is the last visit's, also after its Takeout, until the next visit's first dart: a visit cut short by Next player
   // is only decided then. The visit's points stay on screen only while the visit does.
   const shown = !!last && (!last.closed || over);

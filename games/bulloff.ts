@@ -4,6 +4,8 @@ import type { BullOff } from './x01/rules.ts';
 
 /** Board Manager coords are normalized: 1 is the outer edge of the double ring, 170 mm from the centre. */
 const BOARD_RADIUS_MM = 170;
+/** Closest: a dart less than this from the leader's is a tie (docs/UI.md, Bull-off z tarczy). */
+export const TIE_MM = 5;
 
 export type BullEvent = { t: 'bull'; dart: Dart; coords?: Coords; at: number };
 
@@ -29,17 +31,35 @@ export interface BullOffView {
   /** Who throws next, null once decided. */
   next: number | null;
   winner: number | null;
+  /** Playing order once decided: the winner, then everyone by standings. */
+  order: number[] | null;
 }
 
 const mmOf = (d: BullDart) => (d.coords ? Math.hypot(d.coords.x, d.coords.y) * BOARD_RADIUS_MM : null);
 const rank = (t: BullThrow) => t.mm ?? Infinity;
 const bed = (d: Dart) => (d.n === 25 ? d.m : 0);
+const cmp = (a: number, b: number) => (a === b ? 0 : a < b ? -1 : 1);
 
-/** Players tied for the lead after a round, in the order they threw. PDC: the same bull or 25 as the leader is a tie too. */
+/** Players tied for the lead after a round, in the order they threw. Closest: under TIE_MM from the leader. PDC: the same bull or 25. */
 function leaders(round: BullThrow[], rule: 'closest' | 'pdc'): number[] {
   const best = round.reduce((a, b) => (rank(b) < rank(a) ? b : a));
   const sameBed = rule === 'pdc' && bed(best.dart) > 0;
-  return round.filter(t => rank(t) === rank(best) || (sameBed && bed(t.dart) === bed(best.dart))).map(t => t.player);
+  const tied = (t: BullThrow) =>
+    rank(t) === rank(best) || (rule === 'closest' ? rank(t) - rank(best) < TIE_MM : sameBed && bed(t.dart) === bed(best.dart));
+  return round.filter(tied).map(t => t.player);
+}
+
+/**
+ * Everyone by their last throw: a later round first, then closer, then setup order (no coords ranks after coords).
+ * Players with no throw yet come last.
+ */
+export function standings(throws: BullThrow[], players: number): number[] {
+  const last = new Map(throws.map(t => [t.player, t]));
+  return Array.from({ length: players }, (_, i) => i).sort((a, b) => {
+    const ta = last.get(a), tb = last.get(b);
+    if (!ta || !tb) return cmp(ta ? 0 : 1, tb ? 0 : 1) || a - b;
+    return tb.round - ta.round || cmp(rank(ta), rank(tb)) || a - b;
+  });
 }
 
 /** One dart each in roster order; tied leaders throw again in reverse order until one is left. */
@@ -61,14 +81,18 @@ export function bullOff(darts: BullDart[], players: number, rule: 'closest' | 'p
     }
   }
   const thrown = throws.filter(t => t.round === round).length;
-  return { rule, throws, contenders, round, next: winner === null ? contenders[thrown] : null, winner };
+  const order = winner === null ? null : [winner, ...standings(throws, players).filter(p => p !== winner)];
+  return { rule, throws, contenders, round, next: winner === null ? contenders[thrown] : null, winner, order };
 }
 
-/** An event before the starter is known: a bull dart, its undo, or a pick on the pilot. Returns the starter once decided. */
-export function beforeStart(bull: BullDart[], e: { t: string; [k: string]: unknown }, players: number, rule: BullOff): number | null {
+/** Setup order from `starter` on: a pick on the pilot, or no bull-off. */
+export const fromStarter = (starter: number, players: number) => Array.from({ length: players }, (_, k) => (starter + k) % players);
+
+/** An event before the playing order is known: a bull dart, its undo, or a pick on the pilot. Returns the order once decided. */
+export function beforeStart(bull: BullDart[], e: { t: string; [k: string]: unknown }, players: number, rule: BullOff): number[] | null {
   if (e.t === 'start') {
     const s = e.starter as number;
-    return s >= 0 && s < players ? s : null;
+    return s >= 0 && s < players ? fromStarter(s, players) : null;
   }
   if (rule === 'off') return null;
   if (e.t === 'undo') bull.pop();
@@ -76,7 +100,7 @@ export function beforeStart(bull: BullDart[], e: { t: string; [k: string]: unkno
     const b = e as BullEvent;
     bull.push({ dart: b.dart, coords: b.coords, at: b.at });
   } else return null;
-  return bullOff(bull, players, rule).winner;
+  return bullOff(bull, players, rule).order;
 }
 
 /** Undo of the start: drops the bull dart that decided it. A pick on the pilot leaves the darts as they were. */
