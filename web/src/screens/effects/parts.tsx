@@ -193,7 +193,7 @@ export function PresetPicker({ d, value, none, wide, onPick, onClose }: {
           </button>
         </div>
       )}
-      {list && shown!.length === 0 && <p className="muted" style={{ margin: 0 }}>No preset matches “{q}”.</p>}
+      {q && shown!.length === 0 && <p className="muted" style={{ margin: 0 }}>No preset matches “{q}”.</p>}
       {mine.length > 0 && (
         <section className="section">
           <span className="caps">Your presets</span>

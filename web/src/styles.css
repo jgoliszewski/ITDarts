@@ -692,7 +692,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .fx-pick-main { flex: 1; min-width: 0; min-height: 56px; display: flex; align-items: center; gap: 12px; padding-left: 14px; }
 .fx-pick .icon-btn + .fx-pick-main { padding-left: 0; }
 
-.fx-search { height: 48px; border-radius: 9999px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 6px 0 16px; color: var(--muted); }
+.fx-search { height: 48px; border-radius: 9999px; background: var(--card); border: 1px solid var(--line); display: flex; flex-shrink: 0; align-items: center; gap: 8px; padding: 0 6px 0 16px; color: var(--muted); }
 .fx-search:focus-within { border-color: var(--accent); }
 .fx-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; outline: none; }
 .fx-search input::-webkit-search-cancel-button { display: none; }
