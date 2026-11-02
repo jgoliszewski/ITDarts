@@ -41,7 +41,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
 
   // A round: everyone still in throws once, in the playing order from this game's starter.
   const newRound = () => {
-    queue = rotate(t.order!, game).filter(q => alive[q]);
+    queue = rotate(t.order ?? [], game).filter(q => alive[q]);
     pos = 0;
     failed = new Set();
     roundRange = [lo, hi];

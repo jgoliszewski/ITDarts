@@ -163,3 +163,15 @@ describe('bull-off in the log', () => {
     expect(cricket.view(events, 4, co).order).toEqual([2, 0, 3, 1]);
   });
 });
+
+describe('bull-off in progress', () => {
+  it('every minigame shows the bull-off before the order is known', async () => {
+    const { GAMES, GAME_IDS } = await import('./index.ts');
+    for (const id of GAME_IDS.filter(g => g !== 'x01')) {
+      const g = GAMES[id];
+      const o = { ...g.defaults, bullOff: 'closest' };
+      expect(g.view([], 2, o).phase, id).toBe('bulloff');
+      expect(g.view([{ t: 'bull', ...at(12) }], 2, o).phase, id).toBe('bulloff');
+    }
+  });
+});

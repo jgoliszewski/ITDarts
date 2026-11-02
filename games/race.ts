@@ -75,7 +75,7 @@ function playRace<P>(t: Turns, players: number, coop: boolean, r: Rules<P>): Rac
   // Someone finished: the round is played out so everyone has the same number of visits.
   const over = coop ? r.done(team) : own.some(r.done) && complete % players === 0;
   const last = t.visits.at(-1);
-  const current = !last ? t.order![0] : last.closed ? nextIn(last.player, t.order!) : last.player;
+  const current = !last ? (t.order?.[0] ?? 0) : last.closed ? nextIn(last.player, t.order!) : last.player;
   let winners: number[] = [];
   if (over && !coop) {
     const best = Math.min(...own.map((p, i) => (r.done(p) ? darts[i] : Infinity)));

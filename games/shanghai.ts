@@ -42,7 +42,7 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
 
   // A round: those still playing throw once, in the playing order.
   const newRound = (who: number[]) => {
-    queue = t.order!.filter(q => who.includes(q));
+    queue = (t.order ?? []).filter(q => who.includes(q));
     pos = 0;
   };
   newRound([...Array(players).keys()]);

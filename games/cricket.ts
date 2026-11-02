@@ -70,7 +70,7 @@ function play(t: Turns, players: number, o: CricketOptions): State {
   if (winner !== null) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
   const over = winner !== null;
-  const current = !last ? t.order![0] : last.closed ? nextIn(last.player, t.order!) : last.player;
+  const current = !last ? (t.order?.[0] ?? 0) : last.closed ? nextIn(last.player, t.order!) : last.player;
   return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, marks, points, darts, scoredMarks, visitMarks: visitMarksAll, winners: over ? [winner!] : [] };
 }
 

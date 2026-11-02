@@ -45,7 +45,7 @@ function play(t: Turns, players: number): State {
 
   // A round: everyone still in throws once, starting one place further on each round.
   const newRound = () => {
-    queue = rotate(t.order!, round).filter(q => lives[q] > 0);
+    queue = rotate(t.order ?? [], round).filter(q => lives[q] > 0);
     pos = 0;
     totals = Array(players).fill(null);
   };

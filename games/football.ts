@@ -66,7 +66,7 @@ function play(t: Turns, players: number, o: FootballOptions): State {
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? t.order![0] : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
+  const current = !last ? (t.order?.[0] ?? 0) : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
   return { over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx, goals, ball, visits, winners };
 }
 
