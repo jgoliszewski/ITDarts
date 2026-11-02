@@ -4,14 +4,14 @@ import { fakeBoardPort, loadConfig } from './config.ts';
 
 describe('config flags', () => {
   it('keeps the defaults without flags', () => {
-    const c = loadConfig([]);
+    const c = loadConfig([], resolve('no-config.json'));
     expect(c.effectsDir).toBe(resolve('effects'));
     expect(c.webDir).toBe(resolve('dist/web'));
     expect(c.port).toBe(3000);
   });
 
   it('takes --effects and --web as resolved paths, next to the other flags', () => {
-    const c = loadConfig(['--port', '3300', '--board', 'localhost:3380', '--data', 'tmp/data', '--effects', 'tmp/effects', '--web', 'tmp/web']);
+    const c = loadConfig(['--port', '3300', '--board', 'localhost:3380', '--data', 'tmp/data', '--effects', 'tmp/effects', '--web', 'tmp/web'], resolve('no-config.json'));
     expect(c).toMatchObject({ port: 3300, board: 'localhost:3380', dataDir: resolve('tmp/data'), effectsDir: resolve('tmp/effects'), webDir: resolve('tmp/web') });
   });
 });

@@ -45,6 +45,9 @@ Jednorazowa instancja obok Twojego deva, bez jego bazy i bez `effects/` z repo: 
 - **Porty:** gdy 3300, 3380 lub 3390 jest zajęty, kończy się błędem i niczego nie zatrzymuje.
 - **Flagi serwera:** `--effects <folder>` i `--web <folder>` (domyślnie `effects` i `dist/web`), obok `--data`, `--port` i `--board`.
 - **Przełącznik atrapy w panelu tarczy:** startuje atrapę na porcie z adresu `--board`, gdy jest lokalny (w `dev:shot` 3380, więc nic nie wchodzi na 3180 Twojego deva), a w pozostałych przypadkach na 3180.
+- **Nie zabijaj go twardo** (`taskkill /F` bez `/T`): procesy potomne i folder zostaną. Gdy już się stało, zwolnij porty po PID-ach z `netstat -ano`.
+
+### Testy
 
 ```bash
 npm test

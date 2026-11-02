@@ -32,8 +32,7 @@ const DEFAULTS: Config = {
 };
 
 /** config.json in the repo root, then command line flags: --board host:port, --port N, --kiosk, --data, --effects, --web (folders). */
-export function loadConfig(argv = process.argv.slice(2)): Config {
-  const file = resolve('config.json');
+export function loadConfig(argv = process.argv.slice(2), file = resolve('config.json')): Config {
   const fromFile = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Partial<Config>) : {};
   const cfg: Config = { ...DEFAULTS, ...fromFile };
   for (let i = 0; i < argv.length; i++) {
