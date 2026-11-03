@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-02. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-03. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 

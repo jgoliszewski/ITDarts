@@ -213,7 +213,7 @@ Postanowione w grillingu [#9](https://github.com/jgoliszewski/ITDarts/issues/9).
   - Starburst w kolorze gasnący do ciepłej bieli i Sparkle wyglądają na zepsute; Starburst gasnący do czystej bieli jest dobry;
   - Blink, Breathe i Wipe liczą cykl od zegara kontrolera, więc startują w losowym miejscu; Blink przez to mruga nieregularnie. Heartbeat zaczyna uderzenie od startu efektu i na nim jest Double Pulse; przy prędkości 0 uderza w 0 i 0,5 s, a kolejną parę zaczyna w 1,5 s, więc efekt trwa najwyżej 1,4 s (aplikacja zaokrągla czas do 0,1 s).
   - po teście w meczu: ruch po lotce i po trzeciej lotce nie przeszkadza; przeszkadzał tylko ruch w czasie takeoutu, gdy po wyjęciu lotek ring dalej się ruszał.
-  - **2026-11-03:** to się nie utrzymało w Cricketcie. Sector closed pada w trakcie Tury, a po nim z Cricketa znikały lotki (4 na 35 wobec 0 na 222 po Hit i Miss, [DIAGNOZA](../.scratch/cricket-takeout/DIAGNOZA.md)). Sector closed jest więc stały (zieleń, bez ruchu) i trwa 0,8 s, jak Hit i Miss. Treble 15–19, Treble 20 i Bull zostają z ruchem, do obserwacji w X01.
+  - **2026-11-03:** to się nie utrzymało w Cricketcie. Sector closed pada w trakcie Tury, a po nim z Cricketa znikały lotki (4 na 35 wobec 0 na 222 po Hit i Miss, diagnoza w `.scratch/cricket-takeout/DIAGNOZA.md`). Sector closed jest więc stały (zieleń, bez ruchu) i trwa 0,8 s, jak Hit i Miss. Treble 15–19, Treble 20 i Bull zostają z ruchem, do obserwacji w X01.
 
 ## Animacje na Ekranie wyników
 

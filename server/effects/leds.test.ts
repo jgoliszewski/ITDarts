@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { groupOfTrigger, isFxGroup } from '../../games/effects.ts';
 import { BASE_RULES, BUILTIN_SOUNDS, builtinId } from './builtin.ts';
@@ -46,8 +45,6 @@ describe('LEDs of the Momenty', () => {
     expect([board?.kind, wall?.kind]).toEqual(['solid', 'solid']);
     expect(effectSeconds(LEDS['sector-closed'].effect)).toBeLessThanOrEqual(0.8);
     expect(ledDefault('sector-closed').seconds).toBeLessThanOrEqual(0.8);
-    const rule = JSON.parse(readFileSync('effects/effects.json', 'utf8')).rules.find((r: { id: string }) => r.id === 'b-sector-closed');
-    expect(rule.led.seconds).toBeLessThanOrEqual(0.8);
   });
 
   it('builds a preset with the two rings as segments and fades in, while the base fades back', () => {

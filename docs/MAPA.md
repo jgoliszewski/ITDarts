@@ -119,7 +119,8 @@ Kolory są nasycone i bez przygaszania, zgodnie z wnioskami z LED labu.
 - **Q4:** **(a)**. Mapa żyje w kodzie, a dokument opisuje zasady i odsyła do kodu.
 - **Q5:** kolor i krótki ruch po lotce działają: mieniąca się tęcza na T20 nie przeszkadzała. Ruch w czasie takeoutu daje za to niekończący się takeout, bo kamery widzą ruch. Zasada:
   - po lotce wolno wszystko, co krótkie;
-  - tło, do którego wraca efekt, i wszystko w czasie takeoutu jest statyczne.
+  - tło, do którego wraca efekt, i wszystko w czasie takeoutu jest statyczne;
+  - wyjątek od 2026-11-03: Sector closed jest statyczny, bo jego ruch gubił lotki w Cricketcie ([EFEKTY.md](EFEKTY.md)).
 
   Wynika z tego, że ruchomy efekt po trzeciej lotce (np. 180) przedłuża takeout do swojego końca. Do sprawdzenia w rundzie 2, czy to przeszkadza.
 - **Q6:** odpowiedź później.
@@ -189,7 +190,7 @@ Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają
 | Match won | Match won | płynąca tęcza | białe iskry na pomarańczu | 6 s |
 | Hit | kwinta w górę | pomarańcz | pomarańcz, bez ruchu | 0,8 s |
 | Miss | kwinta w dół | czerwień | czerwień, bez ruchu | 0,8 s |
-| Sector closed | **Hit** | zieleń | Stały: zieleń, bez ruchu | 0,8 s |
+| Sector closed | **Hit** | zieleń | zieleń, bez ruchu | 0,8 s |
 | White Horse | White Horse | fiolet | Run: biel na fiolecie | 2 s |
 | Shanghai | **White Horse** | fiolet | jak White Horse (preset 123) | 2 s |
 | Gotcha | **Bed and breakfast** | magenta | jak Bed and breakfast (preset 111) | 0,8 s |
