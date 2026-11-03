@@ -7,7 +7,7 @@ import { BOARD_ORDER } from '../../../games/darts.ts';
 export const R = [20, 46, 168, 220, 290, 340];
 // Near real proportions for boards that are only looked at; trebles, doubles and the bulls a bit wider so they read on the big screen.
 export const SHOWN = [16, 36, 188, 214, 314, 340];
-/** Radius of a dart's dot. Dots sit in the middle of their field, so a single never shows on a treble. */
+/** Radius of a dart's dot. Without coords dots sit in the middle of their field, so a single never shows on a treble. */
 export const DOT = 7;
 
 export const pt = (r: number, deg: number) => [r * Math.sin((deg * Math.PI) / 180), -r * Math.cos((deg * Math.PI) / 180)] as const;
@@ -30,7 +30,7 @@ export function dartSpot(d: Dart, i: number, rings = R): readonly [number, numbe
 // Ring edges in board units (1 = 170 mm) and where SHOWN draws them.
 const REAL = [0, 6.35 / 170, 15.9 / 170, 99 / 170, 107 / 170, 162 / 170, 1];
 
-/** Where Board Manager's coords (1 = 170 mm, y up) fall on a board with these rings (SHOWN by default): same angle, radius stretched ring by ring, so a dot always sits in its own field. */
+/** Where Board Manager's coords (1 = 170 mm, y up) fall on a board with these rings (SHOWN by default): same angle, radius stretched ring by ring, so a dot's centre always sits in its own field (with Board Manager's standard ring radii). */
 export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [number, number] {
   const DRAWN = [0, ...rings];
   const d = Math.hypot(x, y);
@@ -39,6 +39,12 @@ export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [numbe
   const k = (d - REAL[i - 1]) / (REAL[i] - REAL[i - 1]);
   const r = DRAWN[i - 1] + k * (DRAWN[i] - DRAWN[i - 1]);
   return d ? [(x / d) * r, (-y / d) * r] : [0, 0];
+}
+
+/** A dart with coords on the input board: where it stuck, but no further out than the ring of numbers, so a miss stays in view on its side of the board. */
+export function inputSpot(x: number, y: number): readonly [number, number] {
+  const [sx, sy] = coordsSpot(x, y, R), r = Math.hypot(sx, sy), k = r > 368 ? 368 / r : 1;
+  return [sx * k, sy * k];
 }
 
 export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
@@ -71,7 +77,7 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
       <circle className="hit" cx="0" cy="0" r={R[0]} fill={isSel(25, 2) ? '#F58224' : '#B8322F'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 2 })} />
       {marks.map(({ dart, coords }, i) => {
         // Where the dart really stuck when the board told us; the middle of its field for a dart typed in by hand.
-        const [x, y] = coords ? coordsSpot(coords.x, coords.y, R) : dartSpot(dart, i);
+        const [x, y] = coords ? inputSpot(coords.x, coords.y) : dartSpot(dart, i);
         return <circle key={i} pointerEvents="none" cx={x} cy={y} r={i === hot ? DOT + 4 : DOT} fill="#FFFFFF" stroke="#0A0A0B" strokeWidth={i === hot ? 3 : 2} />;
       })}
     </svg>

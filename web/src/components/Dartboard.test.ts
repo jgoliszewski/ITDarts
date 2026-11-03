@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
-import { DOT, R, SHOWN, coordsSpot, dartSpot } from './Dartboard.tsx';
+import { DOT, R, SHOWN, coordsSpot, dartSpot, inputSpot } from './Dartboard.tsx';
 
 // The scoreboard board widens trebles, doubles and the bulls, so check every dot still sits wholly in its own field.
 describe('dart dots on the scoreboard board', () => {
@@ -51,5 +51,18 @@ describe('Board Manager coords on the input board', () => {
     const [x2, y2] = coordsSpot(0.3, 0.3, R); // 45 degrees, up and right
     expect(x2).toBeCloseTo(-y2);
     expect(coordsSpot(0, 0, R)).toEqual([0, 0]);
+  });
+
+  it('puts the ring edges on the ring radii', () => {
+    expect(Math.hypot(...coordsSpot(0, 99 / 170, R))).toBeCloseTo(R[2]);
+    expect(Math.hypot(...coordsSpot(162 / 170, 0, R))).toBeCloseTo(R[4]);
+  });
+
+  it('keeps a miss in view, on its own side', () => {
+    const [x, y] = inputSpot(1.2, 1.2);
+    expect(Math.hypot(x, y)).toBeLessThanOrEqual(380);
+    expect(x).toBeCloseTo(-y); // 45 degrees, up and right
+    expect(x).toBeGreaterThan(0);
+    expect(inputSpot(0, 0.5)).toEqual(coordsSpot(0, 0.5, R)); // a hit is not touched
   });
 });

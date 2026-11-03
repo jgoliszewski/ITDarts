@@ -98,7 +98,7 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   - Zakładka „Nearby” to siatka 3×3: sąsiad z lewej, odczytane pole i sąsiad z prawej, w wierszach Double, Single i Triple. Pomyłkę o jedno pole poprawia jedno stuknięcie.
   - Zakładka „All” to przełącznik Single/Double/Triple i liczby 1–20.
   - Pod obiema zakładkami są Miss, 25 i Bull.
-  - Na laptopie obok zakładek jest zawsze widoczna duża tarcza z pogrubionymi pierścieniami. Małe białe kropki bez numerów (od 2026-10-27) pokazują, gdzie system odczytał lotki. Przy implementacji zamiast trzeciej zakładki, bo na dużym ekranie mieści się obok.
+  - Na laptopie obok zakładek jest zawsze widoczna duża tarcza z pogrubionymi pierścieniami. Małe białe kropki bez numerów (od 2026-10-27) pokazują lotki: z coords Board Managera stoją tam, gdzie lotka się wbiła (chybienie przycięte do pierścienia numerów, z właściwej strony tarczy), bez coords (lotka wpisana ręcznie) w środku pola. Poprawiana lotka jest większa, z grubszym obrysem; przy „Add dart” nic nie jest wyróżnione. Przy implementacji zamiast trzeciej zakładki, bo na dużym ekranie mieści się obok.
   - Na laptopie lewa kolumna nie przewija się (od 2026-10-27): czerwony „Cancel” jest w nagłówku obok „read as”, podpowiedź o stuknięciu w tarczę jest jedną linią w dolnym marginesie okna, żeby tarcza miała całą wysokość, a klawisze zmniejszają się na niskich ekranach. Sprawdzone do 1280×720.
 - Poprawić da się każdą lotkę w bieżącej turze, czyli przed takeoutem. Starsze tury tylko przez Undo.
 - Wybór od razu podmienia rzut. Poprawiona lotka jest krótko podświetlona, także na Ekranie wyników.
