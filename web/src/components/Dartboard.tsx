@@ -44,7 +44,7 @@ export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [numbe
 export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
   marks: { dart: Dart; coords?: { x: number; y: number } }[];
   selected: Dart | null;
-  /** Index of the dart being fixed: drawn bigger and orange. */
+  /** Index of the dart being fixed: drawn bigger with a thicker rim (its field is orange already). */
   hot?: number;
   onPick: (d: Dart) => void;
   size?: number;
@@ -72,7 +72,7 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
       {marks.map(({ dart, coords }, i) => {
         // Where the dart really stuck when the board told us; the middle of its field for a dart typed in by hand.
         const [x, y] = coords ? coordsSpot(coords.x, coords.y, R) : dartSpot(dart, i);
-        return <circle key={i} pointerEvents="none" cx={x} cy={y} r={i === hot ? DOT + 3 : DOT} fill={i === hot ? '#F58224' : '#FFFFFF'} stroke="#0A0A0B" strokeWidth="2" />;
+        return <circle key={i} pointerEvents="none" cx={x} cy={y} r={i === hot ? DOT + 4 : DOT} fill="#FFFFFF" stroke="#0A0A0B" strokeWidth={i === hot ? 3 : 2} />;
       })}
     </svg>
   );
