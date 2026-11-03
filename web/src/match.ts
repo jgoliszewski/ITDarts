@@ -55,8 +55,6 @@ export function controls(s: ClientState): Controls {
 export const endsNormally = (m: LiveMatch) =>
   m.view.phase === 'matchWon' || (isX01(m) && m.view.phase === 'legWon' && m.options.matchMode.kind === 'off');
 
-export const visitDarts = (m: LiveMatch): Dart[] => m.view.visit.darts.map(d => d.dart);
-
 /** Points a dart shows on its tile; in Higher or Lower T1 is worth zero. */
 export const dartValue = (m: LiveMatch, d: Dart): number => (m.game === 'hol' ? holValue(d) : value(d));
 

@@ -5,7 +5,7 @@ import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
-import { endsNormally, isX01, visitDarts } from './match.ts';
+import { endsNormally, isX01 } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
 import { playCaller, playSound } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
@@ -186,7 +186,7 @@ function Main({ s }: { s: ClientState }) {
 
   const pilotOnly = s.you.isPilot ? screen : 'main';
   const sheet = fix && m && (
-    <FixSheet target={fix} visit={visitDarts(m)} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
+    <FixSheet target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
   );
   const dialogs = (
     <>

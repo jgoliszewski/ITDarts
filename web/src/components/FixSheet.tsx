@@ -74,7 +74,7 @@ function Nearby({ cur, onPick }: { cur: Dart | null; onPick: (d: Dart) => void }
 
 export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
   target: FixTarget;
-  visit: Dart[];
+  visit: { dart: Dart; coords?: { x: number; y: number } }[];
   wide: boolean;
   who: string;
   onPick: (d: Dart) => void;
@@ -116,7 +116,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
             {pad}
           </div>
           <div className="board-wrap">
-            <Dartboard marks={visit} selected={target.dart} onPick={onPick} size={900} />
+            <Dartboard marks={visit} hot={adding ? undefined : target.index} selected={target.dart} onPick={onPick} size={900} />
             <p className="muted">Or tap where the dart really landed, outside the board for a miss.</p>
           </div>
         </div>

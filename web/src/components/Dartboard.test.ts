@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
-import { DOT, SHOWN, coordsSpot, dartSpot } from './Dartboard.tsx';
+import { DOT, R, SHOWN, coordsSpot, dartSpot } from './Dartboard.tsx';
 
 // The scoreboard board widens trebles, doubles and the bulls, so check every dot still sits wholly in its own field.
 describe('dart dots on the scoreboard board', () => {
@@ -40,5 +40,16 @@ describe('Board Manager coords on the scoreboard board', () => {
     const [x, y] = coordsSpot(0, 0.6);
     expect(x).toBeCloseTo(0);
     expect(y).toBeLessThan(0); // up on the screen
+  });
+});
+
+describe('Board Manager coords on the input board', () => {
+  it('lands in the field it lights up, at the real angle', () => {
+    const [x, y] = coordsSpot(0, 103 / 170, R); // middle of the treble 20
+    expect(x).toBeCloseTo(0);
+    expect(-y).toBeCloseTo((R[2] + R[3]) / 2); // SHOWN would give 201
+    const [x2, y2] = coordsSpot(0.3, 0.3, R); // 45 degrees, up and right
+    expect(x2).toBeCloseTo(-y2);
+    expect(coordsSpot(0, 0, R)).toEqual([0, 0]);
   });
 });

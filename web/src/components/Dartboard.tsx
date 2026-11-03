@@ -4,7 +4,7 @@ import { BOARD_ORDER } from '../../../games/darts.ts';
 
 // Rings drawn fatter than real ones so a finger can hit doubles and trebles (UI.md).
 // bull, outer bull, treble in, treble out, double in, double out
-const R = [20, 46, 168, 220, 290, 340];
+export const R = [20, 46, 168, 220, 290, 340];
 // Near real proportions for boards that are only looked at; trebles, doubles and the bulls a bit wider so they read on the big screen.
 export const SHOWN = [16, 36, 188, 214, 314, 340];
 /** Radius of a dart's dot. Dots sit in the middle of their field, so a single never shows on a treble. */
@@ -29,10 +29,10 @@ export function dartSpot(d: Dart, i: number, rings = R): readonly [number, numbe
 
 // Ring edges in board units (1 = 170 mm) and where SHOWN draws them.
 const REAL = [0, 6.35 / 170, 15.9 / 170, 99 / 170, 107 / 170, 162 / 170, 1];
-const DRAWN = [0, ...SHOWN];
 
-/** Where Board Manager's coords (1 = 170 mm, y up) fall on a SHOWN board: same angle, radius stretched ring by ring, so a dot always sits in its own field. */
-export function coordsSpot(x: number, y: number): readonly [number, number] {
+/** Where Board Manager's coords (1 = 170 mm, y up) fall on a board with these rings (SHOWN by default): same angle, radius stretched ring by ring, so a dot always sits in its own field. */
+export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [number, number] {
+  const DRAWN = [0, ...rings];
   const d = Math.hypot(x, y);
   // Past the double the last ring's scale carries on.
   const f = REAL.findIndex(r => r >= d), i = f < 0 ? REAL.length - 1 : Math.max(1, f);
@@ -41,7 +41,14 @@ export function coordsSpot(x: number, y: number): readonly [number, number] {
   return d ? [(x / d) * r, (-y / d) * r] : [0, 0];
 }
 
-export function Dartboard({ marks, selected, onPick, size = 760 }: { marks: Dart[]; selected: Dart | null; onPick: (d: Dart) => void; size?: number }) {
+export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
+  marks: { dart: Dart; coords?: { x: number; y: number } }[];
+  selected: Dart | null;
+  /** Index of the dart being fixed: drawn bigger and orange. */
+  hot?: number;
+  onPick: (d: Dart) => void;
+  size?: number;
+}) {
   const isSel = (n: number, m: number) => !!selected && selected.n === n && selected.m === m;
   return (
     <svg className="dartboard" width={size} height={size} viewBox="-380 -380 760 760" role="img" aria-label="Dartboard: tap where the dart landed">
@@ -62,9 +69,10 @@ export function Dartboard({ marks, selected, onPick, size = 760 }: { marks: Dart
       })}
       <circle className="hit" cx="0" cy="0" r={R[1]} fill={isSel(25, 1) ? '#F58224' : '#1F8A52'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 1 })} />
       <circle className="hit" cx="0" cy="0" r={R[0]} fill={isSel(25, 2) ? '#F58224' : '#B8322F'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 2 })} />
-      {marks.map((d, i) => {
-        const [x, y] = dartSpot(d, i);
-        return <circle key={i} pointerEvents="none" cx={x} cy={y} r={DOT} fill="#FFFFFF" stroke="#0A0A0B" strokeWidth="2" />;
+      {marks.map(({ dart, coords }, i) => {
+        // Where the dart really stuck when the board told us; the middle of its field for a dart typed in by hand.
+        const [x, y] = coords ? coordsSpot(coords.x, coords.y, R) : dartSpot(dart, i);
+        return <circle key={i} pointerEvents="none" cx={x} cy={y} r={i === hot ? DOT + 3 : DOT} fill={i === hot ? '#F58224' : '#FFFFFF'} stroke="#0A0A0B" strokeWidth="2" />;
       })}
     </svg>
   );
