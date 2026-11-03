@@ -61,4 +61,5 @@ npm run typecheck
 - `effects/`: konfiguracja efektów wyklikana na stronie, pod gitem. `effects.json` trzyma reguły, dźwięki i ustawienia, a `sounds/` pliki dźwięków.
 - `bugs/`: zgłoszenia z „Report a bug” w menu, jeden plik JSON na zgłoszenie ([UI.md](docs/UI.md#zgłaszanie-błędów)).
 - `assets/caller/<głos>/`: nagrania callera, czyli głosu sędziego w X01, jeden folder na głos ([EFEKTY.md](docs/EFEKTY.md#caller)). Co mówi, liczy `games/x01/caller.ts`.
+- `assets/opona/`: grafika opony wokół tarczy do druku i jej generator ([README](assets/opona/README.md)).
 - `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` i `/effects` dla wszystkich.
