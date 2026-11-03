@@ -189,7 +189,7 @@ Tak poprawione ledy obejrzane w podglądzie z „Play on the ring”: działają
 | Match won | Match won | płynąca tęcza | białe iskry na pomarańczu | 6 s |
 | Hit | kwinta w górę | pomarańcz | pomarańcz, bez ruchu | 0,8 s |
 | Miss | kwinta w dół | czerwień | czerwień, bez ruchu | 0,8 s |
-| Sector closed | **Hit** | zieleń | Run: zieleń na morskim | 1,4 s |
+| Sector closed | **Hit** | zieleń | Stały: zieleń, bez ruchu | 0,8 s |
 | White Horse | White Horse | fiolet | Run: biel na fiolecie | 2 s |
 | Shanghai | **White Horse** | fiolet | jak White Horse (preset 123) | 2 s |
 | Gotcha | **Bed and breakfast** | magenta | jak Bed and breakfast (preset 111) | 0,8 s |

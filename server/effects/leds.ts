@@ -120,7 +120,8 @@ export const LEDS: Record<LedKey, { preset: number; name: string; group: FxGroup
   // Both rings, long enough to reach full colour: 0.45 s on the board ring alone was hard to see.
   hit: { preset: 120, name: 'Hit', group: 'minigames', effect: pair(ORANGE, 0.8, still(ORANGE)) },
   miss: { preset: 121, name: 'Miss', group: 'minigames', effect: pair(RED, 0.8, still(RED)) },
-  'sector-closed': { preset: 122, name: 'Sector closed', group: 'minigames', effect: pair(GREEN, 1.4, run(GREEN, TEAL, 1.2)) },
+  // Falls mid-visit: moving light on a ring reads as a takeout and the next dart is lost, so still and as short as Hit.
+  'sector-closed': { preset: 122, name: 'Sector closed', group: 'minigames', effect: pair(GREEN, 0.8, still(GREEN)) },
   'white-horse': { preset: 123, name: 'White Horse', group: 'minigames', effect: pair(PURPLE, 2, run(WHITE, PURPLE)) },
   'life-lost': { preset: 124, name: 'Life lost', group: 'minigames', effect: pair(RED, 1, still(RED)) },
   killer: { preset: 125, name: 'Became killer', group: 'minigames', effect: pair(CRIMSON, 1.4, still(CRIMSON)) },

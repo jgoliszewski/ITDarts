@@ -869,7 +869,7 @@
       ],
       "led": {
         "preset": 122,
-        "seconds": 1.4
+        "seconds": 0.8
       }
     },
     {

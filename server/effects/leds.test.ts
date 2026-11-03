@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { groupOfTrigger, isFxGroup } from '../../games/effects.ts';
 import { BASE_RULES, BUILTIN_SOUNDS, builtinId } from './builtin.ts';
-import { BOARD_SEGMENT, effectSeconds, LED_COUNT, LEDS, PRESET_RANGE, rings, SPLIT_AT, wledPreset, type LedKey } from './leds.ts';
+import { BOARD_SEGMENT, effectSeconds, ledDefault, LED_COUNT, LEDS, PRESET_RANGE, rings, SPLIT_AT, wledPreset, type LedKey } from './leds.ts';
 
 const keys = Object.keys(LEDS) as LedKey[];
 
@@ -38,6 +39,15 @@ describe('LEDs of the Momenty', () => {
       if (board && wall) expect(board.dur, k).toBe(wall.dur);
       if (k !== 'match-won' && k !== 'new-record') expect(effectSeconds(LEDS[k].effect), k).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('keeps Sector closed still on both rings and short, as it falls mid-visit and moving light reads as a takeout', () => {
+    const { board, wall } = rings(LEDS['sector-closed'].effect);
+    expect([board?.kind, wall?.kind]).toEqual(['solid', 'solid']);
+    expect(effectSeconds(LEDS['sector-closed'].effect)).toBeLessThanOrEqual(0.8);
+    expect(ledDefault('sector-closed').seconds).toBeLessThanOrEqual(0.8);
+    const rule = JSON.parse(readFileSync('effects/effects.json', 'utf8')).rules.find((r: { id: string }) => r.id === 'b-sector-closed');
+    expect(rule.led.seconds).toBeLessThanOrEqual(0.8);
   });
 
   it('builds a preset with the two rings as segments and fades in, while the base fades back', () => {
