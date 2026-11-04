@@ -68,12 +68,13 @@ export function gameRows(game: GameId, totals: Record<string, number>[]): Row[] 
 export const fmtDistance = (metres: number) => (metres >= 1000 ? `${(metres / 1000).toFixed(2)} km` : `${Math.round(metres)} m`);
 export const fmtKm = (metres: number) => `${(metres / 1000).toFixed(2)} km`;
 
-function bestOf(r: Row): Set<number> {
+/** The best value's players; those in `skip` (removed from the match) have no place. */
+function bestOf(r: Row, skip: boolean[] = []): Set<number> {
   if (!r.better || !r.nums) return new Set();
-  const ok = r.nums.filter((n): n is number => n !== null);
+  const ok = r.nums.filter((n, i): n is number => n !== null && !skip[i]);
   if (ok.length < 2 || ok.every(n => n === ok[0])) return new Set();
   const best = r.better === 'higher' ? Math.max(...ok) : Math.min(...ok);
-  return new Set(r.nums.flatMap((n, i) => (n === best ? [i] : [])));
+  return new Set(r.nums.flatMap((n, i) => (n === best && !skip[i] ? [i] : [])));
 }
 
 /** How full a value's bar is: its share of all players' values, like Autodarts; for 'lower' rows the share of 1/value. */
@@ -89,7 +90,7 @@ function fill(r: Row, i: number): number | null {
  * Players side by side like Autodarts: per row the label in the middle, values on the sides with the best one
  * in a pill of its player's colour, and bars under them. Two players mirror around the middle; more get a column each.
  */
-export function CompareTable({ names, rows }: { names: string[]; rows: Row[] }) {
+export function CompareTable({ names, rows, left = [] }: { names: string[]; rows: Row[]; left?: boolean[] }) {
   const two = names.length === 2;
   const value = (r: Row, best: Set<number>, i: number) => (
     <span className={`cmp-val ${best.has(i) ? 'best' : ''}`} style={best.has(i) ? { background: playerColor(i) } : undefined}>{r.values[i]}</span>
@@ -100,9 +101,11 @@ export function CompareTable({ names, rows }: { names: string[]; rows: Row[] }) 
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
-      <div className="cmp-names">{names.map((n, i) => <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
+      <div className="cmp-names">{names.map((n, i) => left[i]
+        ? <span key={i} className="left">{n}<small>Left</small></span>
+        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
       {rows.map(r => {
-        const best = bestOf(r);
+        const best = bestOf(r, left);
         const bars = !!r.better && !!r.nums;
         return two ? (
           <div key={r.label} className="cmp-row">
@@ -112,7 +115,7 @@ export function CompareTable({ names, rows }: { names: string[]; rows: Row[] }) 
         ) : (
           <div key={r.label} className="cmp-row">
             <span className="cmp-label">{r.label}</span>
-            <div className="cmp-cols">{names.map((_, i) => <div key={i}>{value(r, best, i)}{bars && bar(r, i)}</div>)}</div>
+            <div className="cmp-cols">{names.map((_, i) => <div key={i} className={left[i] ? 'left' : ''}>{value(r, best, i)}{bars && bar(r, i)}</div>)}</div>
           </div>
         );
       })}

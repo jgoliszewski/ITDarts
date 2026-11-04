@@ -11,7 +11,7 @@ import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
-import { dartTone, playOrder, winnersOf } from '../match.ts';
+import { dartTone, pickProps, playOrder, removedNote, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
 /** Range bar for Higher or Lower: 0–180 with the forbidden range in red and the visit sum. */
@@ -208,7 +208,7 @@ export function MiniSide({ m }: { m: MiniMatch }) {
   );
 }
 
-export function MiniList({ m }: { m: MiniMatch }) {
+export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => void }) {
   const v = m.view;
   // Same as X01: full-size rows up to 4 players.
   const compact = m.roster.length > 4;
@@ -218,11 +218,13 @@ export function MiniList({ m }: { m: MiniMatch }) {
         const r = m.roster[i];
         const row = v.rows[i];
         const active = i === v.current && v.phase !== 'bulloff';
+        const note = removedNote(m, i);
         return (
-          <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${row.out ? 'out' : ''}`}>
+          <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${row.out || note ? 'out' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="info">
               <div className="name">{r.name}</div>
-              {m.game === 'knockout' && !row.out
+              {note ? <div className="meta"><span>{note}</span></div>
+                : m.game === 'knockout' && !row.out
                 ? <div className="meta list-hearts" aria-label={row.meta}>{[0, 1, 2].map(k => <span key={k} className={k < m.view.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</div>
                 : <div className="meta"><span>{row.meta}</span></div>}
             </div>
@@ -243,21 +245,22 @@ const MARK = [null, 1, 2, 3].map(n => n && (
   </svg>
 ));
 
-export function CricketGrid({ m }: { m: Extract<MiniMatch, { game: 'cricket' }> }) {
+export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void }) {
   const v = m.view;
   return (
     <div className="cricket" style={{ gridTemplateColumns: `calc(110 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
       {playOrder(m).map(i => (
-        <div key={i} className={`ch ${i === v.current ? 'active' : ''}`}>
+        <div key={i} className={`ch ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`} {...pickProps(onPick, i, m.roster[i].name)}>
           <span className="n">{m.roster[i].name}</span>
           {!v.solo && <span className="num">{v.points[i]}</span>}
+          {v.removed[i] && <span className="left">Left</span>}
         </div>
       ))}
       {CRICKET_SECTORS.map((s, k) => (
         <div key={s} className={`crow ${v.dead[k] ? 'dead' : ''}`} style={{ display: 'contents' }}>
           <span className="sector num">{s === 25 ? 'Bull' : s}</span>
-          {playOrder(m).map(i => <span key={i} className={`mk num ${i === v.current ? 'active' : ''}`}>{MARK[v.marks[i][k]]}</span>)}
+          {playOrder(m).map(i => <span key={i} className={`mk num ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`}>{MARK[v.marks[i][k]]}</span>)}
         </div>
       ))}
     </div>

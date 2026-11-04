@@ -537,6 +537,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .cricket .sector { display: flex; align-items: center; justify-content: center; font-size: calc(56 * var(--u)); color: var(--soft); }
 .cricket .mk { display: flex; align-items: center; justify-content: center; min-height: 0; border-radius: calc(14 * var(--u)); background: var(--card2); font-size: calc(68 * var(--u)); }
 .cricket .mk.active { box-shadow: inset 0 0 0 calc(3 * var(--u)) var(--accent); }
+/* Wycofanie gracza (docs/UI.md#wycofanie-gracza): greyed out, and the pilot taps a row to remove its player. */
+.cricket .ch.out, .cricket .mk.out { opacity: 0.4; }
+.cricket .ch .left { font-size: calc(22 * var(--u)); font-weight: 700; color: var(--soft); }
+[role='button'].prow, [role='button'].p-player, [role='button'].ch { cursor: pointer; }
+.cmp-cols .left { opacity: 0.45; }
+.cmp-names .left { color: var(--muted); opacity: 0.6; display: inline-flex; flex-direction: column; align-items: center; }
+.cmp-names .left small { font-size: 0.6em; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .cricket .crow.dead .sector, .cricket .crow.dead .mk { opacity: 0.3; }
 .new-record { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px; border-radius: 18px; background: var(--accent); color: var(--on-accent); font-weight: 800; letter-spacing: 0.08em; animation: pop 0.6s ease-out; }
 .new-record span { font-weight: 600; letter-spacing: 0; font-size: 0.85em; }

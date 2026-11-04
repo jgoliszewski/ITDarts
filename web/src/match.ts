@@ -9,6 +9,14 @@ export type MiniMatch = Exclude<LiveMatch, { game: 'x01' }>;
 
 export const isX01 = (m: LiveMatch): m is X01Match => m.game === 'x01';
 
+/** Note on a removed player's row (docs/UI.md#wycofanie-gracza), or null. */
+export const removedNote = (m: LiveMatch, i: number): string | null =>
+  m.view.removed[i] === 'match' ? 'Left' : m.view.removed[i] === 'leg' ? 'Back next leg' : null;
+
+/** Props that make a player row open the removal dialog; only the pilot gets them. */
+export const pickProps = (onPick: ((i: number) => void) | undefined, i: number, name: string) =>
+  onPick ? { role: 'button', tabIndex: 0, 'aria-label': `${name}: remove`, onClick: () => onPick(i), onKeyDown: (e: { key: string }) => e.key === 'Enter' && onPick(i) } : {};
+
 /** Players in the playing order (from the bull-off or the pilot's pick); setup order until it is known. */
 export const playOrder = (m: LiveMatch): number[] => m.view.order ?? m.roster.map((_, i) => i);
 

@@ -28,7 +28,7 @@ export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: bool
         {r.line && <div className="line">{r.line}</div>}
       </section>
       <main className="summary-body">
-        <CompareTable names={r.names} rows={rows(r)} />
+        <CompareTable names={r.names} rows={rows(r)} left={r.left} />
         <Heatmap players={r.names.map((name, i) => ({ name, color: playerColor(i), heat: r.heat[i] }))} />
       </main>
       {pilot ? (

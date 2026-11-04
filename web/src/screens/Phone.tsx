@@ -4,7 +4,7 @@ import type { Dart } from '../../../games/darts.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, dartValue, isX01, playOrder, shortDescription, winnersOf } from '../match.ts';
+import { controls, dartValue, isX01, pickProps, playOrder, removedNote, shortDescription, winnersOf } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -22,7 +22,7 @@ function PhoneHeader({ s, title, onMenu, onBoard }: { s: ClientState; title: str
   );
 }
 
-function Players({ m }: { m: LiveMatch }) {
+function Players({ m, onPick }: { m: LiveMatch; onPick?: (i: number) => void }) {
   const v = m.view;
   const legsWord = (n: number) => `${n} ${n === 1 ? 'leg' : 'legs'}`;
   return (
@@ -41,8 +41,10 @@ function Players({ m }: { m: LiveMatch }) {
           if (active) meta = [m.view.hero.caption, m.view.hero.note].filter(Boolean).join(' · ');
           if (active && m.game === '121') meta += ` · ${m.view.attemptLeft} darts left in attempt · ${'♡'.repeat(m.view.lives)}`;
         }
+        const note = removedNote(m, i);
+        if (note) meta = note;
         return (
-          <div key={i} className={`p-player ${active ? 'active' : ''} ${out ? 'out' : ''}`}>
+          <div key={i} className={`p-player ${active ? 'active' : ''} ${out || note ? 'out' : ''} ${onPick ? 'pickable' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="who"><b>{r.name}</b><span>{meta}</span></div>
             <div className="num">{big}</div>
           </div>
@@ -134,8 +136,8 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   return null;
 }
 
-export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd }: {
-  s: ClientState; onMenu: () => void; onBoard: () => void; onFix: (i: number) => void; onEnd: () => void;
+export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
+  s: ClientState; onMenu: () => void; onBoard: () => void; onFix: (i: number) => void; onEnd: () => void; onPlayer: (i: number) => void;
 }) {
   const m = s.match!;
   const v = m.view;
@@ -148,7 +150,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd }: {
       <PhoneHeader s={s} title={shortDescription(m)} onMenu={onMenu} onBoard={onBoard} />
       {offline && <div className="banner">Board offline · enter darts by hand</div>}
       <div className="phone-body">
-        <Players m={m} />
+        <Players m={m} onPick={onPlayer} />
         <PhaseCard s={s} m={m} />
         {!inBull && (
           <div className="section">

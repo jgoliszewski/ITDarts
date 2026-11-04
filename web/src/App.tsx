@@ -3,6 +3,7 @@ import type { Dart } from '../../games/darts.ts';
 import type { ClientState } from '../../server/protocol.ts';
 import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
+import { RemoveDialog } from './components/RemoveDialog.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
 import { endsNormally, isX01 } from './match.ts';
@@ -106,6 +107,7 @@ function Main({ s }: { s: ClientState }) {
   const [screen, setScreen] = useState<Screen>('main');
   const [menu, setMenu] = useState(false);
   const [fix, setFix] = useState<FixTarget | null>(null);
+  const [removeOf, setRemoveOf] = useState<number | null>(null);
   const [endAsk, setEndAsk] = useState<null | 'end' | 'new'>(null);
   const [localQr, setLocalQr] = useState(false);
   const [bug, setBug] = useState(false);
@@ -212,6 +214,7 @@ function Main({ s }: { s: ClientState }) {
       )}
       {bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}
       {sheet}
+      {removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} />}
     </>
   );
 
@@ -233,7 +236,7 @@ function Main({ s }: { s: ClientState }) {
       </>
     );
     return m
-      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} overlay={overlay} />
+      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
       : <Lobby s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
@@ -241,7 +244,7 @@ function Main({ s }: { s: ClientState }) {
   return (
     <>
       {m
-        ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} />
+        ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={setRemoveOf} />
         : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} />}
       {dialogs}
     </>

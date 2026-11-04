@@ -9,7 +9,7 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartTone, isX01, legTarget, playOrder } from '../match.ts';
+import { controls, dartTone, isX01, legTarget, pickProps, playOrder, removedNote } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
@@ -92,7 +92,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
   );
 }
 
-function PlayerList({ m }: { m: X01Match }) {
+function PlayerList({ m, onPick }: { m: X01Match; onPick?: (i: number) => void }) {
   const v = m.view;
   // Up to 4 players the rows stay full size; the stats cards make room for them.
   const compact = m.roster.length > 4;
@@ -103,11 +103,13 @@ function PlayerList({ m }: { m: X01Match }) {
       {playOrder(m).map(i => {
         const r = m.roster[i];
         const active = i === v.current && v.phase !== 'bulloff';
+        const note = removedNote(m, i);
         return (
-          <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''}`}>
+          <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${note ? 'out' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="info">
               <div className="name">{r.name}</div>
               <div className="meta">
+                {note && <span>{note} ·</span>}
                 {sets && <span>Sets {v.sets[i]} ·</span>}
                 {target ? <Pips won={v.legs[i]} of={target} /> : <span>{v.legs[i]} {v.legs[i] === 1 ? 'leg' : 'legs'}</span>}
                 <span style={{ marginLeft: 8 }}>avg {fmtAvg(v.stats[i].matchAvg)}</span>
@@ -275,8 +277,10 @@ export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void 
   );
 }
 
-export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: {
+export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onPlayer, overlay }: {
   s: ClientState;
+  /** Opens the removal dialog for a player; the pilot only. */
+  onPlayer?: (i: number) => void;
   onMenu: () => void;
   onQr: () => void;
   onBoard?: () => void;
@@ -304,14 +308,14 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, overlay }: 
           <>
             <Hero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
             <aside className="side">
-              <PlayerList m={m} />
+              <PlayerList m={m} onPick={onPlayer} />
               {m.roster.length <= 4 && <StatsCards m={m} />}
             </aside>
           </>
         ) : (
           <>
             <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
-            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} /> : <><MiniList m={m} /><MiniSide m={m} /></>}</aside>
+            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}</aside>
           </>
         )}
       </main>
