@@ -120,6 +120,10 @@ const MIGRATIONS = [
   ALTER TABLE match_players ADD COLUMN won INTEGER NOT NULL DEFAULT 0;
   UPDATE match_players SET won = 1 WHERE (match_id, position) IN (SELECT id, winner_position FROM matches);
   `,
+  // Wycofanie z meczu (docs/UI.md#wycofanie-gracza): his darts count, the match does not count as played for him.
+  `
+  ALTER TABLE match_players ADD COLUMN removed INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 // Options and events are whatever the game module takes; the module checks them.
@@ -148,6 +152,8 @@ export interface SaveMatch {
   variant?: string | null;
   scores?: (number | null)[];
   stats?: Record<string, number>[];
+  /** Per player: removed from the match. */
+  removed?: boolean[];
 }
 
 export interface RecordRow {
@@ -297,10 +303,10 @@ export class Db {
         'INSERT INTO matches (game, options, started_at, ended_at, status, winner_position, counts_results, variant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       ).run(s.game, JSON.stringify(s.options), s.startedAt, s.endedAt, s.status, winner, counts ? 1 : 0, s.variant ?? null).lastInsertRowid);
       const mp = this.sql.prepare(
-        'INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won, score, stats, won) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        'INSERT INTO match_players (match_id, position, player_id, guest_name, legs_won, sets_won, score, stats, won, removed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       s.roster.forEach((r, i) => mp.run(matchId, i, r.playerId, r.playerId === null ? r.name : null, legsWon[i], s.sets[i] ?? 0,
         r.playerId === null ? null : (s.scores?.[i] ?? null), s.stats?.[i] ? JSON.stringify(s.stats[i]) : null,
-        s.winners.includes(i) ? 1 : 0));
+        s.winners.includes(i) ? 1 : 0, s.removed?.[i] ? 1 : 0));
       const legIns = this.sql.prepare('INSERT INTO legs (match_id, set_no, leg_no, starter_position, winner_position) VALUES (?, ?, ?, ?, ?)');
       const visitIns = this.sql.prepare(
         'INSERT INTO visits (leg_id, player_id, visit_no, score_before, scored, bust, checkout, darts_count, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
@@ -325,7 +331,7 @@ export class Db {
     if (!m || !(m.game in GAMES)) return null;
     const roster = (this.sql.prepare(`
       SELECT mp.player_id AS playerId, COALESCE(p.name, mp.guest_name) AS name FROM match_players mp
-      LEFT JOIN players p ON p.id = mp.player_id WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as unknown as RosterEntry[]);
+      LEFT JOIN players p ON p.id = mp.player_id WHERE mp.match_id = ? AND mp.removed = 0 ORDER BY mp.position`).all(m.id) as unknown as RosterEntry[]);
     return { game: m.game, options: JSON.parse(m.options), roster };
   }
 

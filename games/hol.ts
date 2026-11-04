@@ -4,7 +4,7 @@ import { value } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface HolOptions {
   firstTo: number;
@@ -33,6 +33,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
   let game = 0, lo: number = START_RANGE[0], hi: number = START_RANGE[1];
+  const gone = Array(players).fill(false);
   let alive = Array(players).fill(true);
   let queue: number[] = [], pos = 0, failed = new Set<number>(), roundRange = [lo, hi];
   let over = false, left = 3, sum: number | null = null, lastGame: State['lastGame'] = null, winner: number | null = null;
@@ -48,7 +49,45 @@ function play(t: Turns, players: number, o: HolOptions): State {
   };
   newRound();
 
+  // End of the round. If everyone left failed, the round does not count.
+  const endRound = () => {
+    const survivors = queue.filter(q => !failed.has(q));
+    if (survivors.length === 0) [lo, hi] = roundRange;
+    else alive = alive.map((_, q) => survivors.includes(q));
+    if (survivors.length === 1) {
+      const w = survivors[0];
+      points[w]++;
+      lastGame = { no: game + 1, winner: w };
+      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
+      if (points[w] >= o.firstTo) {
+        over = true;
+        winner = w;
+        fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
+        return;
+      }
+      game++;
+      fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
+      [lo, hi] = START_RANGE;
+      alive = gone.map(g => !g);
+    }
+    newRound();
+  };
+  // A removed player leaves the round in progress like one who failed, but for good (docs/UI.md#wycofanie-gracza).
+  const leave = (vi: number) => {
+    for (const q of goneAt(t, vi)) {
+      gone[q] = true;
+      alive[q] = false;
+      failed.delete(q);
+      const i = queue.indexOf(q);
+      if (i < 0 || over) continue;
+      queue.splice(i, 1);
+      if (i < pos) pos--;
+      if (pos > 0 && pos >= queue.length) endRound();
+    }
+  };
+
   for (const [vi, v] of t.visits.entries()) {
+    leave(vi);
     let miss = false, total = 0;
     const w = walk(v, d => {
       if (over) return { good: false, end: true };
@@ -70,34 +109,13 @@ function play(t: Turns, players: number, o: HolOptions): State {
       fx.push({ slot: `V${vi + 1}:out`, fact: { kind: 'game', event: 'eliminated' } });
     } else if (total > hi) hi = total;
     else lo = total;
-    if (++pos < queue.length) continue;
-
-    // End of the round. If everyone left failed, the round does not count.
-    const survivors = queue.filter(q => !failed.has(q));
-    if (survivors.length === 0) [lo, hi] = roundRange;
-    else alive = alive.map((_, q) => survivors.includes(q));
-    if (survivors.length === 1) {
-      const w = survivors[0];
-      points[w]++;
-      lastGame = { no: game + 1, winner: w };
-      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
-      if (points[w] >= o.firstTo) {
-        over = true;
-        winner = w;
-        fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
-        continue;
-      }
-      game++;
-      fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
-      [lo, hi] = START_RANGE;
-      alive = Array(players).fill(true);
-    }
-    newRound();
+    if (++pos >= queue.length) endRound();
   }
+  leave(t.visits.length);
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const out = alive.map((a, q) => !a || failed.has(q));
+  const out = alive.map((a, q) => !a || failed.has(q) || gone[q]);
   return {
     over,
     current: open ? open.player : over ? last!.player : queue[pos],

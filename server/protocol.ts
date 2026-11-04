@@ -143,6 +143,7 @@ export type Command =
   | { type: 'undo' }
   | { type: 'next' }
   | { type: 'nextLeg' }
+  | { type: 'remove'; player: number; scope: 'match' | 'leg' }
   | { type: 'endMatch'; save: boolean }
   | { type: 'closeMatch'; then: 'summary' | 'rematch' | 'lobby' }
   | { type: 'closeSummary' }
@@ -175,7 +176,7 @@ export interface PlayerStatsResponse {
   window: StatsWindow;
   x01: import('../games/x01/stats.ts').X01Stats;
   results: { played: number; won: number; winrate: number | null };
-  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played'; score: string }[];
+  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played' | 'left'; score: string }[];
   opponents: { id: number; name: string; played: number; won: number }[];
 }
 

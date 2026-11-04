@@ -20,4 +20,9 @@ describe('rematch', () => {
     expect(names(r)).toBe('BCA');
     expect(names(rematchSetup({}, roster)[1])).toBe('BCA');
   });
+
+  it('starts without the players removed from the match', () => {
+    expect(names(rematchSetup({ bullOff: 'off' }, roster, ['match', null, null])[1])).toBe('BC');
+    expect(names(rematchSetup({ bullOff: 'closest' }, roster, [null, 'match', 'leg'])[1])).toBe('AC');
+  });
 });

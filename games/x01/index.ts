@@ -37,6 +37,7 @@ export function isValidEvent(e: X01Event): boolean {
     case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
     case 'bull': return isValidDart(e.dart);
     case 'start': return Number.isInteger(e.starter);
+    case 'remove': return Number.isInteger(e.player) && (e.scope === 'match' || e.scope === 'leg');
     default: return e.t === 'undo' || e.t === 'next' || e.t === 'nextLeg';
   }
 }

@@ -16,7 +16,8 @@ import type { RcView } from '../games/randomco.ts';
 import { callerLinesGotcha } from '../games/gotcha.ts';
 import { callerLinesRc } from '../games/randomco.ts';
 import type { MiniView } from '../games/turns.ts';
-import { dartCue, newSeed } from '../games/turns.ts';
+import type { Removed } from '../games/turns.ts';
+import { dartCue, newSeed, removeBlock } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
 import { callerLines } from '../games/x01/index.ts';
 import type { Change, Fact, Happening } from '../games/effects.ts';
@@ -289,9 +290,10 @@ export class Hub {
       this.howTo = null;
     }
     const happenings = GAMES[l.rec.game].happenings(l.rec.events, l.rec.roster.length, l.rec.options);
-    const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' ? 'undo' : 'other');
+    // A removal is silent: no Moment, sound or LEDs, even when it ends a round (docs/UI.md#wycofanie-gracza).
+    const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' || e.t === 'remove' ? 'undo' : 'other');
     l.happenings = happenings;
-    if (l.newRecord && !hadRecord && e.t !== 'undo') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
+    if (l.newRecord && !hadRecord && e.t !== 'undo' && e.t !== 'remove') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
     // Hit and Miss come from a fresh dart only, like the dart triggers.
     const cue = e.t === 'dart' ? dartCue(l.rec.game, l.view as MiniView, dartsBefore) : null;
     if (cue) cs.push({ fact: { kind: cue }, before: null });
@@ -335,7 +337,7 @@ export class Hub {
     const v = this.variant(l.rec);
     if (!v || l.view.phase !== 'matchWon' || !('scores' in l.view)) return null;
     if (v.key.endsWith(':coop') && l.rec.roster.some(r => r.playerId === null)) return null;
-    return l.view.scores.map((s, i) => (l.rec.roster[i].playerId === null ? null : s));
+    return l.view.scores.map((s, i) => (l.rec.roster[i].playerId === null || l.view.removed[i] === 'match' ? null : s));
   }
 
   /** New office or personal records, checked against history at the end of the game. */
@@ -425,7 +427,8 @@ export class Hub {
     } else if (view.phase === 'legWon' && rec.game === 'x01' && rec.options.matchMode.kind === 'off') {
       // Without match mode, ending after a leg is the normal end; most legs wins.
       status = 'finished';
-      const legs = (view as X01View).legs;
+      // A player removed from the match has no place in it.
+      const legs = (view as X01View).legs.map((x, i) => (view.removed[i] === 'match' ? -1 : x));
       const best = Math.max(...legs);
       winners = legs.filter(x => x === best).length === 1 ? [legs.indexOf(best)] : [];
     }
@@ -446,6 +449,7 @@ export class Hub {
         variant: scores ? this.variant(rec)!.key : null,
         scores: scores ?? undefined,
         stats: mini?.stats,
+        removed: view.removed.map(r => r === 'match'),
       });
       this.backup();
     } else {
@@ -483,8 +487,8 @@ export class Hub {
     }, null, 2) + '\n');
   }
 
-  private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[]) {
-    this.startMatch(game, ...rematchSetup(options, roster));
+  private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[], removed: Removed[] = []) {
+    this.startMatch(game, ...rematchSetup(options, roster, removed));
   }
 
   private player(c: PlayerCommand): { playerId?: number } {
@@ -566,6 +570,13 @@ export class Hub {
       case 'nextLeg':
         this.apply({ t: 'nextLeg' });
         return {};
+      case 'remove': {
+        if (!this.live || !v) throw new UserError('No match in progress');
+        const why = removeBlock(this.live.rec.game, v, cmd.player, cmd.scope);
+        if (why) throw new UserError(why);
+        this.apply({ t: 'remove', player: cmd.player, scope: cmd.scope });
+        return {};
+      }
       case 'endMatch':
         // Random Checkouts has no end of its own, and Football counts goals: Save ends them as won, with the win screen first.
         if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football') && v?.phase === 'throwing') {
@@ -575,8 +586,9 @@ export class Hub {
         this.finish(cmd.save, cmd.save);
         return {};
       case 'closeMatch': {
+        const removed = this.live?.view.removed ?? [];
         const rec = this.finish(true, cmd.then === 'summary');
-        if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster);
+        if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster, removed);
         return {};
       }
       case 'closeSummary':
@@ -628,10 +640,13 @@ export class Hub {
 
 /**
  * Setup of a rematch (docs/UI.md, Podsumowanie meczu): with a bull-off on, the same setup and a new bull-off decides
- * the order; with it off, the next player in the setup order starts.
+ * the order; with it off, the next player in the setup order starts. `removed` comes from the match's view.
  */
-export function rematchSetup(options: LiveRecord['options'], roster: RosterEntry[]): [LiveRecord['options'], RosterEntry[]] {
+export function rematchSetup(options: LiveRecord['options'], roster: RosterEntry[], removed: Removed[] = []): [LiveRecord['options'], RosterEntry[]] {
+  // Players removed from the match stay out of the rematch (docs/UI.md#wycofanie-gracza).
+  const stays = (_: RosterEntry, i: number) => removed[i] !== 'match';
   const bullOff = (options as { bullOff?: string } | null)?.bullOff;
-  if (bullOff === 'closest' || bullOff === 'pdc') return [options, roster];
-  return [options, [...roster.slice(1), roster[0]]];
+  if (bullOff === 'closest' || bullOff === 'pdc') return [options, roster.filter(stays)];
+  const kept = roster.map((r, i) => (stays(r, i) ? r : null));
+  return [options, [...kept.slice(1), kept[0]].filter(r => r !== null)];
 }

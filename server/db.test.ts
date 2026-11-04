@@ -104,6 +104,41 @@ describe('history and stats', () => {
   });
 });
 
+describe('a player removed from the match', () => {
+  // Anna, Bartek and Cezary; Cezary throws a 60 and leaves, Anna wins the leg.
+  const three = () => [db.createPlayer('Anna'), db.createPlayer('Bartek'), db.createPlayer('Cezary')]
+    .map((id, i) => ({ playerId: id, name: ['Anna', 'Bartek', 'Cezary'][i] }));
+  const events: X01Event[] = [d('S1'), next, d('S1'), next, d('T20'), { t: 'remove', player: 2, scope: 'match' }, d('T20'), d('D20')];
+  const saveRemoved = (roster: RosterEntry[]) => {
+    const v = x01.view(events, 3, OPTS);
+    return db.saveMatch({
+      game: 'x01', options: OPTS, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status: 'finished',
+      winners: [v.matchWinner!], sets: v.sets, legs: x01.compact(events, 3, OPTS), removed: v.removed.map(r => r === 'match'),
+    });
+  };
+
+  it('keeps his darts in the averages but does not count the match as played, won or lost for him', () => {
+    const roster = three();
+    saveRemoved(roster);
+    const stats = new Stats(db);
+    const c = stats.player(roster[2].playerId, 'all')!;
+    expect(c.x01.darts).toBe(3);
+    expect(c.x01.avg).toBe(60);
+    expect(c.results.played).toBe(0);
+    expect(c.recent[0].result).toBe('left');
+    expect(stats.h2h(roster[0].playerId, roster[2].playerId, 'all')!.played).toBe(0);
+    expect(stats.h2h(roster[2].playerId, roster[0].playerId, 'all')!.played).toBe(0);
+    const a = stats.player(roster[0].playerId, 'all')!;
+    expect(a.results).toMatchObject({ played: 1, won: 1 });
+    expect(a.opponents.map(o => o.name)).toEqual(['Bartek']);
+  });
+
+  it('leaves him out of the rematch', () => {
+    saveRemoved(three());
+    expect(db.lastMatchSetup()!.roster.map(r => r.name)).toEqual(['Anna', 'Bartek']);
+  });
+});
+
 describe('minigames', () => {
   // A Next player after every third dart.
   const atcEvents = (...darts: string[]) => darts.flatMap((s, i) => [{ t: 'dart', dart: parseDart(s)!, at: Date.now() }, ...(i % 3 === 2 ? [{ t: 'next' }] : [])]);
@@ -140,6 +175,17 @@ describe('minigames', () => {
     expect(db.lastMatch()!.players.map(p => p.winner)).toEqual([true, true]);
     expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
     expect(new Stats(db).player(a, 'all')!.recent[0].result).toBe('won');
+  });
+
+  it('does not count a minigame as played for a removed player, but keeps his totals', () => {
+    const a = db.createPlayer('Anna'), b = db.createPlayer('Bob');
+    const o = atc.normalizeOptions({});
+    db.saveMatch({
+      game: 'atc', options: o, roster: [{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }], startedAt: 1, endedAt: 2, status: 'finished',
+      winners: [0], sets: [], legs: [], stats: [{ darts: 9, hits: 3 }, { darts: 6, hits: 2 }], removed: [false, true],
+    });
+    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 0, won: 0, totals: { darts: 6, hits: 2 } });
+    expect(new Stats(db).game(a, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
   });
 
   it('does not count minigames in the X01 stats', () => {

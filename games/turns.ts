@@ -20,7 +20,26 @@ export type TurnEvent =
   | { t: 'seed'; seed: number }
   /** End match with Save in a game with no natural end (Random Checkouts): the game ends as won. */
   | { t: 'end' }
+  /** Wycofanie gracza (docs/UI.md#wycofanie-gracza): out of the match, or in X01 out of this leg only. */
+  | RemoveEvent
   | BullEvent;
+
+export type RemoveEvent = { t: 'remove'; player: number; scope: 'match' | 'leg' };
+
+/** How a player is out of play by a removal: for the rest of the match, for this leg (X01), or not at all. */
+export type Removed = 'match' | 'leg' | null;
+
+/** A removal in the replayed log. */
+export interface Removal {
+  player: number;
+  scope: 'match' | 'leg';
+  /** Index of the first visit (X01: leg) it applies to. */
+  at: number;
+  /** It ended the player's open visit, so its undo reopens it. */
+  closed: boolean;
+  /** State right after it; an undo while the state is still this takes the removal back. */
+  mark: string;
+}
 
 export interface Visit {
   player: number;
@@ -40,6 +59,8 @@ export interface Turns {
   ended: boolean;
   bull: BullDart[];
   bullOff: BullOffView | null;
+  players: number;
+  removed: Removal[];
 }
 
 /** What a game says about the log so far. */
@@ -64,6 +85,8 @@ export interface Verdict {
 export interface MiniView {
   phase: 'bulloff' | 'throwing' | 'matchWon';
   current: number;
+  /** Per player: removed from the match (docs/UI.md#wycofanie-gracza). */
+  removed: Removed[];
   bullOff: BullOffView | null;
   /** Playing order, null during the bull-off. */
   order: number[] | null;
@@ -90,6 +113,7 @@ export const isValidTurnEvent = (e: TurnEvent): boolean => {
     case 'start': return Number.isInteger(e.starter);
     case 'numbers': return Array.isArray(e.numbers) && e.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 20);
     case 'seed': return Number.isInteger(e.seed);
+    case 'remove': return Number.isInteger(e.player) && e.scope === 'match';
     default: return e.t === 'undo' || e.t === 'next' || e.t === 'end';
   }
 };
@@ -102,8 +126,39 @@ function reopenLast(t: Turns) {
   if (last.darts.length === 0) t.visits.pop();
 }
 
+/** Closes a visit; one that already ended (bust, checkout, elimination) gets no extra misses. */
+function closeVisit(v: Visit, s: Turn, at: number | undefined) {
+  if (s.dartsLeft > 0) {
+    while (v.darts.length < 3) {
+      v.darts.push({ dart: MISS, at: at ?? v.darts.at(-1)?.at ?? 0 });
+      v.filled++;
+    }
+  }
+  v.closed = true;
+}
+
+const mark = (t: Turns) => {
+  const last = t.visits.at(-1);
+  return `${t.visits.length}:${last?.darts.length ?? 0}:${last?.closed ?? true}`;
+};
+
+/** Removed from the match before visit `vi` (by now when it is left out). */
+export const isGone = (t: Turns, p: number, vi = Infinity) => t.removed.some(r => r.player === p && r.at <= vi);
+
+/** Players whose removal comes right before visit `vi`, for games that keep rounds. */
+export const goneAt = (t: Turns, vi: number) => t.removed.filter(r => r.at === vi).map(r => r.player);
+
+/** Who throws when no visit is open: next in the playing order after the last visit, skipping `out` and removed players. */
+export function nextUp(t: Turns, out: (q: number) => boolean = () => false): number {
+  const order = t.order ?? [0];
+  const skip = (q: number) => out(q) || isGone(t, q);
+  const last = t.visits.at(-1);
+  if (last) return nextIn(last.player, order, skip);
+  return skip(order[0]) ? nextIn(order[0], order, skip) : order[0];
+}
+
 export function replayTurns(events: TurnEvent[], players: number, bullOff: BullOff, play: (t: Turns) => Turn): Turns {
-  const t: Turns = { order: bullOff === 'off' ? fromStarter(0, players) : null, visits: [], numbers: [], seed: 0, ended: false, bull: [], bullOff: null };
+  const t: Turns = { order: bullOff === 'off' ? fromStarter(0, players) : null, visits: [], numbers: [], seed: 0, ended: false, bull: [], bullOff: null, players, removed: [] };
   for (const e of events) {
     if (e.t === 'numbers') {
       if (t.visits.length === 0) t.numbers = e.numbers;
@@ -127,7 +182,21 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
     }
     const last = t.visits.at(-1);
     const open = last && !last.closed ? last : null;
+    const removal = t.removed.at(-1);
+    if (e.t === 'undo' && removal?.mark === mark(t)) {
+      t.removed.pop();
+      if (removal.closed) reopenLast(t);
+      continue;
+    }
     switch (e.t) {
+      case 'remove': {
+        if (e.player < 0 || e.player >= players || isGone(t, e.player) || play(t).over) break;
+        // Removed during their own visit: the visit ends with the darts thrown, like Next player.
+        const closed = !!open && open.player === e.player;
+        if (closed) closeVisit(open, play(t), undefined);
+        t.removed.push({ player: e.player, scope: 'match', at: t.visits.length, closed, mark: mark(t) });
+        break;
+      }
       case 'dart': {
         const s = play(t);
         if (s.over || s.dartsLeft === 0) break;
@@ -154,14 +223,7 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
         if (s.over) break;
         const v = open ?? { player: s.current, darts: [], filled: 0, closed: false };
         if (!open) t.visits.push(v);
-        // A visit that already ended (bust, checkout, elimination) gets no extra misses.
-        if (s.dartsLeft > 0) {
-          while (v.darts.length < 3) {
-            v.darts.push({ dart: MISS, at: e.at ?? v.darts.at(-1)?.at ?? 0 });
-            v.filled++;
-          }
-        }
-        v.closed = true;
+        closeVisit(v, s, e.at);
         break;
       }
     }
@@ -215,12 +277,14 @@ export function verdictOf(fx: Happening[], vi: number): Verdict | null {
 }
 
 /** Builds the common part of a view: phase and the visit on screen. */
-export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff' | 'order'> {
-  if (t.order === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [], verdict: null }, bullOff: t.bullOff, order: null };
+export function frame(t: Turns, s: Turn): Pick<MiniView, 'phase' | 'current' | 'visit' | 'bullOff' | 'order' | 'removed'> {
+  const removed = Array.from({ length: t.players }, (_, p): Removed => (isGone(t, p) ? 'match' : null));
+  if (t.order === null) return { phase: 'bulloff', current: 0, visit: { player: 0, darts: [], dartsLeft: 3, good: [], verdict: null }, bullOff: t.bullOff, order: null, removed };
   const last = t.visits.at(-1);
   const shown = last && (!last.closed || s.over) ? last : null;
   const verdict = shown && s.dartsLeft === 0 ? verdictOf(s.fx, t.visits.length - 1) : null;
   return {
+    removed,
     bullOff: t.bullOff,
     order: t.order,
     phase: s.over ? 'matchWon' : 'throwing',
@@ -374,4 +438,27 @@ export function dartCue(game: GameId, view: { phase: string; visit?: MiniView['v
   if (game === 'atc' || game === 'fullboard' || game === 'cricket' || game === 'shanghai') return v.good.at(-1) ? 'hit' : 'miss';
   if (game === 'hol' && v.dartsLeft === 0) return v.verdict?.tone === 'bad' ? 'miss' : 'hit';
   return null;
+}
+
+/**
+ * Why the Pilot cannot remove player `p` now, or null when he can (docs/UI.md#wycofanie-gracza): not in the bull-off,
+ * not once the game is over, and not when fewer than two would be left in the match or the leg. Players out of lives
+ * in Killer and Knockout are no longer in it either.
+ */
+export function removeBlock(
+  game: GameId,
+  v: { phase: string; removed: Removed[]; rows?: { out: boolean }[] },
+  p: number,
+  scope: 'match' | 'leg',
+): string | null {
+  if (scope === 'leg' && game !== 'x01') return 'Only X01 has legs';
+  if (v.phase === 'bulloff') return 'Not during the bull-off';
+  if (v.phase === 'matchWon' || (v.phase !== 'throwing' && scope === 'leg')) return 'This game is over';
+  if (v.removed[p] === undefined) return 'Unknown player';
+  if (v.removed[p] === 'match' || (v.removed[p] === 'leg' && scope === 'leg')) return 'This player is already out';
+  const after = v.removed.map((r, i) => (i === p ? scope : r));
+  const lost = (i: number) => (game === 'killer' || game === 'knockout') && !!v.rows?.[i].out;
+  const inMatch = after.filter((r, i) => r !== 'match' && !lost(i)).length;
+  const inLeg = after.filter((r, i) => r === null && !lost(i)).length;
+  return Math.min(inMatch, inLeg) < 2 ? 'Fewer than two players would be left: use End match' : null;
 }

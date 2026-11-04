@@ -2,7 +2,7 @@
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface CricketOptions {
   mode: 'standard' | 'cutthroat';
@@ -27,13 +27,16 @@ function play(t: Turns, players: number, o: CricketOptions): State {
   const points = Array(players).fill(0), darts = Array(players).fill(0), scoredMarks = Array(players).fill(0);
   const goods: boolean[][] = [], visitMarksAll: number[] = [];
   const closedAll = (p: number) => marks[p].every(m => m >= 3);
-  const others = (p: number) => points.filter((_, i) => i !== p);
-  const wins = (p: number) => closedAll(p) && (players === 1
+  // A removed player's marks and points stay as they were and no longer count against anyone (docs/UI.md#wycofanie-gracza).
+  let vi = 0;
+  const inPlay = (p: number) => !isGone(t, p, vi);
+  const others = (p: number) => points.filter((_, i) => i !== p && inPlay(i));
+  const wins = (p: number) => inPlay(p) && closedAll(p) && (players === 1
     || (o.mode === 'standard' ? points[p] >= Math.max(...others(p)) : points[p] <= Math.min(...others(p))));
   const fx: Happening[] = [];
   let winner: number | null = null, left = 3;
 
-  for (const [vi, v] of t.visits.entries()) {
+  for (const v of t.visits) {
     const p = v.player;
     let visitMarks = 0;
     const freshTrebles = new Set<number>();
@@ -44,7 +47,7 @@ function play(t: Turns, players: number, o: CricketOptions): State {
       const add = Math.min(3 - marks[p][k], d.m);
       marks[p][k] += add;
       const extra = d.m - add;
-      const open = [...Array(players).keys()].filter(r => r !== p && marks[r][k] < 3);
+      const open = [...Array(players).keys()].filter(r => r !== p && inPlay(r) && marks[r][k] < 3);
       const scores = extra > 0 && open.length > 0;
       if (scores) {
         if (o.mode === 'standard') points[p] += extra * d.n;
@@ -66,11 +69,12 @@ function play(t: Turns, players: number, o: CricketOptions): State {
     if (w.complete && visitMarks >= 5) {
       fx.push({ slot: `V${vi + 1}:marks`, fact: { kind: 'game', event: 'marks', marks: Math.min(visitMarks, 9), whiteHorse: freshTrebles.size === 3 } });
     }
+    vi++;
   }
   if (winner !== null) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
   const over = winner !== null;
-  const current = !last ? (t.order?.[0] ?? 0) : last.closed ? nextIn(last.player, t.order!) : last.player;
+  const current = last && !last.closed ? last.player : nextUp(t);
   return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, marks, points, darts, scoredMarks, visitMarks: visitMarksAll, winners: over ? [winner!] : [] };
 }
 
@@ -105,7 +109,7 @@ function view(events: TurnEvent[], players: number, o: CricketOptions): CricketV
     stats: s.darts.map((d, i) => ({ darts: d, marks: s.scoredMarks[i] })),
     marks: s.marks,
     points: s.points,
-    dead: CRICKET_SECTORS.map((_, k) => s.marks.every(m => m[k] >= 3)),
+    dead: CRICKET_SECTORS.map((_, k) => s.marks.every((m, i) => m[k] >= 3 || f.removed[i])),
     solo,
     visitMarks: f.visit.darts.length ? s.visitMarks.at(-1) ?? 0 : 0,
   };

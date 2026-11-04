@@ -2,7 +2,7 @@
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, dartSlot, frame, isValidTurnEvent, livesLabel, nextIn, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, dartSlot, frame, goneAt, isValidTurnEvent, livesLabel, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface KillerOptions {
   lives: number;
@@ -38,7 +38,9 @@ function play(t: Turns, players: number, o: KillerOptions): State {
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
   let over = false, left = 3;
+  // A removed player is out like an eliminated one, with no Wyzwalacz: nobody hits his number any more.
   for (const [vi, v] of t.visits.entries()) {
+    for (const q of goneAt(t, vi)) out[q] = true;
     const p = v.player;
     const w = walk(v, (d, di) => {
       if (over || out[p]) return { good: false, end: true };
@@ -63,9 +65,10 @@ function play(t: Turns, players: number, o: KillerOptions): State {
     goods.push(w.good);
     left = w.dartsLeft;
   }
+  for (const q of goneAt(t, t.visits.length)) out[q] = true;
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   const last = t.visits.at(-1);
-  const current = !last ? (t.order?.[0] ?? 0) : !last.closed ? last.player : nextIn(last.player, t.order!, q => out[q]);
+  const current = last && !last.closed ? last.player : nextUp(t, q => out[q]);
   return {
     over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx,
     numbers, lives, killer, out, taken, winners: over ? out.flatMap((x, i) => (x ? [] : [i])) : [],

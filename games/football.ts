@@ -3,7 +3,7 @@ import type { Dart } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns, Verdict } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, goneAt, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface FootballOptions {
   /** What takes the ball: any bull, or only the bullseye. */
@@ -31,7 +31,12 @@ function play(t: Turns, players: number, o: FootballOptions): State {
   const visits: State['visits'] = [];
   let ball: number | null = null, over = false, left = 3, winners: number[] = [];
 
+  // The ball of a removed player is free (docs/UI.md#wycofanie-gracza).
+  const free = (vi: number) => {
+    if (ball !== null && goneAt(t, vi).includes(ball)) ball = null;
+  };
   for (const [vi, v] of t.visits.entries()) {
+    free(vi);
     const p = v.player;
     const mine: State['visits'][number] = { goals: 0, wonFrom: undefined };
     const w = walk(v, (d, di) => {
@@ -56,17 +61,18 @@ function play(t: Turns, players: number, o: FootballOptions): State {
     visits.push(mine);
     left = w.dartsLeft;
   }
+  free(t.visits.length);
   // End match with Save ends the game as won: most goals, ties share it, nobody at 0–0.
   if (!over && t.ended) {
     over = true;
-    const best = Math.max(...goals);
-    winners = best > 0 ? goals.flatMap((g, i) => (g === best ? [i] : [])) : [];
+    const best = Math.max(...goals.filter((_, i) => !isGone(t, i)));
+    winners = best > 0 ? goals.flatMap((g, i) => (g === best && !isGone(t, i) ? [i] : [])) : [];
   }
   if (over && winners.length) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? (t.order?.[0] ?? 0) : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
+  const current = open ? open.player : over ? last!.player : nextUp(t);
   return { over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx, goals, ball, visits, winners };
 }
 

@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, nextIn, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -57,7 +57,7 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
     }
     // At the end of the visit, a changed score sends every rival on the same score back to zero.
     if (!bust && totals[p] !== start) {
-      zeroed = totals.map((x, q) => (q !== p && x === totals[p] ? q : -1)).filter(q => q >= 0);
+      zeroed = totals.map((x, q) => (q !== p && x === totals[p] && !isGone(t, q, vi) ? q : -1)).filter(q => q >= 0);
       for (const q of zeroed) totals[q] = 0;
       gotchas[p] += zeroed.length;
       if (zeroed.length) fx.push({ slot: `${V}:gotcha`, fact: { kind: 'game', event: 'gotcha' } });
@@ -67,7 +67,7 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = !last ? (t.order?.[0] ?? 0) : open ? open.player : over ? last.player : nextIn(last.player, t.order!);
+  const current = open ? open.player : over ? last!.player : nextUp(t);
   // `zeroed` is the last visit's, also after its Takeout, until the next visit's first dart: a visit cut short by Next player
   // is only decided then. The visit's points stay on screen only while the visit does.
   const shown = !!last && (!last.closed || over);

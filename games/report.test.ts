@@ -37,4 +37,19 @@ describe('match report', () => {
     expect(r.x01).toBeNull();
     expect(r.totals).toHaveLength(1);
   });
+
+  it('puts a player removed from the match last, marked as left', () => {
+    // Ann throws a 60 and leaves; Bob and Cy play on, Bob checks out.
+    const events = [d('T20'), { t: 'remove', player: 0, scope: 'match' } as X01Event, d('S1'), next, d('S1'), next, d('T20'), d('D20')];
+    const x01 = GAMES.x01;
+    const view = x01.view(events, 3, o);
+    const r = matchReport({
+      game: 'x01', description: 'X01', names: ['Ann', 'Bob', 'Cy'], legs: x01.compact(events, 3, o), view,
+      checkOut: 'double', ended: false, ocheMeters: 2.5,
+    });
+    expect(r.title).toBe('Bob');
+    expect(r.names).toEqual(['Bob', 'Cy', 'Ann']);
+    expect(r.left).toEqual([false, false, true]);
+    expect(r.x01!.map(x => x.darts)).toEqual([5, 3, 3]);
+  });
 });

@@ -6,7 +6,7 @@ import type { GameEvent, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
 import {
-  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, dartSlot, frame, isValidTurnEvent, nextIn, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk,
+  BULL_OFF, OFF_ON, ON_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk,
 } from './turns.ts';
 
 export type TargetMode = 'any' | 'doubles' | 'trebles';
@@ -58,7 +58,7 @@ function playRace<P>(t: Turns, players: number, coop: boolean, r: Rules<P>): Rac
   const darts = Array(players).fill(0), hit = Array(players).fill(0);
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
-  let complete = 0, left = 3;
+  let left = 3, complete = false;
   for (const [vi, v] of t.visits.entries()) {
     const side = sides[v.player];
     const w = walk(v, (d, di) => {
@@ -69,17 +69,19 @@ function playRace<P>(t: Turns, players: number, coop: boolean, r: Rules<P>): Rac
     goods.push(w.good);
     darts[v.player] += w.used;
     hit[v.player] += w.good.filter(Boolean).length;
-    if (w.complete) complete++;
+    complete = w.complete;
     left = w.dartsLeft;
   }
-  // Someone finished: the round is played out so everyone has the same number of visits.
-  const over = coop ? r.done(team) : own.some(r.done) && complete % players === 0;
   const last = t.visits.at(-1);
-  const current = !last ? (t.order?.[0] ?? 0) : last.closed ? nextIn(last.player, t.order!) : last.player;
+  const current = last && !last.closed ? last.player : nextUp(t);
+  // Someone finished: the round is played out so everyone still in has the same number of visits.
+  const roundDone = !last || (complete && nextUp(t) === nextUp({ ...t, visits: [] }));
+  const finished = (i: number) => r.done(own[i]) && !isGone(t, i);
+  const over = coop ? r.done(team) : own.some((_, i) => finished(i)) && roundDone;
   let winners: number[] = [];
   if (over && !coop) {
-    const best = Math.min(...own.map((p, i) => (r.done(p) ? darts[i] : Infinity)));
-    winners = own.map((_, i) => i).filter(i => r.done(own[i]) && darts[i] === best);
+    const best = Math.min(...own.map((_, i) => (finished(i) ? darts[i] : Infinity)));
+    winners = own.map((_, i) => i).filter(i => finished(i) && darts[i] === best);
   }
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
   return { over, current, dartsLeft: over ? 0 : last && !last.closed ? left : 3, goods, fx, sides, darts, hits: hit, winners };

@@ -2,7 +2,7 @@
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface ShanghaiOptions {
   rounds: 7 | 20;
@@ -38,7 +38,7 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
   let round = 1, queue: number[] = [], pos = 0, left = 3;
   let over = false, winner: number | null = null, byShanghai = false;
   /** The round and who plays it, kept on screen while the last visit is open: the next round shows after Takeout. */
-  let held: { round: number; queue: number[] } | null = null;
+  let held = null as { round: number; queue: number[] } | null;
 
   // A round: those still playing throw once, in the playing order.
   const newRound = (who: number[]) => {
@@ -47,7 +47,35 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
   };
   newRound([...Array(players).keys()]);
 
+  // End of the round.
+  const endRound = (keep: boolean) => {
+    held = keep ? { round, queue: [...queue] } : null;
+    const best = Math.max(...queue.map(q => points[q]));
+    const leaders = queue.filter(q => points[q] === best);
+    if (round >= o.rounds && leaders.length === 1) {
+      over = true;
+      winner = leaders[0];
+    } else if (round >= o.rounds) {
+      round++;
+      newRound(leaders);
+    } else {
+      round++;
+      newRound(queue);
+    }
+  };
+  // A removed player leaves the round in progress and every round after (docs/UI.md#wycofanie-gracza).
+  const leave = (vi: number) => {
+    for (const q of goneAt(t, vi)) {
+      const i = queue.indexOf(q);
+      if (i < 0 || over) continue;
+      queue.splice(i, 1);
+      if (i < pos) pos--;
+      if (pos > 0 && pos >= queue.length) endRound(false);
+    }
+  };
+
   for (const [vi, v] of t.visits.entries()) {
+    leave(vi);
     const sector = sectorOf(round, o), p = v.player;
     const seen = new Set<number>();
     let pts = 0;
@@ -82,23 +110,9 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
         continue;
       }
     }
-    if (++pos < queue.length) continue;
-
-    // End of the round.
-    held = vi === t.visits.length - 1 && !v.closed ? { round, queue: [...queue] } : null;
-    const best = Math.max(...queue.map(q => points[q]));
-    const leaders = queue.filter(q => points[q] === best);
-    if (round >= o.rounds && leaders.length === 1) {
-      over = true;
-      winner = leaders[0];
-    } else if (round >= o.rounds) {
-      round++;
-      newRound(leaders);
-    } else {
-      round++;
-      newRound(queue);
-    }
+    if (++pos >= queue.length) endRound(vi === t.visits.length - 1 && !v.closed);
   }
+  leave(t.visits.length);
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
 
   const last = t.visits.at(-1);

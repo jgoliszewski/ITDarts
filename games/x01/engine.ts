@@ -4,6 +4,7 @@ import { beforeStart, bullView, fromStarter, undoStart } from '../bulloff.ts';
 import type { Coords, Dart } from '../darts.ts';
 import { MISS } from '../darts.ts';
 import type { Happening } from '../effects.ts';
+import type { Removal, RemoveEvent, Removed } from '../turns.ts';
 import { hintLines } from './checkout.ts';
 import type { X01Options } from './rules.ts';
 import { scoreDart } from './rules.ts';
@@ -15,6 +16,7 @@ export type X01Event =
   | { t: 'undo' }
   | { t: 'next'; at?: number }
   | { t: 'nextLeg' }
+  | RemoveEvent
   | BullEvent;
 
 export interface DartRec {
@@ -42,6 +44,8 @@ export interface Raw {
   order: number[] | null;
   legs: LegRec[];
   bull: BullDart[];
+  /** Removals; `at` is the index of the leg they happened in. */
+  removed: Removal[];
 }
 
 export interface VisitResult {
@@ -136,14 +140,34 @@ function tally(results: LegResult[], players: number, o: X01Options): Tally {
 // ---------- reducer ----------
 
 export function initialRaw(o: X01Options, players: number): Raw {
-  return o.bullOff === 'off' ? { order: fromStarter(0, players), legs: [{ set: 1, starter: 0, visits: [] }], bull: [] } : { order: null, legs: [], bull: [] };
+  return o.bullOff === 'off'
+    ? { order: fromStarter(0, players), legs: [{ set: 1, starter: 0, visits: [] }], bull: [], removed: [] }
+    : { order: null, legs: [], bull: [], removed: [] };
 }
 
-function currentPlayer(r: LegResult, order: number[]): number {
+/** How player `p` is out of leg `li` (docs/UI.md#wycofanie-gracza): for the match from that leg on, or for that leg only. */
+export function removedIn(raw: Raw, li: number, p: number): Removed {
+  const r = raw.removed.find(x => x.player === p && (x.scope === 'match' ? x.at <= li : x.at === li));
+  return r?.scope ?? null;
+}
+
+/** Next in the playing order after `p`, skipping those removed from leg `li`. */
+function nextInLeg(raw: Raw, li: number, p: number): number {
+  const order = raw.order!;
+  const i = order.indexOf(p);
+  for (let k = 1; k <= order.length; k++) {
+    const q = order[(i + k) % order.length];
+    if (!removedIn(raw, li, q)) return q;
+  }
+  return p;
+}
+
+function currentPlayer(raw: Raw, r: LegResult): number {
   if (r.winner !== null) return r.winner;
+  const li = raw.legs.length - 1;
   const last = r.visits.at(-1);
-  if (!last) return r.starter;
-  return last.closed ? order[(order.indexOf(last.player) + 1) % order.length] : last.player;
+  if (last) return last.closed ? nextInLeg(raw, li, last.player) : last.player;
+  return removedIn(raw, li, r.starter) ? nextInLeg(raw, li, r.starter) : r.starter;
 }
 
 function startNextLeg(raw: Raw, results: LegResult[], players: number, o: X01Options) {
@@ -151,8 +175,31 @@ function startNextLeg(raw: Raw, results: LegResult[], players: number, o: X01Opt
   const last = leg.visits.at(-1);
   if (last) last.closed = true;
   const set = tally(results, players, o).nextSet;
-  // The starter moves on by one place in the playing order each leg.
-  raw.legs.push({ set, starter: raw.order![raw.legs.length % players], visits: [] });
+  // The starter moves on by one place in the playing order each leg, past those removed from the match;
+  // one removed from a leg only keeps his turn to start.
+  const order = raw.order!;
+  let starter = order[(order.indexOf(leg.starter) + 1) % players];
+  while (raw.removed.some(r => r.player === starter && r.scope === 'match') && starter !== leg.starter) {
+    starter = order[(order.indexOf(starter) + 1) % players];
+  }
+  raw.legs.push({ set, starter, visits: [] });
+}
+
+const mark = (raw: Raw) => {
+  const leg = raw.legs.at(-1);
+  const last = leg?.visits.at(-1);
+  return `${raw.legs.length}:${leg?.visits.length ?? 0}:${last?.darts.length ?? 0}:${last?.closed ?? true}`;
+};
+
+/** Closes the open visit: Next player fills in misses, unless the visit already ended with a bust. */
+function closeVisit(visit: VisitRec, bust: boolean, at: number | undefined) {
+  if (!bust) {
+    while (visit.darts.length < 3) {
+      visit.darts.push({ dart: MISS, at: at ?? visit.darts.at(-1)?.at ?? 0 });
+      visit.filled++;
+    }
+  }
+  visit.closed = true;
 }
 
 function reopenLast(leg: LegRec) {
@@ -179,15 +226,31 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
   const t = tally(results, players, o);
   const open = leg.visits.at(-1)?.closed === false ? leg.visits.at(-1)! : null;
   const openResult = open ? cur.visits.at(-1)! : null;
+  const removal = raw.removed.at(-1);
+  if (e.t === 'undo' && removal?.mark === mark(raw)) {
+    raw.removed.pop();
+    if (removal.closed) reopenLast(leg);
+    return;
+  }
 
   switch (e.t) {
+    case 'remove': {
+      const li = raw.legs.length - 1;
+      if (e.player < 0 || e.player >= players || removedIn(raw, li, e.player) || t.matchWinner !== null) return;
+      if (e.scope === 'leg' && cur.winner !== null) return;
+      // Removed during their own visit: it ends with the darts thrown, like Next player.
+      const closed = !!open && open.player === e.player && cur.winner === null;
+      if (closed) closeVisit(open!, openResult!.bust, undefined);
+      raw.removed.push({ player: e.player, scope: e.scope, at: li, closed, mark: mark(raw) });
+      return;
+    }
     case 'start':
     case 'bull':
       return;
     case 'dart': {
       if (cur.winner !== null) return;
       if (openResult && (openResult.bust || openResult.checkoutAt >= 0 || open!.darts.length >= 3)) return;
-      const visit = open ?? { player: currentPlayer(cur, raw.order), darts: [], filled: 0, closed: false };
+      const visit = open ?? { player: currentPlayer(raw, cur), darts: [], filled: 0, closed: false };
       if (!open) leg.visits.push(visit);
       visit.darts.push({ dart: e.dart, coords: e.coords, at: e.at });
       return;
@@ -219,15 +282,9 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
         if (t.matchWinner === null && o.matchMode.kind !== 'off') startNextLeg(raw, results, players, o);
         return;
       }
-      const visit = open ?? { player: currentPlayer(cur, raw.order), darts: [], filled: 0, closed: false };
+      const visit = open ?? { player: currentPlayer(raw, cur), darts: [], filled: 0, closed: false };
       if (!open) leg.visits.push(visit);
-      if (!openResult?.bust) {
-        while (visit.darts.length < 3) {
-          visit.darts.push({ dart: MISS, at: e.at ?? visit.darts.at(-1)?.at ?? 0 });
-          visit.filled++;
-        }
-      }
-      visit.closed = true;
+      closeVisit(visit, !!openResult?.bust, e.at);
       return;
     }
     case 'nextLeg': {
@@ -276,6 +333,8 @@ export interface X01View {
   bullOff: BullOffView | null;
   /** Playing order, null during the bull-off. */
   order: number[] | null;
+  /** Per player: removed from the match or from this leg (docs/UI.md#wycofanie-gracza). */
+  removed: Removed[];
 }
 
 const avg = (points: number, darts: number) => (darts > 0 ? Math.round((points / darts) * 3 * 100) / 100 : null);
@@ -312,13 +371,13 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
       checkedIn: Array(players).fill(o.checkIn === 'straight'),
       visit: { player: 0, darts: [], total: 0, bust: false, checkout: false, dartsLeft: 3 },
       checkout: null, setup: null, lastLeg: null, matchWinner: null, stats,
-      bullOff: bullView(raw.bull, players, o.bullOff), order: null,
+      bullOff: bullView(raw.bull, players, o.bullOff), order: null, removed: Array(players).fill(null),
     };
   }
   const results = raw.legs.map(l => analyzeLeg(l, players, o));
   const cur = results.at(-1)!;
   const t = tally(results, players, o);
-  const current = currentPlayer(cur, raw.order);
+  const current = currentPlayer(raw, cur);
   const last = cur.visits.at(-1);
   const openVisit = last && (!last.closed || cur.winner !== null) ? last : null;
   const visitDarts = openVisit ? openVisit.darts : [];
@@ -372,6 +431,7 @@ export function view(raw: Raw, players: number, o: X01Options): X01View {
     stats: Array.from({ length: players }, (_, p) => playerStats(results, p)),
     bullOff: bullView(raw.bull, players, o.bullOff),
     order: raw.order,
+    removed: Array.from({ length: players }, (_, p) => removedIn(raw, raw.legs.length - 1, p)),
   };
 }
 

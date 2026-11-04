@@ -3,7 +3,7 @@ import type { Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface KnockoutOptions {
   bullOff: BullOff;
@@ -38,6 +38,7 @@ function play(t: Turns, players: number): State {
   const lives = Array(players).fill(KNOCKOUT_LIVES), points = Array(players).fill(0), visits = Array(players).fill(0);
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
+  const gone = Array(players).fill(false);
   let round = 0, queue: number[] = [], pos = 0, totals: (number | null)[] = [];
   let over = false, left = 3, visitScore = 0, roundEnd: RoundEnd | null = null;
   /** The finished round the screen keeps until the takeout, while its last visit is still open. */
@@ -45,7 +46,7 @@ function play(t: Turns, players: number): State {
 
   // A round: everyone still in throws once, starting one place further on each round.
   const newRound = () => {
-    queue = rotate(t.order ?? [], round).filter(q => lives[q] > 0);
+    queue = rotate(t.order ?? [], round).filter(q => lives[q] > 0 && !gone[q]);
     pos = 0;
     totals = Array(players).fill(null);
   };
@@ -55,7 +56,47 @@ function play(t: Turns, players: number): State {
   };
   newRound();
 
+  // End of the round: the lowest total loses a life, ties included, unless that would put everyone out.
+  // Only the player who just threw (`p`) hears about it; the others heard it when their visit was the lowest.
+  const endRound = (vi: number, p: number | null, closed: boolean) => {
+    const lowest = lowestOf(totals)!;
+    const losers = queue.filter(q => totals[q] === lowest);
+    const replayed = losers.length === queue.length && losers.every(q => lives[q] === 1);
+    if (!closed) held = { roundTotals: totals, lowest };
+    roundEnd = { losers: replayed ? [] : losers, out: [], replayed };
+    if (!replayed) {
+      for (const q of losers) {
+        lives[q]--;
+        if (q === p) fx.push({ slot: `V${vi + 1}:life`, fact: { kind: 'game', event: 'lifeLost' } });
+        if (lives[q] === 0) {
+          roundEnd.out.push(q);
+          if (q === p) fx.push({ slot: `V${vi + 1}:out`, fact: { kind: 'game', event: 'eliminated' } });
+        }
+      }
+    }
+    if (lives.filter((l, q) => l > 0 && !gone[q]).length <= 1) {
+      over = true;
+      fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
+      return;
+    }
+    round++;
+    newRound();
+  };
+  // A removed player leaves the round in progress as if he had never been in it (docs/UI.md#wycofanie-gracza).
+  const leave = (vi: number) => {
+    for (const q of goneAt(t, vi)) {
+      gone[q] = true;
+      const i = queue.indexOf(q);
+      if (i < 0 || over) continue;
+      queue.splice(i, 1);
+      if (i < pos) pos--;
+      totals[q] = null;
+      if (pos > 0 && pos >= queue.length) endRound(vi - 1, null, true);
+    }
+  };
+
   for (const [vi, v] of t.visits.entries()) {
+    leave(vi);
     let total = 0;
     const w = walk(v, d => {
       if (over) return { good: false, end: true };
@@ -76,33 +117,9 @@ function play(t: Turns, players: number): State {
     points[p] += total;
     visits[p]++;
     fx.push({ slot: `V${vi + 1}:total`, fact: { kind: 'calledTotal', total } });
-    if (++pos < queue.length) continue;
-
-    // End of the round: the lowest total loses a life, ties included, unless that would put everyone out.
-    // Only the player who just threw hears about it; the others heard it when their visit was the lowest.
-    const lowest = lowestOf(totals)!;
-    const losers = queue.filter(q => totals[q] === lowest);
-    const replayed = losers.length === queue.length && losers.every(q => lives[q] === 1);
-    if (!v.closed) held = { roundTotals: totals, lowest };
-    roundEnd = { losers: replayed ? [] : losers, out: [], replayed };
-    if (!replayed) {
-      for (const q of losers) {
-        lives[q]--;
-        if (q === p) fx.push({ slot: `V${vi + 1}:life`, fact: { kind: 'game', event: 'lifeLost' } });
-        if (lives[q] === 0) {
-          roundEnd.out.push(q);
-          if (q === p) fx.push({ slot: `V${vi + 1}:out`, fact: { kind: 'game', event: 'eliminated' } });
-        }
-      }
-    }
-    if (lives.filter(l => l > 0).length <= 1) {
-      over = true;
-      fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
-      continue;
-    }
-    round++;
-    newRound();
+    if (++pos >= queue.length) endRound(vi, p, v.closed);
   }
+  leave(t.visits.length);
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
@@ -114,7 +131,7 @@ function play(t: Turns, players: number): State {
     goods, fx, lives, out: lives.map(l => l === 0), ...shown, roundEnd,
     visitScore: open || over ? visitScore : 0,
     points, visits,
-    winners: over ? lives.flatMap((l, i) => (l > 0 ? [i] : [])) : [],
+    winners: over ? lives.flatMap((l, i) => (l > 0 && !gone[i] ? [i] : [])) : [],
   };
 }
 

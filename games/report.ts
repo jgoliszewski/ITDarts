@@ -18,7 +18,10 @@ export interface MatchReport {
   kicker: string;
   title: string;
   line: string;
+  /** Players in the comparison: those removed from the match last (docs/UI.md#wycofanie-gracza). */
   names: string[];
+  /** Per player, as in `names`: removed from the match, shown greyed with “Left” and no place. */
+  left: boolean[];
   heat: PlayerHeat[];
   /** Metres walked to the board and back, per player. */
   distance: number[];
@@ -88,16 +91,21 @@ export function matchReport(m: {
     kicker = m.ended ? 'MATCH ENDED' : 'WINNER';
     title = !m.ended && leader !== null ? m.names[leader] : m.names.join(' vs ');
   }
+  const gone = (i: number) => m.view.removed[i] === 'match';
+  const at = [...m.names.keys()].sort((a, b) => Number(gone(a)) - Number(gone(b)));
+  const x01 = m.checkOut ? x01Of(m.legs, n, m.checkOut) : null;
+  const totals = 'winners' in m.view ? m.view.stats : null;
   return {
     game: m.game,
     description: m.description,
     kicker,
     title,
     line,
-    names: m.names,
-    heat,
-    distance: heat.map(h => walked(h.visits, m.ocheMeters)),
-    x01: m.checkOut ? x01Of(m.legs, n, m.checkOut) : null,
-    totals: 'winners' in m.view ? m.view.stats : null,
+    names: at.map(i => m.names[i]),
+    left: at.map(gone),
+    heat: at.map(i => heat[i]),
+    distance: at.map(i => walked(heat[i].visits, m.ocheMeters)),
+    x01: x01 && at.map(i => x01[i]),
+    totals: totals && at.map(i => totals[i]),
   };
 }

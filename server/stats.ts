@@ -121,7 +121,7 @@ export class Stats {
 
   /** Matches that count for winrate and head-to-head, within the window. */
   private resultMatches(playerId: number, w: StatsWindow, x01MatchIds: number[]) {
-    const where = ['mp.player_id = ?', 'm.counts_results = 1', "m.game = 'x01'"];
+    const where = ['mp.player_id = ?', 'mp.removed = 0', 'm.counts_results = 1', "m.game = 'x01'"];
     const args: number[] = [playerId];
     if (legLimit(w)) where.push(`m.id IN (${x01MatchIds.map(() => '?').join(',') || 'NULL'})`), args.push(...x01MatchIds);
     else if (since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
@@ -138,18 +138,18 @@ export class Stats {
     const won = results.filter(r => r.won).length;
 
     const recent = (this.db.sql.prepare(`
-      SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.won,
+      SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.won, mp.removed,
         (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
         (SELECT GROUP_CONCAT(COALESCE(p2.name, o.guest_name), ', ') FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
           WHERE o.match_id = m.id AND o.position != mp.position) AS opponents,
         (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position) o) AS score
       FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE mp.player_id = ? ORDER BY m.ended_at DESC LIMIT 10`).all(playerId) as
-      { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; won: number; players: number; opponents: string | null; score: string }[])
+      { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; won: number; removed: number; players: number; opponents: string | null; score: string }[])
       .filter(r => r.game in GAMES)
       .map(r => {
         const game = GAMES[r.game];
-        const result = r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost';
+        const result = r.removed ? 'left' : r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost';
         return {
           id: r.id,
           endedAt: r.ended_at,
@@ -164,7 +164,7 @@ export class Stats {
     const opponents = ids.length === 0 ? [] : (this.db.sql.prepare(`
       SELECT p.id, p.name, COUNT(*) AS played, SUM(m.winner_position = me.position) AS won
       FROM matches m JOIN match_players me ON me.match_id = m.id AND me.player_id = ?
-      JOIN match_players o ON o.match_id = m.id AND o.position != me.position JOIN players p ON p.id = o.player_id
+      JOIN match_players o ON o.match_id = m.id AND o.position != me.position AND o.removed = 0 JOIN players p ON p.id = o.player_id
       WHERE m.id IN (${ids.map(() => '?').join(',')})
       GROUP BY p.id ORDER BY played DESC`).all(playerId, ...ids) as { id: number; name: string; played: number; won: number }[]);
 
@@ -186,8 +186,8 @@ export class Stats {
     if (since(w, this.now())) (extra = 'AND m.ended_at >= ?'), args.push(since(w, this.now()));
     const rows = this.db.sql.prepare(`
       SELECT m.id, m.winner_position AS winner, x.position AS pa, y.position AS pb
-      FROM matches m JOIN match_players x ON x.match_id = m.id AND x.player_id = ?
-      JOIN match_players y ON y.match_id = m.id AND y.player_id = ?
+      FROM matches m JOIN match_players x ON x.match_id = m.id AND x.player_id = ? AND x.removed = 0
+      JOIN match_players y ON y.match_id = m.id AND y.player_id = ? AND y.removed = 0
       WHERE m.counts_results = 1 AND m.game = 'x01' ${extra} ORDER BY m.ended_at DESC`).all(...args) as { id: number; winner: number; pa: number; pb: number }[];
     // Leg windows mean "the last N meetings" here.
     const limited = legLimit(w) ? rows.slice(0, legLimit(w)!) : rows;
@@ -211,9 +211,9 @@ export class Stats {
     if (!legLimit(w) && since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
     // Leg windows mean "the last N matches" here: these games have one leg per match.
     const rows = this.db.sql.prepare(`
-      SELECT mp.stats, m.status, mp.won, m.variant FROM matches m JOIN match_players mp ON mp.match_id = m.id
+      SELECT mp.stats, m.status, mp.won, mp.removed, m.variant FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE ${where.join(' AND ')} ORDER BY m.ended_at DESC ${legLimit(w) ? `LIMIT ${legLimit(w)}` : ''}`).all(...args) as
-      { stats: string | null; status: string; won: number | null; variant: string | null }[];
+      { stats: string | null; status: string; won: number | null; removed: number; variant: string | null }[];
     const totals: Record<string, number> = {};
     for (const r of rows) for (const [k, v] of Object.entries(JSON.parse(r.stats ?? '{}') as Record<string, number>)) totals[k] = (totals[k] ?? 0) + v;
     const rec = GAMES[game].record;
@@ -224,8 +224,9 @@ export class Stats {
       player,
       game,
       window: w,
-      played: rows.length,
-      won: rows.filter(r => r.won).length,
+      // A removed player's darts count in the totals, the match not (docs/UI.md#wycofanie-gracza).
+      played: rows.filter(r => !r.removed).length,
+      won: rows.filter(r => r.won && !r.removed).length,
       totals,
       bests: !rec ? [] : variants.sort().map(v => {
         const best = this.db.records(v, rec.better, 1, playerId)[0];
