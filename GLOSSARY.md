@@ -68,6 +68,14 @@ _Avoid_: ustawka, leave
 Ustawienie X01: mecz do N wygranych legów albo setów. Wyłączony oznacza, że po każdym legu gracze decydują, czy grać dalej.
 _Avoid_: tryb meczu (w UI)
 
+**Wycofanie z meczu**:
+Pilot usuwa gracza z meczu w toku: gracz zostaje wyszarzony z dopiskiem „Left” i nie rzuca do końca meczu. W UI „Remove from match”, w minigierkach „Remove player”.
+_Avoid_: kick, wyrzucenie, pauza
+
+**Wycofanie z legu**:
+W X01 gracz nie rzuca do końca bieżącego legu („Back next leg”) i wraca w następnym. W UI „Remove from leg”.
+_Avoid_: kick, wyrzucenie, pauza
+
 **Bull-off**:
 Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC.
 _Avoid_: losowanie

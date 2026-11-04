@@ -13,6 +13,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem jest Higher or Lower z opcją „First to”.
 - **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy.
+- **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
 - **Tura** jak w X01: 3 lotki i Takeout. Po trafieniu celu następna lotka w tej samej Turze idzie już w kolejny cel.
 - **Nagłówek** Ekranu wyników pokazuje grę i jej opcje, np. „ATC · Doubles · Clockwise”.
