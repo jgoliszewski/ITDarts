@@ -107,13 +107,13 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 
 Z grillingu 2026-11-04. Pojęcia: Wycofanie z meczu i Wycofanie z legu ([GLOSSARY.md](../GLOSSARY.md)).
 
-- **Gdzie:** tylko Pilot. Stuknięcie w wiersz gracza (lista na telefonie, lista na Ekranie wyników, gdy Pilotem jest laptop) otwiera arkusz z imieniem. W X01 są w nim „Remove from leg” i czerwony „Remove from match”, w minigierkach sam „Remove player”. Każdy przycisk pyta o potwierdzenie („Remove Ann from the match?”). Kto nie jest Pilotem, nic po stuknięciu nie dostaje.
+- **Gdzie:** tylko Pilot. Stuknięcie w wiersz gracza (lista na telefonie, lista na Ekranie wyników, gdy Pilotem jest laptop) otwiera okno na środku ekranu z imieniem (także na telefonie, decyzja z review 2026-11-04). W X01 są w nim „Remove from leg” i czerwony „Remove from match”, w minigierkach sam „Remove player”. Każdy przycisk pyta o potwierdzenie („Remove Ann from the match?”). Kto nie jest Pilotem, nic po stuknięciu nie dostaje.
 - **Kiedy nie:** w trakcie bull-offu, i gdy w meczu (albo w legu) grałoby już tylko dwóch: wtedy jest „End match”, bez walkowera.
-- **Wycofany z meczu:** zostaje na liście wyszarzony z „Left” i swoim wynikiem do tej chwili, kolejka go pomija do końca meczu, także w następnych legach i setach X01. Usunięty w trakcie swojej Tury kończy ją rzuconymi lotkami, gra idzie do następnego.
+- **Wycofany z meczu:** zostaje na liście wyszarzony z „Left” i swoim wynikiem do tej chwili, kolejka go pomija do końca meczu, także w następnych legach i setach X01. Usunięty w trakcie swojej Tury kończy ją rzuconymi lotkami, gra idzie do następnego. Brakujących lotek nie dopisuje się jako pudła, więc średnia liczy tylko rzucone (decyzja z review 2026-11-04).
 - **Wycofany z legu (X01):** wyszarzony z „Back next leg” do końca legu, leg liczy mu się jak przegrany. W następnym legu wraca na swoje miejsce w kolejności, także jako zaczynający, gdy wypada jego kolej.
 - **Gry:** Killer, Knockout i Higher or Lower traktują wycofanego jak wyeliminowanego (z „Left” zamiast „Out”, bez Momentu), w Killerze jego numeru nikt już nie trafia, a runda Knockout w toku kończy się bez niego. W Cricketcie jego zamknięcia przestają blokować punkty, jego punkty zostają zamrożone. W Football piłka, którą miał, jest wolna. W Co-op drużyna gra dalej bez niego. W pozostałych grach jest po prostu pomijany.
 - **Undo** cofa wycofanie, gdy to ostatnie zdarzenie. Wycofanie nie odpala Momentu, dźwięku ani ledów.
-- **Statystyki:** lotki wycofanego z meczu liczą się do średnich i rekordów, ale mecz nie liczy mu się jako rozegrany, wygrany ani przegrany. W podsumowaniu stoi na końcu, wyszarzony z „Left”, bez miejsca. Rematch startuje bez niego. Wycofany z legu jest w meczu normalnie.
+- **Statystyki:** lotki wycofanego z meczu liczą się do średnich i rekordów z Tur (X01), a jego wynik niedokończonej minigierki nie trafia do rekordów, ale mecz nie liczy mu się jako rozegrany, wygrany ani przegrany. W podsumowaniu stoi na końcu, wyszarzony z „Left”, bez miejsca. Rematch startuje bez niego. Wycofany z legu jest w meczu normalnie.
 
 ## Start i koniec meczu
 
