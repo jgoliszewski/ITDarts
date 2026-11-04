@@ -169,10 +169,10 @@ describe('121', () => {
   it('counts a co-op attempt and its checkout for everyone who threw in it', () => {
     const log = [
       ...visit('T20'), ...visit('T17', 'D5'), // 121 out together
-      ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), // 122 failed together
-      ...visit('T20', 'T20', 'D1'), // 122 out by the second player alone
+      ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), ...visit('S1', 'S1', 'S1'), // 122 failed together, started by the second player
+      ...visit('T20', 'T20', 'D1'), // 122 out by the first player alone, whose turn it is to start
     ];
-    expect(oneTwentyOne.view(log, 2, o).stats).toEqual([{ attempts: 2, checkouts: 1 }, { attempts: 3, checkouts: 2 }]);
+    expect(oneTwentyOne.view(log, 2, o).stats).toEqual([{ attempts: 3, checkouts: 2 }, { attempts: 2, checkouts: 1 }]);
   });
 });
 

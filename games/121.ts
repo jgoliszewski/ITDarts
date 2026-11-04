@@ -4,7 +4,7 @@ import type { Change, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import { scoreDart } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, ON_OFF, compactTurns, frame, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, ON_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextIn, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface O121 {
   visits: 3 | 4;
@@ -33,6 +33,8 @@ const RULE = { checkIn: 'straight', checkOut: 'double' } as const;
 function play(t: Turns, players: number, o: O121): State {
   let target = START_TARGET, remaining = target, lives = LIVES, used = 0, best: number | null = null;
   let over = false, left = 3, visitStart = remaining;
+  /** Who threw the first visit of the latest attempt. */
+  let starter: number | null = null;
   const attempts = Array(players).fill(0), checkouts = Array(players).fill(0);
   /** In Co-op an attempt and its checkout count for everyone who threw in it. */
   const inAttempt = new Set<number>();
@@ -48,6 +50,7 @@ function play(t: Turns, players: number, o: O121): State {
   /** What the screen keeps until the takeout, while the finished visit is still open. */
   let held: Pick<State, 'target' | 'remaining' | 'lives' | 'attemptLeft'> | null = null;
   for (const [vi, v] of t.visits.entries()) {
+    if (used === 0) starter = v.player;
     const start = (visitStart = remaining);
     let bust = false, out = false;
     const lastVisit = used + 1 >= o.visits;
@@ -93,7 +96,9 @@ function play(t: Turns, players: number, o: O121): State {
   }
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = open ? open.player : nextUp(t);
+  // In Co-op attempts start with the players in turn; inside one the visits go round as usual (docs/GRY.md#121).
+  const fresh = used === 0 && starter !== null;
+  const current = open ? open.player : fresh ? nextIn(starter!, t.order ?? [0], q => isGone(t, q)) : nextUp(t);
   const dartsLeft = over ? 0 : open ? left : 3;
   const usedNow = open && left > 0 ? open.darts.length : 0;
   const shown = held && !over ? held : { target, remaining, lives, attemptLeft: (o.visits - used) * 3 - usedNow };
