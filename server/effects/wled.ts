@@ -51,8 +51,16 @@ export class Wled {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!r.ok) throw new Error(`WLED answered ${r.status}`);
+      const text = await r.text();
+      let json: unknown;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        // Something else answers at this address (a router page, a captive portal, the wrong device).
+        throw new Error(`${addr} answers with a web page, not WLED: check the address`);
+      }
       this.error = null;
-      return await r.json();
+      return json;
     } catch (e) {
       const text = e instanceof Error && e.name === 'TimeoutError' ? `WLED at ${addr} did not answer` : e instanceof Error ? e.message : String(e);
       this.error = { text, at: Date.now() };
