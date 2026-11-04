@@ -133,7 +133,16 @@ export class Hub {
       }
       this.broadcast();
     });
-    board.on('throw', (dart, coords) => {
+    // Board events come from the Board Manager socket: an error in the match must not escape and take the server down.
+    const safe = <A extends unknown[]>(what: string, f: (...a: A) => void) => (...a: A) => {
+      try {
+        f(...a);
+      } catch (e) {
+        console.error(`Board ${what} failed`, e);
+        this.broadcast();
+      }
+    };
+    board.on('throw', safe('throw', (dart, coords) => {
       const v = this.live?.view;
       if (!v || this.bullOut || this.boardTest) return;
       if (v.phase === 'bulloff') {
@@ -143,13 +152,13 @@ export class Hub {
       }
       if (v.phase !== 'throwing' || v.visit.dartsLeft === 0) return;
       this.apply({ t: 'dart', dart, coords, at: Date.now() });
-    });
+    }));
     board.on('takeoutStarted', () => {
       this.broadcast();
       if (this.boardTest) return;
       this.hubFx({ kind: 'takeoutStart' });
     });
-    board.on('takeoutFinished', () => {
+    board.on('takeoutFinished', safe('takeout', () => {
       if (this.boardTest) return this.broadcast();
       this.hubFx({ kind: 'takeoutEnd' });
       if (this.bullOut) {
@@ -163,7 +172,7 @@ export class Hub {
       if (v && ((v.phase === 'throwing' && v.visit.darts.length > 0) || nextLeg)) {
         this.apply({ t: 'next', at: Date.now() });
       } else this.broadcast();
-    });
+    }));
   }
 
   // ---------- connections ----------
@@ -273,11 +282,17 @@ export class Hub {
     const l = this.live;
     if (!l) throw new UserError('No match in progress');
     if (!GAMES[l.rec.game].isValidEvent(e)) throw new UserError('Invalid input');
-    l.rec.events.push(e);
-    this.db.appendLive(e);
     const before = l.view.phase;
     const dartsBefore = 'visit' in l.view ? l.view.visit.darts.length : 0;
-    l.view = this.compute(l.rec);
+    l.rec.events.push(e);
+    // The view first: an event the match can't compute stays out of the log, so the screen and the log agree.
+    try {
+      l.view = this.compute(l.rec);
+    } catch (err) {
+      l.rec.events.pop();
+      throw err;
+    }
+    this.db.appendLive(e);
     // The visit went to the next player, or the next leg started: not the end of the match.
     const passed = (e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing';
     if (passed) l.turnPass++;

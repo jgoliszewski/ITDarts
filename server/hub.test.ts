@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseDart } from '../games/darts.ts';
+import { GAMES } from '../games/index.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import { Db } from './db.ts';
@@ -16,6 +17,7 @@ let dir: string;
 let db: Db;
 let hub: Hub;
 let fire: ReturnType<typeof vi.fn>;
+let board: EventEmitter;
 
 /** A browser on the socket: sends commands and waits for their results. */
 function client(isLocal: boolean) {
@@ -43,7 +45,7 @@ const remove = (player: number): Command => ({ type: 'remove', player, scope: 'm
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'itdarts-hub-'));
   db = new Db(dir);
-  const board = Object.assign(new EventEmitter(), {
+  board = Object.assign(new EventEmitter(), {
     status: { connected: true, takeout: { active: false, since: null } },
     prepare: async () => undefined, action: async () => undefined, takeoutDone: async () => undefined,
   });
@@ -88,5 +90,24 @@ describe('the remove command', () => {
     expect(await pilot(remove(0))).toMatchObject({ ok: true });
     expect(fire).toHaveBeenCalled();
     expect(fire.mock.calls.flatMap(c => c[0])).toEqual([]);
+  });
+});
+
+describe('a dart from the board', () => {
+  it('cannot take the server down when the match view fails to compute; the error is logged', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'off' }, roster: roster(2) });
+    const failing = vi.spyOn(GAMES.atc, 'view').mockImplementationOnce(() => {
+      throw new Error('view failed');
+    });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(() => board.emit('throw', parseDart('S1'), undefined)).not.toThrow();
+    expect(logged).toHaveBeenCalled();
+    failing.mockRestore();
+    logged.mockRestore();
+    // The dart that failed is not in the log; the next one goes in.
+    expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(0);
+    board.emit('throw', parseDart('S2'), undefined);
+    expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(1);
   });
 });

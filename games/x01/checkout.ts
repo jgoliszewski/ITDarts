@@ -87,6 +87,14 @@ function table(rule: CheckOut, upTo: number): Table {
   const low = lowestFinish(rule);
   // Per aim: points and whether that landing finishes, flattened for speed.
   const landings = SPREADS.map(sp => sp.map(([d, p]) => ({ v: value(d), out: finishesLeg(d, rule), p })));
+  // Advice never aims at a bust: the aimed dart, if it hits, must leave a finishable score or finish. With a bust
+  // allowed, going back to a nicer start could look best (3 left from 4: T19 to bust back to D2), and `hint`, which
+  // walks the aims as if they hit, stepped past the bust into a state with no aim and crashed.
+  const aimed = AIMS.map(d => ({ v: value(d), out: finishesLeg(d, rule) }));
+  const busts = (i: number, rr: number) => {
+    const left = rr - aimed[i].v;
+    return left === 0 ? !aimed[i].out : left < low;
+  };
 
   // Expected darts are kept as a + b·x, where x is the (unknown) value of a fresh visit at the start score.
   const A = [0, 1, 2, 3].map(() => new Float64Array(upTo + 1));
@@ -102,6 +110,7 @@ function table(rule: CheckOut, upTo: number): Table {
         for (let rr = lowest; rr <= r; rr++) {
           let best = Infinity;
           for (let i = 0; i < landings.length; i++) {
+            if (busts(i, rr)) continue;
             let a = 1, b = 0;
             for (const { v, out, p } of landings[i]) {
               const left = rr - v;
@@ -187,7 +196,10 @@ export function hint(remaining: number, dartsLeft: number, rule: CheckOut, score
   const darts: Dart[] = [];
   let r = remaining;
   for (let k = dartsLeft; k >= 1; k--) {
-    const d = AIMS[t.aim.get(key(r, k, start <= BUST_REACH || r === start ? start : 0))!];
+    const i = t.aim.get(key(r, k, start <= BUST_REACH || r === start ? start : 0));
+    // Safety net: the table covers every state the aims lead to; a gap gives the darts so far, not a crash.
+    if (i === undefined) return darts.length ? { darts, finish: false } : null;
+    const d = AIMS[i];
     darts.push(d);
     r -= value(d);
     if (r === 0) return { darts, finish: true };
