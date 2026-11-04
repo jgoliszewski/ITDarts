@@ -147,8 +147,8 @@ export function initialRaw(o: X01Options, players: number): Raw {
 
 /** How player `p` is out of leg `li` (docs/UI.md#wycofanie-gracza): for the match from that leg on, or for that leg only. */
 export function removedIn(raw: Raw, li: number, p: number): Removed {
-  const r = raw.removed.find(x => x.player === p && (x.scope === 'match' ? x.at <= li : x.at === li));
-  return r?.scope ?? null;
+  const mine = raw.removed.filter(x => x.player === p);
+  return mine.some(x => x.scope === 'match' && x.at <= li) ? 'match' : mine.some(x => x.scope === 'leg' && x.at === li) ? 'leg' : null;
 }
 
 /** Next in the playing order after `p`, skipping those removed from leg `li`. */
@@ -236,7 +236,8 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
   switch (e.t) {
     case 'remove': {
       const li = raw.legs.length - 1;
-      if (e.player < 0 || e.player >= players || removedIn(raw, li, e.player) || t.matchWinner !== null) return;
+      const already = removedIn(raw, li, e.player);
+      if (e.player < 0 || e.player >= players || already === 'match' || (already && e.scope === 'leg') || t.matchWinner !== null) return;
       if (e.scope === 'leg' && cur.winner !== null) return;
       // Removed during their own visit: it ends with the darts thrown, like Next player.
       const closed = !!open && open.player === e.player && cur.winner === null;

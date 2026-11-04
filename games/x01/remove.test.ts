@@ -60,6 +60,12 @@ describe('removed from the leg', () => {
     expect(v.current).toBe(1);
   });
 
+  it('can still remove from the match a player who sits out the leg', () => {
+    const v = run([...visit('M'), out(1, 'leg'), out(1)], 4);
+    expect(v.removed).toEqual([null, 'match', null, null]);
+    expect(run([...visit('M'), out(1, 'leg'), out(1), undo], 4).removed).toEqual([null, 'leg', null, null]);
+  });
+
   it('skips a removed starter in his leg', () => {
     const v = run([out(0, 'leg')]);
     expect(v.current).toBe(1);
