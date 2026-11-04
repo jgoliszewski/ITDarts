@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, cutShort, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -55,8 +55,9 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
       winner = p;
       continue;
     }
-    // At the end of the visit, a changed score sends every rival on the same score back to zero.
-    if (!bust && totals[p] !== start) {
+    // At the end of the visit, a changed score sends every rival on the same score back to zero. A visit cut short by
+    // the thrower's removal keeps its points but sends no one back (docs/UI.md#wycofanie-gracza).
+    if (!bust && totals[p] !== start && !cutShort(t, vi)) {
       zeroed = totals.map((x, q) => (q !== p && x === totals[p] && !isGone(t, q, vi) ? q : -1)).filter(q => q >= 0);
       for (const q of zeroed) totals[q] = 0;
       gotchas[p] += zeroed.length;

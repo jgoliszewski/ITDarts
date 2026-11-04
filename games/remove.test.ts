@@ -160,6 +160,15 @@ describe('gotcha', () => {
     expect(play('gotcha', [...visit('S20'), ...visit('S20')]).totals).toEqual([0, 20, 0]);
     expect(play('gotcha', log).totals).toEqual([20, 20, 0]);
   });
+
+  it('does not let a visit cut short by removal send a rival back to zero', () => {
+    // Ola is on 15, Kuba on 20; Ola's S5 makes 20 and she is removed before the visit ends.
+    const before = [...visit('S20'), ...visit('S15'), ...visit('S1'), ...visit(), d('S5')];
+    expect(play('gotcha', [...before, next]).totals).toEqual([0, 20, 1]);
+    const v = play('gotcha', [...before, remove(1)]);
+    expect(v.totals).toEqual([20, 20, 1]);
+    expect(v.zeroed).toEqual([]);
+  });
 });
 
 describe('knockout', () => {
