@@ -33,7 +33,7 @@ export function RemoveDialog({ m, player, onClose }: { m: LiveMatch; player: num
   const canLeg = x01 && !why('leg');
   const canMatch = !why('match');
   return (
-    <Dialog title={name} onClose={onClose} actions={<>
+    <Dialog title={name} className="one-row" onClose={onClose} actions={<>
       <button className="btn" onClick={onClose}>Cancel</button>
       {canLeg && <button className="btn" onClick={() => setScope('leg')}>Remove from leg</button>}
       {canMatch && <button className="btn danger" onClick={() => setScope('match')}>{x01 ? 'Remove from match' : 'Remove player'}</button>}

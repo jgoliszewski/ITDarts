@@ -117,7 +117,7 @@ export async function act(cmd: Command): Promise<Result> {
 
 // ---------- dialog ----------
 
-export function Dialog({ title, children, actions, onClose }: { title: string; children?: ReactNode; actions: ReactNode; onClose: () => void }) {
+export function Dialog({ title, children, actions, onClose, className = '' }: { title: string; children?: ReactNode; actions: ReactNode; onClose: () => void; className?: string }) {
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     addEventListener('keydown', k);
@@ -126,7 +126,7 @@ export function Dialog({ title, children, actions, onClose }: { title: string; c
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={title}>
+      <div className={`dialog ${className}`.trim()} role="dialog" aria-modal="true" aria-label={title}>
         <h2>{title}</h2>
         {children}
         <div className="actions">{actions}</div>
