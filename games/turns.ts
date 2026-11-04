@@ -37,6 +37,8 @@ export interface Removal {
   at: number;
   /** It ended the player's open visit, so its undo reopens it. */
   closed: boolean;
+  /** That visit still took darts: it was cut short, with only the darts thrown. */
+  cut: boolean;
   /** State right after it; an undo while the state is still this takes the removal back. */
   mark: string;
 }
@@ -145,6 +147,9 @@ const mark = (t: Turns) => {
 /** Removed from the match before visit `vi` (by now when it is left out). */
 export const isGone = (t: Turns, p: number, vi = Infinity) => t.removed.some(r => r.player === p && r.at <= vi);
 
+/** Visit `vi` was cut short by its thrower's removal: games with rounds leave it out of the round. */
+export const cutShort = (t: Turns, vi: number) => t.removed.some(r => r.cut && r.at === vi + 1);
+
 /** Players whose removal comes right before visit `vi`, for games that keep rounds. */
 export const goneAt = (t: Turns, vi: number) => t.removed.filter(r => r.at === vi).map(r => r.player);
 
@@ -191,10 +196,11 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
     switch (e.t) {
       case 'remove': {
         if (e.player < 0 || e.player >= players || isGone(t, e.player) || play(t).over) break;
-        // Removed during their own visit: the visit ends with the darts thrown, like Next player.
+        // Removed during their own visit: it ends with the darts thrown, no misses filled in.
         const closed = !!open && open.player === e.player;
-        if (closed) closeVisit(open, play(t), undefined);
-        t.removed.push({ player: e.player, scope: 'match', at: t.visits.length, closed, mark: mark(t) });
+        const cut = closed && play(t).dartsLeft > 0;
+        if (closed) open.closed = true;
+        t.removed.push({ player: e.player, scope: 'match', at: t.visits.length, closed, cut, mark: mark(t) });
         break;
       }
       case 'dart': {

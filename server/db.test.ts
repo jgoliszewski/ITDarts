@@ -7,6 +7,7 @@ import type { X01Event, X01Options } from '../games/x01/index.ts';
 import { atc } from '../games/race.ts';
 import { x01 } from '../games/x01/index.ts';
 import { Db } from './db.ts';
+import { rematchSetup } from './hub.ts';
 import type { RosterEntry } from './protocol.ts';
 import { Stats } from './stats.ts';
 
@@ -122,10 +123,11 @@ describe('a player removed from the match', () => {
     saveRemoved(roster);
     const stats = new Stats(db);
     const c = stats.player(roster[2].playerId, 'all')!;
-    expect(c.x01.darts).toBe(3);
-    expect(c.x01.avg).toBe(60);
+    expect(c.x01.darts).toBe(1);
+    expect(c.x01.avg).toBe(180);
     expect(c.results.played).toBe(0);
     expect(c.recent[0].result).toBe('left');
+    expect(stats.list().map(p => [p.name, p.matches])).toEqual([['Anna', 1], ['Bartek', 1], ['Cezary', 0]]);
     expect(stats.h2h(roster[0].playerId, roster[2].playerId, 'all')!.played).toBe(0);
     expect(stats.h2h(roster[2].playerId, roster[0].playerId, 'all')!.played).toBe(0);
     const a = stats.player(roster[0].playerId, 'all')!;
@@ -135,7 +137,21 @@ describe('a player removed from the match', () => {
 
   it('leaves him out of the rematch', () => {
     saveRemoved(three());
-    expect(db.lastMatchSetup()!.roster.map(r => r.name)).toEqual(['Anna', 'Bartek']);
+    const last = db.lastMatchSetup()!;
+    expect(rematchSetup(last.options as X01Options, last.roster, last.removed)[1].map(r => r.name)).toEqual(['Bartek', 'Anna']);
+  });
+
+  it('gives the rematch from the lobby the order the summary gives, also when the starter left', () => {
+    const roster = three();
+    db.saveMatch({
+      game: 'x01', options: OPTS, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status: 'finished',
+      winners: [1], sets: [0, 0, 0], legs: x01.compact(events, 3, OPTS), removed: [true, false, false],
+    });
+    const last = db.lastMatchSetup()!;
+    const lobby = rematchSetup(last.options as X01Options, last.roster, last.removed)[1].map(r => r.name);
+    const summary = rematchSetup(OPTS, roster, ['match', null, null])[1].map(r => r.name);
+    expect(lobby).toEqual(summary);
+    expect(lobby).toEqual(['Bartek', 'Cezary']);
   });
 });
 
@@ -175,6 +191,17 @@ describe('minigames', () => {
     expect(db.lastMatch()!.players.map(p => p.winner)).toEqual([true, true]);
     expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
     expect(new Stats(db).player(a, 'all')!.recent[0].result).toBe('won');
+  });
+
+  it('leaves a removed player out of the co-op record lineup and marks him in the last match', () => {
+    const a = db.createPlayer('Anna'), b = db.createPlayer('Bob'), c = db.createPlayer('Cy');
+    const roster = [{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }, { playerId: c, name: 'Cy' }];
+    db.saveMatch({
+      game: '121', options: {}, roster, startedAt: 1, endedAt: 2, status: 'finished', winners: [0, 2], sets: [], legs: [],
+      variant: '121:v3:refill:coop', scores: [140, null, 140], removed: [false, true, false],
+    });
+    expect(db.records('121:v3:refill:coop', 'higher')[0].who).toBe('Anna & Cy');
+    expect(db.lastMatch()!.players.map(p => [p.name, p.left])).toEqual([['Anna', false], ['Bob', true], ['Cy', false]]);
   });
 
   it('does not count a minigame as played for a removed player, but keeps his totals', () => {

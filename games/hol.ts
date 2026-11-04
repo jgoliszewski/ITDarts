@@ -4,7 +4,7 @@ import { value } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, cutShort, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface HolOptions {
   firstTo: number;
@@ -49,28 +49,30 @@ function play(t: Turns, players: number, o: HolOptions): State {
   };
   newRound();
 
+  // `w` wins the game; the next one starts with everyone still in the match, unless the match is won.
+  const winGame = (w: number) => {
+    points[w]++;
+    lastGame = { no: game + 1, winner: w };
+    fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
+    if (points[w] >= o.firstTo) {
+      over = true;
+      winner = w;
+      fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
+      return;
+    }
+    game++;
+    fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
+    [lo, hi] = START_RANGE;
+    alive = gone.map(g => !g);
+    newRound();
+  };
   // End of the round. If everyone left failed, the round does not count.
   const endRound = () => {
     const survivors = queue.filter(q => !failed.has(q));
     if (survivors.length === 0) [lo, hi] = roundRange;
     else alive = alive.map((_, q) => survivors.includes(q));
-    if (survivors.length === 1) {
-      const w = survivors[0];
-      points[w]++;
-      lastGame = { no: game + 1, winner: w };
-      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
-      if (points[w] >= o.firstTo) {
-        over = true;
-        winner = w;
-        fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
-        return;
-      }
-      game++;
-      fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
-      [lo, hi] = START_RANGE;
-      alive = gone.map(g => !g);
-    }
-    newRound();
+    if (survivors.length === 1) winGame(survivors[0]);
+    else newRound();
   };
   // A removed player leaves the round in progress like one who failed, but for good (docs/UI.md#wycofanie-gracza).
   const leave = (vi: number) => {
@@ -83,6 +85,8 @@ function play(t: Turns, players: number, o: HolOptions): State {
       queue.splice(i, 1);
       if (i < pos) pos--;
       if (pos > 0 && pos >= queue.length) endRound();
+      // The last one left in the game wins it at once, so a game is never left with nobody in it.
+      if (!over && queue.length === 1) winGame(queue[0]);
     }
   };
 
@@ -101,7 +105,8 @@ function play(t: Turns, players: number, o: HolOptions): State {
     goods.push(w.good);
     left = w.dartsLeft;
     sum = v.darts.length ? total : null;
-    if (!w.complete || over) continue;
+    // A visit cut short by its thrower's removal is not judged: the removal takes him out.
+    if (!w.complete || over || cutShort(t, vi)) continue;
     if (!v.closed) held = [lo, hi];
 
     if (miss || (total >= lo && total <= hi)) {

@@ -6,6 +6,7 @@ import { label } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
 import { GAMES } from '../games/index.ts';
 import type { LegRecord } from '../games/x01/index.ts';
+import type { Removed } from '../games/turns.ts';
 import type { MatchSummary, PlayerInfo, RosterEntry } from './protocol.ts';
 
 // Each entry moves the schema one version up. Never edit a shipped entry; add a new one.
@@ -326,13 +327,19 @@ export class Db {
     });
   }
 
-  lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[] } | null {
+  /** The last match's full roster with who left it; the hub's rematchSetup turns it into the rematch. */
+  lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[]; removed: Removed[] } | null {
     const m = this.sql.prepare('SELECT id, game, options FROM matches ORDER BY ended_at DESC, id DESC LIMIT 1').get() as { id: number; game: GameId; options: string } | undefined;
     if (!m || !(m.game in GAMES)) return null;
-    const roster = (this.sql.prepare(`
-      SELECT mp.player_id AS playerId, COALESCE(p.name, mp.guest_name) AS name FROM match_players mp
-      LEFT JOIN players p ON p.id = mp.player_id WHERE mp.match_id = ? AND mp.removed = 0 ORDER BY mp.position`).all(m.id) as unknown as RosterEntry[]);
-    return { game: m.game, options: JSON.parse(m.options), roster };
+    const rows = this.sql.prepare(`
+      SELECT mp.player_id AS playerId, COALESCE(p.name, mp.guest_name) AS name, mp.removed FROM match_players mp
+      LEFT JOIN players p ON p.id = mp.player_id WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as unknown as (RosterEntry & { removed: number })[];
+    return {
+      game: m.game,
+      options: JSON.parse(m.options),
+      roster: rows.map(({ playerId, name }) => ({ playerId, name })),
+      removed: rows.map(r => (r.removed ? 'match' : null)),
+    };
   }
 
   lastMatch(): MatchSummary | null {
@@ -341,11 +348,11 @@ export class Db {
     if (!m || !(m.game in GAMES)) return null;
     const game = GAMES[m.game];
     const players = this.sql.prepare(`
-      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.won, mp.legs_won, mp.sets_won, mp.score,
+      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.won, mp.legs_won, mp.sets_won, mp.score, mp.removed,
         (SELECT SUM(v.scored) * 3.0 / NULLIF(SUM(v.darts_count), 0) FROM visits v JOIN legs l ON l.id = v.leg_id
           WHERE l.match_id = mp.match_id AND v.player_id = mp.player_id) AS avg
       FROM match_players mp LEFT JOIN players p ON p.id = mp.player_id
-      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; avg: number | null }[];
+      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; removed: number; avg: number | null }[];
     const x01 = m.game === 'x01';
     const sets = players.some(p => p.sets_won > 0);
     const value = (p: (typeof players)[number]) =>
@@ -367,6 +374,7 @@ export class Db {
         value: value(p),
         avg: !x01 || p.avg === null ? null : Math.round(p.avg * 100) / 100,
         winner: !!p.won,
+        left: !!p.removed,
       })),
       checkout: x01 && last ? label(last) : null,
     };
@@ -386,7 +394,7 @@ export class Db {
       return this.sql.prepare(`
         SELECT MAX(mp.score) AS value, m.ended_at AS at,
           (SELECT GROUP_CONCAT(name, ' & ') FROM (SELECT p2.name FROM match_players o JOIN players p2 ON p2.id = o.player_id
-            WHERE o.match_id = m.id ORDER BY o.position)) AS who
+            WHERE o.match_id = m.id AND o.removed = 0 ORDER BY o.position)) AS who
         FROM matches m JOIN match_players mp ON mp.match_id = m.id
         WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
         GROUP BY m.id ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];

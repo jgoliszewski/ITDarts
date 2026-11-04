@@ -2,7 +2,7 @@
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, cutShort, frame, goneAt, isValidTurnEvent, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface ShanghaiOptions {
   rounds: 7 | 20;
@@ -70,7 +70,12 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
       if (i < 0 || over) continue;
       queue.splice(i, 1);
       if (i < pos) pos--;
-      if (pos > 0 && pos >= queue.length) endRound(false);
+      if (pos > 0 && pos >= queue.length) endRound(!(t.visits[vi - 1]?.closed ?? true));
+      // The last one left in a tiebreak wins it at once.
+      if (!over && round > o.rounds && queue.length === 1) {
+        over = true;
+        winner = queue[0];
+      }
     }
   };
 
@@ -96,7 +101,7 @@ function play(t: Turns, players: number, o: ShanghaiOptions): State {
       points[p] += pts;
     }
     left = w.dartsLeft;
-    if (!w.complete || over) continue;
+    if (!w.complete || over || cutShort(t, vi)) continue;
 
     const shanghai = seen.size === 3;
     if (shanghai) {

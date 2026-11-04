@@ -263,7 +263,7 @@ export class Stats {
       SELECT p.id, p.name,
         (SELECT SUM(v.scored) * 3.0 / NULLIF(SUM(v.darts_count), 0) FROM visits v JOIN legs l ON l.id = v.leg_id JOIN matches m ON m.id = l.match_id
           WHERE v.player_id = p.id AND v.at >= ? AND m.game = 'x01') AS avg,
-        (SELECT COUNT(*) FROM match_players mp WHERE mp.player_id = p.id) AS matches,
+        (SELECT COUNT(*) FROM match_players mp WHERE mp.player_id = p.id AND mp.removed = 0) AS matches,
         (SELECT MAX(m.ended_at) FROM match_players mp JOIN matches m ON m.id = mp.match_id WHERE mp.player_id = p.id) AS lastPlayed
       FROM players p WHERE p.archived = 0 ORDER BY p.name_key`).all(from) as unknown as PlayerListItem[])
       .map(p => ({ ...p, avg: p.avg === null ? null : Math.round(p.avg * 100) / 100 }));

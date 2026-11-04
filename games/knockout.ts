@@ -3,7 +3,7 @@ import type { Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, goneAt, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, cutShort, frame, goneAt, isValidTurnEvent, livesLabel, normalizeByDefs, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface KnockoutOptions {
   bullOff: BullOff;
@@ -91,7 +91,8 @@ function play(t: Turns, players: number): State {
       queue.splice(i, 1);
       if (i < pos) pos--;
       totals[q] = null;
-      if (pos > 0 && pos >= queue.length) endRound(vi - 1, null, true);
+      // The last visit may still wait for the takeout: the round result stays on screen till then.
+      if (pos > 0 && pos >= queue.length) endRound(vi - 1, null, t.visits[vi - 1]?.closed ?? true);
     }
   };
 
@@ -110,12 +111,14 @@ function play(t: Turns, players: number): State {
     if (!w.complete || over) continue;
 
     const p = v.player;
+    points[p] += total;
+    visits[p]++;
+    // A visit cut short by its thrower's removal stays out of the round.
+    if (cutShort(t, vi)) continue;
     // Lowest so far in the round, ties included, is bad news at once; the first visit of a round has nothing to be below.
     const before = lowestOf(totals);
     if (before !== null && total <= before) fx.push({ slot: `V${vi + 1}:lowest`, fact: { kind: 'game', event: 'lowest' } });
     totals[p] = total;
-    points[p] += total;
-    visits[p]++;
     fx.push({ slot: `V${vi + 1}:total`, fact: { kind: 'calledTotal', total } });
     if (++pos >= queue.length) endRound(vi, p, v.closed);
   }

@@ -226,8 +226,8 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
           <div className="box">
             <span className="caps" style={{ fontSize: 13 }}>Last match · {last.description.replace(/^X01 · /, '')}</span>
             {last.players.map((p, i) => (
-              <div key={i} className="option-row">
-                <span style={{ fontWeight: p.winner ? 800 : 500, color: p.winner ? 'var(--text)' : 'var(--muted)' }}>{p.name}</span>
+              <div key={i} className="option-row" style={{ opacity: p.left ? 0.5 : undefined }}>
+                <span style={{ fontWeight: p.winner ? 800 : 500, color: p.winner ? 'var(--text)' : 'var(--muted)' }}>{p.name}{p.left && ' · Left'}</span>
                 <span className="num" style={{ fontSize: 32, color: p.winner ? 'var(--accent)' : 'var(--muted)' }}>{p.value}</span>
               </div>
             ))}
@@ -240,7 +240,7 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
         <button className="btn primary" onClick={onNew}>New match</button>
-        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>Rematch {last.players.map(p => p.name).join(' vs ')}</button>}
+        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>Rematch {last.players.filter(p => !p.left).map(p => p.name).join(' vs ')}</button>}
       </div>
     </div>
   );

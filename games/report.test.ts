@@ -50,6 +50,6 @@ describe('match report', () => {
     expect(r.title).toBe('Bob');
     expect(r.names).toEqual(['Bob', 'Cy', 'Ann']);
     expect(r.left).toEqual([false, false, true]);
-    expect(r.x01!.map(x => x.darts)).toEqual([5, 3, 3]);
+    expect(r.x01!.map(x => x.darts)).toEqual([5, 3, 1]);
   });
 });

@@ -31,6 +31,8 @@ interface VisitRec {
   /** Misses added when the visit was closed with fewer than three darts. */
   filled: number;
   closed: boolean;
+  /** Ended by its thrower's removal: only the darts thrown count (docs/UI.md#wycofanie-gracza). */
+  cut?: boolean;
 }
 
 interface LegRec {
@@ -103,7 +105,7 @@ export function analyzeLeg(leg: LegRec, players: number, o: X01Options): LegResu
     scores[v.player] = remaining;
     checkedIn[v.player] = inn;
     if (checkoutAt >= 0) winner = v.player;
-    const dartsCount = checkoutAt >= 0 ? checkoutAt + 1 : v.closed ? 3 : v.darts.length;
+    const dartsCount = checkoutAt >= 0 ? checkoutAt + 1 : v.closed && !v.cut ? 3 : v.darts.length;
     return { player: v.player, darts: v.darts, start, scored: bust ? 0 : start - remaining, bust, checkoutAt, closed: v.closed, dartsCount, live, left };
   });
   return { set: leg.set, starter: leg.starter, visits, scores, winner };
@@ -206,6 +208,7 @@ function reopenLast(leg: LegRec) {
   const last = leg.visits.at(-1);
   if (!last) return;
   last.closed = false;
+  last.cut = false;
   last.darts.splice(last.darts.length - last.filled);
   last.filled = 0;
   if (last.darts.length === 0) leg.visits.pop();
@@ -239,10 +242,13 @@ export function applyEvent(raw: Raw, e: X01Event, players: number, o: X01Options
       const already = removedIn(raw, li, e.player);
       if (e.player < 0 || e.player >= players || already === 'match' || (already && e.scope === 'leg') || t.matchWinner !== null) return;
       if (e.scope === 'leg' && cur.winner !== null) return;
-      // Removed during their own visit: it ends with the darts thrown, like Next player.
+      // Removed during their own visit: it ends with the darts thrown, no misses filled in.
       const closed = !!open && open.player === e.player && cur.winner === null;
-      if (closed) closeVisit(open!, openResult!.bust, undefined);
-      raw.removed.push({ player: e.player, scope: e.scope, at: li, closed, mark: mark(raw) });
+      if (closed) {
+        open!.closed = true;
+        open!.cut = true;
+      }
+      raw.removed.push({ player: e.player, scope: e.scope, at: li, closed, cut: closed, mark: mark(raw) });
       return;
     }
     case 'start':

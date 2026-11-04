@@ -46,6 +46,19 @@ describe('removed from the match', () => {
     const legs = compact(replay([d('T20'), out(0), ...visit('S1')], 3, o), 3, o);
     expect(legs[0].visits.map(x => [x.player, x.scored])).toEqual([[0, 60], [1, 1]]);
   });
+
+  it('counts only the darts he threw: no misses filled in, so T20 is a 180 average', () => {
+    const o = opts();
+    const raw = replay([d('T20'), out(0)], 3, o);
+    expect(compact(raw, 3, o)[0].visits[0].dartsCount).toBe(1);
+    expect(compact(raw, 3, o)[0].visits[0].darts).toHaveLength(1);
+    expect(view(raw, 3, o).stats[0].matchAvg).toBe(180);
+  });
+
+  it('counts the darts thrown before a bust too, when he is removed after it', () => {
+    const o = opts({ startScore: 50 });
+    expect(compact(replay([d('T20'), out(0)], 3, o), 3, o)[0].visits[0].dartsCount).toBe(1);
+  });
 });
 
 describe('removed from the leg', () => {

@@ -256,3 +256,80 @@ describe('when the Pilot may remove a player', () => {
     expect(removeBlock('atc', play('atc', visit('S1')), 1, 'leg')).toMatch(/X01/);
   });
 });
+
+describe('removed while throwing (no misses filled in)', () => {
+  it('ends the visit with only the darts thrown', () => {
+    // Around the Clock counts darts per player: one thrown, not three.
+    const v = play('atc', [d('S1'), remove(0)]);
+    expect(v.stats[0].darts).toBe(1);
+  });
+
+  it('does not judge a higher or lower visit cut short, so no fake failure', () => {
+    const log = [...visit('T20', 'S1', 'S1'), d('S1'), remove(1)];
+    const v = play('hol', log, 3, { firstTo: 2 });
+    expect([v.lo, v.hi]).toEqual([26, 62]);
+    expect(v.current).toBe(2);
+    const facts = GAMES.hol.happenings(log, 3, { ...GAMES.hol.defaults, firstTo: 2 }).map(h => h.fact);
+    expect(facts.some(f => f.kind === 'game' && f.event === 'eliminated')).toBe(false);
+  });
+
+  it('leaves a knockout visit cut short out of the round: the lowest of the rest loses the life', () => {
+    const v = play('knockout', [...visit('S10'), ...visit('S20'), d('S1'), remove(2)]);
+    expect(v.lives[0]).toBeLessThan(v.lives[1]);
+  });
+
+  it('does not let a shanghai leader removed during the last round win', () => {
+    const rounds = (r: number) => [...visit(`D${r}`), ...visit(`S${r}`), ...visit(`T${r}`)];
+    const v = play('shanghai', [...[1, 2, 3, 4, 5, 6].flatMap(rounds), ...visit('S7'), ...visit('S7'), d('S7'), remove(2)]);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([0]);
+  });
+});
+
+describe('a round in progress keeps its result on screen until the takeout', () => {
+  it('knockout: removing someone else while the last visit waits for the takeout', () => {
+    const v = play('knockout', [...visit('S1'), ...visit('S20'), d('S5'), d('S5'), d('S5'), remove(3)], 4);
+    expect(v.roundTotals).toEqual([1, 20, 15, null]);
+  });
+
+  it('shanghai: the round number stays until the takeout', () => {
+    const v = play('shanghai', [...visit('S1'), ...visit('S1'), d('S1'), d('S1'), d('S1'), remove(3)], 4);
+    expect(v.round).toBe(1);
+  });
+});
+
+describe('the last player left in a round', () => {
+  // Kuba (0) and Ada (2) tie after 7 rounds of Shanghai; Ola (1) and Ela (3) score nothing.
+  const tied = [1, 2, 3, 4, 5, 6, 7].flatMap(r => [...visit(`S${r}`), ...visit(), ...visit(`S${r}`), ...visit()]);
+
+  it('wins the shanghai tiebreak at once when the other one is removed', () => {
+    expect(play('shanghai', tied, 4).tiebreak).toBe(true);
+    const v = play('shanghai', [...tied, remove(0)], 4);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([2]);
+  });
+
+  it('wins the shanghai tiebreak when removed after his rival has thrown', () => {
+    const v = play('shanghai', [...tied, ...visit('S20'), remove(2)], 4);
+    expect(v.winners).toEqual([0]);
+  });
+
+  // Round 1 of Higher or Lower: Kuba above, Ola below, Ada and Ela fail; Kuba and Ola are left in the game.
+  const round1 = [...visit('T20', 'T20', 'T20'), ...visit('S1', 'S1', 'S1'), ...visit(), ...visit()];
+
+  it('wins the higher or lower game at once when the other one still in it is removed', () => {
+    const v = play('hol', [...round1, remove(0)], 4);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([1]);
+  });
+
+  it('starts the next higher or lower game with everyone still in the match, never an empty one', () => {
+    const v = play('hol', [...round1, remove(0)], 4, { firstTo: 2 });
+    expect(v.points).toEqual([0, 1, 0, 0]);
+    expect(v.game).toBe(2);
+    expect(v.rows.map(r => r.out)).toEqual([true, false, false, false]);
+    const w = play('hol', [...round1, remove(0), remove(1)], 4, { firstTo: 2 });
+    expect([2, 3]).toContain(w.current);
+    expect(play('hol', [...round1, remove(0), remove(1), d('S20')], 4, { firstTo: 2 }).visit.player).toBe(w.current);
+  });
+});

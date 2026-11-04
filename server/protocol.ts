@@ -98,8 +98,8 @@ export interface MatchSummary {
   description: string;
   endedAt: number;
   status: 'finished' | 'ended';
-  /** `value` is what the lobby shows big: legs or sets in X01, the result in minigames. */
-  players: { name: string; value: string; avg: number | null; winner: boolean }[];
+  /** `value` is what the lobby shows big: legs or sets in X01, the result in minigames. `left`: removed from the match. */
+  players: { name: string; value: string; avg: number | null; winner: boolean; left: boolean }[];
   checkout: string | null;
 }
 

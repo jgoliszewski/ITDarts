@@ -38,8 +38,8 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
             <div className="card">
               <div className="caps">Last match · {last.description.replace(/^X01 · /, '')}</div>
               {last.players.map((p, i) => (
-                <div key={i} className={`last-row ${p.winner ? 'win' : ''}`}>
-                  <span className="n">{p.name}</span>
+                <div key={i} className={`last-row ${p.winner ? 'win' : ''} ${p.left ? 'left' : ''}`}>
+                  <span className="n">{p.name}{p.left && <small> · Left</small>}</span>
                   <span className="num">{p.value}</span>
                 </div>
               ))}
@@ -54,7 +54,7 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
             <button className="btn primary" onClick={() => takeThen(onNew)}>New match here</button>
             {last && (
               <button className="btn secondary" onClick={() => takeThen(() => act({ type: 'rematch' }))}>
-                Rematch {last.players.map(p => p.name).join(' vs ')}
+                Rematch {last.players.filter(p => !p.left).map(p => p.name).join(' vs ')}
               </button>
             )}
           </div>

@@ -523,7 +523,7 @@ export class Hub {
       case 'rematch': {
         const last = this.db.lastMatchSetup();
         if (!last) throw new UserError('No match to repeat');
-        this.rematch(last.game, last.options, last.roster);
+        this.rematch(last.game, last.options, last.roster, last.removed);
         return {};
       }
       case 'skipIntro':
