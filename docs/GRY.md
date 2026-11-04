@@ -98,6 +98,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - Checkout przed końcem lotek kończy podejście, a reszta lotek przepada.
   - W ostatniej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, np. jedna lotka przy nieparzystej reszcie (od 2026-10-27, ze zgłoszenia).
   - W Co-op lotki podejścia rozkładają się na kolejnych graczy.
+  - W Co-op kolejne podejścia zaczynają gracze na zmianę według kolejności gry (od 2026-11-04, ze zgłoszenia): podejście 1 zaczyna pierwszy, podejście 2 drugi, i tak dalej, z pominięciem wycofanych. Wcześniej następne podejście zaczynał następny po ostatnim rzucającym, więc przy 2 graczach i 4 Turach zawsze zaczynał ten sam.
 - **Sukces:** cel rośnie o 1. **Porażka:** cel zostaje i tracisz życie.
 - **Życia:** zawsze 3. Gra kończy się po utracie ostatniego.
 - **Opcje:**
