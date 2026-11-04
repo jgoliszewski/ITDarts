@@ -82,7 +82,8 @@ const tables = new Map<CheckOut, Table>();
 
 function table(rule: CheckOut, upTo: number): Table {
   let t = tables.get(rule);
-  if (!t) tables.set(rule, (t = { top: 1, fresh: [], open: [[], [], []], aim: new Map() }));
+  // Built from the lowest finishable score up: 1 with single out, 2 otherwise.
+  if (!t) tables.set(rule, (t = { top: lowestFinish(rule) - 1, fresh: [], open: [[], [], []], aim: new Map() }));
   if (upTo <= t.top) return t;
   const low = lowestFinish(rule);
   // Per aim: points and whether that landing finishes, flattened for speed.
@@ -176,6 +177,9 @@ export interface Hint {
   finish: boolean;
 }
 
+/** Table gaps already logged. */
+const gaps = new Set<string>();
+
 const same = (a: Dart, b: Dart) => a.n === b.n && a.m === b.m;
 
 /** Chart route for `remaining` within `dartsLeft`, carrying on the visit's planned route while its darts hit. */
@@ -197,8 +201,16 @@ export function hint(remaining: number, dartsLeft: number, rule: CheckOut, score
   let r = remaining;
   for (let k = dartsLeft; k >= 1; k--) {
     const i = t.aim.get(key(r, k, start <= BUST_REACH || r === start ? start : 0));
-    // Safety net: the table covers every state the aims lead to; a gap gives the darts so far, not a crash.
-    if (i === undefined) return darts.length ? { darts, finish: false } : null;
+    // Safety net: the table covers every state the aims lead to; a gap gives the darts so far, not a crash,
+    // and says so once in the log so it does not pass silently.
+    if (i === undefined) {
+      const gap = `${rule} ${r} left, ${k} darts, visit from ${start}`;
+      if (!gaps.has(gap)) {
+        gaps.add(gap);
+        console.warn(`Checkout hint: no aim in the table for ${gap}`);
+      }
+      return darts.length ? { darts, finish: false } : null;
+    }
     const d = AIMS[i];
     darts.push(d);
     r -= value(d);

@@ -32,7 +32,7 @@ const checksOut = (line: string | null, remaining: number) => {
 
 describe('checkout hint', () => {
   for (const rule of ['double', 'single', 'master'] as CheckOut[]) {
-    it(`gives a sound hint in every reachable spot of a visit up to 170 (${rule} out)`, () => {
+    it(`gives a sound hint in every reachable spot of a visit up to 170, down to the last point (${rule} out)`, () => {
       const low = lowestFinish(rule);
       const bad: string[] = [];
       for (let start = low; start <= 170; start++) {
@@ -45,7 +45,7 @@ describe('checkout hint', () => {
             const remaining = start - scored;
             try {
               const h = hint(remaining, 3 - thrown.length, rule, scored, thrown);
-              const why = h && wrong(h, remaining, rule);
+              const why = h ? wrong(h, remaining, rule) : 'no hint for a finishable score';
               if (why) bad.push(`${start} after ${label(thrown)}: ${why}`);
             } catch (e) {
               bad.push(`${start} after ${label(thrown)}: ${(e as Error).message}`);
@@ -65,6 +65,11 @@ describe('checkout hint', () => {
       expect(wrong(h!, start - value(d), 'double')).toBeNull();
     }
     expect(hint(7, 2, 'double', 1, [D('S1')])?.finish).toBe(true);
+  });
+
+  it('shows S1 at 1 point with single out', () => {
+    expect(hint(1, 3, 'single')).toEqual({ darts: [D('S1')], finish: true });
+    expect(hint(1, 1, 'single', 4, [D('S4')])).toEqual({ darts: [D('S1')], finish: true });
   });
 });
 

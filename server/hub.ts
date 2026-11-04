@@ -284,12 +284,18 @@ export class Hub {
     if (!GAMES[l.rec.game].isValidEvent(e)) throw new UserError('Invalid input');
     const before = l.view.phase;
     const dartsBefore = 'visit' in l.view ? l.view.visit.darts.length : 0;
+    const oldView = l.view;
     l.rec.events.push(e);
-    // The view first: an event the match can't compute stays out of the log, so the screen and the log agree.
+    // Everything the event changes is computed first: an event the match can't compute stays out of the log
+    // and the database, with the view as it was and no effects, so the screen and the log agree.
+    let newRecord: Live['newRecord'], happenings: Happening[];
     try {
       l.view = this.compute(l.rec);
+      newRecord = this.newRecords(l);
+      happenings = GAMES[l.rec.game].happenings(l.rec.events, l.rec.roster.length, l.rec.options);
     } catch (err) {
       l.rec.events.pop();
+      l.view = oldView;
       throw err;
     }
     this.db.appendLive(e);
@@ -297,14 +303,13 @@ export class Hub {
     const passed = (e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing';
     if (passed) l.turnPass++;
     const hadRecord = !!l.newRecord;
-    l.newRecord = this.newRecords(l);
+    l.newRecord = newRecord;
     if (e.t !== 'fix') l.lastFix = null;
     // The first dart closes the record screen and “How to play”.
     if (e.t === 'dart' || e.t === 'bull') {
       this.endIntro();
       this.howTo = null;
     }
-    const happenings = GAMES[l.rec.game].happenings(l.rec.events, l.rec.roster.length, l.rec.options);
     // A removal is silent: no Moment, sound or LEDs, even when it ends a round (docs/UI.md#wycofanie-gracza).
     const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' || e.t === 'remove' ? 'undo' : 'other');
     l.happenings = happenings;

@@ -110,4 +110,22 @@ describe('a dart from the board', () => {
     board.emit('throw', parseDart('S2'), undefined);
     expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(1);
   });
+
+  it('keeps the dart out of the log, the view and the effects when its effects fail to compute', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'off' }, roster: roster(2) });
+    const failing = vi.spyOn(GAMES.atc, 'happenings').mockImplementationOnce(() => {
+      throw new Error('happenings failed');
+    });
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    fire.mockClear();
+    board.emit('throw', parseDart('S1'), undefined);
+    failing.mockRestore();
+    logged.mockRestore();
+    expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(0);
+    expect(fire).not.toHaveBeenCalled();
+    // The next dart goes in as usual.
+    board.emit('throw', parseDart('S2'), undefined);
+    expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(1);
+  });
 });
