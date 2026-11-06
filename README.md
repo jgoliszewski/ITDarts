@@ -7,7 +7,7 @@ Biurowy system do gry w darta na tarczy Autodarts: zasady gier, stan meczu, wyni
 Wymaga Node 24 LTS.
 
 1. Skopiuj `config.example.json` do `config.json` i wpisz adres Board Managera (`board`).
-2. Uruchom `start.bat`. Przy pierwszym starcie zainstaluje zależności, potem zbuduje front, uruchomi serwer na porcie 3000 i otworzy Edge w trybie kiosku.
+2. Uruchom `start.bat`. Najpierw próbuje pobrać najnowsze zmiany (`git pull --ff-only`), a gdy się nie uda, startuje obecną wersję. Przy pierwszym starcie zainstaluje zależności, potem zbuduje front, uruchomi serwer na porcie 3000 i otworzy Edge w trybie kiosku.
 3. Telefon w tej samej sieci skanuje QR z ekranu i przejmuje Pilota.
 
 „Close app” w menu Pilota zamyka kiosk i serwer. Dane (SQLite, backupy) lądują w `data/`.
