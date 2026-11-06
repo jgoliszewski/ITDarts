@@ -10,7 +10,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 
 ## Wspólne zasady
 
-- **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem jest Higher or Lower z opcją „First to”.
+- **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem są Higher or Lower i Gotcha z opcją „First to”.
 - **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy.
 - **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
@@ -195,13 +195,14 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 
 - **Cel:** dojść dokładnie do celu, od 0 w górę. Opcja „Target”: 101, 201 (domyślnie) albo 301. Bez wymogu double.
 - **Bust** jak w X01: przekroczenie celu cofa wynik do stanu sprzed Tury i kończy Turę.
-- **Wygrana:** kto pierwszy trafi dokładnie w cel, wygrywa od razu, także w środku Tury.
+- **Wygrana gry:** kto pierwszy trafi dokładnie w cel, wygrywa grę od razu, także w środku Tury.
+- **Opcja „First to”** (od 2026-11-06) 1–5, domyślnie 1 (jedna gra jak dotąd), tak samo jak w Higher or Lower. Wygrana gra daje punkt. Dopóki nikt nie ma N punktów, kolejna gra startuje z wynikami 0 i tym samym celem, a zaczyna następny gracz w kolejności (jak w Higher or Lower). Do takeoutu Tury, która wygrała grę, ekran trzyma wyniki tej gry i kartę „Game won”. Mecz wygrywa, kto pierwszy zdobędzie N punktów. Nagłówek np. „Gotcha · 201 · First to 3” (przy 1 bez dopisku).
 - **Gotcha:** na koniec Tury, jeśli wynik gracza się zmienił, każdy rywal z takim samym wynikiem spada do 0. Bust nikogo nie zeruje, bo wynik wraca do stanu sprzed Tury.
 - **Gracze:** 2–8.
-- **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki. Po karcie Tury notka w hero pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany (od 2026-11-01 już nie na samej karcie). Nagłówek np. „Gotcha · 201”.
+- **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki, a przy „First to” > 1 w drugiej linii też punkty („Left 81 · 1 point”); notka w hero zaczyna się wtedy od „Game 2”. Po karcie Tury notka w hero pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany (od 2026-11-01 już nie na samej karcie). Nagłówek np. „Gotcha · 201”.
 - **Caller** podaje wynik Tury jak w X01, bez „you require” i bez „game shot”.
-- **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won”. Bez „Hit” i „Miss”.
-- **Statystyki:** wygrane i liczba Gotcha (ile razy gracz kogoś wyzerował). Bez rekordu.
+- **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won” (po każdej grze poza ostatnią, przy „First to” > 1) i „Match won”. Bez „Hit” i „Miss”.
+- **Statystyki:** wygrane (mecze) i liczba Gotcha (ile razy gracz kogoś wyzerował, we wszystkich grach meczu). Punkty nie są zapisywane osobno, jak w Higher or Lower. Bez rekordu.
 
 ## Knockout
 

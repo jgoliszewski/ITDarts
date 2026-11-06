@@ -201,3 +201,76 @@ describe('gotcha view and caller', () => {
     expect(legs[0].winner).toBe(0);
   });
 });
+
+describe('gotcha first to', () => {
+  const o2 = { ...o101, firstTo: 2 };
+  // Bull + T17 = 101: player 0 wins game 1 with the second dart.
+  const p0wins = [d('Bull'), d('T17')];
+  const game1 = [...p0wins, next]; // closed winning visit
+  const win1 = (log: TurnEvent[], o = o2) => gotcha.view(log, 2, o);
+
+  it('defaults to 1 and keeps today\'s behaviour: match won at once, no game fx', () => {
+    expect(gotcha.defaults.firstTo).toBe(1);
+    const v = gotcha.view(p0wins, 2, o101);
+    expect(v.phase).toBe('matchWon');
+    expect(v.rows[0].meta).toBe('Left 0');
+    expect(gotcha.happenings(p0wins, 2, o101).map(h => h.slot)).not.toContain('G1:won');
+    expect(gotcha.describe(o101, 2)).toBe('Gotcha · 101');
+    expect(gotcha.describe(o2, 2)).toBe('Gotcha · 101 · First to 2');
+  });
+
+  it('loads old options without firstTo and rejects out-of-range values', () => {
+    expect(gotcha.normalizeOptions({ target: 301, bullOff: 'off' }).firstTo).toBe(1);
+    expect(gotcha.normalizeOptions({ firstTo: 3 }).firstTo).toBe(3);
+    expect(gotcha.normalizeOptions({ firstTo: 9 }).firstTo).toBe(1);
+  });
+
+  it('a game win gives a point, holds the scores until the takeout, then resets', () => {
+    const held = win1(p0wins);
+    expect(held.phase).toBe('throwing');
+    expect(held.totals).toEqual([101, 0]);
+    expect(held.points).toEqual([1, 0]);
+    expect(held.visit.verdict).toEqual({ text: 'Game won', tone: 'good' });
+    expect(held.rows[0].meta).toBe('Left 0 · 1 point');
+    const after = win1(game1);
+    expect(after.totals).toEqual([0, 0]);
+    expect(after.game).toBe(2);
+    expect(after.visit.verdict).toBeNull();
+    expect(after.rows[1].meta).toBe('Left 101 · 0 points');
+    expect(after.winners).toEqual([]);
+  });
+
+  it('the next game starts with the next player in order, then rotates back', () => {
+    expect(win1(game1).current).toBe(1);
+    // Game 2 (starter 1): player 1 wins it; points 1-1; game 3 starts with player 0 again.
+    const game2 = [d('Bull'), d('T17'), next];
+    const v = gotcha.view([...game1, ...game2], 2, { ...o2, firstTo: 3 });
+    expect(v.points).toEqual([1, 1]);
+    expect(v.current).toBe(0);
+  });
+
+  it('the second win takes the match, with Game won then Match won in order', () => {
+    // Game 2 starts with player 1.
+    const g2 = [...game1, d('S1'), next, d('Bull'), d('T17')]; // p1 scores 1, p0 hits 101 again
+    const v = gotcha.view(g2, 2, o2);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([0]);
+    expect(v.result).toBe('Points 2–0');
+    const slots = gotcha.happenings(g2, 2, o2).map(h => h.slot);
+    expect(slots.indexOf('G1:won')).toBeLessThan(slots.indexOf('G2:start'));
+    expect(slots.indexOf('G2:start')).toBeLessThan(slots.indexOf('match:won'));
+    expect(slots.filter(s => s === 'G2:won')).toEqual([]);
+  });
+
+  it('gotcha and bust still work in game 2, and an undo takes the game win back', () => {
+    // Game 2 starts with player 1: p1 60, p0 lands on 60 -> p1 zeroed; then p1 busts.
+    const g2 = [...game1, ...visit('T20'), d('T20'), d('Miss'), d('Miss')];
+    expect(gotcha.view(g2, 2, o2).totals).toEqual([60, 0]);
+    expect(gotcha.view(g2, 2, o2).stats[0]).toEqual({ gotchas: 1 });
+    const bust = gotcha.view([...g2, next, d('T20'), d('T20')], 2, o2); // p1 on 0: 120 > 101
+    expect(bust.totals).toEqual([60, 0]);
+    expect(bust.visit.verdict).toEqual({ text: 'Bust', tone: 'bad' });
+    expect(win1([...game1, { t: 'undo' }]).totals).toEqual([101, 0]);
+    expect(win1([...p0wins, { t: 'undo' }]).points).toEqual([0, 0]);
+  });
+});
