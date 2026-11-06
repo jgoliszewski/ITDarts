@@ -300,7 +300,8 @@ export class Db {
       { match_key: string; game: GameId; options: string; roster: string; started_at: number } | undefined;
     if (!m || !(m.game in GAMES)) return null;
     const events = (this.sql.prepare('SELECT event FROM live_events ORDER BY seq').all() as { event: string }[]).map(r => JSON.parse(r.event));
-    return { key: m.match_key, game: m.game, options: JSON.parse(m.options), roster: JSON.parse(m.roster), startedAt: m.started_at, events };
+    // Options saved before a game got a new option load with its default (e.g. Higher or Lower lives).
+    return { key: m.match_key, game: m.game, options: GAMES[m.game].normalizeOptions(JSON.parse(m.options)), roster: JSON.parse(m.roster), startedAt: m.started_at, events };
   }
 
   // ---------- history ----------

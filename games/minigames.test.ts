@@ -341,6 +341,32 @@ describe('higher or lower', () => {
     expect(v.current).toBe(1); // the next game starts with the next player
   });
 
+  it('gives the life back when a fix or an undo turns a failed visit into a good one', () => {
+    const fix = (index: number, s: string): TurnEvent => ({ t: 'fix', index, dart: parseDart(s)! });
+    const failed = [d('S10'), d('S10'), d('S10')]; // 30, inside 26–45
+    expect(hol.view(failed, 2, o).losing).toBe(true);
+    const fixed = [...failed, fix(0, 'T20'), next]; // 80
+    const v = hol.view(fixed, 2, o);
+    expect(v.lives).toEqual([3, 3]);
+    expect([v.lo, v.hi]).toEqual([26, 80]);
+    const facts = hol.happenings(fixed, 2, o).map(h => h.fact);
+    expect(facts.some(f => f.kind === 'game' && (f.event === 'lifeLost' || f.event === 'eliminated'))).toBe(false);
+    const undone = hol.view([...failed, next, { t: 'undo' }, { t: 'undo' }, d('T20'), next], 2, o); // reopen, drop the last S10, then T20: 80
+    expect(undone.lives).toEqual([3, 3]);
+    expect([undone.lo, undone.hi]).toEqual([26, 80]);
+  });
+
+  it('takes the last life when a fix turns a good visit into a failed one', () => {
+    const one = { ...o, lives: 1 };
+    const log = [d('T20'), d('S5'), d('S1'), { t: 'fix', index: 0, dart: parseDart('S20')! } as TurnEvent]; // 66, fixed to 26: the edge
+    const v = hol.view(log, 2, one);
+    expect(v.lives[0]).toBe(0);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([1]);
+    const facts = hol.happenings(log, 2, one).map(h => h.fact);
+    expect(facts.some(f => f.kind === 'game' && f.event === 'eliminated')).toBe(true);
+  });
+
   it('reads old logs without lives as 3 lives', () => {
     expect(hol.normalizeOptions({ firstTo: 2, bullOff: 'off' })).toEqual({ firstTo: 2, bullOff: 'off', lives: 3 });
     expect(hol.normalizeOptions({ firstTo: 1, bullOff: 'off', lives: 5 }).lives).toBe(5);

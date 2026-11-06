@@ -158,3 +158,18 @@ describe('the boardRotated command', () => {
     expect(db.boardRotatedAt()).toBeNull();
   });
 });
+
+describe('a live match from before an update', () => {
+  it('loads Higher or Lower options saved without lives with 3 lives, and a failed visit costs one', () => {
+    const at = 1;
+    db.startLive({ key: 'k', game: 'hol', options: { firstTo: 1, bullOff: 'off' } as never, roster: roster(2), startedAt: at });
+    for (const s of ['S10', 'S10', 'S10']) db.appendLive({ t: 'dart', dart: parseDart(s)!, at });
+    db.appendLive({ t: 'next', at });
+    expect(db.loadLive()!.options).toEqual({ firstTo: 1, lives: 3, bullOff: 'off' });
+    const resumed = new Hub(db, board as unknown as Board, { dataDir: dir, extraBackupDir: null, ocheMeters: 2.37, port: 0 } as Config,
+      { fire, setBase: () => undefined, applyBase: () => undefined, store: { settings: () => ({}), rev: 0 } } as unknown as Effects, () => undefined, () => undefined);
+    const view = (resumed as unknown as { live: { view: { lives: number[]; phase: string } } }).live.view;
+    expect(view.lives).toEqual([2, 3]);
+    expect(view.phase).toBe('throwing');
+  });
+});
