@@ -18,6 +18,12 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
     <div className="big">
       <BigHeader s={s} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · check Board Manager on {s.board.address}</div>}
+      {s.rotateBoardDue && !s.match && (
+        <div className="banner info">
+          Rotate the board 3 sectors
+          <button className="btn banner-btn" onClick={() => takeThen(() => act({ type: 'boardRotated' }))}>Done</button>
+        </div>
+      )}
       <main className="lobby-main">
         <section className="lobby-qr">
           <Qr text={url} />

@@ -115,6 +115,8 @@ export interface ClientState {
   recentPlayerIds: number[];
   urls: string[];
   showQr: boolean;
+  /** Lobby banner: the board was not rotated by 3 sectors for 30+ days (or never). */
+  rotateBoardDue: boolean;
   /** Test board is open since then: darts and takeouts do not reach the match. */
   boardTest: number | null;
   /** “How to play” shown on the scoreboard. */
@@ -152,6 +154,7 @@ export type Command =
   | { type: 'fakeBoard'; on: boolean }
   | { type: 'boardTest'; on: boolean }
   | { type: 'showQr'; show: boolean }
+  | { type: 'boardRotated' }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
   | { type: 'closeApp' }

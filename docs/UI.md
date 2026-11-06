@@ -160,6 +160,7 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
   - duży QR z adresem laptopa;
   - wynik ostatniego meczu;
   - „New match here” i „Rematch” dla dotykowego ekranu.
+- **Obrót tarczy:** raz w miesiącu lobby pokazuje żółty baner „Rotate the board 3 sectors” z przyciskiem „Done” (spready zużywają się nierówno). Baner jest, gdy obrotu jeszcze nie zapisano albo minęło 30 dni lub więcej. „Done” zapisuje datę na serwerze (`boardRotatedAt` w `settings`) i liczenie zaczyna się od nowa. Tylko w lobby: nie w meczu i nie na telefonie. Stan liczy się przy każdej zmianie stanu, więc serwer bez ruchu przez wiele dni pokaże baner dopiero po następnej zmianie.
 - Po starcie aplikacji QR jest widoczny od razu, żeby telefon mógł przejąć Pilota.
 - W trakcie meczu QR jest ukryty pod przyciskiem w nagłówku.
 

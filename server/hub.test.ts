@@ -129,3 +129,32 @@ describe('a dart from the board', () => {
     expect(db.loadLive()!.events.filter(e => e.t === 'dart')).toHaveLength(1);
   });
 });
+
+describe('the boardRotated command', () => {
+  /** The latest state a device got. */
+  function stateOf(isLocal: boolean) {
+    const ws = Object.assign(new EventEmitter(), { OPEN: 1, readyState: 1, send: (s: string) => ws.emit('out', JSON.parse(s)) });
+    let last: Extract<ServerMessage, { type: 'state' }>['state'] | undefined;
+    ws.on('out', (m: ServerMessage) => m.type === 'state' && (last = m.state));
+    hub.connect(ws as never, isLocal);
+    ws.emit('message', JSON.stringify({ type: 'hello', clientId: isLocal ? 'laptop' : 'phone', deviceName: 'test' }));
+    return () => last!;
+  }
+
+  it('stores the date and clears the flag', async () => {
+    const pilot = client(true);
+    const state = stateOf(true);
+    expect(state().rotateBoardDue).toBe(true);
+    expect(await pilot({ type: 'boardRotated' })).toMatchObject({ ok: true });
+    expect(Date.now() - Date.parse(db.boardRotatedAt()!)).toBeLessThan(5000);
+    await new Promise(r => setImmediate(r)); // the state goes out right after the result
+    expect(state().rotateBoardDue).toBe(false);
+  });
+
+  it('is refused from a device that is not the Pilot', async () => {
+    client(true);
+    const phone = client(false);
+    expect(await phone({ type: 'boardRotated' })).toMatchObject({ ok: false, error: 'Take control first' });
+    expect(db.boardRotatedAt()).toBeNull();
+  });
+});

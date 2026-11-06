@@ -208,6 +208,17 @@ export class Db {
     }
   }
 
+  // ---------- board rotation ----------
+
+  boardRotatedAt(): string | null {
+    const r = this.sql.prepare("SELECT value FROM settings WHERE key = 'boardRotatedAt'").get() as { value: string } | undefined;
+    return r?.value ?? null;
+  }
+
+  setBoardRotatedAt(iso: string) {
+    this.sql.prepare("INSERT INTO settings (key, value) VALUES ('boardRotatedAt', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(iso);
+  }
+
   // ---------- players ----------
 
   players(): PlayerInfo[] {

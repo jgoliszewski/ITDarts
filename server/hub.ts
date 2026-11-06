@@ -29,6 +29,7 @@ import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
 import { UserError, cleanName } from './db.ts';
 import type { Effects, Fx } from './effects/index.ts';
+import { rotateBoardDue } from './rotate.ts';
 import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
 
 interface Client {
@@ -266,6 +267,8 @@ export class Hub {
       recentPlayerIds: this.db.recentPlayerIds(),
       urls: this.urls,
       showQr: this.showQr,
+      // ponytail: computed on each broadcast, so a server idle for days shows it only after the next state change.
+      rotateBoardDue: rotateBoardDue(this.db.boardRotatedAt(), new Date()),
       boardTest: this.boardTest,
       howTo: this.howTo,
       effects: { ...(({ sounds, caller, leds, volume }) => ({ sounds, caller, leds, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
@@ -638,6 +641,9 @@ export class Hub {
         this.showQr = !!cmd.show;
         if (this.qrTimer) clearTimeout(this.qrTimer);
         if (this.showQr) this.qrTimer = setTimeout(() => ((this.showQr = false), this.broadcast()), QR_TIMEOUT_MS);
+        return {};
+      case 'boardRotated':
+        this.db.setBoardRotatedAt(new Date().toISOString());
         return {};
       case 'player':
         return this.player(cmd.cmd);
