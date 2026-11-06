@@ -181,7 +181,13 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
             <div className="card-darts">
               {[0, 1, 2].map(i => {
                 const d = darts[i];
-                if (!d) return <div key={i} className="dart-tile empty" />;
+                if (!d) {
+                  // A dart the board missed can be added until the takeout ends (docs/UI.md, Tura i takeout).
+                  const addable = canEdit && i === darts.length && v.visit.dartsLeft > 0;
+                  return addable
+                    ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
+                    : <div key={i} className="dart-tile empty" />;
+                }
                 const tile = <DartFace m={m} dart={d.dart} />;
                 const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i]) : ''}`;
                 return canEdit
