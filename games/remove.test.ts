@@ -203,17 +203,17 @@ describe('higher or lower', () => {
   it('treats a removed player like one who is out, also in the next game', () => {
     // Range 26–45. Kuba goes high, Ola is removed, Ada fails: Kuba wins the game, and the next one is Kuba against Ada.
     const log = [...visit('T20', 'S1', 'S1'), remove(1), ...visit('S20', 'S10', 'S1')];
-    const v = play('hol', log, 3, { firstTo: 2 });
+    const v = play('hol', log, 3, { firstTo: 2, lives: 1 });
     expect(v.points).toEqual([1, 0, 0]);
     expect(v.removed).toEqual([null, 'match', null]);
     // Game 2 starts one place on, with Ola, who is gone: Ada, then Kuba.
     expect(v.current).toBe(2);
-    expect(play('hol', [...log, ...visit('T20', 'S1', 'S1')], 3, { firstTo: 2 }).current).toBe(0);
+    expect(play('hol', [...log, ...visit('T20', 'S1', 'S1')], 3, { firstTo: 2, lives: 1 }).current).toBe(0);
   });
 
   it('ends the round when the one still to throw is removed', () => {
     // Kuba fails, Ola goes high, Ada is removed: Ola is the only survivor and wins the game.
-    const v = play('hol', [...visit('S20', 'S10', 'S1'), ...visit('T20', 'S1', 'S1'), remove(2)], 3, { firstTo: 2 });
+    const v = play('hol', [...visit('S20', 'S10', 'S1'), ...visit('T20', 'S1', 'S1'), remove(2)], 3, { firstTo: 2, lives: 1 });
     expect(v.points).toEqual([0, 1, 0]);
   });
 });
@@ -275,7 +275,7 @@ describe('removed while throwing (no misses filled in)', () => {
 
   it('does not judge a higher or lower visit cut short, so no fake failure', () => {
     const log = [...visit('T20', 'S1', 'S1'), d('S1'), remove(1)];
-    const v = play('hol', log, 3, { firstTo: 2 });
+    const v = play('hol', log, 3, { firstTo: 2, lives: 1 });
     expect([v.lo, v.hi]).toEqual([26, 62]);
     expect(v.current).toBe(2);
     const facts = GAMES.hol.happenings(log, 3, { ...GAMES.hol.defaults, firstTo: 2 }).map(h => h.fact);
@@ -327,18 +327,18 @@ describe('the last player left in a round', () => {
   const round1 = [...visit('T20', 'T20', 'T20'), ...visit('S1', 'S1', 'S1'), ...visit(), ...visit()];
 
   it('wins the higher or lower game at once when the other one still in it is removed', () => {
-    const v = play('hol', [...round1, remove(0)], 4);
+    const v = play('hol', [...round1, remove(0)], 4, { lives: 1 });
     expect(v.phase).toBe('matchWon');
     expect(v.winners).toEqual([1]);
   });
 
   it('starts the next higher or lower game with everyone still in the match, never an empty one', () => {
-    const v = play('hol', [...round1, remove(0)], 4, { firstTo: 2 });
+    const v = play('hol', [...round1, remove(0)], 4, { firstTo: 2, lives: 1 });
     expect(v.points).toEqual([0, 1, 0, 0]);
     expect(v.game).toBe(2);
     expect(v.rows.map(r => r.out)).toEqual([true, false, false, false]);
-    const w = play('hol', [...round1, remove(0), remove(1)], 4, { firstTo: 2 });
+    const w = play('hol', [...round1, remove(0), remove(1)], 4, { firstTo: 2, lives: 1 });
     expect([2, 3]).toContain(w.current);
-    expect(play('hol', [...round1, remove(0), remove(1), d('S20')], 4, { firstTo: 2 }).visit.player).toBe(w.current);
+    expect(play('hol', [...round1, remove(0), remove(1), d('S20')], 4, { firstTo: 2, lives: 1 }).visit.player).toBe(w.current);
   });
 });

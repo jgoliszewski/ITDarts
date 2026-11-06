@@ -266,14 +266,85 @@ describe('higher or lower', () => {
     const v = hol.view([d('S20'), d('S20'), d('S20')], 3, o);
     expect([v.lo, v.hi, v.sum]).toEqual([26, 45, 60]);
     expect(v.visit.verdict).toBeNull();
-    expect(hol.view([d('S20'), d('S5'), d('S1')], 3, o).visit.verdict).toEqual({ text: 'Out', tone: 'bad' });
+    expect(hol.view([d('S20'), d('S5'), d('S1')], 3, o).visit.verdict).toEqual({ text: 'Life lost', tone: 'bad' });
+    expect(hol.view([d('S20'), d('S5'), d('S1')], 3, { ...o, lives: 1 }).visit.verdict).toEqual({ text: 'Out', tone: 'bad' });
+    expect(hol.view([d('T20'), d('S5'), d('S1')], 3, o).visit.verdict).toBeNull();
   });
 
-  it('a sum on the edge or a miss fails the visit', () => {
-    expect(hol.view(visit('S20', 'S5', 'S1'), 3, o).rows[0].out).toBe(true); // 26
+  it('a sum on the edge, inside the range or a miss costs a life and leaves the range as it was', () => {
+    for (const log of [visit('S20', 'S5', 'S1'), visit('S20', 'S10', 'S5'), visit('S20', 'S20', 'S5'), [d('T20'), d('Miss'), next]]) { // 26, 35, 45, miss
+      const v = hol.view(log, 3, o);
+      expect(v.lives).toEqual([2, 3, 3]);
+      expect(v.rows[0].out).toBe(false);
+      expect([v.lo, v.hi]).toEqual([26, 45]);
+      expect(v.current).toBe(1);
+    }
     const miss = hol.view([d('T20'), d('Miss')], 3, o);
-    expect(miss.rows[0].out).toBe(true);
     expect(miss.visit.dartsLeft).toBe(0);
+  });
+
+  it('shows the visit red while its sum is inside the range or it has a miss', () => {
+    expect(hol.view([d('S20'), d('S10')], 2, o).failed).toBe(true); // 30
+    expect(hol.view([d('S20')], 2, o).failed).toBe(false);
+    expect(hol.view([d('T20')], 2, o).failed).toBe(false);
+    expect(hol.view([d('S1'), d('Miss')], 2, o).failed).toBe(true);
+    expect(hol.view([], 2, o).failed).toBe(false);
+  });
+
+  it('holds the life on screen until the takeout, then takes it', () => {
+    const held = hol.view([d('S20'), d('S10'), d('S5')], 2, o);
+    expect(held.lives).toEqual([3, 3]);
+    expect(held.losing).toBe(true);
+    const after = hol.view(visit('S20', 'S10', 'S5'), 2, o);
+    expect(after.lives).toEqual([2, 3]);
+    expect(after.losing).toBe(false);
+    expect(hol.view([d('T20'), d('S1'), d('S1')], 2, o).losing).toBe(false);
+  });
+
+  it('puts a player out after the last life and fires a life lost each time', () => {
+    const fail = visit('S10', 'S10', 'S10');
+    const log = [fail, fail, fail, fail, fail].flat(); // Ada and Ola fail in turn: Ada loses her third life first
+    const v = hol.view(log, 2, o);
+    expect(v.lives).toEqual([0, 1]);
+    expect(v.rows[0].out).toBe(true);
+    expect(v.winners).toEqual([1]);
+    const facts = hol.happenings(log, 2, o).map(h => h.fact);
+    expect(facts.filter(f => f.kind === 'game' && f.event === 'lifeLost')).toHaveLength(5);
+    expect(facts.filter(f => f.kind === 'game' && f.event === 'eliminated')).toHaveLength(1);
+  });
+  it('ends the game at once when one player is left, even if he has not thrown this round', () => {
+    const v = hol.view([...visit('S10', 'S10', 'S10'), ...visit('S10', 'S10', 'S10')], 3, { ...o, lives: 1 });
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([2]);
+    expect(v.points).toEqual([0, 0, 1]);
+  });
+
+  it('no longer voids a round where everyone fails', () => {
+    const all = hol.view([...visit('S10', 'S10', 'S10'), ...visit('S10', 'S10', 'S10')], 2, o);
+    expect(all.lives).toEqual([2, 2]);
+    expect([all.lo, all.hi]).toEqual([26, 45]);
+    expect(all.current).toBe(0);
+    const one = hol.view(visit('S10', 'S10', 'S10'), 2, { ...o, lives: 1 });
+    expect(one.phase).toBe('matchWon');
+    expect(one.winners).toEqual([1]);
+  });
+
+  it('wins the match at first to N and restarts the range and lives for the next game', () => {
+    const game = [...visit('T20', 'S1', 'S1'), ...visit('S10', 'S10', 'S10')]; // 62 passes, 30 fails
+    const one = { ...o, lives: 1 };
+    expect(hol.view(game, 2, one).phase).toBe('matchWon');
+    const v = hol.view([...visit('S10', 'S10', 'S10'), ...visit('S10', 'S10', 'S10'), ...game], 2, { ...one, firstTo: 2, lives: 2 }); // both fail, then Ada goes high and Ola fails
+    expect(v.points).toEqual([1, 0]);
+    expect([v.lo, v.hi]).toEqual([26, 45]);
+    expect(v.lives).toEqual([2, 2]);
+    expect(v.rows.map(r => r.out)).toEqual([false, false]);
+    expect(v.current).toBe(1); // the next game starts with the next player
+  });
+
+  it('reads old logs without lives as 3 lives', () => {
+    expect(hol.normalizeOptions({ firstTo: 2, bullOff: 'off' })).toEqual({ firstTo: 2, bullOff: 'off', lives: 3 });
+    expect(hol.normalizeOptions({ firstTo: 1, bullOff: 'off', lives: 5 }).lives).toBe(5);
+    expect(hol.describe({ firstTo: 2, bullOff: 'off', lives: 1 }, 2)).toBe('Higher or Lower · First to 2 · 1 life');
   });
 
   it('counts T1 as zero, so a visit can go below the range', () => {
@@ -281,21 +352,6 @@ describe('higher or lower', () => {
     expect([v.lo, v.hi]).toEqual([5, 45]);
     expect(hol.view([d('T1')], 3, o).hero.big).toBe('0');
     expect(hol.view([], 3, o).hero.big).toBe('0');
-  });
-
-  it('voids a round where everyone fails', () => {
-    const all = hol.view([...visit('S10', 'S10', 'S10'), ...visit('S10', 'S10', 'S10')], 2, o);
-    expect(all.rows.map(r => r.out)).toEqual([false, false]);
-    expect([all.lo, all.hi]).toEqual([26, 45]);
-  });
-
-  it('wins the match at first to N and restarts the range for the next game', () => {
-    const game = [...visit('T20', 'S1', 'S1'), ...visit('S10', 'S10', 'S10')]; // 62 passes, 30 fails
-    expect(hol.view(game, 2, o).phase).toBe('matchWon');
-    const v = hol.view(game, 2, { ...o, firstTo: 2 });
-    expect(v.points).toEqual([1, 0]);
-    expect([v.lo, v.hi]).toEqual([26, 45]);
-    expect(v.current).toBe(1); // the next game starts with the next player
   });
 });
 

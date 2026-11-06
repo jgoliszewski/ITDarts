@@ -115,7 +115,7 @@ const PICKER: [KindChoice, string, string][] = [
   ['game:goal', 'Goal', 'Football: a double with the ball'],
   ['game:sectorClosed', 'Sector closed', 'Cricket'],
   ['game:becameKiller', 'Became killer', 'Killer'],
-  ['game:lifeLost', 'Life lost', 'Killer, Knockout'],
+  ['game:lifeLost', 'Life lost', 'Killer, Knockout, Higher or Lower'],
   ['game:lowest', 'Lowest visit', 'Knockout: lowest visit of the round so far'],
   ['game:eliminated', 'Player eliminated', 'Killer, Higher or Lower'],
   ['game:newRecord', GAME_EVENT_LABELS.newRecord, 'An office or personal record at the end'],

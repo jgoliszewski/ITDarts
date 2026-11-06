@@ -146,12 +146,12 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - Zakres tylko rośnie.
 - **T1 liczy się zawsze jako zero** (od 2026-10-27), więc da się zejść poniżej 3. Nie jest pudłem: tura dalej trwa. Kafelek lotki pokazuje 0.
 - **Pudło** (lotka poza punktowanym polem, także odbita) to nieudana tura bez względu na sumę.
-- **Nieudana tura** od razu eliminuje, bez żyć. Zakres po eliminacji zostaje.
-- **Wszyscy odpadają w jednej rundzie:** jeśli w tej samej rundzie odpadną wszyscy pozostali, runda się nie liczy. Zakres wraca do stanu sprzed rundy i wszyscy grają dalej.
-- **Gra** kończy się, gdy zostaje jeden gracz, i daje mu punkt.
-- **Opcja „First to”** 1–5, domyślnie 1. Kolejna gra startuje z zakresem 26–45 i wszystkimi graczami, a zaczyna następny w kolejności. Mecz wygrywa ten, kto pierwszy zdobędzie N punktów.
-- **Ekran wyników:** hero pokazuje dużą sumę Tury (przed pierwszą lotką 0) na skali z czerwonym zakresem i kafelki lotek. Lista graczy pokazuje punkty, a wyeliminowani w bieżącej grze są wyszarzeni.
-- **Wyzwalacze:** „Player eliminated”, „Game won”, „Match won”.
+- **Życia** (od 2026-11-06, po meczu w dwie osoby): opcja „Lives” 1–5, domyślnie 3, jak w Killerze. Nieudana tura od razu zabiera 1 życie, a zakres zostaje. Po utracie ostatniego życia gracz odpada.
+- **Bez unieważniania rund** (od 2026-11-06): wcześniej, gdy w jednej rundzie odpadli wszyscy pozostali, runda się nie liczyła i zakres wracał. Ta zasada jest usunięta, rund się nie powtarza.
+- **Gra** kończy się od razu, gdy zostaje jeden gracz, i daje mu punkt, nawet jeśli w tej rundzie jeszcze nie rzucał.
+- **Opcja „First to”** 1–5, domyślnie 1. Kolejna gra startuje z zakresem 26–45 i wszystkimi graczami z pełnymi życiami, a zaczyna następny w kolejności. Mecz wygrywa ten, kto pierwszy zdobędzie N punktów.
+- **Ekran wyników** (wariant B2.2 z `.scratch/hol-lives/mockup-b2.html`): duża suma Tury (przed pierwszą lotką 0) stoi jak szpilka nad swoim miejscem na skali 0–180: liczba i pionowa kreska do paska. Suma z kreską są czerwone, gdy Tura przegrywa (suma w zakresie albo pudło), a poza zakresem białe, bez napisu. Pasek jest zielony poza zakresem i czerwony w zakresie, pod nim podziałka co 30 (bez liczb, które wpadłyby na granice) i duże czerwone granice zakresu pod swoimi miejscami. Przy wąskim zakresie (start 26–45) granice rozsuwają się od środka. Przy samych końcach skali szpilka i liczby dosuwają się do krawędzi, więc nie wychodzą poza hero. Obok imienia są duże serca aktywnego gracza jak w 121: serce, które zabiera skończona nieudana Tura, pęka, zanim gracz wyjmie lotki. Karta Tury pokazuje wtedy „LIFE LOST”, a przy ostatnim życiu „OUT”. Lista graczy pokazuje punkty i małe serca jak w Knockout, a wyeliminowani w bieżącej grze są wyszarzeni.
+- **Wyzwalacze:** „Life lost” (każda nieudana tura), „Player eliminated” (ostatnie życie), „Game won”, „Match won”.
 - **Statystyki:** wygrane. Bez rekordu.
 - **Znany przypadek brzegowy:** gdy zakres dojdzie do 180 na górze i 3 na dole, nikt nie da rady go ominąć. Nie obsługujemy tego osobno, bo to praktycznie niemożliwe. Taką grę kończy „End match”.
 
@@ -211,7 +211,7 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 - **Suma Tury** jak w X01: S/D/T × sektor, bull 25 albo 50. Pudło i odbita lotka dają 0, ale same nie przegrywają.
 - **Najniższa suma rundy traci życie**, także przy remisie: tracą je wszyscy z najniższą sumą. Życia odbieramy na koniec rundy, po Turze ostatniego gracza.
 - **Życia:** zawsze 3, bez opcji. Po stracie ostatniego gracz odpada, a kolejka go pomija.
-- **Wszyscy odpadliby naraz:** jeśli najniższą sumę mają wszyscy pozostali i każdy ma ostatnie życie, runda się nie liczy. Nikt nie traci życia i gramy następną rundę, jak w Higher or Lower.
+- **Wszyscy odpadliby naraz:** jeśli najniższą sumę mają wszyscy pozostali i każdy ma ostatnie życie, runda się nie liczy. Nikt nie traci życia i gramy następną rundę.
 - **Wygrana:** ostatni gracz z życiem. „End match” z „Save” zapisuje grę bez zwycięzcy, jak w Killer.
 - **Gracze:** 2–8.
 - **Ekran wyników:** hero pokazuje imię, życia, dużą sumę Tury i kafelki lotek (przygaszone przy 0). Obok sumy jest duży kafelek „To beat” z najniższą sumą rundy do tej pory, zielony („Beaten”), gdy Tura ją przebije; pierwszy w rundzie widzi „First to throw” (od 2026-10-30, ze zgłoszenia: wynik do pobicia był za mało widoczny). Lista graczy pokazuje sumę w bieżącej rundzie i życia jako duże serca, a wyeliminowani są wyszarzeni. Karta Tury po ostatniej Turze rundy pokazuje, kto stracił życie („Kuba loses a life”, „Kuba is out”, „Round replayed: everyone would be out”). Nagłówek „Knockout · 3 lives”.

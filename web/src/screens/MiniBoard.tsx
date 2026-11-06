@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label } from '../../../games/darts.ts';
-import { roundEndText } from '../../../games/knockout.ts';
+import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
 import { gameStats } from '../components/Compare.tsx';
 import { DartFace } from '../components/DartFace.tsx';
@@ -14,31 +14,46 @@ import type { MiniMatch } from '../match.ts';
 import { dartTone, pickProps, playOrder, removedNote, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
-/** Range bar for Higher or Lower: 0–180 with the forbidden range in red and the visit sum. */
-function Scale({ lo, hi, sum }: { lo: number; hi: number; sum: number | null }) {
-  const pct = (n: number) => `${(Math.min(180, Math.max(0, n)) / 180) * 100}%`;
+const TICKS = [0, 30, 60, 90, 120, 150, 180];
+
+/**
+ * Higher or Lower hero (docs/GRY.md#higher-or-lower): the visit sum stands like a pin over its spot on a 0–180 bar, red when the visit
+ * fails. The bar is green outside the forbidden range and red inside it, with the range's edges big under the bar.
+ */
+function HolScale({ lo, hi, sum, failed }: { lo: number; hi: number; sum: number | null; failed: boolean }) {
+  const pct = (n: number) => (Math.min(180, Math.max(0, n)) / 180) * 100;
+  // Centred on its spot, but within the last 20% of the bar it slides to sit flush with the end, so nothing leaves the hero.
+  const shift = (p: number) => (p < 50 ? -50 * Math.min(1, p / 20) : -50 - 50 * Math.max(0, (p - 80) / 20));
+  const at = (n: number) => ({ left: `${pct(n)}%`, transform: `translateX(${shift(pct(n))}%)` });
+  // The range always holds 26–45, so only small edges can crowd: push them apart around their middle.
+  const mid = (lo + hi) / 2, gap = 12;
+  const loAt = Math.min(lo, mid - gap), hiAt = Math.max(hi, mid + gap);
+  const n = sum ?? 0;
   return (
-    <div className="hol-scale" aria-label={`Forbidden range ${lo} to ${hi}`}>
-      <div className="track" />
-      <div className="range" style={{ left: pct(lo), width: `calc(${pct(hi)} - ${pct(lo)})` }} />
-      <span className="edge num" style={{ left: pct(lo) }}>{lo}</span>
-      <span className="edge num" style={{ left: pct(hi) }}>{hi}</span>
-      {sum !== null && <div className={`mark ${sum >= lo && sum <= hi ? 'in' : ''}`} style={{ left: pct(sum) }} />}
+    <div className={`hol-scale ${failed ? 'failed' : ''}`} aria-label={`Sum ${n}, forbidden range ${lo} to ${hi}`}>
+      <div className="num pin-num" style={at(n)}>{n}</div>
+      <div className="stem" style={at(n)} />
+      <div className="bar">
+        <div className="range" style={{ left: `${pct(lo)}%`, width: `${pct(hi) - pct(lo)}%` }} />
+      </div>
+      {TICKS.filter(t => Math.abs(t - loAt) > 18 && Math.abs(t - hiAt) > 18).map(t => <span key={t} className="tick num" style={at(t)}>{t}</span>)}
+      <span className="edge num" style={at(loAt)}>{lo}</span>
+      <span className="edge num" style={at(hiAt)}>{hi}</span>
     </div>
   );
 }
 
 /**
- * 121 and Knockout lives (3 in both): outline hearts, red while left and dim once lost. `losing` shakes the heart a failed attempt is
- * about to take while the visit is still held on screen; hearts a refill gives back pop in (docs/GRY.md#121).
+ * 121, Knockout and Higher or Lower lives (3 unless `max` says otherwise): outline hearts, red while left and dim once lost. `losing`
+ * shakes the heart a failed attempt is about to take while the visit is still held on screen; hearts a refill gives back pop in (docs/GRY.md#121).
  */
-export function Hearts({ lives, losing = false }: { lives: number; losing?: boolean }) {
+export function Hearts({ lives, max = LIVES, losing = false }: { lives: number; max?: number; losing?: boolean }) {
   const prev = useRef(lives);
   const gained = lives > prev.current ? prev.current : lives;
   prev.current = lives;
   return (
-    <div className="hearts" aria-label={`${lives} of ${LIVES} lives`}>
-      {Array.from({ length: LIVES }, (_, i) => {
+    <div className="hearts" aria-label={`${lives} of ${max} lives`}>
+      {Array.from({ length: max }, (_, i) => {
         const gain = i >= gained && i < lives;
         return (
           <span key={gain ? `${i}-${lives}` : i} className={`${i < lives ? 'on' : ''} ${losing && i === lives - 1 ? 'losing' : ''} ${gain ? 'gain' : ''}`}>
@@ -143,8 +158,9 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         <div className="spacer" />
         {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd(m) === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
+        {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
       </div>
-      <div className="hero-score-row">
+      {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
         <div className="mini-big">
           <div className="caps">{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
           {m.game === 'fullboard'
@@ -153,11 +169,10 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         </div>
         {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
         {m.game === 'knockout' && <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} />}
-      </div>
+      </div>}
       {board && <RaceBoard m={m} />}
-      {m.game === 'hol' && <Scale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} />}
       {m.game === '121' && <Ladder target={m.view.target} record={m.record?.raw ?? null} />}
-      {heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
+      {m.game !== 'hol' && heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
           const d = visit.darts[i];
@@ -212,6 +227,8 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
   const v = m.view;
   // Same as X01: full-size rows up to 4 players.
   const compact = m.roster.length > 4;
+  // Small hearts under the name in the games with lives per player.
+  const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives } : null;
   return (
     <div className="plist">
       {playOrder(m).map(i => {
@@ -224,8 +241,8 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
             <div className="info">
               <div className="name">{r.name}</div>
               {note ? <div className="meta"><span>{note}</span></div>
-                : m.game === 'knockout' && !row.out
-                ? <div className="meta list-hearts" aria-label={row.meta}>{[0, 1, 2].map(k => <span key={k} className={k < m.view.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</div>
+                : hearts && !row.out
+                ? <div className="meta list-hearts" aria-label={row.meta}>{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</div>
                 : <div className="meta"><span>{row.meta}</span></div>}
             </div>
             <div className="score num">{row.value}</div>
