@@ -109,7 +109,7 @@ export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGam
 
 function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
-  const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i] }));
+  const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
   if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;

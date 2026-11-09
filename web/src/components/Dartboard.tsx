@@ -41,9 +41,9 @@ export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [numbe
   return d ? [(x / d) * r, (-y / d) * r] : [0, 0];
 }
 
-/** A dart with coords on the input board: where it stuck, but no further out than the ring of numbers, so a miss stays in view on its side of the board. */
-export function inputSpot(x: number, y: number): readonly [number, number] {
-  const [sx, sy] = coordsSpot(x, y, R), r = Math.hypot(sx, sy), k = r > 368 ? 368 / r : 1;
+/** A dart with coords on a board with these rings (the input board's by default): where it stuck, but no further out than the ring of numbers, so a miss stays in view on its side of the board. */
+export function inputSpot(x: number, y: number, rings = R): readonly [number, number] {
+  const [sx, sy] = coordsSpot(x, y, rings), r = Math.hypot(sx, sy), k = r > 368 ? 368 / r : 1;
   return [sx * k, sy * k];
 }
 
@@ -98,7 +98,8 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   target: number | 'ring' | null;
   /** The ring that counts on the target: null for any segment, 2 doubles, 3 trebles. */
   ring: 2 | 3 | null;
-  darts: { dart: Dart; good: boolean }[];
+  /** With coords a dot sits where the dart stuck; without (fixed or added by hand) in the middle of its field. */
+  darts: { dart: Dart; good: boolean; coords?: { x: number; y: number } }[];
   label: string;
   /** Drawn over the board (Test board). */
   children?: ReactNode;
@@ -136,8 +137,8 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
       <circle cx="0" cy="0" r={S[1]} fill={paint(25, RING[1])} stroke="#0A0A0B" strokeWidth="2" />
       <circle cx="0" cy="0" r={S[0]} fill={paint(25, RING[0])} stroke="#0A0A0B" strokeWidth="2" />
       {outline}
-      {darts.map(({ dart, good }, i) => {
-        const [x, y] = dartSpot(dart, i, S);
+      {darts.map(({ dart, good, coords }, i) => {
+        const [x, y] = coords ? inputSpot(coords.x, coords.y, S) : dartSpot(dart, i, S);
         return <circle key={i} cx={x} cy={y} r={DOT} fill={good ? HIT_DOT : MISS_DOT} stroke="#FFFFFF" strokeWidth="3" />;
       })}
       {children}
