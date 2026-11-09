@@ -431,6 +431,9 @@ export function seeded(seed: number): () => number {
 /** A fresh seed for the log. */
 export const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 
+/** A score with a real minus sign; `plus` adds + to gains (Bullseye's turn card). */
+export const signed = (n: number, plus = false) => (n < 0 ? `−${-n}` : plus && n > 0 ? `+${n}` : String(n));
+
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export const livesLabel = (n: number) => `${n} ${n === 1 ? 'life' : 'lives'}`;

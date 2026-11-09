@@ -1,9 +1,10 @@
 // Bullseye: points for darts near the bull, first to the target wins (docs/GRY.md). Pure, no I/O.
 import type { Coords, Dart } from './darts.ts';
+import { BOARD_RADIUS_MM } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, signed, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface BullseyeOptions {
   firstTo: 3 | 5 | 10;
@@ -17,20 +18,17 @@ interface State extends Turn {
   winners: number[];
 }
 
-/** Board Manager coords are normalized: 1 is 170 mm from the centre. The inner single ends halfway across the treble, 103 mm. */
+/** The inner single ends halfway across the treble, 103 mm from the centre. */
 const INNER_MM = 103;
-const BOARD_RADIUS_MM = 170;
 
 /** Bull +2, 25 +1, inner single 0 (also without coords), anything else −1. */
 export function dartPoints(rec: { dart: Dart; coords?: Coords }): number {
   const { dart: d, coords: c } = rec;
   if (d.n === 25) return d.m === 2 ? 2 : 1;
   if (d.n === 0 || d.m !== 1) return -1;
-  return !c || Math.hypot(c.x, c.y) * BOARD_RADIUS_MM < INNER_MM ? 0 : -1;
+  // Compared in board units, so 103 mm itself is outside (mm × 170 would land a hair under 103).
+  return !c || Math.hypot(c.x, c.y) < INNER_MM / BOARD_RADIUS_MM ? 0 : -1;
 }
-
-/** A score with a real minus sign; `plus` adds + to gains (the turn card). */
-export const signed = (n: number, plus = false) => (n < 0 ? `−${-n}` : plus && n > 0 ? `+${n}` : String(n));
 
 function play(t: Turns, players: number, o: BullseyeOptions): State {
   const points = Array(players).fill(0);
@@ -84,7 +82,8 @@ function view(events: TurnEvent[], players: number, o: BullseyeOptions): Bullsey
   return {
     ...f,
     winners: s.winners,
-    hero: { big: signed(s.points[p]), caption: 'Points', note: 'Bull +2 · 25 +1 · wide −1' },
+    // Non-breaking spaces keep each value with its field when the note wraps on a phone.
+    hero: { big: signed(s.points[p]), caption: 'Points', note: 'Bull +2 · 25 +1 · inner single 0 · rest −1' },
     rows: s.points.map(n => ({ value: signed(n), meta: 'points', out: false })),
     result: s.winners.length ? `Points ${[...s.points].sort((a, b) => b - a).map(n => signed(n)).join(' / ')}` : '',
     scores: s.points.map(() => null),

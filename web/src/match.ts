@@ -1,6 +1,7 @@
 // What the pilot can do right now, shared by the laptop bar and the phone pilot.
 import { value } from '../../games/darts.ts';
-import { dartPoints, signed } from '../../games/bullseye.ts';
+import { dartPoints } from '../../games/bullseye.ts';
+import { signed } from '../../games/turns.ts';
 import { holValue } from '../../games/hol.ts';
 import type { DartRec } from '../../games/x01/engine.ts';
 import type { ClientState, Command, LiveMatch } from '../../server/protocol.ts';

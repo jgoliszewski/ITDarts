@@ -175,6 +175,18 @@ describe('a live match from before an update', () => {
   });
 });
 
+describe('saving a Bullseye match', () => {
+  it('ends the game as won on End match with Save, with the win screen first', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bullseye', options: { firstTo: 5, bullOff: 'off' }, roster: roster(2) });
+    await pilot(dart('Bull'));
+    await pilot({ type: 'endMatch', save: true });
+    const live = (hub as unknown as { live: { view: { phase: string; winners: number[] } } | null }).live;
+    expect(live?.view.phase).toBe('matchWon');
+    expect(live?.view.winners).toEqual([0]);
+  });
+});
+
 describe('saving a Gotcha match', () => {
   // Bull + T17 = 101: the starter wins the game; the starter of the next game is the other player.
   const win = [dart('Bull'), dart('T17')];

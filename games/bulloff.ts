@@ -1,9 +1,8 @@
 // Bull-off from the board: one dart each at the bull, the server measures who is closest. Pure, no I/O.
 import type { Coords, Dart } from './darts.ts';
+import { BOARD_RADIUS_MM } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 
-/** Board Manager coords are normalized: 1 is the outer edge of the double ring, 170 mm from the centre. */
-const BOARD_RADIUS_MM = 170;
 /** Closest: a dart less than this from the leader's is a tie (docs/UI.md, Bull-off z tarczy). */
 export const TIE_MM = 5;
 

@@ -334,6 +334,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .p-dart.empty { background: transparent; border: 2px dashed var(--line); color: var(--muted2); }
 .p-dart.empty .lbl { font-weight: 600; }
 .p-dart.dead { opacity: 0.5; }
+.p-dart.hit { background: var(--green); border-color: var(--green); color: var(--on-accent); }
+.p-dart.miss { background: var(--red); border-color: var(--red); color: var(--on-accent); }
 .p-dart.flash { border-color: var(--green); }
 .p-hint { text-align: center; font-size: 14px; color: var(--muted2); min-height: 18px; }
 .p-actions { position: sticky; bottom: 0; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; background: linear-gradient(transparent, var(--bg) 16px); margin-top: auto; }

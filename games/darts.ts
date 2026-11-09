@@ -12,6 +12,9 @@ export interface Coords {
   y: number;
 }
 
+/** Board Manager coords are normalized: 1 is the outer edge of the double ring, 170 mm from the centre. */
+export const BOARD_RADIUS_MM = 170;
+
 export const MISS: Dart = { n: 0, m: 1 };
 
 /** Clockwise from the top. */

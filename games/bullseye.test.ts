@@ -22,6 +22,8 @@ describe('bullseye', () => {
     expect(pts('25')).toBe(1);
     expect(pts('S20', at(60))).toBe(0);
     expect(pts('S20', at(102))).toBe(0);
+    expect(pts('S20', at(103))).toBe(-1);
+    expect(pts('S20', { x: 103 / 170, y: 0 })).toBe(-1);
     expect(pts('S20', at(104))).toBe(-1);
     expect(pts('S20', at(140))).toBe(-1);
     expect(pts('T20', at(100))).toBe(-1);

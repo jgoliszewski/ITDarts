@@ -1,11 +1,11 @@
 import { label } from '../../../games/darts.ts';
-import { signed } from '../../../games/bullseye.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
+import { signed } from '../../../games/turns.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, dartValue, isX01, pickProps, playOrder, removedNote, shortDescription, winnersOf } from '../match.ts';
+import { controls, dartTone, dartValue, isX01, pickProps, playOrder, removedNote, shortDescription, winnersOf } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -76,11 +76,11 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
             : <div key={i} className="p-dart empty" />;
         }
         const inner = <><span className="num">{dartValue(m, d)}</span><span className="lbl">{label(d.dart)}</span></>;
-        // In minigames a dart that did nothing is dimmed.
-        const dead = !isX01(m) && !m.view.visit.good[i] ? 'dead' : '';
+        // In minigames a dart that did nothing is dimmed; Bullseye colours by points like the scoreboard.
+        const tone = isX01(m) ? '' : m.game === 'bullseye' ? dartTone(m, m.view.visit.good[i], d) : !m.view.visit.good[i] ? 'dead' : '';
         return editable
-          ? <button key={`${i}-${flash}`} className={`p-dart ${dead} ${flash === i ? 'flash' : ''}`} onClick={() => onDart(i)}>{inner}</button>
-          : <div key={i} className={`p-dart ${dead}`}>{inner}</div>;
+          ? <button key={`${i}-${flash}`} className={`p-dart ${tone} ${flash === i ? 'flash' : ''}`} onClick={() => onDart(i)}>{inner}</button>
+          : <div key={i} className={`p-dart ${tone}`}>{inner}</div>;
       })}
     </div>
   );

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Dart } from '../../../games/darts.ts';
-import { BOARD_ORDER } from '../../../games/darts.ts';
+import { BOARD_ORDER, BOARD_RADIUS_MM as R_MM } from '../../../games/darts.ts';
 
 // Rings drawn fatter than real ones so a finger can hit doubles and trebles (UI.md).
 // bull, outer bull, treble in, treble out, double in, double out
@@ -28,7 +28,7 @@ export function dartSpot(d: Dart, i: number, rings = R): readonly [number, numbe
 }
 
 // Ring edges in board units (1 = 170 mm) and where SHOWN draws them.
-const REAL = [0, 6.35 / 170, 15.9 / 170, 99 / 170, 107 / 170, 162 / 170, 1];
+const REAL = [0, 6.35 / R_MM, 15.9 / R_MM, 99 / R_MM, 107 / R_MM, 162 / R_MM, 1];
 
 /** Where Board Manager's coords (1 = 170 mm, y up) fall on a board with these rings (SHOWN by default): same angle, radius stretched ring by ring, so a dot's centre always sits in its own field (with Board Manager's standard ring radii). */
 export function coordsSpot(x: number, y: number, rings = SHOWN): readonly [number, number] {

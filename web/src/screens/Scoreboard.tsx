@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { label, value } from '../../../games/darts.ts';
 import type { GameId } from '../../../games/index.ts';
-import { signed } from '../../../games/bullseye.ts';
 import type { Verdict } from '../../../games/turns.ts';
+import { signed } from '../../../games/turns.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import { DartFace } from '../components/DartFace.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';

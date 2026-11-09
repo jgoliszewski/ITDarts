@@ -244,7 +244,7 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 
 Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala kolejność przed meczem.
 
-- **Punkty za lotkę:** bull (50) +2, 25 +1, single między 25 a treblem 0. Treble, single za treblem, double, pudło i lotka odbita (Pilot dopisuje ją jako pudło) −1.
+- **Punkty za lotkę:** bull (50) +2, 25 +1, single między 25 a treblem 0. Treble, single za treblem, double, pudło i lotka odbita (Pilot dopisuje ją jako pudło) −1. Tura zamknięta przed trzecią lotką dopisuje brakujące lotki jako pudła, każde po −1.
 - **Single wewnętrzny czy zewnętrzny** rozstrzygają coords z tarczy: odległość od środka mniejsza niż połowa szerokości pierścienia treble (103 mm) to wewnętrzny. Lotka bez coords (poprawiona albo wpisana na Pilocie) liczy się jako wewnętrzna, czyli 0.
 - **Wynik** może spaść poniżej 0.
 - **Opcje:**
