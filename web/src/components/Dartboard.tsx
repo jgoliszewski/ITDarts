@@ -125,10 +125,6 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
       </defs>
       <circle cx="0" cy="0" r="380" fill="#141416" />
       {BOARD_ORDER.map((n, k) => {
-        const [x, y] = pt(360, k * 18);
-        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
-      })}
-      {BOARD_ORDER.map((n, k) => {
         const parts: [number, number, 1 | 2 | 3][] = [[S[1], S[2], 1], [S[2], S[3], 3], [S[3], S[4], 1], [S[4], S[5], 2]];
         return parts.map(([r1, r2, m], j) => (
           <path key={`${n}-${j}`} d={arc(r1, r2, k * 18 - 9, k * 18 + 9)} fill={paint(n, m === 1 ? SINGLE[k % 2] : RING[k % 2])} stroke="#0A0A0B" strokeWidth="2" />
@@ -138,8 +134,15 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
       <circle cx="0" cy="0" r={S[0]} fill={paint(25, RING[0])} stroke="#0A0A0B" strokeWidth="2" />
       {outline}
       {darts.map(({ dart, good, coords }, i) => {
-        const [x, y] = coords ? inputSpot(coords.x, coords.y, S) : dartSpot(dart, i, S);
+        // Board Manager reports some misses at (0, 0) or on the board; only a miss off the board is drawn where it landed.
+        const landed = coords && (dart.n !== 0 || Math.hypot(coords.x, coords.y) > 1);
+        const [x, y] = landed ? inputSpot(coords.x, coords.y, S) : dartSpot(dart, i, S);
         return <circle key={i} cx={x} cy={y} r={DOT} fill={good ? HIT_DOT : MISS_DOT} stroke="#FFFFFF" strokeWidth="3" />;
+      })}
+      {/* The numbers go over the darts: a miss is drawn on their ring and must not hide one. */}
+      {BOARD_ORDER.map((n, k) => {
+        const [x, y] = pt(360, k * 18);
+        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
       })}
       {children}
     </svg>
