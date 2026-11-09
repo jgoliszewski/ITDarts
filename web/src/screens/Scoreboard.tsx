@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { label, value } from '../../../games/darts.ts';
 import type { GameId } from '../../../games/index.ts';
+import { signed } from '../../../games/bullseye.ts';
 import type { Verdict } from '../../../games/turns.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import { DartFace } from '../components/DartFace.tsx';
@@ -77,7 +78,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
               ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
               : <div key={i} className="dart-tile empty" />;
           }
-          const tile = <DartFace m={m} dart={d.dart} />;
+          const tile = <DartFace m={m} rec={d} />;
           const cls = `dart-tile ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
@@ -169,7 +170,8 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
     : m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
-  const big = verdict ? verdict.text : scored !== null ? String(scored) : `${n} ${unit}${n === 1 ? '' : 's'}`;
+  // Bullseye: the visit's points with a sign, +3 or −2.
+  const big = verdict ? verdict.text : m.game === 'bullseye' ? signed(m.view.visitPoints, true) : scored !== null ? String(scored) : `${n} ${unit}${n === 1 ? '' : 's'}`;
   // Only the name, the headline and the darts; what the visit left shows on the hero once the card is gone.
   return (
     <div className="overlay">
@@ -188,8 +190,8 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                     ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
                     : <div key={i} className="dart-tile empty" />;
                 }
-                const tile = <DartFace m={m} dart={d.dart} />;
-                const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i]) : ''}`;
+                const tile = <DartFace m={m} rec={d} />;
+                const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i], d) : ''}`;
                 return canEdit
                   ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
                   : <div key={i} className={cls}>{tile}</div>;

@@ -600,8 +600,8 @@ export class Hub {
         return {};
       }
       case 'endMatch':
-        // Random Checkouts has no end of its own, and Football counts goals: Save ends them as won, with the win screen first.
-        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football') && v?.phase === 'throwing') {
+        // Random Checkouts has no end of its own, and Football and Bullseye count points: Save ends them as won, with the win screen first.
+        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football' || this.live?.rec.game === 'bullseye') && v?.phase === 'throwing') {
           this.apply({ t: 'end' });
           return {};
         }

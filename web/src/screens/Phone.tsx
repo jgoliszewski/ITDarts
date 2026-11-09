@@ -1,4 +1,5 @@
 import { label } from '../../../games/darts.ts';
+import { signed } from '../../../games/bullseye.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { Dart } from '../../../games/darts.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
@@ -74,7 +75,7 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
             ? <button key={i} className="p-dart empty" onClick={() => onDart(i)}><span className="lbl">+ Add dart</span></button>
             : <div key={i} className="p-dart empty" />;
         }
-        const inner = <><span className="num">{dartValue(m, d.dart)}</span><span className="lbl">{label(d.dart)}</span></>;
+        const inner = <><span className="num">{dartValue(m, d)}</span><span className="lbl">{label(d.dart)}</span></>;
         // In minigames a dart that did nothing is dimmed.
         const dead = !isX01(m) && !m.view.visit.good[i] ? 'dead' : '';
         return editable
@@ -158,7 +159,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
               <span className="caps">{m.roster[v.current].name} · this turn</span>
               {isX01(m)
                 ? <span className="num" style={{ color: m.view.visit.bust ? 'var(--red)' : undefined }}>{m.view.visit.bust ? 'BUST' : m.view.visit.total}</span>
-                : <span className="num">{m.game === 'hol' ? m.view.sum ?? 0 : m.view.hero.big}</span>}
+                : <span className="num">{m.game === 'hol' ? m.view.sum ?? 0 : m.game === 'bullseye' ? signed(m.view.visitPoints, true) : m.view.hero.big}</span>}
             </div>
             <Darts m={m} editable onDart={onFix} />
             <div className="p-hint">{checkoutHint(m) ?? c.hint}</div>

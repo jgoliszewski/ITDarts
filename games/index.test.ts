@@ -6,7 +6,7 @@ describe('game groups', () => {
     expect(GAME_GROUPS.map(g => [g.title, g.ids])).toEqual([
       ['Classic', ['x01']],
       ['Practice', ['atc', 'fullboard', '121', 'randomco']],
-      ['Versus', ['cricket', 'killer', 'hol', 'shanghai', 'gotcha', 'knockout', 'football']],
+      ['Versus', ['cricket', 'killer', 'hol', 'shanghai', 'gotcha', 'knockout', 'football', 'bullseye']],
     ]);
     expect(GAME_GROUPS.flatMap(g => g.ids).sort()).toEqual(Object.keys(GAMES).sort());
   });

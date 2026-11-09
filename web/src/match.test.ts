@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch } from './match.ts';
 import { dartTone } from './match.ts';
 
@@ -11,6 +12,11 @@ describe('minigame dart tile colour', () => {
       expect(tone(game, true)).toBe('hit');
       expect(tone(game, false)).toBe('miss');
     }
+  });
+
+  it('colours Bullseye darts by their points: a gain green, −1 red, 0 grey', () => {
+    const t = (s: string, coords?: { x: number; y: number }) => dartTone({ game: 'bullseye' } as MiniMatch, false, { dart: parseDart(s)!, coords, at: 0 });
+    expect([t('Bull'), t('25'), t('S20'), t('S20', { x: 0.9, y: 0 }), t('T20'), t('Miss')]).toEqual(['hit', 'hit', 'dead', 'miss', 'miss', 'miss']);
   });
 
   it('dims darts that did nothing in scoring games', () => {

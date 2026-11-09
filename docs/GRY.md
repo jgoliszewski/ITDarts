@@ -4,7 +4,7 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 11 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout i Football (od 2026-10-30).
+Gramy w X01 oraz 12 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30) i Bullseye (od 2026-11-09).
 
 Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30, razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
@@ -24,7 +24,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
   - **Practice:** ATC, Full Board, 121, Random Checkouts;
-  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football.
+  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye.
 
   Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
@@ -239,6 +239,23 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 - **Caller** milczy.
 - **Wyzwalacze:** nowy „Goal” (M, dobry, na start dźwięk i ledy z Ton) i „Game won”. „Goal” jest w kolejności przed „Game won”, bo wygrana pada tą samą lotką. Przejęcie piłki nie ma Momentu.
 - **Statystyki:** wygrane i liczba goli. Bez rekordu.
+
+## Bullseye
+
+Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala kolejność przed meczem.
+
+- **Punkty za lotkę:** bull (50) +2, 25 +1, single między 25 a treblem 0. Treble, single za treblem, double, pudło i lotka odbita (Pilot dopisuje ją jako pudło) −1.
+- **Single wewnętrzny czy zewnętrzny** rozstrzygają coords z tarczy: odległość od środka mniejsza niż połowa szerokości pierścienia treble (103 mm) to wewnętrzny. Lotka bez coords (poprawiona albo wpisana na Pilocie) liczy się jako wewnętrzna, czyli 0.
+- **Wynik** może spaść poniżej 0.
+- **Opcje:**
+  - „First to”: 3, 5 (domyślnie) albo 10 punktów;
+  - Bull-off.
+- **Wygrana:** kto pierwszy dobije do celu, wygrywa od razu, także w środku Tury. „End match” z „Save” kończy grę jak w Football: wygrywa najwięcej punktów, remisujący dzielą wygraną, a przy wyniku 0 lub niższym nie ma zwycięzcy.
+- **Gracze:** 1–8, każdy na siebie, bez Co-op.
+- **Ekran wyników:** jak w Football: hero z imieniem, dużym wynikiem i kafelkami lotek (zielone dla +, czerwone dla −1, neutralne dla 0), lista graczy z wynikami. Nagłówek np. „Bullseye · First to 5”.
+- **Caller** milczy.
+- **Wyzwalacze:** tylko istniejące („Bull”, „Match won”), bez nowego Momentu.
+- **Statystyki:** wygrane i suma punktów. Bez rekordu.
 
 ## Statystyki na `/stats`
 

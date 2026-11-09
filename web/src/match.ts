@@ -1,7 +1,8 @@
 // What the pilot can do right now, shared by the laptop bar and the phone pilot.
-import type { Dart } from '../../games/darts.ts';
 import { value } from '../../games/darts.ts';
+import { dartPoints, signed } from '../../games/bullseye.ts';
 import { holValue } from '../../games/hol.ts';
+import type { DartRec } from '../../games/x01/engine.ts';
 import type { ClientState, Command, LiveMatch } from '../../server/protocol.ts';
 
 export type X01Match = Extract<LiveMatch, { game: 'x01' }>;
@@ -63,12 +64,17 @@ export function controls(s: ClientState): Controls {
 export const endsNormally = (m: LiveMatch) =>
   m.view.phase === 'matchWon' || (isX01(m) && m.view.phase === 'legWon' && m.options.matchMode.kind === 'off');
 
-/** Points a dart shows on its tile; in Higher or Lower T1 is worth zero. */
-export const dartValue = (m: LiveMatch, d: Dart): number => (m.game === 'hol' ? holValue(d) : value(d));
+/** Points a dart shows on its tile; in Higher or Lower T1 is worth zero, in Bullseye the dart's points (+2 … −1). */
+export const dartValue = (m: LiveMatch, rec: DartRec): string | number =>
+  m.game === 'bullseye' ? signed(dartPoints(rec), true) : m.game === 'hol' ? holValue(rec.dart) : value(rec.dart);
 
-/** Tile colour for a minigame dart: games counted in hits show green or red; scoring games dim the darts that did nothing. */
-export const dartTone = (m: MiniMatch, good: boolean): 'hit' | 'miss' | '' | 'dead' =>
-  m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
+/**
+ * Tile colour for a minigame dart: games counted in hits show green or red; scoring games dim the darts that did nothing.
+ * Bullseye colours by the dart's points: green for a gain, red for −1, grey for 0.
+ */
+export const dartTone = (m: MiniMatch, good: boolean, rec?: DartRec): 'hit' | 'miss' | '' | 'dead' =>
+  m.game === 'bullseye' && rec ? (dartPoints(rec) > 0 ? 'hit' : dartPoints(rec) < 0 ? 'miss' : 'dead')
+  : m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
 
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {

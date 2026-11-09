@@ -101,17 +101,18 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football';
+type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye';
 
 /** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
 export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
-  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football';
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye';
 
 function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i] }));
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
+  if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;
   // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles score.
   if (m.game === 'football') {
     return m.view.ball === v.current
@@ -182,8 +183,8 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
               ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
               : <div key={i} className="dart-tile empty" />;
           }
-          const tile = <DartFace m={m} dart={d.dart} />;
-          const cls = `dart-tile ${dartTone(m, visit.good[i])} ${flash === i ? 'flash' : ''}`;
+          const tile = <DartFace m={m} rec={d} />;
+          const cls = `dart-tile ${dartTone(m, visit.good[i], d)} ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
