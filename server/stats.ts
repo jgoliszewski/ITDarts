@@ -149,14 +149,15 @@ export class Stats {
       .filter(r => r.game in GAMES)
       .map(r => {
         const game = GAMES[r.game];
+        const options = game.normalizeOptions(JSON.parse(r.options));
         const result = r.removed ? 'left' : r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost';
         return {
           id: r.id,
           endedAt: r.ended_at,
-          description: game.describe(game.normalizeOptions(JSON.parse(r.options)), r.players),
+          description: game.describe(options, r.players),
           opponents: r.opponents ?? 'Solo',
           result: result as PlayerStatsResponse['recent'][number]['result'],
-          score: r.game === 'x01' || r.game === 'hol' ? r.score : '',
+          score: r.game === 'x01' || game.points?.show(options) ? r.score : '',
         };
       });
 

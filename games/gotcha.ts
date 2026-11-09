@@ -172,6 +172,7 @@ export const gotcha: GameModule<GotchaOptions, GotchaView> = {
     counts: 'Every dart counts at face value; no double is needed. Going over the target is a bust: your score goes back to where the visit started and the visit ends.',
     win: 'Hit the target exactly and you win the game at once, even in the middle of a visit; first to the set number of games wins the match. Gotcha: if your visit ends on the same score as a rival, that rival goes back to 0. A bust or a visit that scores nothing zeroes nobody.',
   },
+  points: { of: v => v.points, show: o => o.firstTo > 1 },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
   describe: o => `Gotcha · ${o.target}${o.firstTo > 1 ? ` · First to ${o.firstTo}` : ''}`,
   view,

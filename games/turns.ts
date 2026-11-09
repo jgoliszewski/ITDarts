@@ -384,6 +384,8 @@ export interface GameModule<O = any, V = any> {
   options: OptionDef<O>[];
   howTo: HowTo;
   record?: RecordDef<O>;
+  /** Games won per player, saved as legs_won; `show` says whether lists display it as the score. */
+  points?: { of: (view: V) => number[]; show: (o: O) => boolean };
   normalizeOptions: (input: unknown) => O;
   describe: (o: O, players: number) => string;
   view: (events: any[], players: number, o: O) => V;

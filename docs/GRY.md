@@ -202,7 +202,7 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 - **Ekran wyników:** hero pokazuje imię, duży wynik, „Left” do celu i kafelki lotek, przygaszone tylko przy buście. Bez podpowiedzi checkoutu. Lista graczy pokazuje wyniki, a przy „First to” > 1 w drugiej linii też punkty („Left 81 · 1 point”); notka w hero zaczyna się wtedy od „Game 2”. Po karcie Tury notka w hero pokazuje np. „Gotcha! Kuba → 0”, gdy ktoś został wyzerowany (od 2026-11-01 już nie na samej karcie). Nagłówek np. „Gotcha · 201”.
 - **Caller** podaje wynik Tury jak w X01, bez „you require” i bez „game shot”.
 - **Wyzwalacze:** „Bust” (istnieje), nowy „Gotcha” (L, zabawny, na start dźwięk i ledy z Bed and breakfast), „Game won” (po każdej grze poza ostatnią, przy „First to” > 1) i „Match won”. Bez „Hit” i „Miss”.
-- **Statystyki:** wygrane (mecze) i liczba Gotcha (ile razy gracz kogoś wyzerował, we wszystkich grach meczu). Punkty nie są zapisywane osobno, jak w Higher or Lower. Bez rekordu.
+- **Statystyki:** wygrane (mecze) i liczba Gotcha (ile razy gracz kogoś wyzerował, we wszystkich grach meczu). Punkty (wygrane gry) zapisują się jako `legs_won`, jak w Higher or Lower; „Last match” i „Recent” pokazują je tylko przy First to powyżej 1. Bez rekordu.
 
 ## Knockout
 

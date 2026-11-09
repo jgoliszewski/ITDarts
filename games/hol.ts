@@ -216,6 +216,7 @@ export const hol: GameModule<HolOptions, HolView> = {
     counts: 'Above the range moves its top up to your sum; below moves its bottom down. A sum equal to an edge is inside. T1 always counts as zero. Any dart outside the scoring area fails the visit.',
     win: 'A failed visit costs a life and leaves the range as it is; with no lives left you are out. The last player in wins the game at once; first to the set number of games wins the match.',
   },
+  points: { of: v => v.points, show: () => true },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
   describe: o => `Higher or Lower · First to ${o.firstTo} · ${livesLabel(o.lives)}`,
   view,

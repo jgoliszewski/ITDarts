@@ -169,6 +169,47 @@ describe('gotcha', () => {
     expect(v.totals).toEqual([20, 20, 1]);
     expect(v.zeroed).toEqual([]);
   });
+
+  describe('first to 2', () => {
+    // Bull + T17 = 101: whoever throws it wins the game.
+    const o = { target: 101, firstTo: 2 };
+    const win = visit('Bull', 'T17');
+    const g = (log: TurnEvent[], players = 3) => play('gotcha', log, players, o);
+
+    it('skips a removed player when picking who starts the next game', () => {
+      // Kuba wins game 1; game 2 would start with Ola (1), who is gone: Ada (2) starts.
+      const v = g([...win, remove(1)]);
+      expect(v.points).toEqual([1, 0, 0]);
+      expect(v.current).toBe(2);
+    });
+
+    it('keeps the point of a game winner removed while Game won is held', () => {
+      const v = g([d('Bull'), d('T17'), remove(0)]);
+      expect(v.points).toEqual([1, 0, 0]);
+      expect(v.phase).not.toBe('matchWon');
+      expect(v.removed).toEqual(['match', null, null]);
+      expect(v.current).toBe(1);
+    });
+
+    it('rotates the starter by one place per game, whoever won the last one', () => {
+      // Game 1 starts with Kuba (0); Ada (2) wins it. Game 2 starts with Ola (1), not Kuba.
+      const game1 = [...visit('S1'), ...visit('S1'), ...win];
+      const v = g(game1);
+      expect(v.points).toEqual([0, 0, 1]);
+      expect(v.current).toBe(1);
+      // Ola wins game 2 (3 players, first to 3); game 3 starts with Ada (2).
+      expect(play('gotcha', [...game1, ...win], 3, { ...o, firstTo: 3 }).current).toBe(2);
+    });
+
+    it('counts gotchas across all games of the match', () => {
+      // Game 1: Kuba 20, Ola 20 = Gotcha (Kuba back to 0); Kuba wins the game.
+      // Game 2 (Ola starts): Ola 10, Kuba 20, Ola 10 = 20: Gotcha again.
+      const log = [...visit('S20'), ...visit('S20'), ...win, ...visit('S10'), ...visit('S20'), ...visit('S10')];
+      const v = g(log, 2);
+      expect(v.points).toEqual([1, 0]);
+      expect(v.stats[1]).toEqual({ gotchas: 2 });
+    });
+  });
 });
 
 describe('knockout', () => {

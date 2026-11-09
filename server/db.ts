@@ -365,12 +365,13 @@ export class Db {
           WHERE l.match_id = mp.match_id AND v.player_id = mp.player_id) AS avg
       FROM match_players mp LEFT JOIN players p ON p.id = mp.player_id
       WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; removed: number; avg: number | null }[];
+    const options = game.normalizeOptions(JSON.parse(m.options));
     const x01 = m.game === 'x01';
     const sets = players.some(p => p.sets_won > 0);
     const value = (p: (typeof players)[number]) =>
       x01 ? String(sets ? p.sets_won : p.legs_won)
       : p.score !== null && game.record ? game.record.format(p.score)
-      : m.game === 'hol' ? String(p.legs_won)
+      : game.points?.show(options) ? String(p.legs_won)
       : p.won ? 'Won' : '';
     const last = this.sql.prepare(`
       SELECT d.n, d.m FROM legs l JOIN visits v ON v.leg_id = l.id AND v.checkout = 1
@@ -378,7 +379,7 @@ export class Db {
     return {
       id: m.id,
       game: m.game,
-      description: game.describe(game.normalizeOptions(JSON.parse(m.options)), players.length),
+      description: game.describe(options, players.length),
       endedAt: m.ended_at,
       status: m.status,
       players: players.map(p => ({

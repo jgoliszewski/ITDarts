@@ -10,7 +10,6 @@ import type { GameId } from '../games/index.ts';
 import { GAMES, MAX_PLAYERS, isGameId } from '../games/index.ts';
 import type { View121 } from '../games/121.ts';
 import { callerLines121 } from '../games/121.ts';
-import type { HolView } from '../games/hol.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { RcView } from '../games/randomco.ts';
 import { callerLinesGotcha } from '../games/gotcha.ts';
@@ -468,7 +467,7 @@ export class Hub {
       this.db.saveMatch({
         game: rec.game, options: rec.options, roster: rec.roster, startedAt: rec.startedAt, endedAt: Date.now(),
         status, winners, sets: 'sets' in view ? view.sets : [], legs,
-        legsWon: rec.game === 'hol' ? (view as HolView).points : undefined,
+        legsWon: game.points?.of(view),
         variant: scores ? this.variant(rec)!.key : null,
         scores: scores ?? undefined,
         stats: mini?.stats,

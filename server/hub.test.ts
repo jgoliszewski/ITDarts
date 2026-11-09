@@ -11,6 +11,7 @@ import type { Config } from './config.ts';
 import { Db } from './db.ts';
 import type { Effects } from './effects/index.ts';
 import { Hub } from './hub.ts';
+import { Stats } from './stats.ts';
 import type { Command, ServerMessage } from './protocol.ts';
 
 let dir: string;
@@ -171,5 +172,36 @@ describe('a live match from before an update', () => {
     const view = (resumed as unknown as { live: { view: { lives: number[]; phase: string } } }).live.view;
     expect(view.lives).toEqual([2, 3]);
     expect(view.phase).toBe('throwing');
+  });
+});
+
+describe('saving a Gotcha match', () => {
+  // Bull + T17 = 101: the starter wins the game; the starter of the next game is the other player.
+  const win = [dart('Bull'), dart('T17')];
+  const next: Command = { type: 'next' };
+  const legsWon = () => (db.sql.prepare('SELECT legs_won FROM match_players ORDER BY position').all() as { legs_won: number }[]).map(r => r.legs_won);
+
+  it('stores the games won as legs_won and shows them as the score when First to is above 1', async () => {
+    const pilot = client(true);
+    const players = [db.createPlayer('Ann'), db.createPlayer('Bob')];
+    await pilot({ type: 'startMatch', game: 'gotcha', options: { target: 101, firstTo: 3, bullOff: 'off' }, roster: players.map((playerId, i) => ({ playerId, name: ['Ann', 'Bob'][i] })) });
+    // The starter wins every game and the starter alternates: Ann, Bob, Ann, Bob, Ann = 3-2.
+    for (let i = 0; i < 5; i++) {
+      for (const x of win) await pilot(x);
+      if (i < 4) await pilot(next);
+    }
+    await pilot({ type: 'endMatch', save: true });
+    expect(legsWon()).toEqual([3, 2]);
+    expect(db.lastMatch()!.players.map(p => p.value)).toEqual(['3', '2']);
+    expect(new Stats(db).player(players[0], 'all')!.recent[0].score).toBe('3–2');
+  });
+
+  it('keeps Won for First to 1', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'gotcha', options: { target: 101, firstTo: 1, bullOff: 'off' }, roster: roster(2) });
+    for (const x of win) await pilot(x);
+    await pilot({ type: 'endMatch', save: true });
+    expect(legsWon()).toEqual([1, 0]);
+    expect(db.lastMatch()!.players.map(p => p.value)).toEqual(['Won', '']);
   });
 });
