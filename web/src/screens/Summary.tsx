@@ -4,7 +4,7 @@ import { CompareTable, fmtDistance, gameRows, playerColor, x01Rows } from '../co
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Logo, act } from '../components/ui.tsx';
 
-function rows(r: MatchReport) {
+function compareRows(r: MatchReport) {
   return [
     ...(r.x01 ? x01Rows(r.x01) : r.totals ? gameRows(r.game, r.totals) : []),
     { label: 'Distance walked', values: r.distance.map(fmtDistance) },
@@ -16,7 +16,7 @@ function Checkouts({ r }: { r: MatchReport }) {
   const rows = r.checkouts!;
   if (!rows.length) return null;
   return (
-    <section className="checkouts">
+    <section className={`checkouts ${r.names.length === 2 ? 'two' : ''}`}>
       <h2>Checkouts</h2>
       <ol>
         {rows.map((c, i) => (
@@ -52,7 +52,7 @@ export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: bool
       </section>
       <main className="summary-body">
         <div className="summary-left">
-          <CompareTable names={r.names} rows={rows(r)} left={r.left} />
+          <CompareTable names={r.names} rows={compareRows(r)} left={r.left} />
           {r.checkouts && <Checkouts r={r} />}
         </div>
         <Heatmap players={r.names.map((name, i) => ({ name, color: playerColor(i), heat: r.heat[i] }))} />

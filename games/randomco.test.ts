@@ -274,6 +274,21 @@ describe('random checkouts: history', () => {
     expect(rc.view([...log, next, undo, undo], 1, forty).history).toEqual([]);
   });
 
+  it('leaves the bull-off out, and keeps a bust of a player removed mid-number', () => {
+    const three = o({ min: 40, max: 40, bullOff: 'closest' });
+    const bull = (mm: number): TurnEvent => ({ t: 'bull', dart: { n: 25, m: 2 }, coords: { x: mm / 170, y: 0 }, at: ++clock });
+    // Bob (1) wins the bull-off and throws first: bust. Ann (0) busts. Cy (2) misses. Ann is removed, Bob and Cy play on.
+    const log: TurnEvent[] = [
+      seed(1), bull(20), bull(3), bull(30),
+      d('S20'), d('S20'), next, d('T20'), next, d('Miss'), next,
+      { t: 'remove', player: 0, scope: 'match' }, d('S1'), next, d('D20'), next,
+    ];
+    const v = rc.view(log, 3, three);
+    expect(v.order).toEqual([1, 0, 2]);
+    expect(v.history).toEqual([row({ closer: 2, darts: 4, visits: 5, busts: 2, finish: 'D20', firstVisit: false })]);
+    expect(v.removed).toEqual(['match', null, null]);
+  });
+
   it('follows a fix of the closing dart', () => {
     const h = rc.view([seed(1), d('S20'), d('S10'), { t: 'fix', index: 1, dart: { n: 10, m: 2 } }], 1, forty).history;
     expect(h).toEqual([row({ darts: 2, finish: 'S20 D10' })]);

@@ -1,5 +1,5 @@
 // Match summary (docs/UI.md, Podsumowanie meczu): numbers and dart positions of one match, guests included. Pure.
-import type { CheckoutRow } from './randomco.ts';
+import type { CheckoutRow, RcView } from './randomco.ts';
 import type { GameId, MiniView } from './turns.ts';
 import type { LegRecord, X01View } from './x01/engine.ts';
 import type { CheckOut } from './x01/rules.ts';
@@ -110,6 +110,6 @@ export function matchReport(m: {
     distance: at.map(i => walked(heat[i].visits, m.ocheMeters)),
     x01: x01 && at.map(i => x01[i]),
     totals: totals && at.map(i => totals[i]),
-    checkouts: 'history' in m.view ? (m.view.history as CheckoutRow[]).map(c => ({ ...c, closer: c.closer === null ? null : at.indexOf(c.closer) })) : null,
+    checkouts: m.game === 'randomco' ? (m.view as RcView).history.map(c => ({ ...c, closer: c.closer === null ? null : at.indexOf(c.closer) })) : null,
   };
 }
