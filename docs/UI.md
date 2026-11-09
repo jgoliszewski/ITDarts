@@ -142,6 +142,7 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
 - Od góry:
   - nagłówek: „MATCH WON” i zwycięzca z wynikiem w legach albo setach, w minigrach wynik gry, a po przerwaniu „MATCH ENDED”;
   - porównanie w stylu Autodarts: przy dwóch graczach nazwa statystyki pośrodku, wartości po bokach, a pod nimi paski od środka na zewnątrz w kolorach graczy, długie według udziału w sumie (przy „lower” według odwrotności). Najlepsza wartość jest w pigułce koloru gracza. Przy 3–4 graczach każdy ma kolumnę z wartością i paskiem. Szerokość jest ograniczona (560 px przy dwóch), żeby liczby były blisko siebie. X01: średnia, pierwsze 9, checkout %, najwyższy checkout, najkrótszy leg, 60+, 80+, 100+, lotki. Minigry: liczby z modułu gry, jak w profilu na `/stats`. Ostatni wiersz to „Distance walked” w metrach;
+  - w Random Checkouts sekcja „Checkouts” pod porównaniem: lista wylosowanych liczb ([GRY.md](GRY.md#random-checkouts)), imię zamykającego w jego kolorze. Na szerokim ekranie to lewa kolumna, która przewija się sama, więc długa lista nie wypycha heatmapy ani przycisków;
   - [heatmapa](#heatmapa) graczy z tego meczu.
 - Goście mają pełną kolumnę i heatmapę, bo podsumowanie liczy się z meczu, a nie z historii.
 - Na telefonie heatmapa jest pod porównaniem, a przyciski są przypięte na dole.

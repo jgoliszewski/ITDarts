@@ -11,6 +11,29 @@ function rows(r: MatchReport) {
   ];
 }
 
+/** Random Checkouts: one line per drawn number (docs/UI.md, Podsumowanie meczu). */
+function Checkouts({ r }: { r: MatchReport }) {
+  const rows = r.checkouts!;
+  if (!rows.length) return null;
+  return (
+    <section className="checkouts">
+      <h2>Checkouts</h2>
+      <ol>
+        {rows.map((c, i) => (
+          <li key={i} className={c.closer === null ? 'open' : ''}>
+            <span className="co-no">{i + 1}</span>
+            <b className="co-num">{c.number}</b>
+            <span className="co-who" style={c.closer === null ? undefined : { color: playerColor(c.closer) }}>{c.closer === null ? 'Not closed' : r.names[c.closer]}</span>
+            <span className="co-stat">{c.closer !== null && <>{c.darts} {c.darts === 1 ? 'dart' : 'darts'} · </>}{c.visits} {c.visits === 1 ? 'visit' : 'visits'}{c.busts > 0 && <> · {c.busts} {c.busts === 1 ? 'bust' : 'busts'}</>}</span>
+            <span className="co-finish">{c.finish}</span>
+            {c.firstVisit && <em>1st visit</em>}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 /** After the match: who won, the players side by side and the heatmap (docs/UI.md, Podsumowanie meczu). */
 export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: boolean; onNew: () => void; onMenu: () => void }) {
   const r = s.summary!;
@@ -28,7 +51,10 @@ export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: bool
         {r.line && <div className="line">{r.line}</div>}
       </section>
       <main className="summary-body">
-        <CompareTable names={r.names} rows={rows(r)} left={r.left} />
+        <div className="summary-left">
+          <CompareTable names={r.names} rows={rows(r)} left={r.left} />
+          {r.checkouts && <Checkouts r={r} />}
+        </div>
         <Heatmap players={r.names.map((name, i) => ({ name, color: playerColor(i), heat: r.heat[i] }))} />
       </main>
       {pilot ? (

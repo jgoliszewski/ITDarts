@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { changes } from './effects.ts';
 import { label, parseDart } from './darts.ts';
-import type { RcOptions } from './randomco.ts';
+import type { CheckoutRow, RcOptions } from './randomco.ts';
 import { callerLinesRc, canCheckOut, numbersIn, randomCheckouts as rc } from './randomco.ts';
 import type { TurnEvent } from './turns.ts';
 import { hint } from './x01/checkout.ts';
@@ -230,6 +230,53 @@ describe('random checkouts: end match', () => {
 
   it('ignores darts after the end', () => {
     expect(rc.view([...two, end, d('S1')], 2, forty)).toEqual(rc.view([...two, end], 2, forty));
+  });
+});
+
+describe('random checkouts: history', () => {
+  const forty = o({ min: 40, max: 40 });
+  const row = (x: Partial<CheckoutRow>): CheckoutRow => ({ number: 40, closer: 0, darts: 1, visits: 1, busts: 0, finish: '', firstVisit: true, ...x });
+
+  it('lists each number with who closed it, darts, visits, busts and the closing visit', () => {
+    const log = [
+      seed(1), d('S20'), d('S20'), next, d('D20'), next, // 0 busts, 1 checks out in his first visit
+      d('S1'), next, d('S5'), next, d('S5'), next, d('S15'), d('D10'), next, // 1 throws first; 0 closes in his second visit
+    ];
+    expect(rc.view(log, 2, forty).history).toEqual([
+      row({ closer: 1, darts: 1, visits: 2, busts: 1, finish: 'D20' }),
+      row({ closer: 0, darts: 5, visits: 4, finish: 'S15 D10', firstVisit: false }),
+    ]);
+  });
+
+  it('keeps the open number as “not closed” only once a visit was played at it', () => {
+    const one = [seed(1), d('D20'), next];
+    expect(rc.view(one, 1, forty).history).toEqual([row({ finish: 'D20' })]);
+    expect(rc.view([...one, d('S1')], 1, forty).history).toHaveLength(1); // the open visit does not count yet
+    expect(rc.view([...one, d('S1'), next, d('S20'), d('S20'), next, end], 1, forty).history.at(-1))
+      .toEqual(row({ closer: null, darts: 0, visits: 2, busts: 1, firstVisit: false }));
+    expect(rc.view([seed(1), end], 1, forty).history).toEqual([]);
+  });
+
+  it('counts the whole team in co-op, and the first visit is the team’s first', () => {
+    const coop = o({ min: 40, max: 40, coop: true });
+    const h = rc.view([seed(1), d('S20'), next, d('D10'), next, d('S1'), next], 2, coop).history;
+    expect(h).toEqual([
+      row({ closer: 1, visits: 2, firstVisit: false, finish: 'D10' }),
+      row({ closer: null, darts: 0, visits: 1, firstVisit: false }),
+    ]);
+    expect(rc.view([seed(1), d('D20'), next], 2, coop).history[0].firstVisit).toBe(true);
+  });
+
+  it('drops the row when the checkout is undone', () => {
+    const log = [seed(1), d('D20')];
+    expect(rc.view(log, 1, forty).history).toEqual([row({ finish: 'D20' })]);
+    expect(rc.view([...log, undo], 1, forty).history).toEqual([]);
+    expect(rc.view([...log, next, undo, undo], 1, forty).history).toEqual([]);
+  });
+
+  it('follows a fix of the closing dart', () => {
+    const h = rc.view([seed(1), d('S20'), d('S10'), { t: 'fix', index: 1, dart: { n: 10, m: 2 } }], 1, forty).history;
+    expect(h).toEqual([row({ darts: 2, finish: 'S20 D10' })]);
   });
 });
 

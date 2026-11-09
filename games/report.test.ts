@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseDart } from './darts.ts';
 import { GAMES } from './index.ts';
 import { matchReport } from './report.ts';
+import type { TurnEvent } from './turns.ts';
 import type { X01Event, X01Options } from './x01/index.ts';
 
 const o: X01Options = { startScore: 101, checkIn: 'straight', checkOut: 'double', matchMode: { kind: 'off' }, bullOff: 'off' };
@@ -51,5 +52,23 @@ describe('match report', () => {
     expect(r.names).toEqual(['Bob', 'Cy', 'Ann']);
     expect(r.left).toEqual([false, false, true]);
     expect(r.x01!.map(x => x.darts)).toEqual([5, 3, 1]);
+  });
+
+  it('maps the closer of a Random Checkouts number onto the report order, a removed player last', () => {
+    const rc = GAMES.randomco;
+    const opts = rc.normalizeOptions({ min: 40, max: 40 });
+    const events = [
+      { t: 'seed', seed: 1 }, { t: 'remove', player: 0, scope: 'match' },
+      { t: 'dart', dart: parseDart('D20')!, at: 1 }, { t: 'next', at: 2 }, { t: 'end' },
+    ] as TurnEvent[];
+    const r = matchReport({
+      game: 'randomco', description: 'RC', names: ['Ann', 'Bob', 'Cy'], legs: rc.compact(events, 3, opts), view: rc.view(events, 3, opts),
+      checkOut: null, ended: true, ocheMeters: 2.5,
+    });
+    expect(r.names).toEqual(['Bob', 'Cy', 'Ann']);
+    expect(r.checkouts).toEqual([expect.objectContaining({ number: 40, closer: 0, darts: 1, finish: 'D20', firstVisit: true })]);
+    expect(matchReport({
+      game: 'x01', description: 'X', names: ['Ann'], legs: [], view: GAMES.x01.view([], 1, o), checkOut: 'double', ended: false, ocheMeters: 2.5,
+    }).checkouts).toBeNull();
   });
 });

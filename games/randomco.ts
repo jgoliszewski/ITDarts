@@ -1,7 +1,7 @@
 // Random Checkouts: check out numbers drawn from a range, one after another, until the match is ended (docs/GRY.md). Pure, no I/O.
 import { callerLines121 } from './121.ts';
 import type { Dart } from './darts.ts';
-import { value } from './darts.ts';
+import { label, value } from './darts.ts';
 import type { Change, Happening } from './effects.ts';
 import type { BullOff, CheckOut } from './x01/rules.ts';
 import { finishesLeg, scoreDart } from './x01/rules.ts';
@@ -60,7 +60,22 @@ interface Shown {
   left: number[];
 }
 
+/** One drawn number, from the draw to its checkout (docs/GRY.md#random-checkouts); `closer` is null for one nobody closed. */
+export interface CheckoutRow {
+  number: number;
+  closer: number | null;
+  /** The closer's darts at the number, as in the “darts per checkout” stat. */
+  darts: number;
+  /** Visits and busts at the number, all players together. */
+  visits: number;
+  busts: number;
+  /** The darts of the closing visit, e.g. “T20 S10 D16”. */
+  finish: string;
+  firstVisit: boolean;
+}
+
 interface State extends Turn, Shown {
+  history: CheckoutRow[];
   points: number[];
   /** Per player: darts thrown at the numbers they checked out, and checkouts in their first visit at the number. */
   checkoutDarts: number[];
@@ -79,6 +94,8 @@ function play(t: Turns, players: number, o: RcOptions): State {
   // In co-op everyone plays the one shared remaining score at index 0.
   const side = (p: number) => (coop ? 0 : p);
   let number = draw(), left = 3, visitStart = number;
+  const history: CheckoutRow[] = [];
+  let visitsHere = 0, bustsHere = 0;
   const rest: number[] = Array(players).fill(number);
   const zero = () => Array(players).fill(0);
   const points = zero(), checkoutDarts = zero(), firstVisit = zero();
@@ -115,8 +132,15 @@ function play(t: Turns, players: number, o: RcOptions): State {
     if (!v.closed) held = { number, left: [...rest] };
     // Visits at the number count per side: in co-op the team's first visit is the first visit.
     visitsAt[k]++;
+    visitsHere++;
+    if (bust) bustsHere++;
     closer = out && !coop ? p : null;
     if (out) {
+      history.push({
+        number, closer: p, darts: dartsAt[p], visits: visitsHere, busts: bustsHere,
+        finish: v.darts.slice(0, w.used).map(r => label(r.dart)).join(' '), firstVisit: visitsAt[k] === 1,
+      });
+      visitsHere = bustsHere = 0;
       points[p]++;
       checkoutDarts[p] += dartsAt[p];
       if (visitsAt[k] === 1) firstVisit[p]++;
@@ -127,6 +151,8 @@ function play(t: Turns, players: number, o: RcOptions): State {
       visitsAt = zero();
     }
   }
+  // The number nobody closed, once a visit was played at it.
+  if (visitsHere > 0) history.push({ number, closer: null, darts: 0, visits: visitsHere, busts: bustsHere, finish: '', firstVisit: false });
   const over = t.ended;
   let winners: number[] = [];
   if (over) {
@@ -143,7 +169,7 @@ function play(t: Turns, players: number, o: RcOptions): State {
     over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx,
     ...shown,
     left: coop ? shown.left.map(() => shown.left[0]) : shown.left,
-    points, checkoutDarts, firstVisit, winners,
+    history, points, checkoutDarts, firstVisit, winners,
     scored: open && left > 0 ? visitStart - rest[side(open.player)] : 0,
   };
 }
@@ -155,6 +181,8 @@ export interface RcView extends MiniView {
   /** Remaining score per player; in co-op the shared one, repeated. */
   left: number[];
   points: number[];
+  /** Every number drawn so far, in order; the last one is open while nobody closed it. */
+  history: CheckoutRow[];
   checkout: string | null;
   setup: string | null;
   /** A checkout is on with the darts left in the visit, hints or not (for “you require”). */
@@ -187,6 +215,7 @@ function view(events: TurnEvent[], players: number, o: RcOptions): RcView {
     remaining,
     left: s.left,
     points: s.points,
+    history: s.history,
     ...hints,
     reach: f.visit.dartsLeft > 0 && !!hint(remaining, f.visit.dartsLeft, o.checkOut, s.scored, thrown)?.finish,
     coop,

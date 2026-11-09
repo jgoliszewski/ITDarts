@@ -175,6 +175,7 @@ Postanowienia z grillingu z 2026-10-29. Losowe sektory, double i treble są opcj
 - **Caller** jak w 121: wynik Tury, „no score” i „you require”, także po nowej liczbie, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
 - **Wyzwalacze:** „Checkout” i „Bust” (istnieją), „Game won” przy zapisie.
 - **Statystyki:** liczba checkoutów, średnia liczba lotek na checkout i % checkoutów zamkniętych w pierwszej Turze. Bez rekordu, bo gra nie ma końca.
+- **Historia checkoutów** (2026-11-09, tylko [podsumowanie meczu](UI.md#podsumowanie-meczu), bez zapisu w bazie i bez `/stats`): jeden wiersz na wylosowaną liczbę, w kolejności gry. Kto zamknął, jego lotki przy tej liczbie (ta sama definicja co „darts per checkout”), Tury i busty przy liczbie (wszystkich graczy), lotki Tury zamykającej (np. „S1 D17”) i znaczek „1st visit” (ta sama definicja co statystyka). Ostatnia liczba, której nikt nie zamknął, jest wyszarzona jako „Not closed” z Turami i bustami, a bez wiersza, gdy nie padła przy niej żadna Tura. Liczy ją ten sam odtwarzany log co resztę gry, więc Undo i poprawki ją zmieniają.
 
 ## Shanghai
 
