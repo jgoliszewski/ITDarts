@@ -250,9 +250,10 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 - **Opcje:**
   - „First to”: 3, 5 (domyślnie) albo 10 punktów;
   - Bull-off.
-- **Wygrana:** kto pierwszy dobije do celu, wygrywa od razu, także w środku Tury. „End match” z „Save” kończy grę jak w Football: wygrywa najwięcej punktów, remisujący dzielą wygraną, a przy wyniku 0 lub niższym nie ma zwycięzcy.
+- **Koniec** (zmiana z 2026-11-09, wcześniej wygrywał od razu ten, kto pierwszy dobił do celu): wynik sprawdzamy dopiero po rundzie, czyli gdy każdy w grze rzucił swoją Turę. Tura gracza, który dobił do celu, toczy się do końca i wszystkie jej lotki się liczą. Jeśli po rundzie nikt nie ma co najmniej celu (także gdy ktoś dobił, a potem spadł), gramy dalej. Jeśli ktoś ma, wygrywa najwięcej punktów. Przy remisie na pierwszym miejscu dogrywkę grają tylko remisujący: każdy jedną Turę w kolejności gry, punkty doliczają się do sumy, wygrywa najwięcej. Kolejny remis daje kolejną rundę dogrywki, do skutku. Solo runda to jedna Tura. Wycofanie gracza w rundzie albo dogrywce działa jak w Shanghai.
+- **„End match” z „Save”** kończy grę jak w Football: wygrywa najwięcej punktów, remisujący dzielą wygraną, a przy wyniku 0 lub niższym nie ma zwycięzcy.
 - **Gracze:** 1–8, każdy na siebie, bez Co-op.
-- **Ekran wyników:** jak w Football: hero z imieniem, dużym wynikiem i kafelkami lotek (zielone dla +, czerwone dla −1, neutralne dla 0), lista graczy z wynikami. Nagłówek np. „Bullseye · First to 5”.
+- **Ekran wyników:** jak w Football: hero z imieniem, dużym wynikiem i kafelkami lotek (zielone dla +, czerwone dla −1, neutralne dla 0), lista graczy z wynikami. W dogrywce hero ma „Tiebreak”, a lista wyszarza tych, którzy jej nie grają (jak w Shanghai). Nagłówek np. „Bullseye · First to 5”.
 - **Caller** milczy.
 - **Wyzwalacze:** tylko istniejące („Bull”, „Match won”), bez nowego Momentu.
 - **Statystyki:** wygrane i suma punktów. Bez rekordu.
