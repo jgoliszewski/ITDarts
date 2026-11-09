@@ -87,6 +87,11 @@ describe('bullseye', () => {
     expect(bullseye.happenings(log, 3, three).filter(h => h.fact.kind === 'matchWon')).toHaveLength(1);
   });
 
+  it('ends the round when its last player is removed, and drops a removed leader from it', () => {
+    expect(won([...visit('Bull', 'Bull'), ...visit('S1'), remove(2)], 3)).toEqual(['matchWon', [0]]);
+    expect(won([...visit('Bull', 'Bull'), ...visit('S1'), remove(0), ...visit('25')], 3)).toEqual(['throwing', []]);
+  });
+
   // Ann (0) and Cy (2) tie on 4, Bob (1) is out of it.
   const tie = [...visit('Bull', 'Bull'), ...visit('S1'), ...visit('Bull', 'Bull')];
 
