@@ -345,6 +345,22 @@ describe('effects service', () => {
     vi.useRealTimers();
   });
 
+  it('LEDs to white: a base change right after does not wait for the cut-off effect', () => {
+    vi.useFakeTimers();
+    vi.spyOn(fx.wled, 'send').mockImplementation(() => undefined);
+    const preset = vi.spyOn(fx.wled, 'preset').mockImplementation(() => undefined);
+    vi.spyOn(fx.wled, 'effect').mockImplementation(() => undefined);
+    store.updateSettings({ wled: { address: 'wled.local', base: { match: 2, takeout: 3 } } });
+    store.createRule({ triggers: [t180], led: { preset: 10, seconds: 2 } });
+    fx.setBase('match');
+    fx.fire(visit180);
+    fx.ledsWhite();
+    preset.mockClear();
+    fx.setBase('takeout');
+    expect(preset).toHaveBeenCalledWith(3);
+    vi.useRealTimers();
+  });
+
   it('lets a running LED effect finish before a new base', () => {
     vi.useFakeTimers();
     const preset = vi.spyOn(fx.wled, 'preset').mockImplementation(() => undefined);
