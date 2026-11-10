@@ -3,6 +3,7 @@
 import type { Change, Trigger } from '../../games/effects.ts';
 import { pickRule } from '../../games/effects.ts';
 import type { BaseState, EffectsStore, Rule, RuleInput } from './store.ts';
+import { WARM } from './leds.ts';
 import { Wled } from './wled.ts';
 
 /** The caller's recordings: one folder per voice, each with the darts-caller keys (docs/EFEKTY.md#caller). */
@@ -70,6 +71,14 @@ export class Effects {
     // With the switch off the lights go dark again afterwards, as the switch says.
     if (this.baseTimer) clearTimeout(this.baseTimer);
     this.baseTimer = this.store.settings().leds ? null : setTimeout(() => this.wled.off(), seconds * 1000);
+  }
+
+  /** “LEDs to white”: warm white on both rings, even with the switch off; the next base or Moment overwrites it. */
+  ledsWhite() {
+    if (this.baseTimer) clearTimeout(this.baseTimer);
+    this.baseTimer = null;
+    this.ledUntil = 0;
+    this.wled.solid(WARM);
   }
 
   private play(rule: Rule | null, anim: Anim | null, sounds: boolean, leds: boolean, caller: Fx['caller']) {

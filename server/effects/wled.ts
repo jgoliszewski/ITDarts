@@ -1,7 +1,8 @@
 // WLED client: the server is its only user (docs/EFEKTY.md), over the JSON API.
 // An effect is a one-item playlist with "end", so WLED goes back to the base preset by itself. It fades in over FADE_IN;
 // the fade back is the base preset's own transition (server/effects/leds.ts).
-import { FADE_IN } from './leds.ts';
+import { FADE_IN, LED_COUNT, SPLIT_AT } from './leds.ts';
+import type { Rgb } from './leds.ts';
 
 export interface WledPreset {
   id: number;
@@ -80,6 +81,15 @@ export class Wled {
   /** Plays `id` for `seconds`, then applies `end` (255 lets WLED restore what was on before). */
   effect(id: number, seconds: number, end: number | null) {
     this.send({ on: true, playlist: { ps: [id], dur: [Math.max(1, Math.round(seconds * 10))], transition: [Math.round(FADE_IN * 10)], repeat: 1, end: end ?? 255 } });
+  }
+
+  /**
+   * One solid colour on both rings, full brightness. WLED unloads a running playlist when a non-preset request sets a
+   * segment's `fx` (wled00/json.cpp, deserializeSegment), and the playlist's "pl" is read-only in the API, so `fx: 0` stops it.
+   */
+  solid(color: Rgb) {
+    const seg = (id: number, start: number, stop: number) => ({ id, start, stop, on: true, bri: 255, col: [color], fx: 0, pal: 0 });
+    this.send({ on: true, bri: 255, seg: [seg(0, 0, SPLIT_AT), seg(1, SPLIT_AT, LED_COUNT)] });
   }
 
   off() {

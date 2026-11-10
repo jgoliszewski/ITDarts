@@ -169,6 +169,7 @@ Grilling z 2026-10-26: konfiguracja wyklikana w domu ma działać też w pracy.
 - Serwer wysyła playlistę z presetem efektu na zadany czas, z wejściem w 0,2 s (`transition` 2). Jako `"end"` podaje preset bieżącego stanu bazowego, a bez niego `255`. WLED sam wraca wtedy do tła, a serwer nie odmierza czasu. Powrót trwa 0,7 s, bo tyle ma `transition` w presecie tła.
 - Nowe zdarzenie przerywa trwający efekt.
 - Zmiana stanu bazowego czeka na koniec trwającego efektu, żeby takeout nie uciął efektu po 180 (z implementacji).
+- „LEDs to white” w panelu tarczy ustawia oba ringi na `WARM` (segmenty `fx: 0`, co zatrzymuje playlistę efektu) i kasuje oczekujący powrót do bazy.
 - Przełącznik LEDs na Pilocie wyłączony gasi ledy, a włączony zapala stan bazowy.
 - Do testów bez kontrolera jest atrapa: `npm run fake-wled` (port 3190). Na stronie efektów wpisujemy adres `localhost:3190`, a `http://localhost:3190` pokazuje aktualny kolor. Atrapa przyjmuje też `npm run leds:upload -- --wled localhost:3190`.
 - **Stany bazowe**, czyli tło między efektami, każdy z własnym presetem:

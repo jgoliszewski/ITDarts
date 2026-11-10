@@ -8,7 +8,7 @@ import type { Fx } from './index.ts';
 import { Effects } from './index.ts';
 import { slug } from './slug.ts';
 import { BASE_RULES, builtinId } from './builtin.ts';
-import { ledDefault } from './leds.ts';
+import { WARM, ledDefault } from './leds.ts';
 import { EffectsStore, formatEffectsFile, parseEffectsFile, soundType } from './store.ts';
 import { presetColor } from './wled.ts';
 
@@ -320,6 +320,28 @@ describe('effects service', () => {
     expect(off).not.toHaveBeenCalled();
     vi.advanceTimersByTime(100);
     expect(off).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it('LEDs to white: solid warm white on both rings, and the pending return to the base is dropped', () => {
+    vi.useFakeTimers();
+    const send = vi.spyOn(fx.wled, 'send').mockImplementation(() => undefined);
+    const preset = vi.spyOn(fx.wled, 'preset').mockImplementation(() => undefined);
+    vi.spyOn(fx.wled, 'effect').mockImplementation(() => undefined);
+    store.updateSettings({ wled: { address: 'wled.local', base: { match: 2, takeout: 3 } } });
+    store.createRule({ triggers: [t180], led: { preset: 10, seconds: 2 } });
+    fx.setBase('match');
+    fx.fire(visit180);
+    fx.setBase('takeout'); // waits for the effect
+    fx.ledsWhite();
+    const sent = send.mock.calls[0][0] as { on: boolean; seg: { id: number; start: number; stop: number; col: number[][]; fx: number }[] };
+    expect(sent.on).toBe(true);
+    expect(sent.seg.map(s => [s.id, s.start, s.stop, s.fx, s.col])).toEqual([[0, 0, 48, 0, [WARM]], [1, 48, 100, 0, [WARM]]]);
+    preset.mockClear();
+    vi.advanceTimersByTime(5000);
+    expect(preset).not.toHaveBeenCalled();
+    fx.setBase('match'); // the next base change works as usual
+    expect(preset).toHaveBeenCalledWith(2);
     vi.useRealTimers();
   });
 

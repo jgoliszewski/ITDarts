@@ -656,6 +656,10 @@ export class Hub {
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
         return {};
       }
+      case 'ledsWhite':
+        if (!this.effects.wled.configured) throw new UserError('Set the WLED address first');
+        this.effects.ledsWhite();
+        return {};
       case 'closeApp':
         setTimeout(() => this.closeApp(), 300);
         return {};

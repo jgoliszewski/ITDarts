@@ -159,6 +159,7 @@ export type Command =
   | { type: 'boardRotated' }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
+  | { type: 'ledsWhite' }
   | { type: 'closeApp' }
   | { type: 'report'; text: string; where: string; userAgent: string };
 

@@ -148,6 +148,11 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
         </div>
         {b.fake && !s.you.isLocal && <a className="btn" style={{ textDecoration: 'none' }} href={`http://${location.hostname}:${b.address.split(':')[1]}/`} target="_blank" rel="noreferrer">Open fake board</a>}
       </section>
+      <button onClick={() => void act({ type: 'ledsWhite' })}
+        style={{ height: 64, borderRadius: 22, background: 'var(--card2)', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
+        <span className="ba-title">LEDs to white</span>
+        <span className="ba-sub" style={{ color: 'var(--muted2)' }}>Warm white on both rings</span>
+      </button>
       {controls}
       {!wide && (
         <section className="box">
