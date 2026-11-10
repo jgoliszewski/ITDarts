@@ -131,7 +131,8 @@ Kolory są nasycone i bez przygaszania, zgodnie z wnioskami z LED labu.
   - fiolet: zabawne;
   - tęcza: XL;
   - czerwień: źle;
-  - biel: neutralne.
+  - biel: neutralne;
+  - żółty (od 2026-11-10): nasze reguły z głosem papieża, Bed and breakfast (26) i Clean 20s (60) w `effects/effects.json`, preset 129 „Pope”. Reguły bazowe i Gotcha zostają przy swoich kolorach.
 - **Q9:** Treble 15–19 to nadal wysokie treble, więc mają i dźwięk, i ledy, jak T20 i Bull.
 - **Q10:** przyjęte, wszystkie propozycje z Sound check (Treble ladder i Strength ladder):
   - S to marimba bez dzwonka: Treble 15–20 to trzy szybkie nuty, nadal coraz wyżej od T15 do T20, a Clean 20s to trzy uderzenia;

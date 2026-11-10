@@ -336,7 +336,7 @@
         "jeszcze-jak.mp3"
       ],
       "led": {
-        "preset": 110,
+        "preset": 129,
         "seconds": 0.8
       }
     },
@@ -369,7 +369,7 @@
         "papiez-a-mozna-jak-najbadziej.mp3"
       ],
       "led": {
-        "preset": 111,
+        "preset": 129,
         "seconds": 0.8
       }
     },

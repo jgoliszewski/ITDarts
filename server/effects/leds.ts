@@ -64,6 +64,7 @@ export const GREEN: Rgb = [0, 255, 40];
 export const TEAL: Rgb = [0, 200, 120];
 export const PURPLE: Rgb = [150, 0, 255];
 export const MAGENTA: Rgb = [255, 0, 160];
+export const YELLOW: Rgb = [255, 190, 0]; // the Pope's rules (26, 60); 255,255,0 tends to look lime on WS2812, tune at the board
 
 // ---------- the Momenty ----------
 
@@ -87,7 +88,7 @@ const sparks = (color: Rgb, bg: Rgb): Motion => ({ kind: 'burst', color, bg, rat
 export type LedKey =
   | 'base' | 'offline' | 'game-on' | 'leg-start' | 'treble' | 'treble-20' | 'bull' | 'ton' | 'ton-40' | '180' | 'clean-20s' | 'bnb'
   | 'no-score' | 'bust' | 'checkout' | 'madhouse' | 'high-finish' | 'big-fish' | 'set-won' | 'match-won' | 'hit' | 'miss'
-  | 'sector-closed' | 'white-horse' | 'life-lost' | 'killer' | 'attempt-failed' | 'player-out' | 'new-record';
+  | 'sector-closed' | 'white-horse' | 'life-lost' | 'killer' | 'attempt-failed' | 'player-out' | 'new-record' | 'pope';
 
 /** Every LED look with its preset number; numbers never move, so a preset is overwritten in place by the next upload. */
 export const LEDS: Record<LedKey, { preset: number; name: string; group: FxGroup; effect: Effect }> = {
@@ -131,6 +132,8 @@ export const LEDS: Record<LedKey, { preset: number; name: string; group: FxGroup
     preset: 128, name: 'New record', group: 'minigames',
     effect: { board: { kind: 'rainbow', color: 'rainbow', dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT, rate: 0.4 }, wall: { ...ripple(ORANGE, EMBER), dur: 3, fadeIn: FADE_IN, fadeOut: FADE_OUT } },
   },
+  // Our rules with the Pope's voice (Bed and breakfast 26, Clean 20s 60) in effects/effects.json; not a base default.
+  pope: { preset: 129, name: 'Pope', group: 'visits', effect: pair(YELLOW, 0.8, ripple(YELLOW, ORANGE)) },
 };
 
 /** The presets the upload owns; anything in this range that is not in LEDS is removed. */
