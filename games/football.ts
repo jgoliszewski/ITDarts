@@ -124,7 +124,7 @@ function view(events: TurnEvent[], players: number, o: FootballOptions): Footbal
     hero: {
       big: String(s.goals[p]),
       caption: 'Goals',
-      note: s.ball === p ? (s.sectors ? `Your ball · big singles ${s.sectors.join(' · ')} score` : 'Your ball · doubles score') : s.ball === null ? `Ball in the centre · hit ${bull}` : `Ball with a rival · hit ${bull}`,
+      note: s.ball === p ? (s.sectors ? `Your ball · big singles ${s.sectors.join(' · ')} score` : 'Your ball · doubles score') : s.ball === null ? `Ball in the centre · hit ${bull}` : `Ball with a rival · hit ${bull}`,
     },
     rows: s.goals.map((g, i) => ({ value: String(g), meta: s.ball === i ? '⚽ Ball' : plural(g, 'goal'), out: false })),
     result: s.winners.length ? `Goals ${[...s.goals].sort((a, b) => b - a).join('–')}` : '',

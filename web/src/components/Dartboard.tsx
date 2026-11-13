@@ -59,10 +59,11 @@ export function spotCoords(sx: number, sy: number, rings = R): Coords {
 
 /** Where a click fell on the board, as Board Manager coords. */
 function tapCoords(e: MouseEvent<SVGElement>): Coords | undefined {
-  const svg = e.currentTarget.ownerSVGElement;
-  const box = svg?.getBoundingClientRect();
-  if (!box?.width) return undefined;
-  return spotCoords(((e.clientX - box.left) / box.width) * 760 - 380, ((e.clientY - box.top) / box.height) * 760 - 380);
+  // Through the SVG's own matrix, so a letterboxed board (a rectangle around the square viewBox) still maps right.
+  const m = e.currentTarget.ownerSVGElement?.getScreenCTM();
+  if (!m) return undefined;
+  const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+  return spotCoords(p.x, p.y);
 }
 
 export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {

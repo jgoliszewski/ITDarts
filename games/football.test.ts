@@ -79,7 +79,7 @@ describe('football', () => {
 // Goals on Big singles: four sectors drawn from the logged seed at each take of the ball.
 const singles = { ...football.defaults, goalsOn: 'singles' as const };
 const seed = (n: number): TurnEvent => ({ t: 'seed', seed: n });
-const BIG = { x: 0, y: 0.8 }; // 136 mm: between the treble (107 mm) and the double (162 mm)
+const BIG = { x: 0, y: 0.8 }; // 136 mm: between the middle of the treble (103 mm) and the double (162 mm)
 const SMALL = { x: 0, y: 0.35 }; // 60 mm: the inner single
 const dc = (s: string, coords: { x: number; y: number }): TurnEvent => ({ t: 'dart', dart: parseDart(s)!, coords, at: ++clock });
 const fixTo = (index: number, s: string, coords?: { x: number; y: number }): TurnEvent => ({ t: 'fix', index, dart: parseDart(s)!, coords });
@@ -113,6 +113,13 @@ describe('football, goals on big singles', () => {
     expect(goalsOf([s0, d('25'), dc('S20', BIG)])).toEqual([1, 0]);
     expect(goalsOf([s0, d('25'), dc('S3', BIG)])).toEqual([1, 0]);
     expect(goalsOf([s0, d('25'), d('S6')])).toEqual([1, 0]);
+  });
+
+  it('splits the single at 103 mm, like Bullseye: 103 mm itself is a big single', () => {
+    const mm = (v: number) => ({ x: v / 170, y: 0 });
+    expect(goalsOf([s0, d('25'), dc('S20', mm(103))])).toEqual([1, 0]);
+    expect(goalsOf([s0, d('25'), dc('S20', mm(102))])).toEqual([0, 0]);
+    expect(goalsOf([s0, d('25'), dc('S20', mm(105))])).toEqual([1, 0]);
   });
 
   it('does not score the inner single, a double, a treble or another sector', () => {
@@ -173,7 +180,7 @@ describe('football, goals on big singles', () => {
   });
 
   it('shows the sectors and the way to score on the hero', () => {
-    expect(football.view([s0, d('25')], 2, singles).hero.note).toBe('Your ball · big singles 20 · 6 · 3 · 11 score');
+    expect(football.view([s0, d('25')], 2, singles).hero.note).toBe('Your ball · big singles 20 · 6 · 3 · 11 score');
     expect(football.view([d('25')], 2, o).hero.note).toBe('Your ball · doubles score');
     expect(football.view([d('25')], 2, o).sectors).toBeNull();
   });

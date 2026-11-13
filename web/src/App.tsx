@@ -154,7 +154,7 @@ function Main({ s }: { s: ClientState }) {
   };
   const pickFix = (d: Dart, coords?: Coords) => {
     if (!fix) return;
-    void act(fix.dart ? { type: 'fix', index: fix.index, dart: d, ...(coords && { coords }) } : { type: 'dart', dart: d });
+    void act(fix.dart ? { type: 'fix', index: fix.index, dart: d, ...(coords && { coords }) } : { type: 'dart', dart: d, ...(coords && { coords }) });
     setFix(null);
   };
 

@@ -49,7 +49,7 @@ Podmiana jednego Rzutu w bieżącej Turze na inny segment, wybrany na Pilocie.
 _Avoid_: edycja, korekta
 
 **Duży single / mały single**:
-Single w polu między treblem a double (duży, inaczej zewnętrzny, od 107 mm od środka) albo między 25 a treblem (mały, inaczej wewnętrzny). Rozstrzygają go coords Rzutu, a bez coords Rzut liczy się jako duży single (Football w Big singles) albo jako mały (Bullseye).
+Single w polu między treblem a double (duży, inaczej zewnętrzny) albo między 25 a treblem (mały, inaczej wewnętrzny). Granica leży w połowie szerokości treble, 103 mm od środka: od 103 mm (włącznie) to duży single (`SINGLE_SPLIT_MM`, ta sama w Football i Bullseye). Rozstrzygają go coords Rzutu, a bez coords Rzut liczy się jako duży single (Football w Big singles) albo jako mały (Bullseye).
 _Avoid_: single outer/inner (w UI: „Big singles”)
 
 **Undo**:

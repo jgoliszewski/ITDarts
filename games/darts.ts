@@ -15,12 +15,12 @@ export interface Coords {
 /** Board Manager coords are normalized: 1 is the outer edge of the double ring, 170 mm from the centre. */
 export const BOARD_RADIUS_MM = 170;
 
-/** Outer edge of the treble ring, 107 mm from the centre: a single beyond it is a big (outer) single. */
-export const TREBLE_OUTER_MM = 107;
+/** The middle of the treble ring, 103 mm from the centre: a single closer is a small (inner) single, 103 mm itself and beyond a big one. */
+export const SINGLE_SPLIT_MM = 103;
 
-/** Big single: the field between the treble and the double. Without coords a single counts as big. */
+/** Big single: the field between the treble and the double. Without coords a single counts as big. Compared in board units, so 103 mm itself is big. */
 export const isBigSingle = (rec: { dart: Dart; coords?: Coords }): boolean =>
-  rec.dart.m === 1 && (!rec.coords || Math.hypot(rec.coords.x, rec.coords.y) >= TREBLE_OUTER_MM / BOARD_RADIUS_MM);
+  rec.dart.m === 1 && (!rec.coords || !(Math.hypot(rec.coords.x, rec.coords.y) < SINGLE_SPLIT_MM / BOARD_RADIUS_MM));
 
 export const MISS: Dart = { n: 0, m: 1 };
 

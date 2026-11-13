@@ -144,7 +144,8 @@ export type Command =
   | { type: 'showHowTo'; game: GameId | null; options?: unknown }
   | { type: 'rematch' }
   | { type: 'bullOff'; starter: number }
-  | { type: 'dart'; dart: Dart }
+  /** `coords` (Board Manager units) only from a tap on the fix board (Add dart). */
+  | { type: 'dart'; dart: Dart; coords?: Coords }
   /** `coords` (Board Manager units) only from a tap on the fix board. */
   | { type: 'fix'; index: number; dart: Dart; coords?: Coords }
   | { type: 'undo' }

@@ -263,6 +263,19 @@ describe('Football', () => {
     expect(events().filter(e => e.t === 'seed')).toHaveLength(0);
   });
 
+  it('draws a new seed for a rematch in Big singles', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'football', options: { ...o, goalsOn: 'singles' }, roster: roster(2) });
+    const first = events().find(e => e.t === 'seed') as { seed: number };
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    const live = db.loadLive()!;
+    expect(live.options).toMatchObject({ goalsOn: 'singles' });
+    const seeds = live.events.filter(e => e.t === 'seed') as { seed: number }[];
+    expect(seeds).toHaveLength(1);
+    expect(seeds[0].seed).not.toBe(first.seed);
+  });
+
   it('takes a fix with the place that was tapped, and refuses coords that are not numbers', async () => {
     const pilot = client(true);
     await pilot({ type: 'startMatch', game: 'football', options: { ...o, goalsOn: 'singles' }, roster: roster(2) });
@@ -274,6 +287,33 @@ describe('Football', () => {
     expect(events().filter(e => e.t === 'fix')).toHaveLength(1);
     // Without coords the fix is as before.
     expect(await pilot({ type: 'fix', index: 0, dart: parseDart('S20')! })).toMatchObject({ ok: true });
+    expect(events().at(-1)).not.toHaveProperty('coords');
+  });
+});
+
+describe('coords from the Pilot', () => {
+  const events = () => db.loadLive()!.events;
+  const bad = [{ x: 'a', y: 1 }, { x: Infinity, y: 0 }, { x: 1e999, y: 0 }, 'x', { x: 1 }];
+
+  it('keeps coords that are not finite numbers out of the X01 log, for a fix and for a dart', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'x01', options: {}, roster: roster(2) });
+    await pilot(dart('S20'));
+    for (const coords of bad) {
+      expect(await pilot({ type: 'fix', index: 0, dart: parseDart('S5')!, coords } as never)).toMatchObject({ ok: false });
+      expect(await pilot({ type: 'dart', dart: parseDart('S5')!, coords } as never)).toMatchObject({ ok: false });
+    }
+    expect(events().filter(e => e.t === 'fix')).toHaveLength(0);
+    expect(events().filter(e => e.t === 'dart')).toHaveLength(1);
+  });
+
+  it('logs the coords of an added dart, and the dart is as Board Manager gave it without them', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bullseye', options: { firstTo: 5, bullOff: 'off' }, roster: roster(2) });
+    expect(await pilot({ type: 'dart', dart: parseDart('S20')!, coords: { x: 0, y: 0.8 } })).toMatchObject({ ok: true });
+    expect(events().at(-1)).toMatchObject({ t: 'dart', coords: { x: 0, y: 0.8 } });
+    expect((hub as unknown as { live: { view: { points: number[] } } }).live.view.points).toEqual([-1, 0]);
+    await pilot(dart('S20'));
     expect(events().at(-1)).not.toHaveProperty('coords');
   });
 });

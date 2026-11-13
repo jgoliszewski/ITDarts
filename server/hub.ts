@@ -6,6 +6,7 @@ import { networkInterfaces } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { WebSocket } from 'ws';
 import { isValidDart } from '../games/darts.ts';
+import { validCoords } from '../games/turns.ts';
 import type { GameId } from '../games/index.ts';
 import { GAMES, MAX_PLAYERS, isGameId } from '../games/index.ts';
 import type { View121 } from '../games/121.ts';
@@ -569,10 +570,13 @@ export class Hub {
         return {};
       case 'dart':
         if (!isValidDart(cmd.dart)) throw new UserError('Invalid dart');
+        if (cmd.coords !== undefined && !validCoords(cmd.coords)) throw new UserError('Invalid input');
         if (v?.phase !== 'throwing' || v.visit.dartsLeft === 0) throw new UserError('This visit is complete');
-        this.apply({ t: 'dart', dart: cmd.dart, at: Date.now() });
+        this.apply({ t: 'dart', dart: cmd.dart, at: Date.now(), ...(cmd.coords && { coords: cmd.coords }) });
         return {};
       case 'fix':
+        // One check for every game, X01 included: its engine drops the coords, but they must not reach the log.
+        if (cmd.coords !== undefined && !validCoords(cmd.coords)) throw new UserError('Invalid input');
         this.apply({ t: 'fix', index: cmd.index, dart: cmd.dart, ...(cmd.coords && { coords: cmd.coords }) });
         this.live!.lastFix = { index: cmd.index, at: Date.now() };
         return {};

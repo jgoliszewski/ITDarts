@@ -1,6 +1,6 @@
 // Bullseye: points for darts near the bull; after a round in which someone reached the target, the most points win (docs/GRY.md). Pure, no I/O.
 import type { Coords, Dart } from './darts.ts';
-import { BOARD_RADIUS_MM } from './darts.ts';
+import { isBigSingle } from './darts.ts';
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
@@ -22,16 +22,13 @@ interface State extends Turn {
   playing: boolean[];
 }
 
-/** The inner single ends halfway across the treble, 103 mm from the centre. */
-const INNER_MM = 103;
-
 /** Bull +2, 25 +1, inner single 0 (also without coords), anything else −1. */
 export function dartPoints(rec: { dart: Dart; coords?: Coords }): number {
-  const { dart: d, coords: c } = rec;
+  const { dart: d } = rec;
   if (d.n === 25) return d.m === 2 ? 2 : 1;
   if (d.n === 0 || d.m !== 1) return -1;
-  // Compared in board units, so 103 mm itself is outside (mm × 170 would land a hair under 103).
-  return !c || Math.hypot(c.x, c.y) < INNER_MM / BOARD_RADIUS_MM ? 0 : -1;
+  // The inner single ends halfway across the treble (SINGLE_SPLIT_MM); a single without coords is inner here.
+  return rec.coords && isBigSingle(rec) ? -1 : 0;
 }
 
 function play(t: Turns, players: number, o: BullseyeOptions): State {
