@@ -4,15 +4,15 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 12 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30) i Bullseye (od 2026-11-09).
+Gramy w X01 oraz 13 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30), Bullseye (od 2026-11-09) i Free throw (od 2026-11-13).
 
-Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30, razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 (Count Up dalej odrzucony jako gra z wynikiem do pobicia: rzuty treningowe bez celu i bez zwycięzcy to osobny [Free throw](#free-throw), decyzja z 2026-11-13), razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem są Higher or Lower i Gotcha z opcją „First to”.
-- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts nie ma końca wcale i zawsze kończy ją „End match”.
-- **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy.
+- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, i Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu). Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
+- **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy, a Free throw dokładnie 1 (pole `maxPlayers` modułu gry: hub odrzuca start z większym składem).
 - **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
 - **Tura** jak w X01: 3 lotki i Takeout. Po trafieniu celu następna lotka w tej samej Turze idzie już w kolejny cel.
@@ -23,12 +23,12 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - Kolejność kroków: gra, opcje, gracze.
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
-  - **Practice:** ATC, Full Board, 121, Random Checkouts;
+  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw;
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye.
 
-  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”). Te same grupy są w wyborze gry na `/stats`.
+  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”, „1 player”). Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
-- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players”.
+- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players” albo „Free throw is for 1 player”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
 - **Opcje dla 2+ graczy** (Mode w Cricket, Co-op, Bull-off) są widoczne od razu, zanim ktoś zostanie dodany (od 2026-10-27). Bez graczy „Start match” jest wyszarzony.
@@ -177,6 +177,19 @@ Postanowienia z grillingu z 2026-10-29. Losowe sektory, double i treble są opcj
 - **Statystyki:** liczba checkoutów, średnia liczba lotek na checkout i % checkoutów zamkniętych w pierwszej Turze. Bez rekordu, bo gra nie ma końca.
 - **Historia checkoutów** (2026-11-09, tylko [podsumowanie meczu](UI.md#podsumowanie-meczu), bez zapisu w bazie i bez `/stats`): jeden wiersz na wylosowaną liczbę, w kolejności gry. Kto zamknął, jego lotki przy tej liczbie (ta sama definicja co „darts per checkout”), Tury i busty przy liczbie (wszystkich graczy), lotki Tury zamykającej (np. „S1 D17”) i znaczek „1st visit” (ta sama definicja co statystyka). Ostatnia liczba, której nikt nie zamknął, jest wyszarzona jako „Not closed” z Turami i bustami, a bez wiersza, gdy nie padła przy niej żadna Tura. Liczy ją ten sam odtwarzany log co resztę gry, więc Undo i poprawki ją zmieniają.
 
+## Free throw
+
+Postanowienia z grillingu z 2026-11-13. Rzuty treningowe bez celu i bez zwycięzcy; to nie Count Up (odrzucony), bo nie ma wyniku do pobicia ani wygranej.
+
+- **Gracze:** tylko solo, dokładnie 1. Bez Bull-offu, bez Co-op.
+- **Tura:** jak wszędzie, 3 lotki i Takeout. Każda lotka liczy się za swoją wartość jak w X01. Undo i Poprawka działają z logu tur.
+- **Opcje:** „Visits”: Unlimited (domyślnie), 10, 20 albo 30.
+- **Koniec:** po ostatniej Turze limitu gra kończy się sama (Tura zamknięta przed trzecią lotką też się liczy). Bez limitu kończy ją „End match”. „End match” z „Save” kończy grę zdarzeniem `end`, jak w Random Checkouts. W obu przypadkach **nikt nie wygrywa**: ekran „Game over” z wynikiem (np. „10 visits · average 41.3”) i „Summary”, bez „WINNER” i bez Wyzwalacza „Match won”. Undo cofa koniec.
+- **Ekran wyników:** hero to suma bieżącej Tury z podpisem „This visit”, przy limicie z notką „Visit 7 of 20”. Tarcza w hero bez celu (podpis „No target”), kropki lotek Tury w miejscu wbicia. Lotki to kafelki „pole / wartość” bez kolorowania trafień. Wiersz gracza: średnia z 3 lotek i liczba lotek. Karta „THIS MATCH”: Average, Darts, Highest visit, 60+, 80+, 100+. Nagłówek „Free throw” albo „Free throw · 10 visits”.
+- **Telefon:** „this turn” to suma Tury.
+- **Efekty, animacje i caller jak w X01** (poza tym, co wymaga wyniku do zejścia: bust, checkout, „you require”, „game shot”): zob. [EFEKTY.md](EFEKTY.md). Free throw nie ma własnej listy efektów.
+- **Statystyki:** mecz zapisany jako Free throw. Na `/stats`: średnia z 3 lotek (punkty / lotki × 3), lotki, najwyższa Tura (maksimum z meczów, nie suma), 60+, 80+, 100+ ([STATYSTYKI.md](STATYSTYKI.md#inne-gry)). Lotki trafiają do heatmapy gracza dla gry Free throw. Bez rekordu i bez Ekranu rekordu.
+
 ## Shanghai
 
 Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
@@ -263,5 +276,5 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw.
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

@@ -11,9 +11,9 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 | Wyzwalacz | Przykład | Gry |
 |---|---|---|
 | Lotka | T20, Bull, 25, dowolna podwójna, Miss | wszystkie |
-| Suma tury | 180, 26, 0 („no score”) | X01 |
-| Próg lub przedział tury | 100+, 140+, 100–170 | X01 |
-| Kombinacja | 1-5-20, T20 · T20 · Bull | X01 |
+| Suma tury | 180, 26, 0 („no score”) | X01, Free throw |
+| Próg lub przedział tury | 100+, 140+, 100–170 | X01, Free throw |
+| Kombinacja | 1-5-20, T20 · T20 · Bull | X01, Free throw |
 | Zostajesz na („Left on”) | 2, czyli D1 | X01 |
 | Bust | | X01 |
 | Checkout / wygrany leg | | wszystkie |
@@ -32,6 +32,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - Bust późniejszą lotką w tej samej turze nie cofa efektu, który już zagrał.
   - Poprawka odpala „Left on”, jak wynik tury: S19 → T19 na 59 daje „Left on 2”.
   - N od 1 do 901, bez warunku checkoutu.
+- **Free throw** (2026-11-13) zgłasza skończoną Turę tym samym faktem co X01 bez bustu (`visit`, bez checkoutu, ten sam slot `L1V<n>`, w tym samym momencie), więc grają z niego wszystkie reguły Tur: 180, Ton 40, Ton, No score, kombinacje (Bed and breakfast, Clean 20s) i każda własna reguła sumy, przedziału i kombinacji. Lotki jak wszędzie (Treble 15–20, Bull). Nie ma bustu, checkoutu ani „Left on”, a „Match won” nie pada, bo nikt nie wygrywa. Bez nowego Momentu, `ORDER` bez zmian.
 - **Minigierki** mają własne wyzwalacze, np. trafiony cel w Around the Clock albo „New record”. Lista jest w [GRY.md](GRY.md). Reguła działa w każdej grze, w której jej wyzwalacz ma sens.
 
 ## Reguły
@@ -229,6 +230,8 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 | Wygrany mecz | konfetti |
 | T20, Bull | błysk kafelka lotki |
 
+W Free throw grają te same animacje z tych samych faktów (180, 140+ z sumą Tury w plakietce, błysk kafelka).
+
 Z implementacji (2026-10-26):
 
 - 180 to pomarańczowy błysk na cały ekran z wielkim czarnym „180”, bo karta tury pokazuje już pomarańczowe 180 i zwykła animacja z nim zlewała się.
@@ -240,7 +243,7 @@ Z implementacji (2026-10-26):
 
 Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/jgoliszewski/ITDarts/issues/5) (2026-10-26). Wszystko poza tym, co mówi sędzia (pojedyncze lotki, okrzyki, dźwięki pod konkretne wyniki), to Reguły.
 
-- **X01, 121, Random Checkouts, Gotcha i Knockout.** W pozostałych minigierkach caller milczy. W Knockout (od 2026-10-30) mówi jak w Gotcha: tylko wynik Tury. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
+- **X01, 121, Random Checkouts, Free throw, Gotcha i Knockout.** W pozostałych minigierkach caller milczy. W Free throw (od 2026-11-13) mówi „game on” na starcie i sumę każdej Tury tym samym kluczem co X01 (0 to „busted” jak w X01), bez „you require” i bez „game shot”. W Knockout (od 2026-10-30) mówi jak w Gotcha: tylko wynik Tury. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
 - **Co mówi** (stały zestaw, bez kategorii do wyłączania):
   - „game on” na starcie każdego legu, a przy pierwszym legu po bull-offie;
   - wynik tury, 1–180;
