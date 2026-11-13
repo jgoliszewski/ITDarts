@@ -169,6 +169,8 @@ describe('bull-off in progress', () => {
     const { GAMES, GAME_IDS } = await import('./index.ts');
     for (const id of GAME_IDS.filter(g => g !== 'x01')) {
       const g = GAMES[id];
+      // Alone there is nobody to bull off against.
+      if (g.maxPlayers === 1) continue;
       const o = { ...g.defaults, bullOff: 'closest' };
       expect(g.view([], 2, o).phase, id).toBe('bulloff');
       expect(g.view([{ t: 'bull', ...at(12) }], 2, o).phase, id).toBe('bulloff');

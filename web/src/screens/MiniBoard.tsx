@@ -101,17 +101,19 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye';
+type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow';
 
 /** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
 export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
-  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye';
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow';
 
 function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
+  // Free throw has no target: the board only shows where the darts stuck.
+  if (m.game === 'freethrow') return <TargetBoard cleared={[]} target={null} ring={null} darts={darts} label="No target" />;
   if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;
   // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles score.
   if (m.game === 'football') {
@@ -317,7 +319,9 @@ export function NewRecord({ m }: { m: MiniMatch }) {
 /** Like X01's match end: kicker, winner, the game's result and the winner's numbers in big tiles (docs/UI.md, Start i koniec meczu). */
 export function MiniEnd({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) {
   const v = m.view;
-  const tiles = v.winners.length === 1 ? gameStats(m.game, v.stats[v.winners[0]] ?? {}) : [];
+  // Free throw has no winner, but its one player's numbers are the result.
+  const who = v.winners.length === 1 ? v.winners[0] : m.game === 'freethrow' ? 0 : null;
+  const tiles = who === null ? [] : gameStats(m.game, v.stats[who] ?? {});
   return (
     <div className="overlay">
       <div className="result-card">

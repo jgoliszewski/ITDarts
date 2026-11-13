@@ -167,6 +167,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
     : m.game === 'hol' ? m.view.sum ?? 0
     : m.game === 'shanghai' ? m.view.visitPoints
     : m.game === 'knockout' ? m.view.visitScore
+    : m.game === 'freethrow' ? m.view.visitTotal
     : m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
@@ -347,7 +348,8 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onPlayer, o
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} /> : <MiniEnd m={m} isPilot={isPilot} />)}
       <HowToOverlay s={s} />
-      <FxLayer total={isX01(m) ? m.view.visit.total : null} />
+      {/* The 140+ badge shows the visit total in X01 and in Free throw (docs/EFEKTY.md). */}
+      <FxLayer total={isX01(m) ? m.view.visit.total : m.game === 'freethrow' ? m.view.visitTotal : null} />
       {overlay}
     </div>
   );

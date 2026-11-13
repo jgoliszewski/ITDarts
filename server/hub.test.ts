@@ -187,6 +187,25 @@ describe('saving a Bullseye match', () => {
   });
 });
 
+describe('Free throw', () => {
+  it('refuses a start with 2 players', async () => {
+    const pilot = client(true);
+    const r = await pilot({ type: 'startMatch', game: 'freethrow', options: { visits: 0 }, roster: roster(2) });
+    expect(r).toMatchObject({ ok: false, error: 'Free throw is for 1 player' });
+    expect((hub as unknown as { live: unknown }).live).toBeNull();
+  });
+
+  it('ends on End match with Save with the end screen and no winner', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'freethrow', options: { visits: 0 }, roster: roster(1) });
+    await pilot(dart('T20'));
+    await pilot({ type: 'endMatch', save: true });
+    const live = (hub as unknown as { live: { view: { phase: string; winners: number[] } } | null }).live;
+    expect(live?.view.phase).toBe('matchWon');
+    expect(live?.view.winners).toEqual([]);
+  });
+});
+
 describe('saving a Gotcha match', () => {
   // Bull + T17 = 101: the starter wins the game; the starter of the next game is the other player.
   const win = [dart('Bull'), dart('T17')];

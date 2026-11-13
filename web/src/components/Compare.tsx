@@ -17,6 +17,14 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
     case 'gotcha': return [['Gotchas', String(t.gotchas ?? 0), 'rivals sent back to 0']];
     case 'knockout': return [['Average visit', t.visits ? (t.points / t.visits).toFixed(1) : '–', `${t.visits ?? 0} visits`]];
     case 'football': return [['Goals', String(t.goals ?? 0)]];
+    case 'freethrow': return [
+      ['Average', t.darts ? ((t.points / t.darts) * 3).toFixed(1) : '–', 'per 3 darts'],
+      ['Darts', String(t.darts ?? 0)],
+      ['Highest visit', String(t.best ?? 0)],
+      ['60+', String(t.v60 ?? 0)],
+      ['80+', String(t.v80 ?? 0)],
+      ['100+', String(t.v100 ?? 0)],
+    ];
     case 'bullseye': return [['Points', String(t.points ?? 0)]];
     case 'shanghai': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Shanghais', String(t.shanghais ?? 0)]];
     case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];

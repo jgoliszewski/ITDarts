@@ -4,6 +4,7 @@ import type { CricketOptions, CricketView } from '../games/cricket.ts';
 import type { Coords, Dart } from '../games/darts.ts';
 import type { Fx } from './effects/index.ts';
 import type { MatchReport, PlayerHeat } from '../games/report.ts';
+import type { FreethrowOptions, FreethrowView } from '../games/freethrow.ts';
 import type { BullseyeOptions, BullseyeView } from '../games/bullseye.ts';
 import type { FootballOptions, FootballView } from '../games/football.ts';
 import type { GotchaOptions, GotchaView } from '../games/gotcha.ts';
@@ -61,6 +62,7 @@ interface Games {
   knockout: { options: KnockoutOptions; view: KnockoutView };
   football: { options: FootballOptions; view: FootballView };
   bullseye: { options: BullseyeOptions; view: BullseyeView };
+  freethrow: { options: FreethrowOptions; view: FreethrowView };
 }
 
 /** The office record of the variant being played, for the record screen. */

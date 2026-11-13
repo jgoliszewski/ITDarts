@@ -345,7 +345,7 @@ export const rotate = (order: number[], k: number) => order.map((_, i) => order[
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye' | 'freethrow';
 
 /** The setup and /stats tiles come in these groups, in this order (docs/GRY.md, Setup na Pilocie). */
 export type GameGroup = 'classic' | 'practice' | 'versus';
@@ -380,6 +380,8 @@ export interface GameModule<O = any, V = any> {
   blurb: string;
   group: GameGroup;
   minPlayers: number;
+  /** Most players the game takes (Free throw: 1); the setup and the hub refuse more. */
+  maxPlayers?: number;
   defaults: O;
   options: OptionDef<O>[];
   howTo: HowTo;

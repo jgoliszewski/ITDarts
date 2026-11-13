@@ -29,6 +29,8 @@ const PATHS: Record<GameId, ReactNode> = {
   knockout: <path d="M12 20.5s-7.5-4.6-9.4-9.4A5 5 0 0 1 12 6.4a5 5 0 0 1 9.4 4.7C19.5 15.9 12 20.5 12 20.5z" />,
   // Ball.
   football: <><circle cx="12" cy="12" r="9" /><path d="M12 8.6l3.2 2.3-1.2 3.8h-4l-1.2-3.8z" /><path d="M12 8.6V3M15.2 10.9l5.4-1.8M14 14.7l3.3 4.6M10 14.7l-3.3 4.6M8.8 10.9L3.4 9.1" /></>,
+  // A dart in flight.
+  freethrow: <><path d="M3.5 20.5l3-3" /><path d="M6.5 17.5l9-9" /><path d="M13 6l1-3.5 1.5 1.5M18 11l3.5-1-1.5-1.5" /><path d="M15.5 8.5L19 5" /></>,
   // A dart in the bull.
   bullseye: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" />{dot(12, 12, 1.6)}<path d="M13.4 10.6l6-6M17 3.5h2.5V6" /></>,
 };

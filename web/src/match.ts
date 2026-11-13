@@ -43,7 +43,7 @@ export function controls(s: ClientState): Controls {
       return { hint: 'Bull-off: one dart each at the bull', primary: null, endInstead: false, canUndo: !!v.bullOff?.throws.length };
     case 'matchWon':
       // Random Checkouts ends only by End match: an undo there takes the end back and play goes on.
-      return { hint: m.game === 'randomco' ? 'Game over. Undo plays on.' : `${isX01(m) ? 'Match' : 'Game'} over. Undo fixes the last dart.`, primary: null, endInstead: false, canUndo: true };
+      return { hint: m.game === 'randomco' || m.game === 'freethrow' ? 'Game over. Undo plays on.' : `${isX01(m) ? 'Match' : 'Game'} over. Undo fixes the last dart.`, primary: null, endInstead: false, canUndo: true };
     case 'legWon':
       if (takeout) return { hint: 'Board stuck? End the takeout by hand', primary: { label: 'Takeout done', cmd: { type: 'next' } }, endInstead: false, canUndo: true };
       return off
@@ -75,7 +75,7 @@ export const dartValue = (m: LiveMatch, rec: DartRec): string | number =>
  */
 export const dartTone = (m: MiniMatch, good: boolean, rec?: DartRec): 'hit' | 'miss' | '' | 'dead' =>
   m.game === 'bullseye' && rec ? (dartPoints(rec) > 0 ? 'hit' : dartPoints(rec) < 0 ? 'miss' : 'dead')
-  : m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
+  : m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' || m.game === 'freethrow' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
 
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import type { X01Event, X01Options } from '../games/x01/index.ts';
+import { freethrow } from '../games/freethrow.ts';
 import { atc } from '../games/race.ts';
 import { x01 } from '../games/x01/index.ts';
 import { Db } from './db.ts';
@@ -152,6 +153,33 @@ describe('a player removed from the match', () => {
     const summary = rematchSetup(OPTS, roster, ['match', null, null])[1].map(r => r.name);
     expect(lobby).toEqual(summary);
     expect(lobby).toEqual(['Bartek', 'Cezary']);
+  });
+});
+
+describe('Free throw stats', () => {
+  const save = (roster: RosterEntry[], events: unknown[]) => {
+    const o = freethrow.defaults;
+    return db.saveMatch({
+      game: 'freethrow', options: o, roster, startedAt: Date.now() - 1000, endedAt: Date.now(), status: 'finished',
+      winners: [], sets: [], legs: freethrow.compact(events as never, 1, o), stats: freethrow.view(events as never, 1, o).stats,
+    });
+  };
+  const dartsAt = (...s: string[]) => s.map(x => ({ t: 'dart', dart: parseDart(x)!, coords: { x: 0.1, y: 0.2 }, at: Date.now() }));
+
+  it('adds up darts and points over matches but keeps the highest visit as a maximum', () => {
+    const a = db.createPlayer('Anna');
+    const r = [{ playerId: a, name: 'Anna' }];
+    save(r, [...dartsAt('T20', 'T20', 'T20'), { t: 'next' }, ...dartsAt('S1', 'S1', 'S1')]);
+    save(r, dartsAt('T20', 'S20', 'S20'));
+    expect(new Stats(db).game(a, 'freethrow', 'all')).toMatchObject({ played: 2, won: 0, totals: { darts: 9, points: 283, visits: 3, best: 180, v100: 2 } });
+  });
+
+  it('puts the darts into the heatmap of the game', () => {
+    const a = db.createPlayer('Anna');
+    save([{ playerId: a, name: 'Anna' }], dartsAt('T20', 'T20', 'T20'));
+    const [h] = new Stats(db).heat([a], 'freethrow', 'all');
+    expect(h.heat.darts).toHaveLength(3);
+    expect(h.heat.visits).toBe(1);
   });
 });
 

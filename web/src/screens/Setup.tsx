@@ -268,6 +268,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
   const blocked = s.match ? 'A match is in progress'
     : roster.length === 0 ? 'Add players to start'
     : roster.length < g.minPlayers ? `${g.name} needs at least ${g.minPlayers} players`
+    : g.maxPlayers !== undefined && roster.length > g.maxPlayers ? `${g.name} is for 1 player`
     : null;
 
   return (
@@ -290,7 +291,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
                       <GameIcon game={id} className="tile-icon" stroke={1.25} />
                       <b>{t.name}</b>
                       <span>{t.blurb}</span>
-                      <small>{t.minPlayers}–{MAX_PLAYERS} players</small>
+                      <small>{t.maxPlayers === 1 ? '1 player' : `${t.minPlayers}–${t.maxPlayers ?? MAX_PLAYERS} players`}</small>
                     </button>
                   );
                 })}

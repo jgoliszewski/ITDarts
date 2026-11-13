@@ -12,11 +12,12 @@ import type { View121 } from '../games/121.ts';
 import { callerLines121 } from '../games/121.ts';
 import { drawNumbers } from '../games/killer.ts';
 import type { RcView } from '../games/randomco.ts';
+import { callerLinesFreethrow } from '../games/freethrow.ts';
 import { callerLinesGotcha } from '../games/gotcha.ts';
 import { callerLinesRc } from '../games/randomco.ts';
 import type { MiniView } from '../games/turns.ts';
 import type { Removed } from '../games/turns.ts';
-import { dartCue, newSeed, removeBlock } from '../games/turns.ts';
+import { dartCue, newSeed, plural, removeBlock } from '../games/turns.ts';
 import type { X01View } from '../games/x01/index.ts';
 import { callerLines } from '../games/x01/index.ts';
 import type { Change, Fact, Happening } from '../games/effects.ts';
@@ -326,11 +327,12 @@ export class Hub {
     if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
-  /** The caller speaks in X01, 121, Random Checkouts, Gotcha and Knockout only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01, 121, Random Checkouts, Free throw, Gotcha and Knockout only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
     if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
     if (l.rec.game === 'randomco') return callerLinesRc(cs, l.view as RcView, turnStart);
     if (l.rec.game === 'gotcha' || l.rec.game === 'knockout') return callerLinesGotcha(cs);
+    if (l.rec.game === 'freethrow') return callerLinesFreethrow(cs);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
@@ -401,6 +403,7 @@ export class Hub {
     const game = GAMES[gameId];
     const roster = this.checkRoster(rosterInput);
     if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs at least ${game.minPlayers} players`);
+    if (game.maxPlayers !== undefined && roster.length > game.maxPlayers) throw new UserError(`${game.name} is for ${plural(game.maxPlayers, 'player')}`);
     this.summary = null;
     // Alone there is nobody to bull off against, whatever the setup says.
     const opts = { ...game.normalizeOptions(options), ...(roster.length === 1 && { bullOff: 'off' }) };
@@ -600,8 +603,8 @@ export class Hub {
         return {};
       }
       case 'endMatch':
-        // Random Checkouts has no end of its own, and Football and Bullseye count points: Save ends them as won, with the win screen first.
-        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football' || this.live?.rec.game === 'bullseye') && v?.phase === 'throwing') {
+        // Random Checkouts has no end of its own, and Football and Bullseye count points: Save ends them as won, with the win screen first (Free throw: with no winner).
+        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football' || this.live?.rec.game === 'bullseye' || this.live?.rec.game === 'freethrow') && v?.phase === 'throwing') {
           this.apply({ t: 'end' });
           return {};
         }
