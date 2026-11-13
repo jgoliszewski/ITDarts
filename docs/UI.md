@@ -44,6 +44,8 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   | Gotcha | strzałka zawracająca na zero |
   | Knockout | serce |
   | Football | piłka |
+  | Bullseye | strzałka w tarczy |
+  | Free throw | lotka w locie |
 
 - **Kafelek gry w setupie:** ikona jest tłem w prawym dolnym rogu, 96 px, ucięta krawędzią o około 1/6. Mocniejsze ucięcie (1/4 i 1/2) odrzuciliśmy, bo ikony przestawały być rozpoznawalne. Ikony bez ucięcia (80 px) też, bo przy niskim kafelku wchodziła pod opis. Na zwykłym kafelku jest szara (`#3A3A40`), a na zaznaczonym przyciemnia pomarańcz. Tekst leży nad nią.
 - **Małe ikony:** przed nazwą gry na chipach wyboru gry na `/stats` i w nagłówku Ekranu wyników, w kolorze tekstu obok. Pomarańcz zostaje tylko dla stanu „zaznaczone i aktywne”.

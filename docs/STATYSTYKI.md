@@ -57,6 +57,8 @@ Później, bez zmian w modelu (policzą się wstecz): skuteczność na poszczeg�
 
 Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lotek, np. MPR w Cricket albo rekord w ATC. Lista, rekordy i tabele na `/stats` są w [GRY.md](GRY.md).
 
+**Reguła ogólna:** klucz `best` w `stats` minigierki agreguje się na `/stats` jako maksimum, pozostałe klucze jako sumy. Nowa gra z kluczem `best` dostaje maksimum po samej nazwie klucza (`server/stats.ts`).
+
 **Free throw** (od 2026-11-13) zapisuje w `stats` gracza: `darts`, `points`, `visits` (zakończone Tury), `best` (najwyższa Tura), `v60`, `v80` i `v100` (Tury od 60, 80 i 100 punktów). `/stats` sumuje je po meczach, ale `best` bierze jako maksimum. Pokazuje średnią z 3 lotek (`points / darts × 3`), lotki, najwyższą Turę i liczniki. Lotki z coords trafiają do heatmapy (`GET /api/stats/heat?game=freethrow`, ta sama ścieżka co inne minigierki). Profil X01, średnie X01, winrate i head-to-head bez zmian. Bez rekordu.
 
 ## Prezentacja
