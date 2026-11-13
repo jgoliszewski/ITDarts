@@ -360,18 +360,24 @@ export class Db {
     if (!m || !(m.game in GAMES)) return null;
     const game = GAMES[m.game];
     const players = this.sql.prepare(`
-      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.won, mp.legs_won, mp.sets_won, mp.score, mp.removed,
+      SELECT mp.position, COALESCE(p.name, mp.guest_name) AS name, mp.won, mp.legs_won, mp.sets_won, mp.score, mp.removed, mp.stats,
         (SELECT SUM(v.scored) * 3.0 / NULLIF(SUM(v.darts_count), 0) FROM visits v JOIN legs l ON l.id = v.leg_id
           WHERE l.match_id = mp.match_id AND v.player_id = mp.player_id) AS avg
       FROM match_players mp LEFT JOIN players p ON p.id = mp.player_id
-      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; removed: number; avg: number | null }[];
+      WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; removed: number; stats: string | null; avg: number | null }[];
     const options = game.normalizeOptions(JSON.parse(m.options));
     const x01 = m.game === 'x01';
+    // Free throw has no result of its own: its line is the average of 3 darts, as on the scoreboard.
+    const average = (json: string | null) => {
+      const s = json ? JSON.parse(json) as { darts?: number; points?: number } : null;
+      return s?.darts ? ((s.points ?? 0) / s.darts * 3).toFixed(1) : '';
+    };
     const sets = players.some(p => p.sets_won > 0);
     const value = (p: (typeof players)[number]) =>
       x01 ? String(sets ? p.sets_won : p.legs_won)
       : p.score !== null && game.record ? game.record.format(p.score)
       : game.points?.show(options) ? String(p.legs_won)
+      : m.game === 'freethrow' ? average(p.stats)
       : p.won ? 'Won' : '';
     const last = this.sql.prepare(`
       SELECT d.n, d.m FROM legs l JOIN visits v ON v.leg_id = l.id AND v.checkout = 1

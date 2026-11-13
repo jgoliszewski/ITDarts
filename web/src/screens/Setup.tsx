@@ -4,6 +4,7 @@ import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../../../games/index.ts';
 import type { RcOptions } from '../../../games/randomco.ts';
 import { RANGE_PRESETS, highestNumber, lowestNumber } from '../../../games/randomco.ts';
 import type { OptionDef } from '../../../games/turns.ts';
+import { plural } from '../../../games/turns.ts';
 import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
@@ -268,7 +269,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
   const blocked = s.match ? 'A match is in progress'
     : roster.length === 0 ? 'Add players to start'
     : roster.length < g.minPlayers ? `${g.name} needs at least ${g.minPlayers} players`
-    : g.maxPlayers !== undefined && roster.length > g.maxPlayers ? `${g.name} is for 1 player`
+    : g.maxPlayers !== undefined && roster.length > g.maxPlayers ? `${g.name} is for ${plural(g.maxPlayers, 'player')}`
     : null;
 
   return (

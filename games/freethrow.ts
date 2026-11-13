@@ -44,7 +44,8 @@ function play(t: Turns, o: FreethrowOptions): State {
     if (total >= 100) s.v100++;
     // The same fact and slot as an X01 visit without a bust, so every visit rule fires as in X01.
     fx.push({ slot: `L1V${vi + 1}`, fact: { kind: 'visit', total, darts: v.darts.map(r => r.dart), checkout: false } });
-    if (o.visits && s.visits >= o.visits) over = true;
+    // The last visit of the limit stays on screen until it is closed (Takeout), like any other visit.
+    if (o.visits && s.visits >= o.visits && v.closed) over = true;
   }
   if (t.ended) over = true;
   const last = t.visits.at(-1);
@@ -55,12 +56,6 @@ function play(t: Turns, o: FreethrowOptions): State {
 export interface FreethrowView extends MiniView {
   /** Sum of the visit on screen. */
   visitTotal: number;
-  /** Visits that end the game, 0 for none. */
-  limit: number;
-  /** The visit on screen, from 1. */
-  visitNo: number;
-  /** Average of 3 darts, null before the first dart. */
-  average: number | null;
 }
 
 const fmtAvg = (a: number | null) => (a === null ? '–' : a.toFixed(1));
@@ -77,14 +72,11 @@ function view(events: TurnEvent[], players: number, o: FreethrowOptions): Freeth
     ...f,
     winners: [],
     hero: { big: String(visitTotal), caption: 'This visit', note: o.visits ? `Visit ${visitNo} of ${o.visits}` : '' },
-    rows: [{ value: fmtAvg(average), meta: plural(s.darts, 'dart'), out: false }],
+    rows: [{ value: fmtAvg(average), meta: `average · ${plural(s.darts, 'dart')}`, out: false }],
     result: s.over ? `${plural(s.visits, 'visit')} · average ${fmtAvg(average)}` : '',
     scores: [null],
     stats: [{ darts: s.darts, points: s.points, visits: s.visits, best: s.best, v60: s.v60, v80: s.v80, v100: s.v100 }],
     visitTotal,
-    limit: o.visits,
-    visitNo,
-    average,
   };
 }
 
@@ -109,14 +101,14 @@ const DEFAULTS: FreethrowOptions = { visits: 0 };
 export const freethrow: GameModule<FreethrowOptions, FreethrowView> = {
   id: 'freethrow',
   name: 'Free throw',
-  blurb: 'Practice throws with no target. Just the visit totals.',
+  blurb: 'Practice darts with no target. Just the visit totals.',
   group: 'practice',
   minPlayers: 1,
   maxPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,
   howTo: {
-    goal: 'Throw for practice: there is no target and nobody wins.',
+    goal: 'Practice: there is no target and nobody wins.',
     turn: 'Three darts per visit, then Takeout. Alone only.',
     counts: 'Every dart counts at face value, as in X01. The screen shows the total of the visit, your average of 3 darts and your best visit.',
     win: 'The game has no winner. With a limit it ends after the last visit; Unlimited has no end of its own: End match and Save.',

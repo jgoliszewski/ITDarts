@@ -41,7 +41,7 @@ describe('free throw scoring', () => {
     const v = view(log);
     // 180, 60, 100, 3: 343 points in 12 darts
     expect(v.stats[0]).toEqual({ darts: 12, points: 343, visits: 4, best: 180, v60: 3, v80: 2, v100: 2 });
-    expect(v.rows[0]).toEqual({ value: '85.8', meta: '12 darts', out: false });
+    expect(v.rows[0]).toEqual({ value: '85.8', meta: 'average · 12 darts', out: false });
   });
 
   it('counts 60+, 80+ and 100+ from the exact total', () => {
@@ -65,7 +65,7 @@ describe('free throw scoring', () => {
   });
 
   it('shows no average before any dart', () => {
-    expect(view([]).rows[0]).toEqual({ value: '–', meta: '0 darts', out: false });
+    expect(view([]).rows[0]).toEqual({ value: '–', meta: 'average · 0 darts', out: false });
   });
 });
 
@@ -76,30 +76,39 @@ describe('free throw end', () => {
     expect(view(full(40)).phase).toBe('throwing');
   });
 
-  it('ends after the last visit of the limit, not before, with nobody winning', () => {
+  it('ends when the last visit of the limit is closed, not on its third dart, with nobody winning', () => {
     expect(view(full(9), lim(10)).phase).toBe('throwing');
     const nine = [...full(9), d('S1'), d('S1')];
     expect(view(nine, lim(10)).phase).toBe('throwing');
-    const v = view([...nine, d('S1')], lim(10));
+    // The third dart leaves the visit card on screen, waiting for Takeout.
+    const three = [...nine, d('S1')];
+    const open = view(three, lim(10));
+    expect(open.phase).toBe('throwing');
+    expect(open.visit.darts).toHaveLength(3);
+    expect(open.hero.big).toBe('3');
+    // The visit fact and the caller still fire on the third dart.
+    expect(freethrow.happenings(three, 1, lim(10)).filter(h => h.fact.kind === 'visit')).toHaveLength(10);
+    const v = view([...three, next], lim(10));
     expect(v.phase).toBe('matchWon');
     expect(v.winners).toEqual([]);
     expect(v.result).toBe('10 visits · average 3.0');
-    expect(freethrow.happenings([...nine, d('S1')], 1, lim(10)).some(h => h.fact.kind === 'matchWon')).toBe(false);
+    expect(freethrow.happenings([...three, next], 1, lim(10)).some(h => h.fact.kind === 'matchWon')).toBe(false);
   });
 
   it('counts a visit closed early toward the limit', () => {
     expect(view([...full(9), d('S1'), next], lim(10)).phase).toBe('matchWon');
   });
 
-  it('takes no more darts after the limit', () => {
-    const v = view([...full(10), d('T20')], lim(10));
-    expect(v.stats[0].darts).toBe(30);
+  it('takes no more darts after the limit, nor in the finished last visit', () => {
+    expect(view([...full(10), d('T20')], lim(10)).stats[0].darts).toBe(30);
+    expect(view([...full(9), d('S1'), d('S1'), d('S1'), d('T20')], lim(10)).stats[0].darts).toBe(30);
   });
 
-  it('undo reopens the last visit of the limit', () => {
+  it('undo after the end reopens the last visit of the limit with its three darts', () => {
     const v = view([...full(10), undo], lim(10));
     expect(v.phase).toBe('throwing');
-    expect(v.visit.darts).toHaveLength(2);
+    expect(v.visit.darts).toHaveLength(3);
+    expect(v.visit.dartsLeft).toBe(0);
   });
 
   it('ends on End match with Save without a winner or Match won, and undo takes it back', () => {
@@ -171,6 +180,27 @@ describe('free throw facts', () => {
       expect(ft?.id).toBe(xx?.id);
     });
   }
+
+  it('changes the visit fact as X01 does after a fix of a finished visit', () => {
+    const base = ['S20', 'S20', 'S20'].map(d);
+    const fix: TurnEvent = { t: 'fix', index: 0, dart: parseDart('T20')! };
+    const fixed = (game: { happenings: (e: TurnEvent[], p: number, o: never) => never[] }, opts: unknown) =>
+      changes(game.happenings(base, 1, opts as never), game.happenings([...base, fix], 1, opts as never), 'fix').filter(c => c.fact.kind === 'visit');
+    const a = fixed(freethrow as never, o);
+    expect(a).toHaveLength(1);
+    expect(a[0].fact).toMatchObject({ kind: 'visit', total: 100 });
+    expect(a).toEqual(fixed(x01 as never, X01_OPTS));
+  });
+
+  it('drops the visit fact on undo of the third dart and brings it back as X01 does', () => {
+    const base = ['S20', 'S20', 'S20'].map(d);
+    const facts = (game: { happenings: (e: TurnEvent[], p: number, o: never) => never[] }, opts: unknown, log: TurnEvent[]) => visitFact(game.happenings(log, 1, opts as never));
+    for (const log of [[...base, undo], [...base, undo, d('T20')]]) {
+      expect(facts(freethrow as never, o, log)).toEqual(facts(x01 as never, X01_OPTS, log));
+    }
+    expect(facts(freethrow as never, o, [...base, undo])).toEqual([]);
+    expect(facts(freethrow as never, o, [...base, undo, d('T20')])).toHaveLength(1);
+  });
 
   it('picks 180, Ton 40, Bed and breakfast and No score as in X01', () => {
     const rules = BASE_RULES.map(r => ({ ...r, enabled: true }));

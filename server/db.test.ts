@@ -174,6 +174,14 @@ describe('Free throw stats', () => {
     expect(new Stats(db).game(a, 'freethrow', 'all')).toMatchObject({ played: 2, won: 0, totals: { darts: 9, points: 283, visits: 3, best: 180, v100: 2 } });
   });
 
+  it('shows the average of 3 darts as the player\'s value in the last match', () => {
+    const a = db.createPlayer('Anna');
+    save([{ playerId: a, name: 'Anna' }], [...dartsAt('T20', 'S5', 'S1'), { t: 'next' }]);
+    expect(db.lastMatch()).toMatchObject({ game: 'freethrow', players: [{ name: 'Anna', value: '66.0', winner: false }] });
+    save([{ playerId: null, name: 'Guest' }], [...dartsAt('T20', 'T20', 'T20'), { t: 'next' }, ...dartsAt('S1', 'S1')]);
+    expect(db.lastMatch()!.players[0].value).toBe('109.2');
+  });
+
   it('puts the darts into the heatmap of the game', () => {
     const a = db.createPlayer('Anna');
     save([{ playerId: a, name: 'Anna' }], dartsAt('T20', 'T20', 'T20'));

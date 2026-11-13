@@ -216,6 +216,7 @@ export class Stats {
       WHERE ${where.join(' AND ')} ORDER BY m.ended_at DESC ${legLimit(w) ? `LIMIT ${legLimit(w)}` : ''}`).all(...args) as
       { stats: string | null; status: string; won: number | null; removed: number; variant: string | null }[];
     const totals: Record<string, number> = {};
+    // Convention for every minigame: a `best` key in its stats is a maximum over matches, all other keys are sums (docs/STATYSTYKI.md).
     for (const r of rows) for (const [k, v] of Object.entries(JSON.parse(r.stats ?? '{}') as Record<string, number>)) totals[k] = k === 'best' ? Math.max(totals[k] ?? 0, v) : (totals[k] ?? 0) + v;
     const rec = GAMES[game].record;
     const variants = (this.db.sql.prepare(`

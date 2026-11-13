@@ -212,7 +212,8 @@ export function MiniSide({ m }: { m: MiniMatch }) {
   return (
     <div className="card" style={{ flex: 1, minHeight: 0 }}>
       <div className="caps">{m.roster[p].name.toUpperCase()} · This match</div>
-      <div className={`mstats few ${n > 2 ? 'three' : ''}`} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, gridTemplateRows: 'minmax(0, 1fr)' }}>
+      {/* More than three numbers (Free throw) take the 3×2 grid of X01 instead of one narrow row. */}
+      <div className={n > 3 ? 'mstats' : `mstats few ${n > 2 ? 'three' : ''}`} style={n > 3 ? undefined : { gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, gridTemplateRows: 'minmax(0, 1fr)' }}>
         {m.game === '121' && (
           <div>
             <span className="l">Darts left</span>
@@ -329,7 +330,7 @@ export function MiniEnd({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) {
         <div className="winner">{winnersOf(m)}</div>
         <div className="so-far">{v.result}</div>
         {tiles.length > 0 && (
-          <div className="result-grid" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
+          <div className="result-grid" style={{ gridTemplateColumns: `repeat(${Math.min(3, tiles.length)}, minmax(0, 1fr))` }}>
             {tiles.map(([l, val]) => <div key={l}><div className="l">{l}</div><div className="num">{val}</div></div>)}
           </div>
         )}

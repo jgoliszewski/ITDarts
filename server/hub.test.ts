@@ -203,6 +203,11 @@ describe('Free throw', () => {
     const live = (hub as unknown as { live: { view: { phase: string; winners: number[] } } | null }).live;
     expect(live?.view.phase).toBe('matchWon');
     expect(live?.view.winners).toEqual([]);
+    // Closing the end screen saves a finished match nobody won.
+    await pilot({ type: 'closeMatch', then: 'summary' });
+    expect(db.sql.prepare('SELECT game, status FROM matches').all()).toEqual([{ game: 'freethrow', status: 'finished' }]);
+    expect(db.sql.prepare('SELECT won FROM match_players').all()).toEqual([{ won: 0 }]);
+    expect(db.lastMatch()).toMatchObject({ status: 'finished', players: [{ winner: false }] });
   });
 });
 

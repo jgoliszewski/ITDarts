@@ -135,6 +135,8 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
 }
 
 const GAME_KEY = 'itdarts.statsGame';
+/** Games in which nobody ever wins: no “Won” and no winrate. */
+const NO_WINNER: GameId[] = ['freethrow'];
 const pct = (a: number | undefined, b: number | undefined) => (b ? `${Math.round(((a ?? 0) / b) * 1000) / 10}%` : '–');
 
 function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
@@ -149,7 +151,7 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
         <div className="stat-grid">
           {gameStats(game, data.totals).map(([l, v, sub], i) => <Stat key={l} l={l} v={v} s={sub} hl={i === 0} />)}
           <Stat l="Played" v={String(data.played)} />
-          <Stat l="Won" v={String(data.won)} s={data.played ? pct(data.won, data.played) : undefined} />
+          {!NO_WINNER.includes(game) && <Stat l="Won" v={String(data.won)} s={data.played ? pct(data.won, data.played) : undefined} />}
         </div>
       )}
       <PlayerHeat ids={[id]} game={game} w={w} />
@@ -208,7 +210,7 @@ function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWi
       return [
         ...gameRows(game, gs.map(g => g.totals)),
         { label: 'Played', values: gs.map(g => String(g.played)) },
-        { label: 'Won', values: gs.map(g => String(g.won)), nums: gs.map(g => g.won), better: 'higher' as const },
+        ...(NO_WINNER.includes(game) ? [] : [{ label: 'Won', values: gs.map(g => String(g.won)), nums: gs.map(g => g.won), better: 'higher' as const }]),
       ];
     })();
   rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtKm(h.distance)) });

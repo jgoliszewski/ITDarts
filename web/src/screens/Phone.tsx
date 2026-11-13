@@ -39,7 +39,8 @@ function Players({ m, onPick }: { m: LiveMatch; onPick?: (i: number) => void }) 
         } else {
           ({ meta, value: big, out } = m.view.rows[i]);
           // The active player's line shows what the hero shows on the big screen.
-          if (active) meta = [m.view.hero.caption, m.view.hero.note].filter(Boolean).join(' · ');
+          // Free throw: the number on the line is the average, the hero's caption names the visit total.
+          if (active) meta = [m.game === 'freethrow' ? 'Average' : m.view.hero.caption, m.view.hero.note].filter(Boolean).join(' · ');
           if (active && m.game === '121') meta += ` · ${m.view.attemptLeft} darts left in attempt · ${'♡'.repeat(m.view.lives)}`;
         }
         const note = removedNote(m, i);
