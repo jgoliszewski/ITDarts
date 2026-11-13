@@ -111,7 +111,7 @@ export const freethrow: GameModule<FreethrowOptions, FreethrowView> = {
     goal: 'Practice: there is no target and nobody wins.',
     turn: 'Three darts per visit, then Takeout. Alone only.',
     counts: 'Every dart counts at face value, as in X01. The screen shows the total of the visit, your average of 3 darts and your best visit.',
-    win: 'The game has no winner. With a limit it ends after the last visit; Unlimited has no end of its own: End match and Save.',
+    win: 'The game has no winner. With a limit it ends when the darts of the last visit are pulled; Unlimited has no end of its own: End match and Save.',
   },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
   describe: o => (o.visits ? `Free throw · ${o.visits} visits` : 'Free throw'),
