@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { parseDart } from './darts.ts';
+import { BOARD_ORDER, parseDart } from './darts.ts';
 import { football } from './football.ts';
 import type { TurnEvent } from './turns.ts';
+import { seeded } from './turns.ts';
 
 let clock = 0;
 const d = (s: string): TurnEvent => ({ t: 'dart', dart: parseDart(s)!, at: ++clock });
 const next: TurnEvent = { t: 'next', at: 0 };
 const visit = (...s: string[]): TurnEvent[] => [...s.map(d), next];
-const o = football.defaults;
+const o = { ...football.defaults, goalsOn: 'doubles' as const };
 
 describe('football', () => {
   it('scores doubles only with the ball, and the ball can come in the same visit', () => {
@@ -39,8 +40,9 @@ describe('football', () => {
     const bullOnly = { ...o, kickOff: 'bullseye' as const };
     expect(football.view([d('25')], 2, bullOnly).ball).toBeNull();
     expect(football.view([d('Bull')], 2, bullOnly).ball).toBe(0);
-    expect(football.describe(bullOnly, 2)).toBe('Football · Bull only · First to 5');
-    expect(football.describe(o, 2)).toBe('Football · 25/50 · First to 5');
+    expect(football.describe(bullOnly, 2)).toBe('Football · Bull only · Doubles · First to 5');
+    expect(football.describe(o, 2)).toBe('Football · 25/50 · Doubles · First to 5');
+    expect(football.describe(football.defaults, 2)).toBe('Football · 25/50 · Big singles · First to 5');
   });
 
   it('wins at once on the last goal, even mid-visit', () => {
@@ -71,5 +73,120 @@ describe('football', () => {
   it('undoes a goal and the ball with Undo', () => {
     const v = football.view([d('25'), d('D1'), { t: 'undo' }, { t: 'undo' }], 2, o);
     expect([v.goals, v.ball]).toEqual([[0, 0], null]);
+  });
+});
+
+// Goals on Big singles: four sectors drawn from the logged seed at each take of the ball.
+const singles = { ...football.defaults, goalsOn: 'singles' as const };
+const seed = (n: number): TurnEvent => ({ t: 'seed', seed: n });
+const BIG = { x: 0, y: 0.8 }; // 136 mm: between the treble (107 mm) and the double (162 mm)
+const SMALL = { x: 0, y: 0.35 }; // 60 mm: the inner single
+const dc = (s: string, coords: { x: number; y: number }): TurnEvent => ({ t: 'dart', dart: parseDart(s)!, coords, at: ++clock });
+const fixTo = (index: number, s: string, coords?: { x: number; y: number }): TurnEvent => ({ t: 'fix', index, dart: parseDart(s)!, coords });
+/** The starts (0–4) of the first draws a seed gives. */
+const draws = (sd: number, n = 3) => { const r = seeded(sd); return Array.from({ length: n }, () => Math.floor(r() * 5)); };
+const seedWith = (k: number) => { let n = 1; while (draws(n)[0] !== k) n++; return n; };
+const setFor = (k: number) => [0, 5, 10, 15].map(i => BOARD_ORDER[k + i]);
+const sectors = (events: TurnEvent[], opts = singles) => football.view(events, 2, opts).sectors;
+const goalsOf = (events: TurnEvent[]) => football.view(events, 2, singles).goals;
+
+describe('football, goals on big singles', () => {
+  const s0 = seed(seedWith(0)); // sectors 20 · 6 · 3 · 11
+
+  it('draws four sectors a quarter of the board apart, from the seed, at the first take of the ball', () => {
+    expect(sectors([s0])).toBeNull();
+    expect(sectors([s0, d('S20')])).toBeNull();
+    expect(sectors([s0, d('25')])).toEqual([20, 6, 3, 11]);
+    expect(sectors([seed(seedWith(3)), d('25')])).toEqual(setFor(3));
+  });
+
+  it('always draws every fifth place of the board', () => {
+    for (let n = 1; n <= 60; n++) {
+      const got = sectors([seed(n), d('25')])!;
+      const i = got.map(x => BOARD_ORDER.indexOf(x));
+      expect(got).toHaveLength(4);
+      expect(i.map((x, j) => (x - i[0] + 20) % 20 === j * 5), `seed ${n}: ${got}`).toEqual([true, true, true, true]);
+    }
+  });
+
+  it('scores the big single of a drawn sector, with or without coords', () => {
+    expect(goalsOf([s0, d('25'), dc('S20', BIG)])).toEqual([1, 0]);
+    expect(goalsOf([s0, d('25'), dc('S3', BIG)])).toEqual([1, 0]);
+    expect(goalsOf([s0, d('25'), d('S6')])).toEqual([1, 0]);
+  });
+
+  it('does not score the inner single, a double, a treble or another sector', () => {
+    expect(goalsOf([s0, d('25'), dc('S20', SMALL)])).toEqual([0, 0]);
+    expect(goalsOf([s0, d('25'), d('D20'), d('T20'), d('D6')])).toEqual([0, 0]);
+    expect(goalsOf([s0, d('25'), dc('S1', BIG), d('S25'), d('Bull')])).toEqual([0, 0]);
+    const v = football.view([s0, d('25'), dc('S11', SMALL), dc('S11', BIG)], 2, singles);
+    expect(v.visit.good).toEqual([true, false, true]);
+  });
+
+  it('scores only with the ball', () => {
+    expect(goalsOf([s0, d('S20')])).toEqual([0, 0]);
+    expect(goalsOf([s0, ...visit('25'), dc('S20', BIG)])).toEqual([0, 0]);
+  });
+
+  it('a fix with coords decides between the inner and the outer single', () => {
+    const base = [s0, d('25'), dc('S20', BIG)];
+    expect(goalsOf([...base, fixTo(1, 'S20', SMALL)])).toEqual([0, 0]);
+    expect(goalsOf([...base, fixTo(1, 'S20', SMALL), fixTo(1, 'S20', BIG)])).toEqual([1, 0]);
+    // A fix without coords counts as big, also over a dart that had inner coords.
+    expect(goalsOf([s0, d('25'), dc('S20', SMALL), fixTo(1, 'S20')])).toEqual([1, 0]);
+    expect(goalsOf([...base, fixTo(1, 'S1', BIG)])).toEqual([0, 0]);
+  });
+
+  it('draws again at every take of the ball, from the centre and from a rival, not for the holder', () => {
+    let sd = 1;
+    // Three different starts, so each new draw shows.
+    while (new Set(draws(sd)).size < 3) sd++;
+    const ks = draws(sd);
+    const first = [seed(sd), ...visit('25', 'Bull')]; // the second bull is the holder's: no draw
+    expect(sectors(first)).toEqual(setFor(ks[0]));
+    const second = [...first, ...visit('Bull')]; // the rival takes it
+    expect(sectors(second)).toEqual(setFor(ks[1]));
+    const third = [...second, ...visit('25')]; // and the first player takes it back
+    expect(sectors(third)).toEqual(setFor(ks[2]));
+    expect(sectors(third)).not.toEqual(sectors(second));
+  });
+
+  it('keeps the sectors when the ball is freed, and draws new ones at the next take', () => {
+    let sd = 1;
+    while (draws(sd, 2)[0] === draws(sd, 2)[1]) sd++;
+    const three = (events: TurnEvent[]) => football.view(events, 3, singles);
+    const freed = [seed(sd), ...visit('25'), { t: 'remove', player: 0, scope: 'match' } as TurnEvent];
+    expect(three(freed).ball).toBeNull();
+    expect(three(freed).sectors).toEqual(setFor(draws(sd)[0]));
+    const taken = three([...freed, d('25')]);
+    expect(taken.ball).toBe(1);
+    expect(taken.sectors).toEqual(setFor(draws(sd)[1]));
+  });
+
+  it('gives the same sectors after Undo and after a fix of an earlier dart', () => {
+    const log = [s0, ...visit('25', 'S1'), ...visit('Bull')];
+    const want = sectors(log);
+    expect(sectors([...log, d('25'), { t: 'undo' }])).toEqual(want);
+    expect(sectors([...log, { t: 'undo' }, { t: 'undo' }, d('Bull')])).toEqual(want);
+    // A fix that keeps the take of the ball keeps the draws.
+    expect(sectors([s0, d('25'), fixTo(0, 'Bull'), next, d('Bull')])).toEqual(sectors([s0, d('Bull'), next, d('Bull')]));
+  });
+
+  it('shows the sectors and the way to score on the hero', () => {
+    expect(football.view([s0, d('25')], 2, singles).hero.note).toBe('Your ball · big singles 20 · 6 · 3 · 11 score');
+    expect(football.view([d('25')], 2, o).hero.note).toBe('Your ball · doubles score');
+    expect(football.view([d('25')], 2, o).sectors).toBeNull();
+  });
+
+  it('loads options saved before Goals on as Doubles, and the setup default as Big singles', () => {
+    const old = { kickOff: 'any', goals: 5, bullOff: 'off' };
+    expect(football.normalizeOptions(old).goalsOn).toBe('doubles');
+    expect(football.normalizeOptions({ ...old, goalsOn: 'singles' }).goalsOn).toBe('singles');
+    expect(football.normalizeOptions({ ...old, goalsOn: 'nonsense' }).goalsOn).toBe('doubles');
+    expect(football.defaults.goalsOn).toBe('singles');
+  });
+
+  it('still scores every double in Doubles, whatever the seed', () => {
+    expect(football.view([seed(5), d('25'), d('D7'), dc('S20', BIG)], 2, o).goals).toEqual([1, 0]);
   });
 });

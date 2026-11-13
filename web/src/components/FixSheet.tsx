@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Dart } from '../../../games/darts.ts';
+import type { Coords, Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER, label, value } from '../../../games/darts.ts';
 import { Dartboard } from './Dartboard.tsx';
 
@@ -77,7 +77,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
   visit: { dart: Dart; coords?: { x: number; y: number } }[];
   wide: boolean;
   who: string;
-  onPick: (d: Dart) => void;
+  onPick: (d: Dart, coords?: Coords) => void;
   onClose: () => void;
 }) {
   const adding = target.dart === null;

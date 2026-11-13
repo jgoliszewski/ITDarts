@@ -242,14 +242,20 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
 - **Piłka:** jedna na wszystkich, na starcie na środku (nikt jej nie ma). Bull przejmuje piłkę ze środka albo od posiadacza. Bull posiadacza nic nie robi.
-- **Gol:** z piłką każdy double 1–20 to gol, a strzelec zatrzymuje piłkę i strzela dalej, aż ktoś mu ją odbierze. Bull nigdy nie jest golem. Po przejęciu piłki następna lotka tej samej Tury może już być golem.
+- **Gol:** zależy od opcji „Goals on” (od 2026-11-13). Strzelec zatrzymuje piłkę i strzela dalej, aż ktoś mu ją odbierze. Bull nigdy nie jest golem. Po przejęciu piłki następna lotka tej samej Tury może już być golem.
+  - **Big singles** (domyślnie): z piłką golem jest tylko duży single, czyli pole między treblem a double, w jednym z czterech wylosowanych sektorów. Double, treble i mały single w tych sektorach gola nie dają, single poza nimi też nie.
+  - **Doubles:** z piłką każdy double 1–20 to gol (dotychczasowe zasady).
+- **Losowanie sektorów (Big singles):** cztery sektory leżą co ćwierć tarczy, czyli co piąta pozycja w `BOARD_ORDER` (np. 20 · 6 · 3 · 11), więc jest pięć zestawów. Nowy zestaw losuje się przy każdym przejęciu piłki, ze środka i od rywala, także ten sam co przed chwilą. Bull posiadacza nic nie zmienia, więc nie losuje. Przed pierwszym przejęciem zestawu nie ma. Gdy posiadacza wycofamy, piłka jest wolna, a zestaw zostaje do następnego przejęcia, które losuje nowy. Losowanie idzie z ziarna w logu (`{ t: 'seed' }`, hub dopisuje je przy starcie w Big singles, także w Rematchu), po kolei z jednego generatora, więc Undo i Poprawka odtwarzają te same zestawy.
+- **Duży czy mały single** rozstrzygają coords z tarczy: odległość od środka co najmniej 107 mm (zewnętrzna krawędź treble) to duży single (`isBigSingle` w `games/darts.ts`). Lotka bez coords (wpisana na Pilocie, z klawiatury albo z „Nearby”) liczy się jako duży single. Poprawka kliknięciem w dużą tarczę zapisuje miejsce kliknięcia jako coords lotki, więc poprawiony mały single nie jest golem.
+- **Stare opcje:** mecz zapisany przed „Goals on” (historia, mecz w toku po restarcie) odtwarza się jako „Doubles”. Nowy mecz z setupu ma domyślnie „Big singles”, także gdy Pilot ma zapamiętane opcje Football bez tego klucza.
 - **Opcje:**
   - „Kick-off”: „25/50” (domyślnie, piłkę daje każdy bull) albo „Bull only” (tylko 50);
+  - „Goals on”: „Big singles” (domyślnie) albo „Doubles”;
   - „Goals”: 3, 5 (domyślnie) albo 10;
   - Bull-off.
 - **Wygrana:** kto pierwszy dobije do liczby goli, wygrywa od razu, także w środku Tury. „End match” z „Save” kończy grę jak wygraną: wygrywa najwięcej goli, remisujący dzielą wygraną, a przy 0 goli nie ma zwycięzcy.
 - **Gracze:** 2–8, każdy na siebie.
-- **Ekran wyników:** hero pokazuje imię, dużą liczbę goli, kafelki lotek (zielone dla przejęcia i gola, czerwone dla reszty) i gdzie jest piłka. Prawą połowę hero zajmuje tarcza z ATC: bez piłki podświetlony bull (przy „Bull only” sam środek), z piłką pierścień doubles. Lista graczy pokazuje gole i piłkę przy posiadaczu. Karta Tury: „Goal!”, „2 goals!” albo „Ball won”, z dopiskiem, komu piłka została odebrana. Nagłówek np. „Football · 25/50 · First to 5”.
+- **Ekran wyników:** hero pokazuje imię, dużą liczbę goli, kafelki lotek (zielone dla przejęcia i gola, czerwone dla reszty) i gdzie jest piłka. Prawą połowę hero zajmuje tarcza z ATC: bez piłki podświetlony bull (przy „Bull only” sam środek), z piłką pierścień doubles albo, w Big singles, obrys dużych singli czterech sektorów z podpowiedzią „Your ball · big singles 20 · 6 · 3 · 11 score”. Lista graczy pokazuje gole i piłkę przy posiadaczu. Karta Tury: „Goal!”, „2 goals!” albo „Ball won”, z dopiskiem, komu piłka została odebrana. Nagłówek np. „Football · 25/50 · Big singles · First to 5” albo „… · Doubles · …”.
 - **Caller** milczy.
 - **Wyzwalacze:** nowy „Goal” (M, dobry, na start dźwięk i ledy z Ton) i „Game won”. „Goal” jest w kolejności przed „Game won”, bo wygrana pada tą samą lotką. Przejęcie piłki nie ma Momentu.
 - **Statystyki:** wygrane i liczba goli. Bez rekordu.
@@ -259,7 +265,7 @@ Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITD
 Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala kolejność przed meczem.
 
 - **Punkty za lotkę:** bull (50) +2, 25 +1, single między 25 a treblem 0. Treble, single za treblem, double, pudło i lotka odbita (Pilot dopisuje ją jako pudło) −1. Tura zamknięta przed trzecią lotką dopisuje brakujące lotki jako pudła, każde po −1.
-- **Single wewnętrzny czy zewnętrzny** rozstrzygają coords z tarczy: odległość od środka mniejsza niż połowa szerokości pierścienia treble (103 mm) to wewnętrzny. Lotka bez coords (poprawiona albo wpisana na Pilocie) liczy się jako wewnętrzna, czyli 0.
+- **Single wewnętrzny czy zewnętrzny** rozstrzygają coords z tarczy: odległość od środka mniejsza niż połowa szerokości pierścienia treble (103 mm) to wewnętrzny. Lotka bez coords (wpisana na Pilocie albo poprawiona z klawiatury lub „Nearby”) liczy się jako wewnętrzna, czyli 0. Poprawka kliknięciem w dużą tarczę zapisuje miejsce kliknięcia (od 2026-11-13), więc poprawiony zewnętrzny single daje −1, a wewnętrzny 0.
 - **Wynik** może spaść poniżej 0.
 - **Opcje:**
   - „First to”: 3, 5 (domyślnie) albo 10 punktów;

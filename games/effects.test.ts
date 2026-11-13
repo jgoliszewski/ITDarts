@@ -171,7 +171,7 @@ describe('minigame occurrences', () => {
   });
 
   it('fires Goal on each goal, and it beats Match won on the winning dart', () => {
-    const o = { ...football.defaults, goals: 3 as const };
+    const o = { ...football.defaults, goalsOn: 'doubles' as const, goals: 3 as const };
     expect(kinds(fired(football, [d('S25'), d('D5')], o, 2))).toEqual(['dart', 'goal']);
     const cs = fired(football, [d('S25'), d('D5'), d('D6'), next, d('S1'), next, d('D7')], o, 2);
     expect(kinds(cs)).toEqual(['dart', 'goal', 'matchWon']);

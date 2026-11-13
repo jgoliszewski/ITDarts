@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
-import { DOT, R, SHOWN, coordsSpot, dartSpot, inputSpot } from './Dartboard.tsx';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import { isBigSingle } from '../../../games/darts.ts';
+import { DOT, R, SHOWN, TargetBoard, coordsSpot, dartSpot, inputSpot, spotCoords } from './Dartboard.tsx';
 
 // The scoreboard board widens trebles, doubles and the bulls, so check every dot still sits wholly in its own field.
 describe('dart dots on the scoreboard board', () => {
@@ -64,5 +67,45 @@ describe('Board Manager coords on the input board', () => {
     expect(x).toBeCloseTo(-y); // 45 degrees, up and right
     expect(x).toBeGreaterThan(0);
     expect(inputSpot(0, 0.5)).toEqual(coordsSpot(0, 0.5, R)); // a hit is not touched
+  });
+});
+
+describe('a tap on the fix board as Board Manager coords', () => {
+  it('is the inverse of coordsSpot, ring by ring', () => {
+    for (const [x, y] of [[0, 0.1], [0.05, 0.3], [0, 0.62], [-0.4, 0.5], [0.3, -0.7], [0, 0.97], [0.9, 0.9]]) {
+      const [sx, sy] = coordsSpot(x, y, R);
+      const c = spotCoords(sx, sy);
+      expect(c.x, `${x},${y}`).toBeCloseTo(x);
+      expect(c.y, `${x},${y}`).toBeCloseTo(y);
+    }
+    expect(spotCoords(0, 0)).toEqual({ x: 0, y: 0 });
+  });
+
+  it('points up for the top and keeps the ring edges on the real radii', () => {
+    expect(spotCoords(0, -R[2])).toMatchObject({ x: 0 });
+    expect(spotCoords(0, -R[2]).y).toBeCloseTo(99 / 170);
+    expect(spotCoords(R[4], 0).x).toBeCloseTo(162 / 170);
+    expect(spotCoords(0, -380).y).toBeGreaterThan(1); // the miss area, outside the double
+  });
+
+  it('taps in the middle of a field land in that field: outer single is big, inner single is not', () => {
+    const tap = (r: number) => spotCoords(0, -r);
+    expect(isBigSingle({ dart: { n: 20, m: 1 }, coords: tap((R[3] + R[4]) / 2) })).toBe(true);
+    expect(isBigSingle({ dart: { n: 20, m: 1 }, coords: tap((R[1] + R[2]) / 2) })).toBe(false);
+  });
+});
+
+describe('the Big singles outline on the hero board', () => {
+  const outlines = (sectors: number[]) => renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: sectors, ring: 1, darts: [], label: 'x' })).match(/class="tb-outline"/g) ?? [];
+  it('draws one outline per sector', () => {
+    expect(outlines([20, 6, 3, 11])).toHaveLength(4);
+    expect(outlines([])).toHaveLength(0);
+  });
+
+  it('outlines the field between the treble and the double', () => {
+    const svg = renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: [20], ring: 1, darts: [], label: 'x' }));
+    const d = /class="tb-outline" d="([^"]+)"/.exec(svg)![1];
+    expect(d).toContain(`A${SHOWN[4]} ${SHOWN[4]}`);
+    expect(d).toContain(`A${SHOWN[3]} ${SHOWN[3]}`);
   });
 });

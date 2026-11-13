@@ -174,3 +174,13 @@ describe('bullseye', () => {
     expect(bullseye.record).toBeUndefined();
   });
 });
+
+describe('bullseye, a fix with coords', () => {
+  const fixAt = (coords?: Coords): TurnEvent => ({ t: 'fix', index: 0, dart: parseDart('S20')!, coords });
+  it('scores an outer single tapped on the board −1, and an inner single 0', () => {
+    expect(bullseye.view([d('S20', at(60)), fixAt(at(140))], 2, o).points).toEqual([-1, 0]);
+    expect(bullseye.view([d('S20', at(140)), fixAt(at(60))], 2, o).points).toEqual([0, 0]);
+    // No coords after the fix still means inner.
+    expect(bullseye.view([d('S20', at(140)), fixAt()], 2, o).points).toEqual([0, 0]);
+  });
+});

@@ -415,7 +415,7 @@ export class Hub {
       this.db.appendLive(e);
     }
     // Random draws come from a logged seed, so undo and fixes replay the same numbers; a rematch draws a new one.
-    if (gameId === 'randomco' || (gameId === 'atc' && opts.order === 'random')) {
+    if (gameId === 'randomco' || (gameId === 'atc' && opts.order === 'random') || (gameId === 'football' && opts.goalsOn === 'singles')) {
       const e = { t: 'seed', seed: newSeed() };
       rec.events.push(e);
       this.db.appendLive(e);
@@ -573,7 +573,7 @@ export class Hub {
         this.apply({ t: 'dart', dart: cmd.dart, at: Date.now() });
         return {};
       case 'fix':
-        this.apply({ t: 'fix', index: cmd.index, dart: cmd.dart });
+        this.apply({ t: 'fix', index: cmd.index, dart: cmd.dart, ...(cmd.coords && { coords: cmd.coords }) });
         this.live!.lastFix = { index: cmd.index, at: Date.now() };
         return {};
       case 'undo':

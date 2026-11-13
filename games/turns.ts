@@ -11,7 +11,8 @@ import type { BullOff } from './x01/rules.ts';
 export type TurnEvent =
   | { t: 'start'; starter: number }
   | { t: 'dart'; dart: Dart; coords?: Coords; at: number }
-  | { t: 'fix'; index: number; dart: Dart }
+  /** `coords`: where the Pilot tapped on the board, so games that tell the inner from the outer single can tell. */
+  | { t: 'fix'; index: number; dart: Dart; coords?: Coords }
   | { t: 'undo' }
   | { t: 'next'; at?: number }
   /** Killer numbers, drawn by the server before the first dart. */
@@ -107,11 +108,14 @@ export interface MiniView {
   stats: Record<string, number>[];
 }
 
+export const validCoords = (c: unknown): c is Coords =>
+  !!c && typeof c === 'object' && Number.isFinite((c as Coords).x) && Number.isFinite((c as Coords).y);
+
 export const isValidTurnEvent = (e: TurnEvent): boolean => {
   switch (e.t) {
     case 'dart':
     case 'bull': return isValidDart(e.dart);
-    case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart);
+    case 'fix': return Number.isInteger(e.index) && isValidDart(e.dart) && (e.coords === undefined || validCoords(e.coords));
     case 'start': return Number.isInteger(e.starter);
     case 'numbers': return Array.isArray(e.numbers) && e.numbers.every(n => Number.isInteger(n) && n >= 1 && n <= 20);
     case 'seed': return Number.isInteger(e.seed);
@@ -212,7 +216,7 @@ export function replayTurns(events: TurnEvent[], players: number, bullOff: BullO
         break;
       }
       case 'fix':
-        if (open && e.index >= 0 && e.index < open.darts.length) open.darts[e.index] = { dart: e.dart, at: open.darts[e.index].at };
+        if (open && e.index >= 0 && e.index < open.darts.length) open.darts[e.index] = { dart: e.dart, coords: e.coords, at: open.darts[e.index].at };
         break;
       case 'undo':
         if (open) {

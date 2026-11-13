@@ -126,6 +126,7 @@ describe('killer', () => {
 });
 
 describe('football', () => {
+  const doubles = { goalsOn: 'doubles' };
   it('frees the ball a removed player had', () => {
     const log = [...visit('D25'), remove(0)];
     expect(play('football', [...visit('D25')]).ball).toBe(0);
@@ -137,9 +138,9 @@ describe('football', () => {
   it('leaves the removed player out of the winners on End match with Save', () => {
     // Kuba leads, then is level with Ola when he goes.
     const log = [...visit('D25', 'D20', 'D20'), ...visit('D25', 'D20'), remove(0), { t: 'end' } as TurnEvent];
-    const v = play('football', log);
+    const v = play('football', log, 3, doubles);
     expect(v.goals).toEqual([2, 1, 0]);
-    const level = play('football', [...visit('D25', 'D20'), ...visit('D25', 'D20'), remove(0), { t: 'end' } as TurnEvent]);
+    const level = play('football', [...visit('D25', 'D20'), ...visit('D25', 'D20'), remove(0), { t: 'end' } as TurnEvent], 3, doubles);
     expect(level.winners).toEqual([1]);
     expect(v.winners).toEqual([1]);
   });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Dart } from '../../games/darts.ts';
+import type { Coords, Dart } from '../../games/darts.ts';
 import type { ClientState } from '../../server/protocol.ts';
 import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
@@ -152,9 +152,9 @@ function Main({ s }: { s: ClientState }) {
     const d = m.view.visit.darts[index];
     setFix({ index, dart: d ? d.dart : null });
   };
-  const pickFix = (d: Dart) => {
+  const pickFix = (d: Dart, coords?: Coords) => {
     if (!fix) return;
-    void act(fix.dart ? { type: 'fix', index: fix.index, dart: d } : { type: 'dart', dart: d });
+    void act(fix.dart ? { type: 'fix', index: fix.index, dart: d, ...(coords && { coords }) } : { type: 'dart', dart: d });
     setFix(null);
   };
 

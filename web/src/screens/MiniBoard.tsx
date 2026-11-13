@@ -115,8 +115,11 @@ function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   // Free throw has no target: the board only shows where the darts stuck.
   if (m.game === 'freethrow') return <TargetBoard cleared={[]} target={null} ring={null} darts={darts} label="No target" />;
   if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;
-  // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles score.
+  // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles or the big singles of four sectors score.
   if (m.game === 'football') {
+    if (m.view.ball === v.current && m.view.sectors) {
+      return <TargetBoard cleared={[]} target={m.view.sectors} ring={1} darts={darts} label={`Big singles ${m.view.sectors.join(' · ')} score`} />;
+    }
     return m.view.ball === v.current
       ? <TargetBoard cleared={[]} target="ring" ring={2} darts={darts} label="Doubles score" />
       : <TargetBoard cleared={[]} target={25} ring={m.options.kickOff === 'bullseye' ? 2 : null} darts={darts} label="The bull wins the ball" />;

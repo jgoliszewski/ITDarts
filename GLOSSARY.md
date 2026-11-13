@@ -48,6 +48,10 @@ _Avoid_: kolejka, runda
 Podmiana jednego Rzutu w bieżącej Turze na inny segment, wybrany na Pilocie.
 _Avoid_: edycja, korekta
 
+**Duży single / mały single**:
+Single w polu między treblem a double (duży, inaczej zewnętrzny, od 107 mm od środka) albo między 25 a treblem (mały, inaczej wewnętrzny). Rozstrzygają go coords Rzutu, a bez coords Rzut liczy się jako duży single (Football w Big singles) albo jako mały (Bullseye).
+_Avoid_: single outer/inner (w UI: „Big singles”)
+
 **Undo**:
 Cofnięcie ostatniego Rzutu. Przy pustej Turze cofa do poprzedniej Tury.
 _Avoid_: cofnij turę

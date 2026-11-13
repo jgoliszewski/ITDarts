@@ -241,3 +241,39 @@ describe('saving a Gotcha match', () => {
     expect(db.lastMatch()!.players.map(p => p.value)).toEqual(['Won', '']);
   });
 });
+
+describe('Football', () => {
+  const events = () => db.loadLive()!.events;
+  const o = { kickOff: 'any', goals: 5, bullOff: 'off' };
+
+  it('logs a seed at the start with Goals on Big singles, and not with Doubles', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'football', options: { ...o, goalsOn: 'singles' }, roster: roster(2) });
+    expect(events().filter(e => e.t === 'seed')).toHaveLength(1);
+    await pilot({ type: 'endMatch', save: false });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    await pilot({ type: 'startMatch', game: 'football', options: { ...o, goalsOn: 'doubles' }, roster: roster(2) });
+    expect(events().filter(e => e.t === 'seed')).toHaveLength(0);
+  });
+
+  it('starts an old setup without Goals on as Doubles, with no seed', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'football', options: o, roster: roster(2) });
+    expect(db.loadLive()!.options).toMatchObject({ goalsOn: 'doubles' });
+    expect(events().filter(e => e.t === 'seed')).toHaveLength(0);
+  });
+
+  it('takes a fix with the place that was tapped, and refuses coords that are not numbers', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'football', options: { ...o, goalsOn: 'singles' }, roster: roster(2) });
+    await pilot(dart('S20'));
+    expect(await pilot({ type: 'fix', index: 0, dart: parseDart('S20')!, coords: { x: 0, y: 0.8 } })).toMatchObject({ ok: true });
+    expect(events().at(-1)).toMatchObject({ t: 'fix', index: 0, coords: { x: 0, y: 0.8 } });
+    const bad = await pilot({ type: 'fix', index: 0, dart: parseDart('S20')!, coords: { x: 'a', y: 1 } } as never);
+    expect(bad).toMatchObject({ ok: false, error: 'Invalid input' });
+    expect(events().filter(e => e.t === 'fix')).toHaveLength(1);
+    // Without coords the fix is as before.
+    expect(await pilot({ type: 'fix', index: 0, dart: parseDart('S20')! })).toMatchObject({ ok: true });
+    expect(events().at(-1)).not.toHaveProperty('coords');
+  });
+});

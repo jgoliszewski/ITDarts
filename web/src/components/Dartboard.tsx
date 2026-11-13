@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import type { Dart } from '../../../games/darts.ts';
+import type { MouseEvent, ReactNode } from 'react';
+import type { Coords, Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER, BOARD_RADIUS_MM as R_MM } from '../../../games/darts.ts';
 
 // Rings drawn fatter than real ones so a finger can hit doubles and trebles (UI.md).
@@ -47,18 +47,37 @@ export function inputSpot(x: number, y: number, rings = R): readonly [number, nu
   return [sx * k, sy * k];
 }
 
+/** Board Manager's coords (1 = 170 mm, y up) for a spot on a board with these rings: the inverse of coordsSpot, so a tap lands in the field it was made in. */
+export function spotCoords(sx: number, sy: number, rings = R): Coords {
+  const DRAWN = [0, ...rings];
+  const r = Math.hypot(sx, sy);
+  // Past the double the last ring's scale carries on.
+  const f = DRAWN.findIndex(v => v >= r), i = f < 0 ? DRAWN.length - 1 : Math.max(1, f);
+  const d = REAL[i - 1] + ((r - DRAWN[i - 1]) / (DRAWN[i] - DRAWN[i - 1])) * (REAL[i] - REAL[i - 1]);
+  return r ? { x: (sx / r) * d, y: (-sy / r) * d } : { x: 0, y: 0 };
+}
+
+/** Where a click fell on the board, as Board Manager coords. */
+function tapCoords(e: MouseEvent<SVGElement>): Coords | undefined {
+  const svg = e.currentTarget.ownerSVGElement;
+  const box = svg?.getBoundingClientRect();
+  if (!box?.width) return undefined;
+  return spotCoords(((e.clientX - box.left) / box.width) * 760 - 380, ((e.clientY - box.top) / box.height) * 760 - 380);
+}
+
 export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
   marks: { dart: Dart; coords?: { x: number; y: number } }[];
   selected: Dart | null;
   /** Index of the dart being fixed: drawn bigger with a thicker rim (its field is orange already). */
   hot?: number;
-  onPick: (d: Dart) => void;
+  /** With where the tap fell, so the fix keeps it (Football and Bullseye tell the inner from the outer single). */
+  onPick: (d: Dart, coords?: Coords) => void;
   size?: number;
 }) {
   const isSel = (n: number, m: number) => !!selected && selected.n === n && selected.m === m;
   return (
     <svg className="dartboard" width={size} height={size} viewBox="-380 -380 760 760" role="img" aria-label="Dartboard: tap where the dart landed">
-      <circle className="hit" cx="0" cy="0" r="380" fill="#141416" onClick={() => onPick({ n: 0, m: 1 })} />
+      <circle className="hit" cx="0" cy="0" r="380" fill="#141416" onClick={e => onPick({ n: 0, m: 1 }, tapCoords(e))} />
       {BOARD_ORDER.map((n, k) => {
         const [x, y] = pt(360, k * 18);
         return <text key={`t${n}`} x={x} y={y} fill="#A1A1A6" fontSize="24" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
@@ -68,13 +87,13 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
         const single = dark ? '#232327' : '#4A4A50', ring = dark ? '#B8322F' : '#1F8A52';
         const parts: [number, number, 1 | 2 | 3, string][] = [[R[1], R[2], 1, single], [R[2], R[3], 3, ring], [R[3], R[4], 1, single], [R[4], R[5], 2, ring]];
         return parts.map(([r1, r2, m, fill], j) => (
-          <path key={`${n}-${j}`} d={arc(r1, r2, a1, a2)} fill={isSel(n, m) ? '#F58224' : fill} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n, m })}>
+          <path key={`${n}-${j}`} d={arc(r1, r2, a1, a2)} fill={isSel(n, m) ? '#F58224' : fill} stroke="#0A0A0B" strokeWidth="2" onClick={e => onPick({ n, m }, tapCoords(e))}>
             <title>{`${m === 3 ? 'T' : m === 2 ? 'D' : 'S'}${n}`}</title>
           </path>
         ));
       })}
-      <circle className="hit" cx="0" cy="0" r={R[1]} fill={isSel(25, 1) ? '#F58224' : '#1F8A52'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 1 })} />
-      <circle className="hit" cx="0" cy="0" r={R[0]} fill={isSel(25, 2) ? '#F58224' : '#B8322F'} stroke="#0A0A0B" strokeWidth="2" onClick={() => onPick({ n: 25, m: 2 })} />
+      <circle className="hit" cx="0" cy="0" r={R[1]} fill={isSel(25, 1) ? '#F58224' : '#1F8A52'} stroke="#0A0A0B" strokeWidth="2" onClick={e => onPick({ n: 25, m: 1 }, tapCoords(e))} />
+      <circle className="hit" cx="0" cy="0" r={R[0]} fill={isSel(25, 2) ? '#F58224' : '#B8322F'} stroke="#0A0A0B" strokeWidth="2" onClick={e => onPick({ n: 25, m: 2 }, tapCoords(e))} />
       {marks.map(({ dart, coords }, i) => {
         // Where the dart really stuck when the board told us; the middle of its field for a dart typed in by hand.
         const [x, y] = coords ? inputSpot(coords.x, coords.y) : dartSpot(dart, i);
@@ -94,10 +113,10 @@ const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 
  */
 export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   cleared: number[];
-  /** A sector or the bull (25), or 'ring': the whole of `ring` all round (Football with the ball). */
-  target: number | 'ring' | null;
-  /** The ring that counts on the target: null for any segment, 2 doubles, 3 trebles. */
-  ring: 2 | 3 | null;
+  /** A sector or the bull (25), 'ring': the whole of `ring` all round (Football with the ball), or sectors (the big singles of Football's Big singles). */
+  target: number | number[] | 'ring' | null;
+  /** The ring that counts on the target: null for any segment, 1 the big single, 2 doubles, 3 trebles. */
+  ring: 1 | 2 | 3 | null;
   /** With coords a dot sits where the dart stuck; without (fixed or added by hand) in the middle of its field. */
   darts: { dart: Dart; good: boolean; coords?: { x: number; y: number } }[];
   label: string;
@@ -108,9 +127,10 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   const done = new Set(cleared);
   const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
   const tk = typeof target === 'number' && target !== 25 ? BOARD_ORDER.indexOf(target) : -1;
-  const [o1, o2] = ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
+  const [o1, o2] = ring === 1 ? [S[3], S[4]] : ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
   // Only the bullseye counts for the bull with Doubles or Trebles.
   const outline = target === null ? null
+    : Array.isArray(target) ? target.map(n => <path key={n} className="tb-outline" d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
     : target === 'ring' ? <><circle className="tb-outline" cx="0" cy="0" r={o1} /><circle className="tb-outline" cx="0" cy="0" r={o2} /></>
     : target === 25 ? <circle className="tb-outline" cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
     : <path className="tb-outline" d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;

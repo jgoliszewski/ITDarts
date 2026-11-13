@@ -145,7 +145,8 @@ export type Command =
   | { type: 'rematch' }
   | { type: 'bullOff'; starter: number }
   | { type: 'dart'; dart: Dart }
-  | { type: 'fix'; index: number; dart: Dart }
+  /** `coords` (Board Manager units) only from a tap on the fix board. */
+  | { type: 'fix'; index: number; dart: Dart; coords?: Coords }
   | { type: 'undo' }
   | { type: 'next' }
   | { type: 'nextLeg' }
