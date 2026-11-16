@@ -106,13 +106,13 @@ _Avoid_: anonim, tymczasowy gracz
 Lista zdarzeń bieżącego meczu (rzuty, poprawki, undo, takeouty), z której silnik gry wylicza stan. Po meczu kompaktowany do obowiązujących lotek.
 _Avoid_: historia (w tym znaczeniu), event store
 
-**Średnia until 170**:
-Średnia z 3 lotek liczona z całych Tur zaczętych z wynikiem powyżej 170.
-_Avoid_: scoring average
-
 **Okno**:
 Zakres danych, z którego liczymy statystykę: czasowy (7 dni … all time) albo w legach (10, 100, all).
 _Avoid_: okres, filtr
+
+**Poprzednie Okno**:
+Okno tuż przed wybranym, z którego liczymy strzałkę zmiany: okres tej samej długości przed oknem czasowym albo poprzednie 10 / 100 legów (minigierki: meczów). Nie istnieje dla „All time” ani przy mniej niż 3 legach (meczach).
+_Avoid_: okres bazowy, baseline
 
 ## Efekty
 

@@ -52,7 +52,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 ### Rekordy i Ekran rekordu
 
 - Moduł gry może zdefiniować **statystykę rekordową**: co jest rekordem, czy lepiej mniej, czy więcej, i które opcje tworzą osobny wariant. Rekord zawsze dotyczy dokładnie jednego wariantu.
-- Rekordy mają ATC, Full Board, 121, solo Cricket i solo Shanghai. X01 na razie nie ma.
+- Rekordy (z Ekranem rekordu) mają ATC, Full Board, 121, solo Cricket i solo Shanghai. X01 ma od 2026-11-16 tabele rekordów biura na `/stats` (Highest visit, Highest checkout, Best leg na wynik startowy), ale **bez Ekranu rekordu** i bez Momentu „New record”: nie ma definicji rekordu w module gry ([STATYSTYKI.md](STATYSTYKI.md#rekordy-biura-x01)).
 - **Ekran rekordu:** po „Start” Ekran wyników pokazuje przez około 4 s nazwę wariantu i rekord biura, czyli wartość, kto go ustanowił i kiedy.
   - Rekordów osobistych na tym ekranie nie pokazujemy.
   - W Co-op pokazuje rekord co-op wariantu z imionami składu.
@@ -152,7 +152,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **Opcja „First to”** 1–5, domyślnie 1. Kolejna gra startuje z zakresem 26–45 i wszystkimi graczami z pełnymi życiami, a zaczyna następny w kolejności. Mecz wygrywa ten, kto pierwszy zdobędzie N punktów.
 - **Ekran wyników** (wariant B2.2 z `.scratch/hol-lives/mockup-b2.html`): duża suma Tury (przed pierwszą lotką 0) stoi jak szpilka nad swoim miejscem na skali 0–180: liczba i pionowa kreska do paska. Suma z kreską są czerwone, gdy Tura przegrywa (suma w zakresie albo pudło), a poza zakresem białe, bez napisu. Pasek jest zielony poza zakresem i czerwony w zakresie, pod nim podziałka co 30 (bez liczb, które wpadłyby na granice) i duże czerwone granice zakresu pod swoimi miejscami. Przy wąskim zakresie (start 26–45) granice rozsuwają się od środka. Przy samych końcach skali szpilka i liczby dosuwają się do krawędzi, więc nie wychodzą poza hero. Obok imienia są duże serca aktywnego gracza jak w 121: serce, które zabiera skończona nieudana Tura, pęka, zanim gracz wyjmie lotki. Karta Tury pokazuje wtedy „LIFE LOST”, a przy ostatnim życiu „OUT”. Lista graczy pokazuje punkty i małe serca jak w Knockout, a wyeliminowani w bieżącej grze są wyszarzeni.
 - **Wyzwalacze:** „Life lost” (każda nieudana tura), „Player eliminated” (ostatnie życie), „Game won”, „Match won”.
-- **Statystyki:** wygrane. Bez rekordu.
+- **Statystyki:** wygrane, winrate i „Visits survived”, czyli % Tur bez utraty życia (`survived ÷ visits` w `stats` gracza, ze wszystkich gier meczu; Tura urwana wycofaniem się nie liczy; stare mecze bez tych pól to brak danych). Bez rekordu.
 - **Znany przypadek brzegowy:** gdy zakres dojdzie do 180 na górze i 3 na dole, nikt nie da rady go ominąć. Nie obsługujemy tego osobno, bo to praktycznie niemożliwe. Taką grę kończy „End match”.
 
 ## Random Checkouts
@@ -281,6 +281,7 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 ## Statystyki na `/stats`
 
 - Wybór gry.
-- Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw.
+- Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą. X01 ma takie tabele bez Ekranu rekordu: Highest visit, Highest checkout i Best leg osobno na wynik startowy.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw.
+- **Liczniki minigierek jako średnia na mecz** (suma małym drukiem), a główna statystyka gry ze strzałką zmiany względem poprzedniego Okna. Winrate liczy się jak w X01, tylko z meczów versus; w grach solo (Free throw) jest samo „Played” ([STATYSTYKI.md](STATYSTYKI.md#progres)).
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

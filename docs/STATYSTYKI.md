@@ -1,6 +1,6 @@
 # ITDarts: historia gier i statystyki (etap 2)
 
-Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)). Pojęcia są zdefiniowane w [GLOSSARY.md](../GLOSSARY.md), model danych w [ADR 0004](adr/0004-log-zdarzen-i-sqlite.md), a UI w [UI.md](UI.md).
+Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITDarts/issues/4)). Przebudowa statystyk („stats v2”) z grillingu z 2026-11-13 i 2026-11-16 (sesja, bez issue): pytanie „czy się poprawiam” najpierw, „kto lepszy” potem, ciekawostki na dole. Pojęcia są zdefiniowane w [GLOSSARY.md](../GLOSSARY.md), model danych w [ADR 0004](adr/0004-log-zdarzen-i-sqlite.md), a UI w [UI.md](UI.md).
 
 ## Co zapisujemy
 
@@ -25,7 +25,7 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 ## Co wchodzi do statystyk
 
 - **Statystyki rzutowe** (średnie, liczniki, checkouty) zarejestrowanych graczy liczą się zawsze, także w meczach z gośćmi i w grze solo.
-- **Winrate i head-to-head:** tylko zakończone mecze, w których grało co najmniej dwóch graczy i wszyscy są zarejestrowani.
+- **Winrate i head-to-head:** tylko zakończone mecze, w których grało co najmniej dwóch graczy i wszyscy są zarejestrowani, a gracz nie został wycofany z meczu. Ta sama definicja (`matches.counts_results`) dotyczy minigierek, patrz „Winrate w minigierkach”.
 - **„End match” w trakcie meczu** pyta, czy zapisać mecz do statystyk:
   - „Discard” usuwa mecz całkowicie, także z historii;
   - „Save” dodaje wszystkie tury do statystyk rzutowych. Checkout %, najkrótszy leg i rekordy liczą tylko dokończone legi. Mecz nie wchodzi do winrate.
@@ -37,36 +37,74 @@ Postanowienia z grillingu z 2026-10-25 ([#4](https://github.com/jgoliszewski/ITD
 |---|---|
 | Średnia | Punkty ÷ lotki × 3. Bust to 0 punktów, a jego lotki się liczą. |
 | Średnia z pierwszych 9 | Jak wyżej, z pierwszych trzech tur legu. |
-| Średnia until 170 | Jak wyżej, z całych tur zaczętych z wynikiem powyżej 170, łącznie z turą, która schodzi poniżej. Leg zaczęty od 170 lub mniej jej nie daje. |
 | Checkout % | Udane checkouty ÷ lotki rzucone przy wyniku do skończenia jedną lotką. |
 | Najwyższy checkout | Największy wynik zamknięty jedną turą. |
-| Najkrótszy leg | Najmniej lotek w wygranym legu. |
-| 60+, 80+, 100+ | Liczba tur w przedziałach 60–79, 80–99 i od 100 w górę, każda tura liczy się raz. Od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura. Liczone z zapisanych tur, więc dotyczy też starszych meczów. |
+| Najwyższa Tura (Highest visit) | Najwięcej punktów w jednej turze. Bust to 0 punktów. |
+| Best leg | Najmniej lotek w wygranym legu, liczone tylko z **najczęściej granego wyniku startowego** gracza (remis w liczbie legów: wyższy wynik startowy) i podawane z dopiskiem, np. „15 darts · 301”. Bez podziału na pozostałe warianty (check-in, check-out). Statystyka zwraca też liczbę legów i najlepszy leg dla każdego granego wyniku startowego, żeby Compare mógł wybrać wynik najczęstszy łącznie u obu graczy („Best leg · 301”). |
+| Bust rate | % tur zakończonych bustem (jedno miejsce po przecinku). Mniej znaczy lepiej. |
+| 60+, 80+, 100+ | Liczba tur w przedziałach 60–79, 80–99 i od 100 w górę, każda tura liczy się raz. Od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura. Profil pokazuje główną liczbę jako **% tur** w przedziale, a sumę małym drukiem. Liczone z zapisanych tur, więc dotyczy też starszych meczów. |
 | Winrate, head-to-head | Wygrane ÷ mecze według zasad wyżej. |
 
-Definicji średniej until 170 nie znaleźliśmy w żadnym oficjalnym źródle. Przyjęliśmy najczęstszy podział legu na fazę punktowania i fazę checkoutu, bez cięcia tury w połowie.
+**Tabela double** (profil X01, pod statystykami; nie ma jej w Compare ani w podsumowaniu meczu): kolumny Double, Hit, Attempts i %, sortowane po próbach. Próba to lotka rzucona przy wyniku do zamknięcia jedną lotką, przypisana do double, którego ten wynik wymagał (wynik ÷ 2, 50 to bull). Trafienie to lotka, która zamknęła leg. Liczą się tylko Tury z check-out „double” i tylko dokończone legi, czyli ta sama pętla co Checkout %. Dla gracza, który gra wyłącznie double out, suma prób z tabeli równa się liczbie prób w Checkout %. Bull to double jak inne (w API `double: 25`).
 
-Później, bez zmian w modelu (policzą się wstecz): skuteczność na poszczególnych double, bust rate.
+Później (policzą się wstecz z zapisanych lotek): celność (% treble, sektory), ekran szczegółów meczu z historii, ranking ([#6](https://github.com/jgoliszewski/ITDarts/issues/6)).
 
 ## Okna
 
 - **Czasowe:** 7 dni, 30 dni, 3 miesiące, rok, all time.
 - **W legach:** ostatnie 10, ostatnie 100, all.
 
+## Progres
+
+Profil odpowiada najpierw na „czy się poprawiam”, więc statystyki porównujemy z **poprzednim Oknem** (`GET /api/stats/players/:id`, pole `previous`; w minigierkach `previous` w odpowiedzi gry).
+
+- **Okno czasowe** porównuje się z okresem tej samej długości tuż przed nim: dla 7 dni to `[teraz − 14 dni, teraz − 7 dni)`.
+- **Okno w legach** (10, 100) porównuje się z poprzednimi 10 albo 100 legami gracza według świeżości. W minigierkach, które mają jeden leg na mecz, to poprzednie N meczów.
+- **Brak porównania** (`null`): dla „All time” i gdy poprzednie Okno ma mniej niż 3 legi (minigierki: 3 mecze).
+- **Strzałka zmiany** pokazuje różnicę liczbą, zieloną przy poprawie i czerwoną przy spadku. Statystyki, w których mniej znaczy lepiej (Bust rate, Darts per checkout), mają odwrócony kolor. X01: Average, First 9, Checkout %. Winrate bez strzałki.
+- **Wykres Average** (`trend` w odpowiedzi): punkt to jeden mecz X01 z wybranego Okna, z Averagem gracza w tym meczu, rosnąco po czasie. Profil rysuje wykres od 3 punktów i tylko dla gracza (nie w Compare).
+
 ## Inne gry
 
 Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lotek, np. MPR w Cricket albo rekord w ATC. Lista, rekordy i tabele na `/stats` są w [GRY.md](GRY.md).
 
+**Częstości „na mecz”.** Liczniki minigierek profil pokazuje jako średnią na mecz, a sumę małym drukiem. Mianownikiem jest `matches` w odpowiedzi gry: liczba meczów, z których zsumowano `totals` (razem z meczami, z których gracz został wycofany, bo jego lotki liczą się w sumach). Główna statystyka ze strzałką: ATC, Full Board i Shanghai: hit rate; Cricket: MPR; 121: Attempts won; Random Checkouts: Darts per checkout; Knockout: Average visit; Killer: Lives taken na mecz; Football: Goals na mecz; Gotcha: Gotchas na mecz; Bullseye: Points na mecz; Free throw: Average.
+
+**Winrate w minigierkach** liczymy jak w X01: do „versus played / won / winrate” wchodzą mecze zakończone, z co najmniej dwoma Graczami, bez Gości, bez remisu (`matches.counts_results`), w których gracz nie został wycofany. Osobno zwracamy liczbę rozegranych meczów (solo też, bez wycofanych). W grze tylko solo (Free throw) versus to 0 i profil pokazuje samo „Played”. W Oknie z grami solo i versus naraz winrate liczy się z versus, a solo wchodzi tylko do „Played”. Mecz zapisany przez „Save” i remis (np. ATC) nie wchodzą do winrate.
+
 **Reguła ogólna:** klucz `best` w `stats` minigierki agreguje się na `/stats` jako maksimum, pozostałe klucze jako sumy. Nowa gra z kluczem `best` dostaje maksimum po samej nazwie klucza (`server/stats.ts`).
 
-**Free throw** (od 2026-11-13) zapisuje w `stats` gracza: `darts`, `points`, `visits` (zakończone Tury), `best` (najwyższa Tura), `v60`, `v80` i `v100` (Tury od 60, 80 i 100 punktów). `/stats` sumuje je po meczach, ale `best` bierze jako maksimum. Pokazuje średnią z 3 lotek (`points / darts × 3`), lotki, najwyższą Turę i liczniki. Lotki z coords trafiają do heatmapy (`GET /api/stats/heat?game=freethrow`, ta sama ścieżka co inne minigierki). Profil X01, średnie X01, winrate i head-to-head bez zmian. Bez rekordu.
+**Free throw** (od 2026-11-13) zapisuje w `stats` gracza: `darts`, `points`, `visits` (zakończone Tury), `best` (najwyższa Tura), `v60`, `v80` i `v100` (Tury od 60, 80 i 100 punktów). `/stats` sumuje je po meczach, ale `best` bierze jako maksimum. Pokazuje średnią z 3 lotek (`points / darts × 3`), lotki, najwyższą Turę i liczniki. Lotki z coords trafiają do heatmapy (`GET /api/stats/heat?game=freethrow`, ta sama ścieżka co inne minigierki). Główna statystyka ze strzałką to Average; 60+/80+/100+ pokazujemy jako % Tur z sumą małym drukiem; najwyższa Tura zostaje maksimum (`best`, także w poprzednim Oknie). To gra solo, więc profil pokazuje samo „Played”, bez winrate. Profil X01, średnie X01 i head-to-head bez zmian. Bez rekordu.
+
+**Higher or Lower** (od 2026-11-16) zapisuje w `stats` gracza `visits` (ocenione Tury) i `survived` (Tury bez utraty życia), ze wszystkich gier meczu (First to powyżej 1). Statystyka „Visits survived” to `survived ÷ visits`. Tura urwana wycofaniem gracza nie jest oceniana, więc się nie liczy. Mecze zapisane wcześniej nie mają tych pól: to brak danych, nie zero, więc nie wchodzą ani do licznika, ani do mianownika.
+
+## Rekordy biura X01
+
+Na `/stats`, all time, bez wyboru Okna, tylko Gracze (Goście nie zostawiają Tur). Trzy rodzaje tabel top 10 (`GET /api/stats/records?game=x01`, ten sam kształt `RecordTable` co rekordy minigierek):
+
+- **Highest visit:** najwięcej punktów w jednej Turze.
+- **Highest checkout:** największy wynik zamknięty Turą, tylko dokończone legi.
+- **Best leg** osobno dla każdego granego wyniku startowego (klucz `leg:301`, „Best leg · 301”): wygrany leg z najmniejszą liczbą lotek.
+
+Konwencje jak przy rekordach minigierek (`Db.records`): jeden wiersz na gracza i mecz (najlepsza wartość z meczu), ten sam gracz może wystąpić wiele razy, najlepsze pierwsze, przy remisie wcześniejszy pierwszy. Tabela bez wierszy się nie pojawia.
+
+**Bez Ekranu rekordu i bez Momentu „New record” w X01:** moduł X01 nie ma definicji rekordu (`GAMES.x01.record`), bo ta definicja włączałaby oba ([GRY.md](GRY.md#rekordy-i-ekran-rekordu)). Rekordy X01 liczy samo `/stats` z zapisanych Tur.
+
+## Lista graczy
+
+- **Average X01 z 30 dni** (jak dotąd) i obok niego Average z poprzednich 30 dni (`avgPrev`), z którego widok liczy strzałkę. Brak (`null`) przy mniej niż 3 legach w tamtym okresie.
+- **Liczba meczów** z ostatnich 30 dni, wszystkie gry, bez meczów, z których gracz został wycofany (wcześniej liczba z całej historii).
+
+## Ciekawostki
+
+Mała sekcja „Fun facts” na dole profilu: **Darts** (liczba rzuconych lotek) i **Distance walked** (przeniesione spod heatmapy). Nie podświetlamy ich w Compare, bo więcej nie znaczy lepiej.
 
 ## Prezentacja
 
 - Widok „Stats” jest tylko do odczytu i otwiera się z dowolnego urządzenia w LAN bez przejmowania Pilota.
-- Zawartość: lista graczy, profil gracza z oknami, head-to-head.
+- Zawartość: lista graczy, profil gracza z oknami i progresem, rekordy biura X01, head-to-head.
 - Telefon pamięta wybór „to ja” i otwiera się od razu na tym profilu.
-- **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), pod nią „Distance walked” w km.
+- **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), a „Distance walked” w km jest w sekcji ciekawostek na dole profilu.
 - **Porównanie graczy** na `/stats/compare`, wejście przyciskiem „Compare” na liście graczy:
   - dokładnie dwóch zarejestrowanych graczy, wybieranych w dwóch polach „X VS Y” pod oknem czasu (od 2026-10-28; wcześniej chipy 2–4), plus gra i okno;
   - tabela z kolumną na gracza i wierszami jak w profilu tej gry, z podświetloną najlepszą wartością;
@@ -83,5 +121,6 @@ Każdy moduł gry w `games/` definiuje swoje statystyki liczone z zapisanych lot
 
 ## Poza zakresem
 
+- Celność (% treble, sektory) i ekran szczegółów meczu z historii: patrz „Później” przy statystykach X01.
 - Ranking: [#6](https://github.com/jgoliszewski/ITDarts/issues/6).
 - Import historii z konta Autodarts.
