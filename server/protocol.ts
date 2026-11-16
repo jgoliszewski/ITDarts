@@ -185,6 +185,10 @@ export interface PlayerStatsResponse {
   player: PlayerInfo;
   window: StatsWindow;
   x01: import('../games/x01/stats.ts').X01Stats;
+  /** The same figures for the Okno right before this one (docs/STATYSTYKI.md, Progres); null for All time or with fewer than 3 legs there. */
+  previous: { avg: number | null; first9: number | null; checkoutPct: number | null } | null;
+  /** The player's Average in each X01 match of the Okno, oldest first. */
+  trend: { matchId: number; endedAt: number; avg: number }[];
   results: { played: number; won: number; winrate: number | null };
   recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played' | 'left'; score: string }[];
   opponents: { id: number; name: string; played: number; won: number }[];
@@ -203,9 +207,16 @@ export interface GameStatsResponse {
   player: PlayerInfo;
   game: GameId;
   window: StatsWindow;
+  /** Matches played, solo too, without those the player left. */
   played: number;
   won: number;
+  /** Winrate as in X01: finished matches of two or more registered players with one winner, without those the player left. Solo games: all zero, `winrate` null. */
+  versus: { played: number; won: number; winrate: number | null };
+  /** Matches `totals` were summed from (those the player left included): the denominator of "per match". */
+  matches: number;
   totals: Record<string, number>;
+  /** `matches` and `totals` of the Okno right before this one; null for All time or with fewer than 3 matches there. */
+  previous: { matches: number; totals: Record<string, number> } | null;
   /** Best result per record variant. */
   bests: { label: string; value: string }[];
 }
@@ -222,7 +233,11 @@ export interface RecordTable {
 export interface PlayerListItem {
   id: number;
   name: string;
+  /** X01 Average of the last 30 days. */
   avg: number | null;
+  /** The same for the 30 days before; null with fewer than 3 legs then. */
+  avgPrev: number | null;
+  /** Matches of the last 30 days, all games, without those the player left. */
   matches: number;
   lastPlayed: number | null;
 }
