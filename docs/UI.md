@@ -14,6 +14,7 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 - **Telefon obsługuje wszystko.** Główny ekran może nie być dotykowy, więc każda akcja jest dostępna z Pilota na telefonie.
 - **Jeden responsywny widok Pilota** dla laptopa i telefonu, projektowany najpierw pod telefon i dotyk.
 - **Przejęcie Pilota** jest natychmiastowe, bez potwierdzenia. Poprzedni Pilot dostaje komunikat, kto przejął, i ten sam przycisk, żeby odebrać. Nazwę urządzenia (telefon, laptop) wyliczamy z przeglądarki.
+- **Komunikaty (toasty)** na Ekranie wyników stoją pod nagłówkiem przy lewej krawędzi, nad hero, i nie wchodzą na prawą kolumnę ani wiersz przycisków (od 2026-11-16). Na telefonie i pozostałych ekranach są na dole pośrodku.
 
 ## Styl
 
