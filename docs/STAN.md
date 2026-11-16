@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-13. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-16. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -8,6 +8,12 @@ Stan na 2026-11-13. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Statystyki v2** (2026-11-16, gałąź `stats-v2`, [STATYSTYKI.md](STATYSTYKI.md), plan i makieta w `.scratch/stats-v2/`): `/stats` odpowiada najpierw na „czy się poprawiam”.
+  - **Profil X01:** Average, First 9 i Checkout % ze strzałką względem poprzedniego Okna, wykres Average mecz po meczu (od 3 meczów), Bust rate, Highest visit, Best leg z wynikiem startowym, 60+/80+/100+ jako % Tur, tabela double, sekcja „Fun facts” (Darts, Distance walked). Usunięty Until 170.
+  - **Minigierki:** liczniki jako średnia na mecz, główna statystyka gry ze strzałką (kierunek „lepiej” w jednym miejscu, `web/src/stats.ts`), winrate z meczów versus albo samo „Played”, w Higher or Lower „Visits survived”.
+  - **Rekordy biura X01** na `/stats` (Highest visit, Highest checkout, Best leg na wynik startowy), bez Ekranu rekordu. Lista graczy: Average z 30 dni ze strzałką i liczba meczów z 30 dni. Compare: częstości, Bust rate (mniej = lepiej), Best leg przy najczęstszym wspólnym wyniku startowym. Podsumowanie meczu: liczby, bez Until 170, z Bust rate i Highest visit.
+  - **Sprawdzone:** `npm test`, `npm run typecheck`, `npm run build`; testy czystych funkcji i backendu; zrzuty 1280 i 375 z `dev:shot` na zasianej bazie (`.scratch/stats-v2/shots/`); wynik backendu na kopii prawdziwej bazy.
+  - **Niesprawdzone:** prawdziwa baza w biurze na żywo, telefon na żywo, strzałki na prawdziwej historii (zasiew był syntetyczny). Mecze Higher or Lower sprzed zmiany nie mają „Visits survived” (brak danych, nie zero).
 - **Football: gol dużym singlem w losowanych sektorach** (2026-11-13, [GRY.md](GRY.md#football), plan w `.scratch/football-singles/PLAN.md`): nowa opcja „Goals on”: „Big singles” (domyślnie) albo „Doubles” (dotychczasowe zasady). W Big singles z piłką gola daje tylko duży single (między treblem a double, od 107 mm od środka, `isBigSingle` w `games/darts.ts`) w jednym z czterech sektorów co piątą pozycję w `BOARD_ORDER`; zestaw z pięciu losuje się z `seeded(t.seed)` przy każdym przejęciu piłki (ze środka i od rywala, nie przy bullu posiadacza), po wycofaniu posiadacza zestaw zostaje do następnego przejęcia. Hub dopisuje `{ t: 'seed' }` przy starcie Football w Big singles (Rematch idzie tą samą ścieżką `startMatch`). Lotka bez coords liczy się jako duży single. Zdarzenie `fix` ma opcjonalne `coords` (`games/turns.ts`, protokół, hub): klik w dużą tarczę w arkuszu poprawki przenosi miejsce kliknięcia (`spotCoords` w `Dartboard.tsx`, odwrotność `coordsSpot`), Keypad i „Nearby” bez coords. X01 świadomie ignoruje coords z poprawki (silnik dalej zrzuca je z poprawionej lotki). Zdejmuje to ograniczenie Bullseye. Ekran: obrys dużych singli czterech sektorów na hero (`TargetBoard` z `target: number[]` i `ring: 1`), „Your ball · big singles 20 · 6 · 3 · 11 score”, nagłówek „Football · 25/50 · Big singles · First to 5”. Testy z logu w `games/football.test.ts`, `games/bullseye.test.ts`, `server/hub.test.ts`, `web/src/components/Dartboard.test.ts` z mutacjami warunków.
   - **Uwaga przy wdrożeniu:** mecz Football w toku odtworzy się jako Doubles (opcje bez `goalsOn` normalizują się do `doubles`), więc zasady w trakcie meczu się nie zmieniają. Zapamiętane w przeglądarce opcje Football bez „Goals on” dostają w setupie nowy domyślny Big singles.
   - **Sprawdzone na `dev:shot`** (zrzuty 1920×1080 i 375 px w `.scratch/football-singles/`): setup z „Goals on”, hero z obrysem czterech sektorów i piłką, gol dużym singlem (136 mm od środka) bez gola za mały single, karta Tury „Goal!”, arkusz poprawki; klik w mały single na dużej tarczy zdjął gola (1 → 0), więc coords z kliknięcia dochodzą do gry.
