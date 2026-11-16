@@ -93,6 +93,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @media (max-width: 560px) { .dialog.one-row .actions { flex-direction: column-reverse; } }
 .toasts { position: fixed; z-index: 70; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(560px, calc(100vw - 32px)); pointer-events: none; }
 .toast { pointer-events: auto; background: #26262B; color: var(--text); border-radius: 18px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); width: 100%; }
+/* On the wide screen toasts sit under the header at the left edge, over the hero, clear of the right column. */
+.big ~ .toasts { bottom: auto; top: calc(96 * var(--u)); left: calc(40 * var(--u)); transform: none; width: min(560px, calc(100vw - 720 * var(--u))); }
 .toast.error { background: var(--red-bg); color: var(--red-soft); }
 .toast .btn { height: 40px; padding: 0 16px; font-size: 14px; }
 .banner { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--red-bg); color: var(--red-soft); font-weight: 700; padding: 8px 16px; font-size: 15px; }
@@ -182,18 +184,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .mstats.few .num { font-size: calc(96 * var(--u)); line-height: 1; white-space: nowrap; }
 .mstats.few.three > div { padding: calc(24 * var(--u)) calc(16 * var(--u)); }
 .mstats.few.three .num { font-size: calc(64 * var(--u)); }
-.pilot-bar { height: calc(120 * var(--u)); flex-shrink: 0; padding: 0 calc(40 * var(--u)); display: flex; align-items: center; gap: calc(16 * var(--u)); background: #111113; position: relative; z-index: 30; }
-.pilot-bar .hint { flex: 1; color: var(--muted); font-size: calc(20 * var(--u)); }
-.pilot-bar .btn { height: calc(72 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(22 * var(--u)); }
-.pilot-bar .btn svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); }
-.view-bar { position: relative; z-index: 30; height: calc(72 * var(--u)); flex-shrink: 0; padding: 0 calc(40 * var(--u)) calc(16 * var(--u)); display: flex; align-items: center; justify-content: flex-end; gap: calc(16 * var(--u)); }
-.view-bar span { color: var(--muted2); font-size: calc(18 * var(--u)); }
-.view-bar .btn { height: calc(48 * var(--u)); font-size: calc(18 * var(--u)); padding: 0 calc(24 * var(--u)); }
+.side-actions { flex-shrink: 0; margin-top: auto; position: relative; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: calc(12 * var(--u)); }
+.side-actions .btn { height: calc(64 * var(--u)); padding: 0; font-size: calc(20 * var(--u)); white-space: nowrap; }
+.side-actions .btn svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); }
+.side-actions .btn:only-child, .side-actions .third { grid-column: 1 / -1; }
+.side-actions .third .btn { width: 100%; }
 
 .overlay { position: absolute; left: 0; right: 0; top: calc(80 * var(--u)); bottom: 0; background: rgba(10, 10, 11, 0.8); display: flex; align-items: center; justify-content: center; z-index: 20; }
-/* Centred over what the bars leave free, so the card never slides under them. */
-.big:has(> .pilot-bar) > .overlay { bottom: calc(120 * var(--u)); }
-.big:has(> .view-bar) > .overlay { bottom: calc(72 * var(--u)); }
 .overlay-card { width: calc(1120 * var(--u)); border-radius: calc(40 * var(--u)); background: var(--sheet); overflow: hidden; display: flex; flex-direction: column; text-align: center; }
 .overlay-card .body { padding: calc(40 * var(--u)) calc(56 * var(--u)) calc(32 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); }
 .overlay-card .who { font-size: calc(40 * var(--u)); font-weight: 700; color: var(--soft); }
@@ -222,7 +219,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .result-card .actions { display: flex; gap: calc(16 * var(--u)); }
 .result-card .btn { height: calc(80 * var(--u)); padding: 0 calc(40 * var(--u)); font-size: calc(24 * var(--u)); }
 /* Bull-off (docs/UI.md, Bull-off z tarczy): fixed sizes, so nothing moves between throwing, takeout, tie, rethrow and the order. */
-.bulloff-card { width: calc(1640 * var(--u)); height: calc(860 * var(--u)); border-radius: calc(40 * var(--u)); background: var(--sheet); padding: calc(32 * var(--u)) calc(56 * var(--u)); }
+/* Lifted 48 u off the centre, so its bottom stays clear of the action row in the right column. */
+.bulloff-card { width: calc(1640 * var(--u)); height: calc(860 * var(--u)); border-radius: calc(40 * var(--u)); background: var(--sheet); padding: calc(32 * var(--u)) calc(56 * var(--u)); margin-bottom: calc(96 * var(--u)); }
 .bulloff { display: grid; height: 100%; grid-template-columns: calc(740 * var(--u)) minmax(0, 1fr); grid-template-rows: auto calc(224 * var(--u)) minmax(0, 1fr) auto;
   grid-template-areas: 'kicker kicker' 'board status' 'board list' 'board picks'; column-gap: calc(56 * var(--u)); row-gap: calc(20 * var(--u)); }
 .bo-kicker { grid-area: kicker; font-size: calc(30 * var(--u)); font-weight: 700; letter-spacing: 0.12em; color: var(--accent); }
@@ -284,7 +282,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 
 /* lobby */
 .lobby-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) calc(640 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(40 * var(--u)); min-height: 0; }
-.lobby-qr { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(64 * var(--u)); display: flex; align-items: center; gap: calc(72 * var(--u)); min-width: 0; }
+.lobby-start { border-radius: calc(36 * var(--u)); background: var(--card); padding: calc(64 * var(--u)); display: flex; flex-direction: column; justify-content: center; gap: calc(40 * var(--u)); min-width: 0; }
+.lobby-start .btn.primary { height: calc(180 * var(--u)); font-size: calc(56 * var(--u)); border-radius: calc(48 * var(--u)); }
+.lobby-start .btn.secondary { height: calc(110 * var(--u)); font-size: calc(32 * var(--u)); border-radius: calc(36 * var(--u)); }
 .qr-box { flex-shrink: 0; width: calc(520 * var(--u)); height: calc(520 * var(--u)); border-radius: calc(32 * var(--u)); background: var(--text); padding: calc(36 * var(--u)); }
 .qr-box svg { width: 100%; height: 100%; display: block; }
 .lobby-text { display: flex; flex-direction: column; gap: calc(28 * var(--u)); min-width: 0; }
@@ -301,9 +301,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .last-row.win .num { color: var(--accent); }
 .lobby-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(12 * var(--u)); }
 .lobby-nav .btn { height: calc(72 * var(--u)); font-size: calc(22 * var(--u)); text-decoration: none; }
-.lobby-actions { flex: 1; justify-content: flex-end; }
-.lobby-actions .btn { height: calc(96 * var(--u)); font-size: calc(28 * var(--u)); }
-.lobby-actions .btn.secondary { height: calc(72 * var(--u)); font-size: calc(22 * var(--u)); }
 
 /* ---------- phone ---------- */
 .phone { min-height: 100%; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; position: relative; padding-bottom: env(safe-area-inset-bottom); }

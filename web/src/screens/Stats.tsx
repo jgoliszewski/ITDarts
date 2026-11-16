@@ -398,7 +398,7 @@ export function StatsPage({ path }: { path: string }) {
         <GamePicker game={game} setGame={setGame} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Records game={game} />
-          {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them on the pilot under Players.</p> : (
+          {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them under Players.</p> : (
             <>
               <div className="option-row">
                 <div className="caps" style={{ fontSize: 13 }}>{x01 ? 'Players · average last 30 days' : 'Players'}</div>

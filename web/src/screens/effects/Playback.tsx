@@ -51,7 +51,7 @@ export function PlaybackTab({ d, wide }: { d: EffectsData; wide: boolean }) {
         <Volume label="Effects volume" value={s.volume} onSave={volume => put({ volume })} />
         <Volume label="Caller volume" value={s.callerVolume} onSave={callerVolume => put({ callerVolume })} />
       </section>
-      <span className="muted" style={{ fontSize: 14 }}>The same switches are in the pilot menu. Overall loudness is set in Windows.</span>
+      <span className="muted" style={{ fontSize: 14 }}>The same switches are in the menu. Overall loudness is set in Windows.</span>
     </div>
   );
 }

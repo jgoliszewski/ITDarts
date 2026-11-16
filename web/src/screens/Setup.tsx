@@ -200,7 +200,7 @@ function MiniSection({ game, options, players, setOptions: save }: { game: GameI
         </div>
       ))}
       {game === '121' && players > 1 && <div className="muted" style={{ fontSize: 13 }}>With 2 or more players 121 is played in Co-op: one shared target.</div>}
-      {game === 'killer' && <div className="muted" style={{ fontSize: 13 }}>Numbers are drawn at the start. Reroll them on the pilot before the first dart.</div>}
+      {game === 'killer' && <div className="muted" style={{ fontSize: 13 }}>Numbers are drawn at the start. Reroll them before the first dart.</div>}
     </>
   );
 }

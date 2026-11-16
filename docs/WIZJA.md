@@ -57,7 +57,7 @@ Panel pokazuje też status połączenia z tarczą. Podgląd kamer pominęliśmy.
 - **Źródło prawdy:** serwer jest jedynym klientem websocketu Board Managera i jedynym miejscem, w którym żyje stan meczu oraz logika gier ([ADR 0001](adr/0001-lokalny-serwer-zrodlem-prawdy.md)).
 - **Przeglądarki:** to wyłącznie widoki. Wysyłają komendy i dostają gotowy stan.
   - **Ekran wyników:** tylko wyświetla mecz.
-  - **Pilot:** zawsze dokładnie jeden. Domyślnie jest nim laptop. Każde urządzenie może przejąć pilota przyciskiem „Przejmij pilota”, a poprzedni pilot od razu przechodzi w podgląd. Telefon wchodzi przez kod QR wyświetlany na ekranie.
+  - **Pilot:** zawsze dokładnie jeden. Domyślnie jest nim laptop. Każde urządzenie może przejąć pilota przyciskiem „Przejmij pilota”, a poprzedni pilot od razu przechodzi w podgląd. Telefon wchodzi przez kod QR wyświetlany na ekranie (od 2026-11-16 Ekran wyników nie wyświetla QR: telefon wpisuje adres laptopa, a QR może pokazać tylko telefon, który już jest Pilotem).
 - **Dostęp:** każdy w biurowym LAN, bez logowania.
 - **Offline:** działa bez internetu. Nie ładuje niczego z CDN, fontów z sieci ani zewnętrznych API.
 - **Odporność na awarie:**

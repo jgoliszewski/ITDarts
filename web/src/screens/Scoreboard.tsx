@@ -29,7 +29,7 @@ export function boardPill(s: ClientState): { dot: string; text: string } {
   return { dot: 'green', text: s.match ? 'Ready · throw' : 'Board ready' };
 }
 
-export function BigHeader({ s, sub, game, onQr, onBoard, onMenu }: { s: ClientState; sub?: string; game?: GameId; onQr: () => void; onBoard?: () => void; onMenu: () => void }) {
+export function BigHeader({ s, sub, game, onBoard, onMenu }: { s: ClientState; sub?: string; game?: GameId; onBoard?: () => void; onMenu: () => void }) {
   const pill = boardPill(s);
   return (
     <header className="big-header">
@@ -38,7 +38,6 @@ export function BigHeader({ s, sub, game, onQr, onBoard, onMenu }: { s: ClientSt
       <div className="spacer" />
       <div className="pill"><span className={`dot ${pill.dot}`} />{pill.text}</div>
       {onBoard && <button className="icon-btn" aria-label="Board panel" onClick={onBoard}>{Icon.board()}</button>}
-      <button className="icon-btn" aria-label="Show QR code" onClick={onQr}>{Icon.qr()}</button>
       <button className="icon-btn" aria-label="Menu" onClick={onMenu}>{Icon.menu()}</button>
     </header>
   );
@@ -210,14 +209,14 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
             </div>
           </div>
         )}
-        {stuck && <div className="stuck">Board stuck? Use Takeout done on the pilot.</div>}
+        {stuck && <div className="stuck">Board stuck? Tap Takeout done.</div>}
       </div>
     </div>
   );
 }
 
 // Leg and match end look the same in every game: kicker, winner and big tiles, with no lines under them;
-// the pilot bar says what comes next (docs/UI.md, Start i koniec meczu).
+// the action row under the side column says what comes next (docs/UI.md, Start i koniec meczu).
 function LegEnd({ m }: { m: X01Match }) {
   const v = m.view;
   const leg = v.lastLeg!;
@@ -286,12 +285,11 @@ export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void 
   );
 }
 
-export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onPlayer, overlay }: {
+export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay }: {
   s: ClientState;
   /** Opens the removal dialog for a player; the pilot only. */
   onPlayer?: (i: number) => void;
   onMenu: () => void;
-  onQr: () => void;
   onBoard?: () => void;
   onFix: (index: number) => void;
   onEnd: () => void;
@@ -308,10 +306,21 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onPlayer, o
   const reroll = m.game === 'killer' && m.view.canReroll && !m.intro;
   const finished = v.visit.darts.length > 0 && v.visit.dartsLeft === 0;
 
+  // The last row of the right column; the third button (Reroll or End match) gets a row above Undo and the main action.
+  const third = reroll ? <button className="btn" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
+    : c.endInstead ? <button className="btn" onClick={onEnd}>End match</button> : null;
+  const actions = isPilot && (third || c.canUndo || c.primary) && (
+    <div className="side-actions">
+      {third && <div className="third">{third}</div>}
+      {c.canUndo && <button className="btn" onClick={() => act({ type: 'undo' })}>{Icon.undo()}Undo</button>}
+      {c.primary && <button className="btn primary" onClick={() => act(c.primary!.cmd)}>{c.primary.label}</button>}
+    </div>
+  );
+
   return (
     <div className="big">
-      <BigHeader s={s} sub={m.description} game={m.game} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
-      {!s.board.connected && <div className="banner">Board offline · enter darts by hand on the pilot</div>}
+      <BigHeader s={s} sub={m.description} game={m.game} onBoard={onBoard} onMenu={onMenu} />
+      {!s.board.connected && <div className="banner">Board offline · tap a dart to enter it by hand</div>}
       <main className={`board-main ${!isX01(m) && hasBoard(m) ? 'with-board' : ''}`}>
         {isX01(m) ? (
           <>
@@ -319,29 +328,16 @@ export function Scoreboard({ s, onMenu, onQr, onBoard, onFix, onEnd, onPlayer, o
             <aside className="side">
               <PlayerList m={m} onPick={onPlayer} />
               {m.roster.length <= 4 && <StatsCards m={m} />}
+              {actions}
             </aside>
           </>
         ) : (
           <>
             <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
-            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}</aside>
+            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}{actions}</aside>
           </>
         )}
       </main>
-      {isPilot ? (
-        <footer className="pilot-bar">
-          <span className="hint">{c.hint}</span>
-          {reroll && <button className="btn" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>}
-          {c.canUndo && <button className="btn" onClick={() => act({ type: 'undo' })}>{Icon.undo()}Undo</button>}
-          {c.endInstead && <button className="btn" onClick={onEnd}>End match</button>}
-          {c.primary && <button className="btn primary" onClick={() => act(c.primary!.cmd)}>{c.primary.label}</button>}
-        </footer>
-      ) : (
-        <footer className="view-bar">
-          <span>{s.pilot ? `Controlled from ${s.pilot.deviceName}` : 'No pilot'}</span>
-          <button className="btn" onClick={() => act({ type: 'takeControl' })}>Take control</button>
-        </footer>
-      )}
       {m.intro && !isX01(m) ? <RecordIntro m={m} isPilot={isPilot} />
         : (v.phase === 'bulloff' || m.bullTakeout) && <BullOff m={m} isPilot={isPilot} />}
       {v.phase === 'throwing' && (takeout || finished) && !m.bullTakeout && <TurnCard s={s} m={m} onDart={onFix} canEdit={isPilot} />}

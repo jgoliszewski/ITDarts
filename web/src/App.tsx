@@ -50,11 +50,10 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
       <div className="scrim" onClick={onClose} />
       <div className="dialog" role="menu" aria-label="Menu" style={{ gap: 8, width: 'min(420px, calc(100vw - 32px))' }}>
         <h2 style={{ marginBottom: 8 }}>Menu</h2>
-        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel and QR are in the header. */}
+        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
         {!pilot ? (
           <>
             {item('Take control', () => void act({ type: 'takeControl' }))}
-            {!wide && item('Show QR', () => open('qr'))}
             {item('Stats', () => (location.href = '/stats'))}
             {item('Effects', () => (location.href = '/effects'))}
           </>
@@ -109,7 +108,6 @@ function Main({ s }: { s: ClientState }) {
   const [fix, setFix] = useState<FixTarget | null>(null);
   const [removeOf, setRemoveOf] = useState<number | null>(null);
   const [endAsk, setEndAsk] = useState<null | 'end' | 'new'>(null);
-  const [localQr, setLocalQr] = useState(false);
   const [bug, setBug] = useState(false);
   const [closeAsk, setCloseAsk] = useState(false);
   const wasPilot = useRef(s.you.isPilot);
@@ -175,15 +173,8 @@ function Main({ s }: { s: ClientState }) {
     if (what === 'new' || what === 'end') askEnd(what);
     else if (what === 'bug') setBug(true);
     else if (what === 'close') setCloseAsk(true);
-    else if (what === 'qr') {
-      if (s.you.isPilot) void act({ type: 'showQr', show: true });
-      else setLocalQr(true);
-    } else setScreen(what);
-  };
-
-  const toggleQr = () => {
-    if (s.you.isPilot) void act({ type: 'showQr', show: !s.showQr });
-    else setLocalQr(!localQr);
+    else if (what === 'qr') void act({ type: 'showQr', show: true });
+    else setScreen(what);
   };
 
   const pilotOnly = s.you.isPilot ? screen : 'main';
@@ -230,14 +221,14 @@ function Main({ s }: { s: ClientState }) {
   if (wide) {
     const overlay = (
       <>
-        {(s.showQr || localQr) && <QrOverlay s={s} onClose={() => (s.you.isPilot && s.showQr ? void act({ type: 'showQr', show: false }) : setLocalQr(false))} />}
+        {s.showQr && <QrOverlay s={s} onClose={() => { if (s.you.isPilot) void act({ type: 'showQr', show: false }); }} />}
         {pilotOnly === 'board' && <BoardPanel s={s} wide onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />}
         {dialogs}
       </>
     );
     return m
-      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onQr={toggleQr} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
+      ? <Scoreboard s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
+      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;

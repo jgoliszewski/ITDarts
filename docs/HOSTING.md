@@ -61,7 +61,7 @@ Bez kont i bez logowania, bo dane nie są wrażliwe.
 - **Odczyt:** `/stats` i historia meczów są publiczne, tylko do odczytu.
 - **Zmiany** (mecz, Pilot, `/effects`, Players, pobieranie zgłoszeń błędów) wymagają klucza kiosku albo tokenu Pilota.
 - **Klucz kiosku** leży w lokalnym `config.json` laptopa, nie w repo. `start.bat` otwiera adres z tym kluczem. Serwer trzyma jeden aktywny kiosk naraz.
-- **Token Pilota** jest krótkotrwały i siedzi w linku z kodu QR na Ekranie wyników. Kto stoi przy tarczy, ten steruje i może wejść na `/effects`. Z domu Pilota przejąć się nie da.
+- **Token Pilota** jest krótkotrwały i siedzi w linku z kodu QR na Ekranie wyników. Kto stoi przy tarczy, ten steruje i może wejść na `/effects`. Z domu Pilota przejąć się nie da. Uwaga: od 2026-11-16 Ekran wyników nie pokazuje QR (`.scratch/no-phone/PLAN.md`), więc przed wdrożeniem hostingu trzeba ustalić, skąd telefon weźmie link z tokenem.
 - **Ekran wyników na żywo** z zewnątrz na razie nie istnieje, widzi go tylko kiosk.
 
 Konta osobowe dokładamy dopiero wtedy, gdy pojawi się „moje statystyki” albo potrzeba wiedzieć, kto co zmienił.

@@ -346,7 +346,7 @@ export function RuleEditor({ d, rule, wide }: { d: EffectsData; rule: Rule | nul
         <span className="spacer" />
         <button className="btn" disabled={!canTest} onClick={() => testRule(r)}>{Icon.play(16)}Test whole rule</button>
       </div>
-      <p className="muted" style={{ margin: 0, fontSize: 13 }}>Test plays the sound on this device and the LEDs on the controller{off.length > 0 ? `, although ${off.join(' and ')} ${off.length > 1 ? 'are' : 'is'} off on the pilot` : ''}.</p>
+      <p className="muted" style={{ margin: 0, fontSize: 13 }}>Test plays the sound on this device and the LEDs on the controller{off.length > 0 ? `, although ${off.join(' and ')} ${off.length > 1 ? 'are' : 'is'} off in the menu` : ''}.</p>
 
       {sheet === 'trigger' && <TriggerPicker wide={wide} onClose={() => setSheet(null)} onPick={t => { set({ triggers: [...r.triggers, t] }); setChip(r.triggers.length); }} />}
       {sheet === 'sound' && <SoundPicker d={d} wide={wide} taken={r.sounds} onClose={() => setSheet(null)} onPick={id => set({ sounds: [...r.sounds, id] })} />}
