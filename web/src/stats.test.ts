@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { X01Stats } from '../../games/x01/stats.ts';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { pick } from './useJson.ts';
 import { GAMES } from '../../games/index.ts';
 import { TrendChart } from './components/StatParts.tsx';
 import { gameCompareRows, gameRows, gameStats, x01CompareRows, x01Rows } from './components/Compare.tsx';
@@ -186,6 +187,27 @@ describe('the figures of each game', () => {
   });
 });
 
+describe('data kept per key', () => {
+  it('shows the data only under the key it was fetched for', () => {
+    const held = { key: 'x01', data: { x01: {} }, error: false };
+    expect(pick(held, 'x01')).toEqual({ data: { x01: {} }, error: false });
+    // A screen switched to another game must get nothing, not the old game's response.
+    expect(pick(held, 'cricket')).toEqual({ data: null, error: false });
+    expect(pick({ key: null, data: null, error: false }, 'x01')).toEqual({ data: null, error: false });
+    expect(pick({ key: 'x01', data: null, error: true }, 'x01').error).toBe(true);
+    expect(pick({ key: 'x01', data: null, error: true }, 'cricket').error).toBe(false);
+  });
+});
+
+describe('Checkout % format', () => {
+  it('always has one decimal, in Compare and anywhere that uses the definition', () => {
+    expect(X01_METRICS.checkoutPct.fmt(8)).toBe('8.0%');
+    expect(X01_METRICS.checkoutPct.fmt(33.7)).toBe('33.7%');
+    expect(X01_METRICS.checkoutPct.fmt(null)).toBe('–');
+    expect(x01CompareRows([{ ...X, checkoutPct: 8 }, { ...X, checkoutPct: 10.1 }]).find(r => r.label === 'Checkout %')!.values).toEqual(['8.0%', '10.1%']);
+  });
+});
+
 describe('winrate tile', () => {
   it('shows only Played for a game with solo matches only', () => {
     expect(winTile({ played: 5, versus: { played: 0, won: 0, winrate: null } })).toEqual({ label: 'Played', value: '5' });
@@ -203,6 +225,15 @@ describe('Average chart', () => {
     expect(draw([50, 40, 30], 45)).toContain('class="mean"');
     expect(draw([50, 40, 30], null)).not.toContain('class="mean"');
     expect(draw([50, 40], 45)).toBe('');
+  });
+  it('puts the dashed line at the Average of the Okno, not at the mean of the points', () => {
+    const points = [50, 40, 30, 60]; // the mean of the points is 45; the Average of the Okno is 52
+    const m = draw(points, 52);
+    const y1 = Number(/<line[^>]*\sy1="([\d.]+)"[^>]*class="mean"/.exec(m)![1]);
+    const { lo, hi } = chartScale([...points, 52]);
+    expect(y1).toBeCloseTo(240 - 26 - ((52 - lo) / (hi - lo)) * (240 - 52), 5);
+    const meanY = 240 - 26 - ((45 - lo) / (hi - lo)) * (240 - 52);
+    expect(Math.abs(y1 - meanY)).toBeGreaterThan(1);
   });
   it('puts the last value under its point when the line comes down to it', () => {
     const num = (m: string, re: RegExp) => Number(re.exec(m)![1]);

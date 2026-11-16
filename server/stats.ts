@@ -138,9 +138,9 @@ export class Stats {
     return { stats: x01Stats(visits), matchIds: [...new Set(visits.map(v => v.matchId))], visits };
   }
 
-  /** Average, First 9 and Checkout % of the Okno before this one; null for All time and for fewer than 3 legs there. */
-  private previousX01(playerId: number, w: StatsWindow): PlayerStatsResponse['previous'] {
-    if (w === 'all') return null;
+  /** Average, First 9 and Checkout % of the Okno before this one; null for All time, for an Okno with no leg of its own, and for fewer than 3 legs there. */
+  private previousX01(playerId: number, w: StatsWindow, current: number): PlayerStatsResponse['previous'] {
+    if (w === 'all' || !current) return null;
     const p = x01Stats(this.statVisits(playerId, w, undefined, true));
     return p.legs < MIN_PREVIOUS ? null : { avg: p.avg, first9: p.first9, checkoutPct: p.checkoutPct };
   }
@@ -212,7 +212,7 @@ export class Stats {
       player,
       window: w,
       x01: stats,
-      previous: this.previousX01(playerId, w),
+      previous: this.previousX01(playerId, w, stats.legs),
       trend: this.trend(visits),
       results: { played: results.length, won, winrate: results.length ? Math.round((won / results.length) * 1000) / 10 : null },
       recent,
@@ -270,7 +270,8 @@ export class Stats {
     const player = this.db.player(playerId);
     if (!player || game === 'x01' || !(game in GAMES)) return null;
     const rows = this.gameRows(playerId, game, w);
-    const before = w === 'all' ? [] : this.gameRows(playerId, game, w, true);
+    // No comparison with nothing: an empty Okno has no previous either.
+    const before = w === 'all' || rows.length === 0 ? [] : this.gameRows(playerId, game, w, true);
     const rec = GAMES[game].record;
     const variants = (this.db.sql.prepare(`
       SELECT DISTINCT m.variant FROM matches m JOIN match_players mp ON mp.match_id = m.id

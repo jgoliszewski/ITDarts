@@ -69,7 +69,8 @@ const fmtInt = (n: number | null) => (n === null ? '–' : String(n));
 export const X01_METRICS = {
   avg: { label: 'Average', better: 'higher', value: x => x.avg, fmt: fmtFixed(1) },
   first9: { label: 'First 9', better: 'higher', value: x => x.first9, fmt: fmtFixed(1) },
-  checkoutPct: { label: 'Checkout %', better: 'higher', value: x => x.checkoutPct, fmt: fmtPct },
+  // Always one decimal (8.0, not 8), here and in the profile tile.
+  checkoutPct: { label: 'Checkout %', better: 'higher', value: x => x.checkoutPct, fmt: n => (n === null ? '–' : `${n.toFixed(1)}%`) },
   bustRate: { label: 'Bust rate', better: 'lower', value: x => x.bustRate, fmt: fmtPct },
   highestVisit: { label: 'Highest visit', better: 'higher', value: x => x.highestVisit, fmt: fmtInt },
   highestCheckout: { label: 'Highest checkout', better: 'higher', value: x => x.highestCheckout, fmt: fmtInt },
@@ -212,5 +213,3 @@ export function chartScale(points: number[]): { lo: number; hi: number; step: nu
   const hi = Math.ceil(max / step) * step;
   return { lo, hi: hi === lo ? hi + step : hi, step };
 }
-
-export const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;

@@ -77,6 +77,12 @@ describe('previous Okno of X01', () => {
     expect(stats.player(anna, '7d')!.previous).not.toBeNull();
   });
 
+  it('is null when the current Okno has no leg at all', () => {
+    week([9, 10, 11, 12]);
+    expect(stats.player(anna, '7d')!.x01.legs).toBe(0);
+    expect(stats.player(anna, '7d')!.previous).toBeNull();
+  });
+
   it('is null for All time', () => {
     week([1, 9, 10, 11, 12]);
     expect(stats.player(anna, 'all')!.previous).toBeNull();
@@ -152,6 +158,11 @@ describe('minigame stats', () => {
     for (const d of [9, 10, 11]) solo(d, { darts: 3, hits: 3 });
     const g = stats.game(anna, 'atc', '7d')!;
     expect(g).toMatchObject({ matches: 1, totals: { darts: 9, hits: 3 }, previous: { matches: 3, totals: { darts: 9, hits: 9 } } });
+  });
+
+  it('has no previous Okno when the current one has no match', () => {
+    for (const d of [9, 10, 11]) solo(d);
+    expect(stats.game(anna, 'atc', '7d')).toMatchObject({ matches: 0, previous: null });
   });
 
   it('needs 3 matches in the previous Okno, and has none for All time', () => {

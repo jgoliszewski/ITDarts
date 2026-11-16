@@ -185,7 +185,7 @@ export interface PlayerStatsResponse {
   player: PlayerInfo;
   window: StatsWindow;
   x01: import('../games/x01/stats.ts').X01Stats;
-  /** The same figures for the Okno right before this one (docs/STATYSTYKI.md, Progres); null for All time or with fewer than 3 legs there. */
+  /** The same figures for the Okno right before this one (docs/STATYSTYKI.md, Progres); null for All time, with no leg in this Okno, or with fewer than 3 legs there. */
   previous: { avg: number | null; first9: number | null; checkoutPct: number | null } | null;
   /** The player's Average in each X01 match of the Okno, oldest first. */
   trend: { matchId: number; endedAt: number; avg: number }[];
@@ -214,7 +214,7 @@ export interface GameStatsResponse {
   /** Matches `totals` were summed from (those the player left included): the denominator of "per match". */
   matches: number;
   totals: Record<string, number>;
-  /** `matches` and `totals` of the Okno right before this one; null for All time or with fewer than 3 matches there. */
+  /** `matches` and `totals` of the Okno right before this one; null for All time, with no match in this Okno, or with fewer than 3 matches there. */
   previous: { matches: number; totals: Record<string, number> } | null;
   /** Best result per record variant. */
   bests: { label: string; value: string }[];

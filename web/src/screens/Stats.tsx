@@ -8,7 +8,8 @@ import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Stat, DeltaTag, TrendChart } from '../components/StatParts.tsx';
 import { Dropdown, Icon, Logo } from '../components/ui.tsx';
-import { MIN_TREND, X01_METRICS, delta, doubleName, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile, x01Delta } from '../stats.ts';
+import { MIN_TREND, X01_METRICS, delta, doubleName, fmtFixed, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile, x01Delta } from '../stats.ts';
+import { getJson, useAsync, useJson } from '../useJson.ts';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
 const ME_KEY = 'itdarts.me';
@@ -16,21 +17,6 @@ const WINDOW_KEY = 'itdarts.statsWindow';
 const TIME: [StatsWindow, string][] = [['7d', '7D'], ['30d', '30D'], ['90d', '3M'], ['365d', '1Y'], ['all', 'All']];
 const LEGS: [StatsWindow, string][] = [['l10', 'Last 10 legs'], ['l100', 'Last 100 legs']];
 let autoOpened = false;
-
-function useJson<T>(url: string | null): { data: T | null; error: boolean } {
-  const [state, setState] = useState<{ data: T | null; error: boolean }>({ data: null, error: false });
-  useEffect(() => {
-    if (!url) return;
-    let alive = true;
-    setState(s => ({ data: s.data, error: false }));
-    fetch(url)
-      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(data => alive && setState({ data, error: false }))
-      .catch(() => alive && setState({ data: null, error: true }));
-    return () => { alive = false; };
-  }, [url]);
-  return state;
-}
 
 function go(path: string) {
   history.pushState(null, '', path);
@@ -120,6 +106,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
   const x = data.x01;
   const prev = data.previous;
   const since = previousLabel(w);
+  const empty = x.darts === 0 && data.results.played === 0;
   const isMe = me === String(id);
   const toggleMe = () => {
     const v = isMe ? null : String(id);
@@ -133,14 +120,14 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
         <button className={`chip ${isMe ? 'on' : ''}`} onClick={toggleMe}>{isMe ? 'This is me ✓' : 'This is me'}</button>
       </div>
       <WindowPicker value={w} onChange={setW} />
-      {x.darts === 0 && data.results.played === 0 ? (
+      {empty ? (
         <p className="muted" style={{ margin: 0 }}>No darts in this window.</p>
       ) : (
         <>
           <div className="stat-grid main">
             <Stat main hl l={X01_METRICS.avg.label} v={fmtAvg(x.avg)} delta={x01Delta('avg', x, prev)} vs={since} />
             <Stat main l={X01_METRICS.first9.label} v={fmtAvg(x.first9)} delta={x01Delta('first9', x, prev)} vs={since} />
-            <Stat main l={X01_METRICS.checkoutPct.label} v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
+            <Stat main l={X01_METRICS.checkoutPct.label} v={fmtFixed(1)(x.checkoutPct)} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
               delta={x01Delta('checkoutPct', x, prev)} vs={since} />
           </div>
           <TrendChartBox points={data.trend.map(t => t.avg)} avg={x.avg} />
@@ -185,7 +172,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           ))}
         </div>
       )}
-      <FunFacts distance={heat?.[0]?.distance} darts={x.darts} />
+      {!empty && <FunFacts distance={heat?.[0]?.distance} darts={x.darts} />}
     </div>
   );
 }
@@ -223,7 +210,7 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
           ))}
         </div>
       )}
-      <FunFacts distance={heat?.[0]?.distance} darts={data.totals.darts} />
+      {data.played > 0 && <FunFacts distance={heat?.[0]?.distance} darts={data.totals.darts} />}
     </div>
   );
 }
@@ -243,17 +230,12 @@ const COMPARE_KEY = 'itdarts.compare';
 
 /** Stats of two players side by side, rows as in the profile of the game (docs/STATYSTYKI.md, Prezentacja). */
 function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
-  const [data, setData] = useState<{ stats: (PlayerStatsResponse | GameStatsResponse)[]; heat: HeatResponse } | null>(null);
   const key = ids.join(',');
-  useEffect(() => {
-    let alive = true;
-    const json = (url: string) => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(r.status)));
-    Promise.all([
-      Promise.all(key.split(',').map(id => json(`/api/stats/players/${id}?window=${w}${game === 'x01' ? '' : `&game=${game}`}`))),
-      json(`/api/stats/heat?ids=${key}&game=${game}&window=${w}`),
-    ]).then(([stats, heat]) => alive && setData({ stats, heat })).catch(() => alive && setData(null));
-    return () => { alive = false; };
-  }, [key, game, w]);
+  // Keyed by everything the rows depend on: after a switch of game the old response is never rendered under the new game.
+  const { data } = useAsync(`${key}|${game}|${w}`, () => Promise.all([
+    Promise.all(ids.map(id => getJson<PlayerStatsResponse | GameStatsResponse>(`/api/stats/players/${id}?window=${w}${game === 'x01' ? '' : `&game=${game}`}`))),
+    getJson<HeatResponse>(`/api/stats/heat?ids=${key}&game=${game}&window=${w}`),
+  ]).then(([stats, heat]) => ({ stats, heat })));
   if (!data) return <p className="muted">Loading…</p>;
   const names = data.stats.map(d => d.player.name);
   const rows: Row[] = game === 'x01'
