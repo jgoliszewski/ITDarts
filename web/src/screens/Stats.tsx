@@ -3,10 +3,12 @@ import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, isGameId } from '../../../games/index.ts';
 import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
 import type { Row } from '../components/Compare.tsx';
-import { CompareTable, fmtKm, gameRows, gameStats, playerColor, x01Rows } from '../components/Compare.tsx';
+import { CompareTable, fmtKm, gameCompareRows, playerColor, x01CompareRows } from '../components/Compare.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
+import { Stat, DeltaTag, TrendChart } from '../components/StatParts.tsx';
 import { Dropdown, Icon, Logo } from '../components/ui.tsx';
+import { MIN_TREND, delta, doubleName, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile } from '../stats.ts';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
 const ME_KEY = 'itdarts.me';
@@ -44,10 +46,6 @@ function WindowPicker({ value, onChange }: { value: StatsWindow; onChange: (w: S
   );
 }
 
-function Stat({ l, v, s, hl }: { l: string; v: string; s?: string; hl?: boolean }) {
-  return <div className={`stat ${hl ? 'hl' : ''}`}><span className="l">{l}</span><span className="num">{v}</span>{s && <span className="s">{s}</span>}</div>;
-}
-
 function H2H({ a, b, w }: { a: number; b: number; w: StatsWindow }) {
   const { data } = useJson<H2HResponse>(`/api/stats/h2h?a=${a}&b=${b}&window=${w}`);
   if (!data) return null;
@@ -63,6 +61,56 @@ function H2H({ a, b, w }: { a: number; b: number; w: StatsWindow }) {
   );
 }
 
+/** The Average chart, in its own section; nothing below 3 matches. */
+function TrendChartBox({ points }: { points: number[] }) {
+  if (points.length < MIN_TREND) return null;
+  return (
+    <div className="section">
+      <div className="caps" style={{ fontSize: 13 }}>Average · match by match</div>
+      <TrendChart points={points} />
+    </div>
+  );
+}
+
+/** How well each double is hit, most thrown first; the bull is a double like the rest (docs/STATYSTYKI.md). */
+function DoubleTable({ rows }: { rows: PlayerStatsResponse['x01']['doubles'] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="section">
+      <div className="caps" style={{ fontSize: 13 }}>Doubles</div>
+      <div className="dbl head"><span>Double</span><span /><span>Hit</span><span>Attempts</span><span>%</span></div>
+      {rows.map(r => {
+        const share = percent(r.hits, r.attempts) ?? 0;
+        return (
+          <div key={r.double} className="dbl">
+            <b>{doubleName(r.double)}</b>
+            <div className="bar"><i style={{ width: `${share}%` }} /></div>
+            <span className="num">{r.hits}</span>
+            <span className="num">{r.attempts}</span>
+            <span className="num">{share}%</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Small tiles at the bottom of a profile: darts thrown (when known) and the distance walked in the window. */
+function FunFacts({ id, game, w, darts }: { id: number; game: GameId; w: StatsWindow; darts?: number }) {
+  const { data } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=${game}&window=${w}`);
+  const distance = data?.[0]?.distance;
+  if (darts === undefined && !distance) return null;
+  return (
+    <div className="section fun">
+      <div className="caps" style={{ fontSize: 13 }}>Fun facts</div>
+      <div className="stat-grid">
+        {darts !== undefined && <Stat l="Darts" v={String(darts)} />}
+        {distance ? <Stat l="Distance walked" v={fmtKm(distance)} /> : null}
+      </div>
+    </div>
+  );
+}
+
 function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<PlayerStatsResponse>(`/api/stats/players/${id}?window=${w}`);
   const [me, setMe] = useState(store.get(ME_KEY));
@@ -70,6 +118,8 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
   if (error) return <p className="muted">This player does not exist.</p>;
   if (!data) return <p className="muted">Loading…</p>;
   const x = data.x01;
+  const prev = data.previous;
+  const since = previousLabel(w);
   const isMe = me === String(id);
   const toggleMe = () => {
     const v = isMe ? null : String(id);
@@ -87,20 +137,26 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
         <p className="muted" style={{ margin: 0 }}>No darts in this window.</p>
       ) : (
         <>
+          <div className="stat-grid main">
+            <Stat main hl l="Average" v={fmtAvg(x.avg)} delta={delta(x.avg, prev?.avg, 'higher')} vs={since} />
+            <Stat main l="First 9" v={fmtAvg(x.first9)} delta={delta(x.first9, prev?.first9, 'higher')} vs={since} />
+            <Stat main l="Checkout %" v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
+              delta={delta(x.checkoutPct, prev?.checkoutPct, 'higher')} vs={since} />
+          </div>
+          <TrendChartBox points={data.trend.map(t => t.avg)} />
           <div className="stat-grid">
-            <Stat l="Average" v={fmtAvg(x.avg)} hl />
-            <Stat l="First 9" v={fmtAvg(x.first9)} />
-            <Stat l="Checkout %" v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`} />
-            <Stat l="Highest checkout" v={fmtNum(x.highestCheckout)} />
-            <Stat l="Best leg" v={fmtNum(x.bestLeg)} s="darts" />
-            <Stat l="60+" v={String(x.c60)} />
-            <Stat l="80+" v={String(x.c80)} />
-            <Stat l="100+" v={String(x.c100)} />
             <Stat l="Legs" v={`${x.legsWon}/${x.legs}`} s="won / played" />
+            <Stat l="Bust rate" v={fmtPct(x.bustRate)} s={`${x.busts} of ${x.visits} visits`} />
+            <Stat l="Highest visit" v={fmtNum(x.highestVisit)} />
+            <Stat l="Highest checkout" v={fmtNum(x.highestCheckout)} />
+            <Stat l="Best leg" v={fmtNum(x.bestLeg)} s={x.bestLegStart === null ? 'darts' : `darts · ${x.bestLegStart}`} />
+            <Stat l="60+" v={fmtPct(visitShare(x.c60, x))} s={`${x.c60} visits`} />
+            <Stat l="80+" v={fmtPct(visitShare(x.c80, x))} s={`${x.c80} visits`} />
+            <Stat l="100+" v={fmtPct(visitShare(x.c100, x))} s={`${x.c100} visits`} />
             <Stat l="Winrate" v={data.results.winrate === null ? '–' : `${data.results.winrate}%`} s={`${data.results.won} of ${data.results.played} matches`} />
-            <Stat l="Darts" v={String(x.darts)} />
           </div>
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>Winrate counts finished matches between registered players only. Matches with guests count for averages, not for wins.</p>
+          <DoubleTable rows={x.doubles} />
         </>
       )}
       <PlayerHeat ids={[id]} game="x01" w={w} />
@@ -129,29 +185,33 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           ))}
         </div>
       )}
+      <FunFacts id={id} game="x01" w={w} darts={x.darts} />
     </div>
   );
 }
 
 const GAME_KEY = 'itdarts.statsGame';
-/** Games in which nobody ever wins: no “Won” and no winrate. */
-const NO_WINNER: GameId[] = ['freethrow'];
-const pct = (a: number | undefined, b: number | undefined) => (b ? `${Math.round(((a ?? 0) / b) * 1000) / 10}%` : '–');
 
 function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<GameStatsResponse>(`/api/stats/players/${id}?game=${game}&window=${w}`);
   if (error) return <p className="muted">This player does not exist.</p>;
   if (!data) return <p className="muted">Loading…</p>;
+  const shown = profileMetrics(game, data);
+  const win = winTile(data);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{data.player.name}</h2>
       <WindowPicker value={w} onChange={setW} />
       {data.played === 0 ? <p className="muted" style={{ margin: 0 }}>No {GAMES[game].name} in this window.</p> : (
-        <div className="stat-grid">
-          {gameStats(game, data.totals).map(([l, v, sub], i) => <Stat key={l} l={l} v={v} s={sub} hl={i === 0} />)}
-          <Stat l="Played" v={String(data.played)} />
-          {!NO_WINNER.includes(game) && <Stat l="Won" v={String(data.won)} s={data.played ? pct(data.won, data.played) : undefined} />}
-        </div>
+        <>
+          <div className="stat-grid main">
+            {shown.filter(m => m.main).map(m => <Stat key={m.label} main hl l={m.label} v={m.value} s={m.sub} delta={m.delta} vs={previousLabel(w, 'matches')} />)}
+            <Stat main l={win.label} v={win.value} s={win.sub} />
+          </div>
+          <div className="stat-grid">
+            {shown.filter(m => !m.main).map(m => <Stat key={m.label} l={m.label} v={m.value} s={m.sub} />)}
+          </div>
+        </>
       )}
       <PlayerHeat ids={[id]} game={game} w={w} />
       {data.bests.length > 0 && (
@@ -162,11 +222,12 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
           ))}
         </div>
       )}
+      <FunFacts id={id} game={game} w={w} darts={data.totals.darts} />
     </div>
   );
 }
 
-/** Heatmap of one or more players in a game and window, with the distance walked under a single player's board. */
+/** Heatmap of one or more players in a game and window. */
 function PlayerHeat({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
   const { data } = useJson<HeatResponse>(`/api/stats/heat?ids=${ids.join(',')}&game=${game}&window=${w}`);
   if (!data || data.length === 0 || data.every(p => p.heat.visits === 0)) return null;
@@ -174,7 +235,6 @@ function PlayerHeat({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWin
     <div className="section">
       <div className="caps" style={{ fontSize: 13 }}>Heatmap</div>
       <Heatmap players={data.map((p, i) => ({ name: p.player.name, color: playerColor(i), heat: p.heat }))} />
-      {data.length === 1 && <div className="stat-grid"><Stat l="Distance walked" v={fmtKm(data[0].distance)} /></div>}
     </div>
   );
 }
@@ -200,16 +260,16 @@ function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWi
     ? (() => {
       const ps = data.stats as PlayerStatsResponse[];
       return [
-        ...x01Rows(ps.map(p => p.x01)),
+        ...x01CompareRows(ps.map(p => p.x01)),
         { label: 'Winrate', values: ps.map(p => (p.results.winrate === null ? '–' : `${p.results.winrate}%`)), nums: ps.map(p => p.results.winrate), better: 'higher' as const },
       ];
     })()
     : (() => {
       const gs = data.stats as GameStatsResponse[];
       return [
-        ...gameRows(game, gs.map(g => g.totals)),
+        ...gameCompareRows(game, gs),
         { label: 'Played', values: gs.map(g => String(g.played)) },
-        ...(NO_WINNER.includes(game) ? [] : [{ label: 'Won', values: gs.map(g => String(g.won)), nums: gs.map(g => g.won), better: 'higher' as const }]),
+        ...(gs.some(g => g.versus.played > 0) ? [{ label: 'Winrate', values: gs.map(g => fmtPct(g.versus.winrate)), nums: gs.map(g => g.versus.winrate), better: 'higher' as const }] : []),
       ];
     })();
   rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtKm(h.distance)) });
@@ -253,7 +313,7 @@ function ComparePage() {
 
 function Records({ game }: { game: GameId }) {
   const { data } = useJson<RecordTable[]>(`/api/stats/records?game=${game}`);
-  if (!GAMES[game].record) return null;
+  if (game !== 'x01' && !GAMES[game].record) return null;
   if (!data) return <p className="muted">Loading…</p>;
   if (data.length === 0) return <p className="muted">No records yet.</p>;
   return (
@@ -337,7 +397,7 @@ export function StatsPage({ path }: { path: string }) {
         <>
         <GamePicker game={game} setGame={setGame} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {!x01 && <Records game={game} />}
+          <Records game={game} />
           {!list ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">No players yet. Create them on the pilot under Players.</p> : (
             <>
               <div className="option-row">
@@ -348,8 +408,8 @@ export function StatsPage({ path }: { path: string }) {
                 {list.map(p => (
                   <button key={p.id} className="player-card" onClick={() => go(`/stats/${p.id}`)}>
                     <b>{p.name}</b>
-                    {x01 && <span className="num" style={{ color: 'var(--text)' }}>{fmtAvg(p.avg)}</span>}
-                    <span>{p.matches} {p.matches === 1 ? 'match' : 'matches'}{p.lastPlayed ? ` · last ${shortDate(p.lastPlayed)}` : ''}</span>
+                    {x01 && <span className="vrow"><span className="num" style={{ color: 'var(--text)' }}>{fmtAvg(p.avg)}</span><DeltaTag d={delta(p.avg, p.avgPrev, 'higher')} /></span>}
+                    <span>{p.matches} {p.matches === 1 ? 'match' : 'matches'} · 30 days{p.lastPlayed ? ` · last ${shortDate(p.lastPlayed)}` : ''}</span>
                   </button>
                 ))}
               </div>

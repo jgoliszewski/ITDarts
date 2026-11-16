@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
+import type { GameStatsResponse } from '../../../server/protocol.ts';
+import { METRICS, sharedBestLeg, visitShare } from '../stats.ts';
 import { fmtAvg, fmtNum } from '../util.ts';
 
 /** Fixed player colours by place in the match or comparison (docs/UI.md, Podsumowanie meczu). */
@@ -47,30 +49,65 @@ export interface Row {
   better?: 'higher' | 'lower';
 }
 
-const X01_ROWS: [string, (x: X01Stats) => number | null, (x: X01Stats) => string, 'higher' | 'lower' | undefined][] = [
+type X01Row = [string, (x: X01Stats) => number | null, (x: X01Stats) => string, 'higher' | 'lower' | undefined];
+
+const pctText = (n: number | null) => (n === null ? '–' : `${n}%`);
+
+const X01_COMMON: X01Row[] = [
   ['Average', x => x.avg, x => fmtAvg(x.avg), 'higher'],
   ['First 9', x => x.first9, x => fmtAvg(x.first9), 'higher'],
   ['Checkout %', x => x.checkoutPct, x => (x.checkoutPct === null ? '–' : `${x.checkoutPct}%`), 'higher'],
+  ['Bust rate', x => x.bustRate, x => pctText(x.bustRate), 'lower'],
+  ['Highest visit', x => x.highestVisit, x => fmtNum(x.highestVisit), 'higher'],
   ['Highest checkout', x => x.highestCheckout, x => fmtNum(x.highestCheckout), 'higher'],
+];
+
+const toRows = (xs: X01Stats[], defs: X01Row[]): Row[] =>
+  defs.map(([label, num, fmt, better]) => ({ label, values: xs.map(fmt), nums: xs.map(num), better }));
+
+/** One match (podsumowanie): the bands are counts and Best leg has no start score, a match has one. */
+export const x01Rows = (xs: X01Stats[]): Row[] => toRows(xs, [
+  ...X01_COMMON,
   ['Best leg', x => x.bestLeg, x => fmtNum(x.bestLeg), 'lower'],
   ['60+', x => x.c60, x => String(x.c60), 'higher'],
   ['80+', x => x.c80, x => String(x.c80), 'higher'],
   ['100+', x => x.c100, x => String(x.c100), 'higher'],
   ['Darts', () => null, x => String(x.darts), undefined],
-];
+]);
 
-export const x01Rows = (xs: X01Stats[]): Row[] =>
-  X01_ROWS.map(([label, num, fmt, better]) => ({ label, values: xs.map(fmt), nums: xs.map(num), better }));
+/** Compare: frequencies, not counts, and Best leg at the start score both played most. */
+export function x01CompareRows(xs: X01Stats[]): Row[] {
+  const shared = sharedBestLeg(xs);
+  const band = (label: string, key: 'c60' | 'c80' | 'c100'): X01Row => [label, x => visitShare(x[key], x), x => pctText(visitShare(x[key], x)), 'higher'];
+  return [
+    ...toRows(xs, X01_COMMON),
+    {
+      label: shared ? `Best leg · ${shared.startScore}` : 'Best leg',
+      values: (shared?.best ?? xs.map(() => null)).map(fmtNum),
+      nums: shared?.best ?? xs.map(() => null),
+      better: 'lower',
+    },
+    ...toRows(xs, [band('60+ (% of visits)', 'c60'), band('80+ (% of visits)', 'c80'), band('100+ (% of visits)', 'c100'), ['Darts', () => null, x => String(x.darts), undefined]]),
+  ];
+}
 
-/** Minigame rows: every value counts as better when higher, except plain dart counts. */
+/** Minigame rows of one match: the counts as they are; the direction of each comes from the definition in stats.ts. */
 export function gameRows(game: GameId, totals: Record<string, number>[]): Row[] {
   const per = totals.map(t => gameStats(game, t));
   return (per[0] ?? []).map(([label], i) => ({
     label,
     values: per.map(p => p[i][1]),
     nums: per.map(p => (Number.isFinite(parseFloat(p[i][1])) ? parseFloat(p[i][1]) : null)),
-    better: label === 'Darts' ? undefined : label === 'Darts per checkout' ? 'lower' : 'higher',
+    better: METRICS[game]?.find(m => m.label === label)?.better,
   }));
+}
+
+/** Minigame rows for Compare: frequencies (per match, %), the direction of each from its definition. */
+export function gameCompareRows(game: GameId, gs: Pick<GameStatsResponse, 'totals' | 'matches'>[]): Row[] {
+  return (METRICS[game] ?? []).map(m => {
+    const nums = gs.map(g => m.value(g.totals, g.matches));
+    return { label: m.perMatch ? `${m.label} / match` : m.label, values: nums.map(m.fmt), nums, better: m.better };
+  });
 }
 
 export const fmtDistance = (metres: number) => (metres >= 1000 ? `${(metres / 1000).toFixed(2)} km` : `${Math.round(metres)} m`);
