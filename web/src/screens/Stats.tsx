@@ -90,7 +90,6 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           <div className="stat-grid">
             <Stat l="Average" v={fmtAvg(x.avg)} hl />
             <Stat l="First 9" v={fmtAvg(x.first9)} />
-            <Stat l="Until 170" v={fmtAvg(x.until170)} />
             <Stat l="Checkout %" v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`} />
             <Stat l="Highest checkout" v={fmtNum(x.highestCheckout)} />
             <Stat l="Best leg" v={fmtNum(x.bestLeg)} s="darts" />

@@ -49,10 +49,11 @@ export function heatOf(legs: LegRecord[], players: number): PlayerHeat[] {
   return out;
 }
 
-export function x01Of(legs: LegRecord[], players: number, checkOut: CheckOut): X01Stats[] {
+export function x01Of(legs: LegRecord[], players: number, checkOut: CheckOut, startScore: number): X01Stats[] {
   return Array.from({ length: players }, (_, p) => x01Stats(legs.flatMap((leg, legId) => leg.visits.filter(v => v.player === p).map(v => ({
     legId,
     legFinished: leg.winner !== null,
+    startScore,
     visitNo: v.visitNo,
     start: v.start,
     scored: v.scored,
@@ -71,6 +72,8 @@ export function matchReport(m: {
   legs: LegRecord[];
   view: X01View | MiniView;
   checkOut: CheckOut | null;
+  /** The X01 start score; ignored without `checkOut`. */
+  startScore?: number;
   ended: boolean;
   ocheMeters: number;
 }): MatchReport {
@@ -96,7 +99,7 @@ export function matchReport(m: {
   }
   const gone = (i: number) => m.view.removed[i] === 'match';
   const at = [...m.names.keys()].sort((a, b) => Number(gone(a)) - Number(gone(b)));
-  const x01 = m.checkOut ? x01Of(m.legs, n, m.checkOut) : null;
+  const x01 = m.checkOut ? x01Of(m.legs, n, m.checkOut, m.startScore ?? 501) : null;
   const totals = 'winners' in m.view ? m.view.stats : null;
   return {
     game: m.game,

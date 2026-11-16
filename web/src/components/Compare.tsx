@@ -50,7 +50,6 @@ export interface Row {
 const X01_ROWS: [string, (x: X01Stats) => number | null, (x: X01Stats) => string, 'higher' | 'lower' | undefined][] = [
   ['Average', x => x.avg, x => fmtAvg(x.avg), 'higher'],
   ['First 9', x => x.first9, x => fmtAvg(x.first9), 'higher'],
-  ['Until 170', x => x.until170, x => fmtAvg(x.until170), 'higher'],
   ['Checkout %', x => x.checkoutPct, x => (x.checkoutPct === null ? '–' : `${x.checkoutPct}%`), 'higher'],
   ['Highest checkout', x => x.highestCheckout, x => fmtNum(x.highestCheckout), 'higher'],
   ['Best leg', x => x.bestLeg, x => fmtNum(x.bestLeg), 'lower'],

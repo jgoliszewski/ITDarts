@@ -18,9 +18,11 @@ describe('match report', () => {
     const view = x01.view(events, 2, o);
     const r = matchReport({
       game: 'x01', description: 'X01', names: ['Ann', 'Guest 1'], legs: x01.compact(events, 2, o), view,
-      checkOut: 'double', ended: false, ocheMeters: 2.5,
+      checkOut: 'double', startScore: 101, ended: false, ocheMeters: 2.5,
     });
     expect([r.kicker, r.title, r.line]).toEqual(['WINNER', 'Ann', '1–0']);
+    expect(r.x01![0]).toMatchObject({ visits: 2, busts: 0, bustRate: 0, highestVisit: 81, bestLeg: 4, bestLegStart: 101 });
+    expect(r.x01![0]).not.toHaveProperty('until170');
     expect(r.x01!.map(x => x.darts)).toEqual([4, 3]);
     expect(r.x01![0].highestCheckout).toBe(20);
     expect(r.heat.map(h => [h.darts.length, h.noPos, h.visits])).toEqual([[4, 0, 2], [2, 1, 1]]);

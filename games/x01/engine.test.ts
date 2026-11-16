@@ -203,7 +203,7 @@ describe('hints', () => {
 });
 
 describe('history stats', () => {
-  it('computes averages, until 170 and checkout %', () => {
+  it('computes averages and checkout %', () => {
     const o = opts();
     const opponent = visit('S1');
     const events = [
@@ -214,11 +214,10 @@ describe('history stats', () => {
     ];
     const legs = compact(replay(events, 2, o), 2, o);
     const mine = legs.flatMap((l, legId) =>
-      l.visits.filter(v => v.player === 0).map(v => ({ ...v, legId, legFinished: l.winner !== null, darts: v.darts.map(x => x.dart), checkOut: o.checkOut })));
+      l.visits.filter(v => v.player === 0).map(v => ({ ...v, legId, startScore: o.startScore, legFinished: l.winner !== null, darts: v.darts.map(x => x.dart), checkOut: o.checkOut })));
     const s = x01Stats(mine);
     expect(s.avg).toBe(Math.round((501 / 11) * 300) / 100);
     expect(s.first9).toBe(163);
-    expect(s.until170).toBe(180);
     expect(s.checkoutAttempts).toBe(3); // S12 at 24, D5 at 12, D1 at 2
     expect(s.checkoutPct).toBe(33.3);
     expect(s.highestCheckout).toBe(12);
