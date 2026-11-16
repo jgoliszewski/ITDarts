@@ -255,6 +255,21 @@ describe('killer', () => {
 describe('higher or lower', () => {
   const o = hol.defaults;
 
+  it('stores the visits judged and those that cost no life, per player', () => {
+    const stats = (log: TurnEvent[]) => hol.view(log, 2, o).stats;
+    expect(stats(visit('S20', 'S20', 'S20'))).toEqual([{ visits: 1, survived: 1 }, { visits: 0, survived: 0 }]);
+    expect(stats([...visit('S20', 'S20', 'S20'), ...visit('S20', 'S10', 'S1')])).toEqual([{ visits: 1, survived: 1 }, { visits: 1, survived: 0 }]);
+    expect(stats([...visit('S20', 'S10', 'S1'), ...visit('T20', 'Miss', 'S1')])).toEqual([{ visits: 1, survived: 0 }, { visits: 1, survived: 0 }]);
+  });
+
+  it('adds the visits of all games of a match', () => {
+    // One life, first to 2. Game 1: Ann fails and Bob wins it before throwing. Game 2 starts with Bob: he survives, Ann fails again.
+    const log = [...visit('S20', 'S10', 'S1'), ...visit('T20', 'S1', 'S1'), ...visit('S20', 'S10', 'S1')];
+    const v = hol.view(log, 2, { ...o, lives: 1, firstTo: 2 });
+    expect(v.winners).toEqual([1]);
+    expect(v.stats).toEqual([{ visits: 2, survived: 0 }, { visits: 1, survived: 1 }]);
+  });
+
   it('widens the range on a success', () => {
     let v = hol.view(visit('S20', 'S20', 'S20'), 3, o);
     expect([v.lo, v.hi]).toEqual([26, 60]);

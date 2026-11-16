@@ -29,6 +29,9 @@ interface State extends Turn {
   points: number[];
   lives: number[];
   out: boolean[];
+  /** Per player: visits judged, and those that cost no life (stored as `visits` and `survived`). */
+  judged: number[];
+  survived: number[];
   game: number;
   lastGame: { no: number; winner: number } | null;
   winners: number[];
@@ -36,6 +39,7 @@ interface State extends Turn {
 
 function play(t: Turns, players: number, o: HolOptions): State {
   const points = Array(players).fill(0);
+  const judged = Array(players).fill(0), survived = Array(players).fill(0);
   const goods: boolean[][] = [];
   const fx: Happening[] = [];
   let game = 0, lo: number = START_RANGE[0], hi: number = START_RANGE[1];
@@ -109,6 +113,8 @@ function play(t: Turns, players: number, o: HolOptions): State {
     // A visit cut short by its thrower's removal is not judged: the removal takes him out.
     if (!w.complete || over || cutShort(t, vi)) continue;
     held = v.closed ? null : { lo, hi, lives: [...lives] };
+    judged[v.player]++;
+    if (!failed) survived[v.player]++;
 
     if (failed) {
       fx.push({ slot: `V${vi + 1}:life`, fact: { kind: 'game', event: 'lifeLost' } });
@@ -137,7 +143,7 @@ function play(t: Turns, players: number, o: HolOptions): State {
     sum: open || over ? sum : null,
     failed: (open || over) && sum !== null ? failed : false,
     losing: !!hold && failed,
-    points, lives: hold ? hold.lives : lives, out, game, lastGame, winners: winner === null ? [] : [winner],
+    points, lives: hold ? hold.lives : lives, out, judged, survived, game, lastGame, winners: winner === null ? [] : [winner],
   };
 }
 
@@ -170,7 +176,7 @@ function view(events: TurnEvent[], players: number, o: HolOptions): HolView {
     rows: s.points.map((p, i) => ({ value: String(p), meta: s.out[i] ? 'Out' : `${livesLabel(s.lives[i])} · ${plural(p, 'point')}`, out: s.out[i] })),
     result: s.winners.length ? `Points ${[...s.points].sort((a, b) => b - a).join('–')}` : '',
     scores: s.points.map(() => null),
-    stats: s.points.map(() => ({})),
+    stats: s.judged.map((visits, i) => ({ visits, survived: s.survived[i] })),
     lo: s.lo,
     hi: s.hi,
     sum: s.sum,

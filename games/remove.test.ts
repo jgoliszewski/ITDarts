@@ -253,6 +253,12 @@ describe('higher or lower', () => {
     expect(play('hol', [...log, ...visit('T20', 'S1', 'S1')], 3, { firstTo: 2, lives: 1 }).current).toBe(0);
   });
 
+  it('does not judge a visit cut short by its thrower leaving', () => {
+    // Kuba throws one dart and is removed: no visit judged, no life lost. Ola then fails a visit, Ada survives one.
+    const v = play('hol', [d('S1'), remove(0), ...visit('S20', 'S10', 'S1'), ...visit('T20', 'S1', 'S1')], 3);
+    expect(v.stats).toEqual([{ visits: 0, survived: 0 }, { visits: 1, survived: 0 }, { visits: 1, survived: 1 }]);
+  });
+
   it('ends the round when the one still to throw is removed', () => {
     // Kuba fails, Ola goes high, Ada is removed: Ola is the only survivor and wins the game.
     const v = play('hol', [...visit('S20', 'S10', 'S1'), ...visit('T20', 'S1', 'S1'), remove(2)], 3, { firstTo: 2, lives: 1 });
