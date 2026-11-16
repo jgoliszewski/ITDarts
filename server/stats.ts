@@ -2,7 +2,7 @@
 import type { Dart } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
 import { GAMES } from '../games/index.ts';
-import type { X01Options } from '../games/x01/index.ts';
+import type { X01Options, X01Stats } from '../games/x01/index.ts';
 import { x01Stats } from '../games/x01/index.ts';
 import type { Db } from './db.ts';
 import { walked } from '../games/report.ts';
@@ -27,6 +27,8 @@ function bounds(w: StatsWindow, now: number, prev: boolean): { from: number; to:
 
 /** A previous Okno needs this many legs (minigames: matches) to be worth comparing with. */
 const MIN_PREVIOUS = 3;
+/** Checkout % is compared only when both Okna have this many checkout attempts: one hit out of one is no 100%. */
+const MIN_CHECKOUT_ATTEMPTS = 10;
 
 const legLimit = (w: StatsWindow) => (w === 'l10' ? 10 : w === 'l100' ? 100 : null);
 
@@ -138,11 +140,16 @@ export class Stats {
     return { stats: x01Stats(visits), matchIds: [...new Set(visits.map(v => v.matchId))], visits };
   }
 
-  /** Average, First 9 and Checkout % of the Okno before this one; null for All time, for an Okno with no leg of its own, and for fewer than 3 legs there. */
-  private previousX01(playerId: number, w: StatsWindow, current: number): PlayerStatsResponse['previous'] {
-    if (w === 'all' || !current) return null;
+  /**
+   * Average, First 9 and Checkout % of the Okno before this one; null for All time, for an Okno with no leg of its own,
+   * and for fewer than 3 legs there. Checkout % alone is null with fewer than 10 checkout attempts in either Okno.
+   */
+  private previousX01(playerId: number, w: StatsWindow, current: X01Stats): PlayerStatsResponse['previous'] {
+    if (w === 'all' || !current.legs) return null;
     const p = x01Stats(this.statVisits(playerId, w, undefined, true));
-    return p.legs < MIN_PREVIOUS ? null : { avg: p.avg, first9: p.first9, checkoutPct: p.checkoutPct };
+    if (p.legs < MIN_PREVIOUS) return null;
+    const enough = Math.min(p.checkoutAttempts, current.checkoutAttempts) >= MIN_CHECKOUT_ATTEMPTS;
+    return { avg: p.avg, first9: p.first9, checkoutPct: enough ? p.checkoutPct : null };
   }
 
   /**
@@ -212,7 +219,7 @@ export class Stats {
       player,
       window: w,
       x01: stats,
-      previous: this.previousX01(playerId, w, stats.legs),
+      previous: this.previousX01(playerId, w, stats),
       trend: this.trend(visits),
       results: { played: results.length, won, winrate: results.length ? Math.round((won / results.length) * 1000) / 10 : null },
       recent,

@@ -60,7 +60,7 @@ describe('previous Okno of X01', () => {
     week([1, 9, 10, 12]); // one leg now, three in [now - 14d, now - 7d)
     const p = stats.player(anna, '7d')!;
     expect(p.x01.avg).toBe(60);
-    expect(p.previous).toEqual({ avg: 101, first9: 101, checkoutPct: 100 });
+    expect(p.previous).toEqual({ avg: 101, first9: 101, checkoutPct: null }); // too few checkout attempts to compare
     // The same legs, seen from 30d: now holds everything from the last 30 days, the previous Okno is empty.
     expect(stats.player(anna, '30d')!.previous).toBeNull();
   });
@@ -94,8 +94,28 @@ describe('previous Okno of X01', () => {
     const p = stats.player(anna, 'l10')!;
     expect(p.x01.legs).toBe(10);
     expect(p.x01.avg).toBe(60);
-    expect(p.previous).toEqual({ avg: 101, first9: 101, checkoutPct: 100 });
+    expect(p.previous).toEqual({ avg: 101, first9: 101, checkoutPct: null });
     expect(new Stats(db, () => NOW).player(anna, 'l100')!.previous).toBeNull(); // no legs before the last 100
+  });
+
+  it('compares Checkout % only with 10 checkout attempts in both Okna', () => {
+    // A quick leg is one checkout attempt (D20 on 40), hit. Adds `now` legs to the last 7 days and `before` to the 7 days before.
+    const legs = (now: number, before: number) => {
+      for (let i = 0; i < now; i++) saveX01([A(), B()], quickLeg(1 + i * 0.5), 1 + i * 0.5);
+      for (let i = 0; i < before; i++) saveX01([A(), B()], quickLeg(8 + i * 0.5), 8 + i * 0.5);
+      return stats.player(anna, '7d')!;
+    };
+    const p = legs(9, 9);
+    expect(p.x01.checkoutAttempts).toBe(9);
+    expect(p.previous).toEqual({ avg: 101, first9: 101, checkoutPct: null });
+    expect(legs(1, 0).previous!.checkoutPct).toBeNull(); // 10 now, 9 before
+    expect(legs(0, 1).previous!.checkoutPct).toBe(100); // 10 and 10
+  });
+
+  it('needs 10 attempts in the current Okno too', () => {
+    for (let i = 0; i < 9; i++) saveX01([A(), B()], quickLeg(1 + i * 0.5), 1 + i * 0.5);
+    for (let i = 0; i < 10; i++) saveX01([A(), B()], quickLeg(8 + i * 0.5), 8 + i * 0.5);
+    expect(stats.player(anna, '7d')!.previous).toEqual({ avg: 101, first9: 101, checkoutPct: null });
   });
 
   it('needs 3 legs before the last 10 as well', () => {
