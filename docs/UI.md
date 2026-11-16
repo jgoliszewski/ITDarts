@@ -173,7 +173,7 @@ Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikon
 
 - **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
 - **Bez meczu:** Close app, czyli wyjście z kiosku, z potwierdzeniem. Tylko na laptopie przy tarczy.
-- **Na telefonie** dochodzi Show QR, które pokazuje nakładkę QR na Ekranie wyników.
+- **Na telefonie-Pilocie** dochodzi Show QR, które pokazuje nakładkę QR na Ekranie wyników. Telefon bez kontroli go nie ma.
 - **Bez kontroli:** Take control i Stats.
 - **Report a bug:** w każdym menu, także bez kontroli ([Zgłaszanie błędów](#zgłaszanie-błędów)).
 - **Efekty:** w menu meczu i ogólnym są przełączniki Sounds, Caller i LEDs. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Układ strony z zakładkami opisuje [EFEKTY.md](EFEKTY.md#układ-strony), a makiety to A1–A4 i C.

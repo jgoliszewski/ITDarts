@@ -50,11 +50,10 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
       <div className="scrim" onClick={onClose} />
       <div className="dialog" role="menu" aria-label="Menu" style={{ gap: 8, width: 'min(420px, calc(100vw - 32px))' }}>
         <h2 style={{ marginBottom: 8 }}>Menu</h2>
-        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel and QR are in the header. */}
+        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
         {!pilot ? (
           <>
             {item('Take control', () => void act({ type: 'takeControl' }))}
-            {!wide && item('Show QR', () => open('qr'))}
             {item('Stats', () => (location.href = '/stats'))}
             {item('Effects', () => (location.href = '/effects'))}
           </>

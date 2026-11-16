@@ -31,7 +31,7 @@ Urządzenie (np. telefon), z którego gracze startują mecz i poprawiają rzuty.
 _Avoid_: kontroler, remote
 
 **Lobby**:
-Widok Ekranu wyników, gdy nie trwa mecz: QR do przejęcia Pilota i wynik ostatniego meczu.
+Widok Ekranu wyników, gdy nie trwa mecz: duże „New match” i „Rematch” oraz wynik ostatniego meczu.
 _Avoid_: ekran startowy, home
 
 **Panel tarczy**:

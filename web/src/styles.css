@@ -93,6 +93,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 @media (max-width: 560px) { .dialog.one-row .actions { flex-direction: column-reverse; } }
 .toasts { position: fixed; z-index: 70; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(560px, calc(100vw - 32px)); pointer-events: none; }
 .toast { pointer-events: auto; background: #26262B; color: var(--text); border-radius: 18px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: 15px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); width: 100%; }
+/* On the wide screen toasts sit under the header, clear of the action row in the right column. */
+.big ~ .toasts { bottom: auto; top: calc(96 * var(--u)); }
 .toast.error { background: var(--red-bg); color: var(--red-soft); }
 .toast .btn { height: 40px; padding: 0 16px; font-size: 14px; }
 .banner { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--red-bg); color: var(--red-soft); font-weight: 700; padding: 8px 16px; font-size: 15px; }
@@ -182,7 +184,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .mstats.few .num { font-size: calc(96 * var(--u)); line-height: 1; white-space: nowrap; }
 .mstats.few.three > div { padding: calc(24 * var(--u)) calc(16 * var(--u)); }
 .mstats.few.three .num { font-size: calc(64 * var(--u)); }
-.side-actions { flex-shrink: 0; position: relative; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: calc(12 * var(--u)); }
+.side-actions { flex-shrink: 0; margin-top: auto; position: relative; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: calc(12 * var(--u)); }
 .side-actions .btn { height: calc(64 * var(--u)); padding: 0; font-size: calc(20 * var(--u)); white-space: nowrap; }
 .side-actions .btn svg { width: calc(20 * var(--u)); height: calc(20 * var(--u)); }
 .side-actions .btn:only-child, .side-actions .third { grid-column: 1 / -1; }
