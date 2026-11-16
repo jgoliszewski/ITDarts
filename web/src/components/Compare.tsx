@@ -2,8 +2,7 @@ import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
 import type { GameStatsResponse } from '../../../server/protocol.ts';
-import { METRICS, sharedBestLeg, visitShare } from '../stats.ts';
-import { fmtAvg, fmtNum } from '../util.ts';
+import { BAND_BETTER, METRICS, X01_BANDS, X01_METRICS, fmtPct, sharedBestLeg, visitShare } from '../stats.ts';
 
 /** Fixed player colours by place in the match or comparison (docs/UI.md, Podsumowanie meczu). */
 export const PLAYER_COLORS = ['#e0325f', '#16b2c9', '#f0a020', '#3ccb7f'];
@@ -49,45 +48,39 @@ export interface Row {
   better?: 'higher' | 'lower';
 }
 
-type X01Row = [string, (x: X01Stats) => number | null, (x: X01Stats) => string, 'higher' | 'lower' | undefined];
+const metricRow = (xs: X01Stats[], key: keyof typeof X01_METRICS): Row => {
+  const m = X01_METRICS[key];
+  const nums = xs.map(m.value);
+  return { label: m.label, values: nums.map(m.fmt), nums, better: m.better };
+};
 
-const pctText = (n: number | null) => (n === null ? '–' : `${n}%`);
-
-const X01_COMMON: X01Row[] = [
-  ['Average', x => x.avg, x => fmtAvg(x.avg), 'higher'],
-  ['First 9', x => x.first9, x => fmtAvg(x.first9), 'higher'],
-  ['Checkout %', x => x.checkoutPct, x => (x.checkoutPct === null ? '–' : `${x.checkoutPct}%`), 'higher'],
-  ['Bust rate', x => x.bustRate, x => pctText(x.bustRate), 'lower'],
-  ['Highest visit', x => x.highestVisit, x => fmtNum(x.highestVisit), 'higher'],
-  ['Highest checkout', x => x.highestCheckout, x => fmtNum(x.highestCheckout), 'higher'],
-];
-
-const toRows = (xs: X01Stats[], defs: X01Row[]): Row[] =>
-  defs.map(([label, num, fmt, better]) => ({ label, values: xs.map(fmt), nums: xs.map(num), better }));
+const COMMON = ['avg', 'first9', 'checkoutPct', 'bustRate', 'highestVisit', 'highestCheckout'] as const;
+const dartsRow = (xs: X01Stats[]): Row => ({ label: 'Darts', values: xs.map(x => String(x.darts)) });
 
 /** One match (podsumowanie): the bands are counts and Best leg has no start score, a match has one. */
-export const x01Rows = (xs: X01Stats[]): Row[] => toRows(xs, [
-  ...X01_COMMON,
-  ['Best leg', x => x.bestLeg, x => fmtNum(x.bestLeg), 'lower'],
-  ['60+', x => x.c60, x => String(x.c60), 'higher'],
-  ['80+', x => x.c80, x => String(x.c80), 'higher'],
-  ['100+', x => x.c100, x => String(x.c100), 'higher'],
-  ['Darts', () => null, x => String(x.darts), undefined],
-]);
+export const x01Rows = (xs: X01Stats[]): Row[] => [
+  ...COMMON.map(k => metricRow(xs, k)),
+  metricRow(xs, 'bestLeg'),
+  ...X01_BANDS.map(({ label, key }) => ({ label, values: xs.map(x => String(x[key])), nums: xs.map(x => x[key]), better: BAND_BETTER })),
+  dartsRow(xs),
+];
 
-/** Compare: frequencies, not counts, and Best leg at the start score both played most. */
-export function x01CompareRows(xs: X01Stats[]): Row[] {
+/**
+ * Compare: frequencies, not counts, and Best leg at the start score both played most. `between` goes before Darts
+ * (the profile's Winrate), which stays at the bottom with Distance walked.
+ */
+export function x01CompareRows(xs: X01Stats[], between: Row[] = []): Row[] {
   const shared = sharedBestLeg(xs);
-  const band = (label: string, key: 'c60' | 'c80' | 'c100'): X01Row => [label, x => visitShare(x[key], x), x => pctText(visitShare(x[key], x)), 'higher'];
+  const bestNums = shared?.best ?? xs.map(() => null);
   return [
-    ...toRows(xs, X01_COMMON),
-    {
-      label: shared ? `Best leg · ${shared.startScore}` : 'Best leg',
-      values: (shared?.best ?? xs.map(() => null)).map(fmtNum),
-      nums: shared?.best ?? xs.map(() => null),
-      better: 'lower',
-    },
-    ...toRows(xs, [band('60+ (% of visits)', 'c60'), band('80+ (% of visits)', 'c80'), band('100+ (% of visits)', 'c100'), ['Darts', () => null, x => String(x.darts), undefined]]),
+    ...COMMON.map(k => metricRow(xs, k)),
+    { label: shared ? `${X01_METRICS.bestLeg.label} · ${shared.startScore}` : X01_METRICS.bestLeg.label, values: bestNums.map(X01_METRICS.bestLeg.fmt), nums: bestNums, better: X01_METRICS.bestLeg.better },
+    ...X01_BANDS.map(({ label, key }) => {
+      const nums = xs.map(x => visitShare(x[key], x));
+      return { label: `${label} (% of visits)`, values: nums.map(fmtPct), nums, better: BAND_BETTER };
+    }),
+    ...between,
+    dartsRow(xs),
   ];
 }
 
@@ -103,11 +96,18 @@ export function gameRows(game: GameId, totals: Record<string, number>[]): Row[] 
 }
 
 /** Minigame rows for Compare: frequencies (per match, %), the direction of each from its definition. */
-export function gameCompareRows(game: GameId, gs: Pick<GameStatsResponse, 'totals' | 'matches'>[]): Row[] {
-  return (METRICS[game] ?? []).map(m => {
+export function gameCompareRows(game: GameId, gs: Pick<GameStatsResponse, 'totals' | 'matches' | 'played' | 'versus'>[]): Row[] {
+  const metrics = (METRICS[game] ?? []).map(m => {
     const nums = gs.map(g => m.value(g.totals, g.matches));
     return { label: m.perMatch ? `${m.label} / match` : m.label, values: nums.map(m.fmt), nums, better: m.better };
   });
+  const winrate = gs.map(g => g.versus.winrate);
+  return [
+    ...metrics,
+    { label: 'Played', values: gs.map(g => String(g.played)) },
+    // Winrate only when somebody has versus matches; a game with solo matches only has none.
+    ...(gs.some(g => g.versus.played > 0) ? [{ label: 'Winrate', values: winrate.map(fmtPct), nums: winrate, better: 'higher' as const }] : []),
+  ];
 }
 
 export const fmtDistance = (metres: number) => (metres >= 1000 ? `${(metres / 1000).toFixed(2)} km` : `${Math.round(metres)} m`);

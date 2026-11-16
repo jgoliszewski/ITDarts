@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { X01Stats } from '../../games/x01/stats.ts';
-import { gameCompareRows, x01CompareRows, x01Rows } from './components/Compare.tsx';
-import { MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, visitShare, winTile } from './stats.ts';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { GAMES } from '../../games/index.ts';
+import { TrendChart } from './components/StatParts.tsx';
+import { gameCompareRows, gameRows, gameStats, x01CompareRows, x01Rows } from './components/Compare.tsx';
+import { X01_METRICS, x01Delta, MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, visitShare, winTile } from './stats.ts';
 
 describe('delta', () => {
   it('is green when the figure moved the better way and red when it did not', () => {
@@ -75,6 +78,8 @@ describe('X01 rows', () => {
   it('compares frequencies, Bust rate with less as better, and Best leg at the shared start score', () => {
     const rows = x01CompareRows([X, { ...X, bustRate: 5, bestLegs: [{ startScore: 301, legs: 1, best: 22 }], c60: 20 }]);
     expect(label(rows)).toEqual(['Average', 'First 9', 'Checkout %', 'Bust rate', 'Highest visit', 'Highest checkout', 'Best leg · 301', '60+ (% of visits)', '80+ (% of visits)', '100+ (% of visits)', 'Darts']);
+    // The profile adds its Winrate between the bands and Darts, which stays at the bottom.
+    expect(label(x01CompareRows([X, X], [{ label: 'Winrate', values: ['50%', '50%'] }])).slice(-3)).toEqual(['100+ (% of visits)', 'Winrate', 'Darts']);
     const get = (l: string) => rows.find(r => r.label === l)!;
     expect(get('Bust rate')).toMatchObject({ values: ['10%', '5%'], better: 'lower' });
     expect(get('Best leg · 301')).toMatchObject({ values: ['18', '22'], better: 'lower' });
@@ -146,9 +151,38 @@ describe('the figures of each game', () => {
   });
 
   it('compares per match, not totals', () => {
-    const rows = gameCompareRows('football', [{ totals: { goals: 9 }, matches: 3 }, { totals: { goals: 4 }, matches: 1 }]);
-    expect(rows).toEqual([{ label: 'Goals / match', values: ['3.0', '4.0'], nums: [3, 4], better: 'higher' }]);
-    expect(gameCompareRows('randomco', [tot({ checkouts: 2, checkoutDarts: 8 }), tot({})])[0]).toMatchObject({ better: 'lower', values: ['4.0', '–'] });
+    const solo = { played: 1, versus: { played: 0, won: 0, winrate: null } };
+    const rows = gameCompareRows('football', [{ totals: { goals: 9 }, matches: 3, ...solo }, { totals: { goals: 4 }, matches: 1, ...solo }]);
+    expect(rows[0]).toEqual({ label: 'Goals / match', values: ['3.0', '4.0'], nums: [3, 4], better: 'higher' });
+    expect(gameCompareRows('randomco', [{ ...tot({ checkouts: 2, checkoutDarts: 8 }), ...solo }, { ...tot({}), ...solo }])[0]).toMatchObject({ better: 'lower', values: ['4.0', '–'] });
+  });
+
+  it('adds Played, and Winrate only when somebody has versus matches', () => {
+    const solo = { totals: {}, matches: 1, played: 3, versus: { played: 0, won: 0, winrate: null } };
+    const versus = { totals: {}, matches: 1, played: 4, versus: { played: 4, won: 1, winrate: 25 } };
+    const labels = (gs: typeof solo[]) => gameCompareRows('football', gs).map(r => r.label);
+    expect(labels([solo, solo])).toEqual(['Goals / match', 'Played']);
+    const rows = gameCompareRows('football', [solo, versus]);
+    expect(rows.map(r => r.label)).toEqual(['Goals / match', 'Played', 'Winrate']);
+    expect(rows[2]).toMatchObject({ values: ['–', '25%'], nums: [null, 25], better: 'higher' });
+  });
+
+  it('keeps the labels of a match card and the figures of the profile bound, with the same direction', () => {
+    // gameStats (the live card and the match summary) and METRICS (the profile and Compare) are two lists tied by label.
+    for (const game of Object.keys(GAMES) as (keyof typeof GAMES)[]) {
+      if (game === 'x01') continue;
+      const labels = gameStats(game, {}).map(([l]) => l);
+      for (const l of labels) expect(METRICS[game]?.some(m => m.label === l), `${game}: ${l}`).toBe(true);
+      const rows = gameRows(game, [{}]);
+      for (const r of rows) expect(r.better, `${game}: ${r.label}`).toBe(METRICS[game]!.find(m => m.label === r.label)!.better);
+    }
+  });
+
+  it('turns an X01 arrow by the direction of the figure, from the one definition', () => {
+    expect(X01_METRICS.bustRate.better).toBe('lower');
+    expect(x01Delta('checkoutPct', { ...X, checkoutPct: 25 }, { avg: 50, first9: 55, checkoutPct: 20 })).toEqual({ text: '▲ 5.0', tone: 'good' });
+    expect(x01Delta('avg', { ...X, avg: 48 }, { avg: 50, first9: 55, checkoutPct: 20 })).toEqual({ text: '▼ 2.0', tone: 'bad' });
+    expect(x01Delta('avg', X, null)).toBeNull();
   });
 });
 
@@ -164,6 +198,19 @@ describe('winrate tile', () => {
 });
 
 describe('Average chart', () => {
+  const draw = (points: number[], avg: number | null) => renderToStaticMarkup(TrendChart({ points, avg }) as never);
+  it('draws the dashed line only for the average of the Okno, and nothing below 3 matches', () => {
+    expect(draw([50, 40, 30], 45)).toContain('class="mean"');
+    expect(draw([50, 40, 30], null)).not.toContain('class="mean"');
+    expect(draw([50, 40], 45)).toBe('');
+  });
+  it('puts the last value under its point when the line comes down to it', () => {
+    const num = (m: string, re: RegExp) => Number(re.exec(m)![1]);
+    const gap = (m: string) => num(m, /<text[^>]*\sy="([\d.]+)"[^>]*class="last"/) - [...m.matchAll(/cy="([\d.]+)"/g)].map(x => Number(x[1])).at(-1)!;
+    const down = gap(draw([50, 60, 40], 50)), up = gap(draw([50, 40, 60], 50));
+    expect(down).toBeGreaterThan(0);
+    expect(up).toBeLessThan(0);
+  });
   it('needs 3 matches', () => {
     expect(MIN_TREND).toBe(3);
   });

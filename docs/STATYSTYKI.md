@@ -62,7 +62,7 @@ Profil odpowiada najpierw na „czy się poprawiam”, więc statystyki porównu
 - **Okno w legach** (10, 100) porównuje się z poprzednimi 10 albo 100 legami gracza według świeżości. W minigierkach, które mają jeden leg na mecz, to poprzednie N meczów.
 - **Brak porównania** (`null`): dla „All time” i gdy poprzednie Okno ma mniej niż 3 legi (minigierki: 3 mecze).
 - **Strzałka zmiany** pokazuje różnicę liczbą, zieloną przy poprawie i czerwoną przy spadku. Statystyki, w których mniej znaczy lepiej (Bust rate, Darts per checkout), mają odwrócony kolor. X01: Average, First 9, Checkout %. Winrate bez strzałki.
-- **Wykres Average** (`trend` w odpowiedzi): punkt to jeden mecz X01 z wybranego Okna, z Averagem gracza w tym meczu, rosnąco po czasie. Profil rysuje wykres od 3 punktów i tylko dla gracza (nie w Compare).
+- **Wykres Average** (`trend` w odpowiedzi): punkt to jeden mecz X01 z wybranego Okna, z Averagem gracza w tym meczu, rosnąco po czasie. Profil rysuje wykres od 3 punktów i tylko dla gracza (nie w Compare). Przerywana linia to Average całego Okna, ta sama liczba co na kafelku nad wykresem (ważona lotkami), a nie średnia z punktów. Mecz przecięty granicą Okna wchodzi do wykresu i do kafelków tylko z Turami, które mieszczą się w Oknie, więc jego punkt pokazuje Average tej części meczu.
 
 ## Inne gry
 

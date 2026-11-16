@@ -427,9 +427,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .chart .line { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linejoin: round; }
 .chart .dot { fill: var(--accent); }
 .chart .last { fill: var(--text); font-size: 20px; font-weight: 700; }
-.player-card .delta { font-size: 18px; color: var(--muted); }
-.player-card .delta.good { color: var(--green); }
-.player-card .delta.bad { color: var(--red); }
+.player-card .delta { font-size: 18px; }
 .dbl { display: grid; grid-template-columns: 64px 1fr 56px 84px 64px; gap: 12px; align-items: center; padding: 8px 14px; border-radius: 14px; background: var(--card); font-size: 15px; margin-top: 6px; }
 .dbl.head { background: none; padding-block: 0; font-size: 12px; color: var(--muted2); font-weight: 600; margin-top: 0; }
 .dbl .num { font-size: 20px; text-align: right; }

@@ -1,7 +1,7 @@
 // What /stats shows and how: the figures of each game, which direction is better, and the change against the previous Okno. Pure.
 import type { GameId } from '../../games/index.ts';
 import type { BestLegAt, X01Stats } from '../../games/x01/stats.ts';
-import type { GameStatsResponse, StatsWindow } from '../../server/protocol.ts';
+import type { GameStatsResponse, PlayerStatsResponse, StatsWindow } from '../../server/protocol.ts';
 
 export type Better = 'higher' | 'lower';
 
@@ -54,6 +54,37 @@ export function sharedBestLeg(xs: Pick<X01Stats, 'bestLegs'>[]): { startScore: n
   if (!top) return null;
   const at = (x: { bestLegs: BestLegAt[] }) => x.bestLegs.find(b => b.startScore === top[0])?.best ?? null;
   return { startScore: top[0], best: xs.map(at) };
+}
+
+/** One X01 figure: its label, value, format and which way is better. Arrows and Compare both read this. */
+export interface X01Metric {
+  label: string;
+  better: Better;
+  value: (x: X01Stats) => number | null;
+  fmt: (n: number | null) => string;
+}
+
+const fmtInt = (n: number | null) => (n === null ? '–' : String(n));
+
+export const X01_METRICS = {
+  avg: { label: 'Average', better: 'higher', value: x => x.avg, fmt: fmtFixed(1) },
+  first9: { label: 'First 9', better: 'higher', value: x => x.first9, fmt: fmtFixed(1) },
+  checkoutPct: { label: 'Checkout %', better: 'higher', value: x => x.checkoutPct, fmt: fmtPct },
+  bustRate: { label: 'Bust rate', better: 'lower', value: x => x.bustRate, fmt: fmtPct },
+  highestVisit: { label: 'Highest visit', better: 'higher', value: x => x.highestVisit, fmt: fmtInt },
+  highestCheckout: { label: 'Highest checkout', better: 'higher', value: x => x.highestCheckout, fmt: fmtInt },
+  bestLeg: { label: 'Best leg', better: 'lower', value: x => x.bestLeg, fmt: fmtInt },
+} satisfies Record<string, X01Metric>;
+
+/** 60+, 80+ and 100+: more is better, whether shown as counts (one match) or as a share of visits. */
+export const X01_BANDS: { label: string; key: 'c60' | 'c80' | 'c100' }[] = [
+  { label: '60+', key: 'c60' }, { label: '80+', key: 'c80' }, { label: '100+', key: 'c100' },
+];
+export const BAND_BETTER: Better = 'higher';
+
+/** The arrow of an X01 figure against the previous Okno; its colour follows the figure's direction. */
+export function x01Delta(key: 'avg' | 'first9' | 'checkoutPct', x: X01Stats, prev: PlayerStatsResponse['previous']): Delta | null {
+  return delta(X01_METRICS[key].value(x), prev?.[key], X01_METRICS[key].better);
 }
 
 export const doubleName = (double: number) => (double === 25 ? 'Bull' : `D${double}`);

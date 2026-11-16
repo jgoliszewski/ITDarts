@@ -171,7 +171,7 @@ describe('Free throw stats', () => {
     const r = [{ playerId: a, name: 'Anna' }];
     save(r, [...dartsAt('T20', 'T20', 'T20'), { t: 'next' }, ...dartsAt('S1', 'S1', 'S1')]);
     save(r, dartsAt('T20', 'S20', 'S20'));
-    expect(new Stats(db).game(a, 'freethrow', 'all')).toMatchObject({ played: 2, won: 0, totals: { darts: 9, points: 283, visits: 3, best: 180, v100: 2 } });
+    expect(new Stats(db).game(a, 'freethrow', 'all')).toMatchObject({ played: 2, totals: { darts: 9, points: 283, visits: 3, best: 180, v100: 2 } });
   });
 
   it('shows the average of 3 darts as the player\'s value in the last match', () => {
@@ -225,7 +225,7 @@ describe('minigames', () => {
     const [a1, a2, a3] = turns(fast), [b1, b2, b3] = turns(fast);
     saveAtc([{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }], atcEvents(...a1, ...b1, ...a2, ...b2, ...a3, 'Miss', ...b3));
     expect(db.lastMatch()!.players.map(p => p.winner)).toEqual([true, true]);
-    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
+    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1 });
     expect(new Stats(db).player(a, 'all')!.recent[0].result).toBe('won');
   });
 
@@ -247,8 +247,8 @@ describe('minigames', () => {
       game: 'atc', options: o, roster: [{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }], startedAt: 1, endedAt: 2, status: 'finished',
       winners: [0], sets: [], legs: [], stats: [{ darts: 9, hits: 3 }, { darts: 6, hits: 2 }], removed: [false, true],
     });
-    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 0, won: 0, totals: { darts: 6, hits: 2 } });
-    expect(new Stats(db).game(a, 'atc', 'all')).toMatchObject({ played: 1, won: 1 });
+    expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 0, totals: { darts: 6, hits: 2 } });
+    expect(new Stats(db).game(a, 'atc', 'all')).toMatchObject({ played: 1 });
   });
 
   it('does not count minigames in the X01 stats', () => {

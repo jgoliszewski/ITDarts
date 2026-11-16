@@ -209,7 +209,6 @@ export interface GameStatsResponse {
   window: StatsWindow;
   /** Matches played, solo too, without those the player left. */
   played: number;
-  won: number;
   /** Winrate as in X01: finished matches of two or more registered players with one winner, without those the player left. Solo games: all zero, `winrate` null. */
   versus: { played: number; won: number; winrate: number | null };
   /** Matches `totals` were summed from (those the player left included): the denominator of "per match". */

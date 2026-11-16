@@ -112,6 +112,14 @@ describe('Average trend', () => {
     expect(stats.player(anna, 'l10')!.trend).toHaveLength(4);
   });
 
+  it('averages a match cut by the edge of the Okno from the visits inside it', () => {
+    // One match: a visit of 60 thirty-one days ago, then a visit of 30 twenty-nine days ago.
+    const old = throws(NOW - 31 * DAY, 'S20', 'S20', 'S20'), recent = throws(NOW - 29 * DAY, 'S10', 'S10', 'S10');
+    saveX01([A()], [...old, { t: 'next' } as X01Event, ...recent], 29, OPTS, 'ended');
+    expect(stats.player(anna, '30d')!.trend.map(x => x.avg)).toEqual([30]);
+    expect(stats.player(anna, '90d')!.trend.map(x => x.avg)).toEqual([45]);
+  });
+
   it('is empty without matches and skips matches where the player threw nothing', () => {
     expect(stats.player(anna, 'all')!.trend).toEqual([]);
     saveX01([A(), B()], [...throws(NOW, 'S1', 'S1', 'S1')], 1, OPTS, 'ended'); // only Anna threw
@@ -185,7 +193,7 @@ describe('minigame stats', () => {
       mini([A(), B()], 3, { stats: [{}, {}] }); // Anna wins
       mini([A(), B()], 4, { winners: [1], stats: [{}, {}] }); // Anna loses
       const g = stats.game(anna, 'atc', 'all')!;
-      expect([g.played, g.won]).toEqual([4, 1]);
+      expect([g.played, g.versus.won]).toEqual([4, 1]);
       expect(g.versus).toEqual({ played: 2, won: 1, winrate: 50 });
     });
 

@@ -8,7 +8,7 @@ import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Stat, DeltaTag, TrendChart } from '../components/StatParts.tsx';
 import { Dropdown, Icon, Logo } from '../components/ui.tsx';
-import { MIN_TREND, delta, doubleName, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile } from '../stats.ts';
+import { MIN_TREND, X01_METRICS, delta, doubleName, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile, x01Delta } from '../stats.ts';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
 const ME_KEY = 'itdarts.me';
@@ -62,12 +62,13 @@ function H2H({ a, b, w }: { a: number; b: number; w: StatsWindow }) {
 }
 
 /** The Average chart, in its own section; nothing below 3 matches. */
-function TrendChartBox({ points }: { points: number[] }) {
+function TrendChartBox({ points, avg }: { points: number[]; avg: number | null }) {
   if (points.length < MIN_TREND) return null;
   return (
     <div className="section">
       <div className="caps" style={{ fontSize: 13 }}>Average · match by match</div>
-      <TrendChart points={points} />
+      <TrendChart points={points} avg={avg} />
+      <p className="muted" style={{ margin: 0, fontSize: 13 }}>The dashed line is the average of the whole window.</p>
     </div>
   );
 }
@@ -96,9 +97,7 @@ function DoubleTable({ rows }: { rows: PlayerStatsResponse['x01']['doubles'] }) 
 }
 
 /** Small tiles at the bottom of a profile: darts thrown (when known) and the distance walked in the window. */
-function FunFacts({ id, game, w, darts }: { id: number; game: GameId; w: StatsWindow; darts?: number }) {
-  const { data } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=${game}&window=${w}`);
-  const distance = data?.[0]?.distance;
+function FunFacts({ distance, darts }: { distance?: number; darts?: number }) {
   if (darts === undefined && !distance) return null;
   return (
     <div className="section fun">
@@ -113,6 +112,7 @@ function FunFacts({ id, game, w, darts }: { id: number; game: GameId; w: StatsWi
 
 function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<PlayerStatsResponse>(`/api/stats/players/${id}?window=${w}`);
+  const { data: heat } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=x01&window=${w}`);
   const [me, setMe] = useState(store.get(ME_KEY));
   const [vs, setVs] = useState<number | null>(null);
   if (error) return <p className="muted">This player does not exist.</p>;
@@ -138,12 +138,12 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
       ) : (
         <>
           <div className="stat-grid main">
-            <Stat main hl l="Average" v={fmtAvg(x.avg)} delta={delta(x.avg, prev?.avg, 'higher')} vs={since} />
-            <Stat main l="First 9" v={fmtAvg(x.first9)} delta={delta(x.first9, prev?.first9, 'higher')} vs={since} />
-            <Stat main l="Checkout %" v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
-              delta={delta(x.checkoutPct, prev?.checkoutPct, 'higher')} vs={since} />
+            <Stat main hl l={X01_METRICS.avg.label} v={fmtAvg(x.avg)} delta={x01Delta('avg', x, prev)} vs={since} />
+            <Stat main l={X01_METRICS.first9.label} v={fmtAvg(x.first9)} delta={x01Delta('first9', x, prev)} vs={since} />
+            <Stat main l={X01_METRICS.checkoutPct.label} v={x.checkoutPct === null ? '–' : `${x.checkoutPct}`} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
+              delta={x01Delta('checkoutPct', x, prev)} vs={since} />
           </div>
-          <TrendChartBox points={data.trend.map(t => t.avg)} />
+          <TrendChartBox points={data.trend.map(t => t.avg)} avg={x.avg} />
           <div className="stat-grid">
             <Stat l="Legs" v={`${x.legsWon}/${x.legs}`} s="won / played" />
             <Stat l="Bust rate" v={fmtPct(x.bustRate)} s={`${x.busts} of ${x.visits} visits`} />
@@ -159,7 +159,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           <DoubleTable rows={x.doubles} />
         </>
       )}
-      <PlayerHeat ids={[id]} game="x01" w={w} />
+      <PlayerHeat data={heat} />
       {data.opponents.length > 0 && (
         <div className="section">
           <div className="caps" style={{ fontSize: 13 }}>Opponents</div>
@@ -185,7 +185,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           ))}
         </div>
       )}
-      <FunFacts id={id} game="x01" w={w} darts={x.darts} />
+      <FunFacts distance={heat?.[0]?.distance} darts={x.darts} />
     </div>
   );
 }
@@ -194,6 +194,7 @@ const GAME_KEY = 'itdarts.statsGame';
 
 function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<GameStatsResponse>(`/api/stats/players/${id}?game=${game}&window=${w}`);
+  const { data: heat } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=${game}&window=${w}`);
   if (error) return <p className="muted">This player does not exist.</p>;
   if (!data) return <p className="muted">Loading…</p>;
   const shown = profileMetrics(game, data);
@@ -213,7 +214,7 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
           </div>
         </>
       )}
-      <PlayerHeat ids={[id]} game={game} w={w} />
+      <PlayerHeat data={heat} />
       {data.bests.length > 0 && (
         <div className="section">
           <div className="caps" style={{ fontSize: 13 }}>Personal bests · all time</div>
@@ -222,14 +223,13 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
           ))}
         </div>
       )}
-      <FunFacts id={id} game={game} w={w} darts={data.totals.darts} />
+      <FunFacts distance={heat?.[0]?.distance} darts={data.totals.darts} />
     </div>
   );
 }
 
-/** Heatmap of one or more players in a game and window. */
-function PlayerHeat({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWindow }) {
-  const { data } = useJson<HeatResponse>(`/api/stats/heat?ids=${ids.join(',')}&game=${game}&window=${w}`);
+/** Heatmap of one player in a game and window (the profile fetches it once, Fun facts reads the distance from it). */
+function PlayerHeat({ data }: { data: HeatResponse | null }) {
   if (!data || data.length === 0 || data.every(p => p.heat.visits === 0)) return null;
   return (
     <div className="section">
@@ -259,19 +259,10 @@ function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWi
   const rows: Row[] = game === 'x01'
     ? (() => {
       const ps = data.stats as PlayerStatsResponse[];
-      return [
-        ...x01CompareRows(ps.map(p => p.x01)),
-        { label: 'Winrate', values: ps.map(p => (p.results.winrate === null ? '–' : `${p.results.winrate}%`)), nums: ps.map(p => p.results.winrate), better: 'higher' as const },
-      ];
+      const winrate = ps.map(p => p.results.winrate);
+      return x01CompareRows(ps.map(p => p.x01), [{ label: 'Winrate', values: winrate.map(fmtPct), nums: winrate, better: 'higher' as const }]);
     })()
-    : (() => {
-      const gs = data.stats as GameStatsResponse[];
-      return [
-        ...gameCompareRows(game, gs),
-        { label: 'Played', values: gs.map(g => String(g.played)) },
-        ...(gs.some(g => g.versus.played > 0) ? [{ label: 'Winrate', values: gs.map(g => fmtPct(g.versus.winrate)), nums: gs.map(g => g.versus.winrate), better: 'higher' as const }] : []),
-      ];
-    })();
+    : gameCompareRows(game, data.stats as GameStatsResponse[]);
   rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtKm(h.distance)) });
   return (
     <>

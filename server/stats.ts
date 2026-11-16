@@ -135,7 +135,7 @@ export class Stats {
 
   private x01(playerId: number, w: StatsWindow, matchIds?: number[]) {
     const visits = this.statVisits(playerId, w, matchIds);
-    return { stats: x01Stats(visits), matchIds: [...new Set(visits.map(v => v.matchId))] };
+    return { stats: x01Stats(visits), matchIds: [...new Set(visits.map(v => v.matchId))], visits };
   }
 
   /** Average, First 9 and Checkout % of the Okno before this one; null for All time and for fewer than 3 legs there. */
@@ -145,10 +145,13 @@ export class Stats {
     return p.legs < MIN_PREVIOUS ? null : { avg: p.avg, first9: p.first9, checkoutPct: p.checkoutPct };
   }
 
-  /** The player's Average in every X01 match of the Okno, oldest first. */
-  private trend(playerId: number, w: StatsWindow): PlayerStatsResponse['trend'] {
-    const byMatch = new Map<number, ReturnType<Stats['statVisits']>>();
-    for (const v of this.statVisits(playerId, w)) byMatch.set(v.matchId, [...(byMatch.get(v.matchId) ?? []), v]);
+  /**
+   * The player's Average in every X01 match of the Okno, oldest first. A match cut by the edge of the Okno counts
+   * with the visits inside it only, like the figures above the chart (docs/STATYSTYKI.md, Progres).
+   */
+  private trend(visits: ReturnType<Stats['statVisits']>): PlayerStatsResponse['trend'] {
+    const byMatch = new Map<number, typeof visits>();
+    for (const v of visits) byMatch.set(v.matchId, [...(byMatch.get(v.matchId) ?? []), v]);
     return [...byMatch].flatMap(([matchId, vs]) => {
       const a = x01Stats(vs).avg;
       return a === null ? [] : [{ matchId, endedAt: vs[0].endedAt, avg: a }];
@@ -169,7 +172,7 @@ export class Stats {
   player(playerId: number, w: StatsWindow): PlayerStatsResponse | null {
     const player = this.db.player(playerId);
     if (!player) return null;
-    const { stats, matchIds } = this.x01(playerId, w);
+    const { stats, matchIds, visits } = this.x01(playerId, w);
     const results = this.resultMatches(playerId, w, matchIds);
     const won = results.filter(r => r.won).length;
 
@@ -210,7 +213,7 @@ export class Stats {
       window: w,
       x01: stats,
       previous: this.previousX01(playerId, w),
-      trend: this.trend(playerId, w),
+      trend: this.trend(visits),
       results: { played: results.length, won, winrate: results.length ? Math.round((won / results.length) * 1000) / 10 : null },
       recent,
       opponents,
@@ -281,7 +284,6 @@ export class Stats {
       window: w,
       // A removed player's darts count in the totals, the match not (docs/UI.md#wycofanie-gracza).
       played: rows.filter(r => !r.removed).length,
-      won: rows.filter(r => r.won && !r.removed).length,
       versus: { played: versus.length, won: versusWon, winrate: versus.length ? Math.round((versusWon / versus.length) * 1000) / 10 : null },
       matches: rows.length,
       totals: Stats.totals(rows),
