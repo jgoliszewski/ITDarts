@@ -8,8 +8,9 @@ Wzorce podpatrzone w Scolii (wynik i poprawka lotki), HomeDarts (minimalizm), Au
 
 ## Ekrany i tryby
 
-- **Domyślnie** wszystko działa na dotykowym laptopie przy tarczy. Laptop jest jednocześnie Ekranem wyników i Pilotem, a pasek Pilota jest zawsze widoczny pod wynikiem.
-- **Tryb wynika z tego, kto ma Pilota.** Gdy telefon przejmie Pilota, laptop sam staje się czystym Ekranem wyników z dyskretnym „Take control”. Nie ma osobnego przełącznika trybów.
+- **Domyślnie** wszystko działa na dotykowym laptopie przy tarczy. Laptop jest jednocześnie Ekranem wyników i Pilotem, a przyciski Pilota są ostatnim wierszem prawej kolumny (od 2026-11-16, wcześniej pasek pod wynikiem).
+- **Tryb wynika z tego, kto ma Pilota.** Gdy telefon przejmie Pilota, laptop sam staje się czystym Ekranem wyników bez przycisków, a „Take control” zostaje w menu. Nie ma osobnego przełącznika trybów.
+- **Laptop nie reklamuje telefonu** (od 2026-11-16): używamy tylko dotykowego laptopa, więc Ekran wyników nie ma QR, przycisku QR ani tekstów „on the pilot”. Telefon dalej może przejąć Pilota po wpisaniu adresu, a nakładkę QR może wywołać telefon-Pilot („Show QR”).
 - **Telefon obsługuje wszystko.** Główny ekran może nie być dotykowy, więc każda akcja jest dostępna z Pilota na telefonie.
 - **Jeden responsywny widok Pilota** dla laptopa i telefonu, projektowany najpierw pod telefon i dotyk.
 - **Przejęcie Pilota** jest natychmiastowe, bez potwierdzenia. Poprzedni Pilot dostaje komunikat, kto przejął, i ten sam przycisk, żeby odebrać. Nazwę urządzenia (telefon, laptop) wyliczamy z przeglądarki.
@@ -73,7 +74,7 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   - karta z 6 ostatnimi wizytami aktywnego gracza;
   - karta z meczu: średnia z legu, średnia z meczu, najlepsza wizyta i liczniki 60+, 80+, 100+ (od 2026-10-27 zamiast 100+, 140+, 180, pod poziom biura).
   - Przy 3–4 graczach bez karty ostatnich wizyt. Przy 5+ graczach zostaje sama lista, w wersji kompaktowej. Bez first 9, checkout % i liczby lotek w legu. Szerszą listę przy 3–4 graczach (760) zdjęliśmy 2026-11-01, żeby kolumna miała tę samą szerokość we wszystkich grach.
-- **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, przycisk QR i menu.
+- **Nagłówek:** gra i ustawienia (np. „X01 · 501 · Double out · First to 3 legs”), status tarczy, ikona tarczy (u Pilota) i menu. Bez przycisku QR (od 2026-11-16).
 - **Bust:** czerwony „BUST” w hero. Wynik wraca do stanu sprzed tury.
 - **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).
 
@@ -82,19 +83,19 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
 - **Takeout** kończy turę automatycznie. Lotki, których brakuje do trzech, wpadają jako Miss.
 - **Karta tury** (z testów 2026-10-26): gdy Tura się skończy (trzecia lotka, bust, checkout, utrata życia), ekran nie przeskakuje dalej, tylko od razu pokazuje kartę tury. Przy krótszej Turze karta pojawia się z początkiem takeoutu.
   - Na karcie jest tylko imię, duży werdykt i lotki (od 2026-11-01). Nad liczbą jest samo imię, bez „scored”. Werdykt to „CHECKOUT”, „BUST” (czerwony) albo zdarzenie gry, np. „LIFE LOST”. Bez werdyktu jest wynik tury: suma w X01, 121 i Higher or Lower, w Cricket liczba marków („4 MARKS”, od 2026-10-28, ze zgłoszenia: po poprawce S2 na T17 liczba trafień się nie zmieniała), a w pozostałych minigierkach liczba trafień („2 HITS”).
-  - Karta i inne nakładki mieszczą się nad paskiem Pilota (od 2026-10-28, ze zgłoszenia: pasek „Removing darts” wystawał pod pasek).
+  - Karta i inne nakładki nie nachodzą na wiersz przycisków w prawej kolumnie. Wiersz leży nad przyciemnieniem nakładki i zostaje klikalny („Takeout done”, „Next leg”, „Skip”, „Undo”). Karta bull-offu jest podniesiona o 48 u, żeby kończyła się nad przyciskami (od 2026-11-16, wcześniej nakładki kończyły się nad paskiem Pilota).
   - Lotki to duże kafelki jak na ekranie gry (od 2026-10-27, ze zgłoszenia o nieczytelnej karcie), z polem na górze (np. „S7”). W grach liczonych trafieniami (ATC, Full Board, Cricket, Killer) kafelek jest zielony przy trafieniu i czerwony przy pudle (od 2026-10-27). W 121 i Higher or Lower lotka, która nic nie dała, jest wygaszona. Niedorzucone lotki to puste kafelki.
   - Bez kafelków ze stanem po Turze („Left”, „Target”, „Range” itd.) i bez notek gry pod lotkami (zdjęte 2026-11-01): nikt ich nie czytał, a hero pokazuje to samo po końcu takeoutu. Zostaje „Pull the darts” i pasek takeoutu.
   - Hero pod kartą trzyma stan z chwili końca Tury, np. w 121 nadal „Target 121”. Nowy cel, nowe życie i następny gracz pojawiają się dopiero po końcu takeoutu.
   - Checkout kończący leg X01 pokazuje od razu ekran końca legu, jak dotąd.
 - W czasie takeoutu ekran jest przyszarzony. Pod kartą tury jest bursztynowy pasek „Removing darts” ze spinnerem i ostrzeżeniem, że rzuty przed „Ready” się nie liczą.
 - **Koniec takeoutu** (sam albo przez „Takeout done”) gra krótki dźwięk zmiany gracza (arpeggio marimby) i dopiero wtedy przełącza na następnego gracza. Dźwięk opisuje [EFEKTY.md](EFEKTY.md#wbudowane-dźwięki).
-- **Zacięty takeout:** Board Manager czasem nie zgłasza końca takeoutu i wtedy nie widzi nowych rzutów. Pilot ma w czasie takeoutu główny przycisk „Takeout done”. Wywołuje on Reset na Board Managerze i przechodzi do następnej tury. Po około 15 s ekran podpowiada „Board stuck? Use Takeout done on the pilot”.
+- **Zacięty takeout:** Board Manager czasem nie zgłasza końca takeoutu i wtedy nie widzi nowych rzutów. Pilot ma w czasie takeoutu główny przycisk „Takeout done”. Wywołuje on Reset na Board Managerze i przechodzi do następnej tury. Po około 15 s ekran podpowiada „Board stuck? Tap Takeout done.”
 - Lotki rzucone przed „Takeout done” nie istnieją dla systemu. Gracz dopisuje je przez „Add dart” albo rzuca jeszcze raz.
 
 ## Pilot w trakcie meczu
 
-- **Pasek:** wskazówka, „Undo” i główny przycisk. Główny przycisk to „Next player”, w czasie takeoutu „Takeout done”, a po legu bez match mode „Next leg”.
+- **Przyciski:** na Ekranie wyników ostatni wiersz prawej kolumny, „Undo” (węższy) i główny przycisk, bez wskazówki. Trzeci przycisk („Reroll numbers” w Killer przed pierwszą lotką, „End match” po legu bez match mode) jest w wierszu nad nimi. Na telefonie pasek ze wskazówką, „Undo” i głównym przyciskiem. Główny przycisk to „Next player”, w czasie takeoutu „Takeout done”, a po legu bez match mode „Next leg”.
 - **Undo** cofa jedną lotkę. Gdy w turze nie ma lotek, cofa do poprzedniej tury z jej trzema lotkami.
 - **Poprawka lotki:** stuknięcie w kafelek otwiera arkusz.
   - Zakładka „Nearby” to siatka 3×3: sąsiad z lewej, odczytane pole i sąsiad z prawej, w wierszach Double, Single i Triple. Pomyłkę o jedno pole poprawia jedno stuknięcie.
@@ -130,7 +131,7 @@ Z grillingu 2026-11-04. Pojęcia: Wycofanie z meczu i Wycofanie z legu ([GLOSSAR
   - match mode: Off, Legs lub Sets, z „First to N”;
   - bull-off: Off, „Closest to bull” lub zasady PDC.
 - **Gracze i goście:** opisani w [STATYSTYKI.md](STATYSTYKI.md).
-- **Wspólny wygląd kart** (od 2026-11-01): koniec legu, koniec meczu i Ekran rekordu mają duży napis nad zwycięzcą, duże imię i duże kafelki z liczbami. Pod kafelkami nie ma linijek tekstu („Legs so far”, „Next leg starts after the takeout”, „The summary opens from the pilot”, „Game on in a moment”): co dalej, mówi pasek Pilota.
+- **Wspólny wygląd kart** (od 2026-11-01): koniec legu, koniec meczu i Ekran rekordu mają duży napis nad zwycięzcą, duże imię i duże kafelki z liczbami. Pod kafelkami nie ma linijek tekstu („Legs so far”, „Next leg starts after the takeout”, „The summary opens from the pilot”, „Game on in a moment”): co dalej, mówią przyciski Pilota.
 - **Koniec legu:** ekran ze zwycięzcą, checkoutem, liczbą lotek i średnią z legu.
   - W match mode trzyma się do końca takeoutu, potem następny leg startuje sam.
   - Bez match mode czeka na „Next leg” albo „End match”.
@@ -159,21 +160,20 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
 
 ## Lobby i QR
 
-- Bez meczu Ekran wyników pokazuje lobby:
-  - duży QR z adresem laptopa;
-  - wynik ostatniego meczu;
-  - „New match here” i „Rematch” dla dotykowego ekranu.
+- Bez meczu Ekran wyników pokazuje lobby (od 2026-11-16 bez QR):
+  - po lewej „READY FOR THE NEXT ONE” albo „NO MATCH YET”, „Game on?”, duży „New match” i pod nim „Rematch …”, gdy jest ostatni mecz;
+  - po prawej Players, Stats, Effects i wynik ostatniego meczu.
+- „New match”, „Rematch” i Players po cichu odbierają Pilota, gdyby miał go telefon.
 - **Obrót tarczy:** raz w miesiącu lobby pokazuje żółty baner „Rotate the board 3 sectors” z przyciskiem „Done” (spready zużywają się nierówno). Baner jest, gdy obrotu jeszcze nie zapisano albo minęło 30 dni lub więcej. „Done” zapisuje datę na serwerze (`boardRotatedAt` w `settings`) i liczenie zaczyna się od nowa. Tylko w lobby: nie w meczu i nie na telefonie. Stan liczy się przy każdej zmianie stanu, więc serwer bez ruchu przez wiele dni pokaże baner dopiero po następnej zmianie.
-- Po starcie aplikacji QR jest widoczny od razu, żeby telefon mógł przejąć Pilota.
-- W trakcie meczu QR jest ukryty pod przyciskiem w nagłówku.
+- Nakładka QR („Scan to take control”) zostaje tylko na „Show QR” z telefonu-Pilota.
 
 ## Menu Pilota
 
-Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku obok QR (na telefonie: status tarczy w nagłówku). New match to przycisk na ekranie głównym, a Players, Stats i Effects są w rzędzie na górze ekranu głównego (kiosk: nad ostatnim meczem po prawej, telefon Pilota: pod nagłówkiem).
+Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku (na telefonie: status tarczy w nagłówku). New match to przycisk na ekranie głównym, a Players, Stats i Effects są w rzędzie na górze ekranu głównego (kiosk: nad ostatnim meczem po prawej, telefon Pilota: pod nagłówkiem).
 
 - **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
 - **Bez meczu:** Close app, czyli wyjście z kiosku, z potwierdzeniem. Tylko na laptopie przy tarczy.
-- **Na telefonie** dochodzi Show QR, bo nagłówek telefonu nie ma przycisku QR.
+- **Na telefonie** dochodzi Show QR, które pokazuje nakładkę QR na Ekranie wyników.
 - **Bez kontroli:** Take control i Stats.
 - **Report a bug:** w każdym menu, także bez kontroli ([Zgłaszanie błędów](#zgłaszanie-błędów)).
 - **Efekty:** w menu meczu i ogólnym są przełączniki Sounds, Caller i LEDs. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Układ strony z zakładkami opisuje [EFEKTY.md](EFEKTY.md#układ-strony), a makiety to A1–A4 i C.

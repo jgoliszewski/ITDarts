@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react';
 import type { ClientState } from '../../../server/protocol.ts';
 import { HowToOverlay } from '../components/HowTo.tsx';
-import { Qr, act, pilotUrl } from '../components/ui.tsx';
+import { act } from '../components/ui.tsx';
 import { fmtAvg } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
-export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
-  s: ClientState; onMenu: () => void; onQr: () => void; onBoard?: () => void; onNew: () => void; onPlayers: () => void; overlay?: ReactNode }) {
-  const url = pilotUrl(s);
+export function Lobby({ s, onMenu, onBoard, onNew, onPlayers, overlay }: {
+  s: ClientState; onMenu: () => void; onBoard?: () => void; onNew: () => void; onPlayers: () => void; overlay?: ReactNode }) {
   const last = s.lastMatch;
   const takeThen = async (fn: () => void | Promise<unknown>) => {
     if (!s.you.isPilot && !(await act({ type: 'takeControl' })).ok) return;
@@ -16,7 +15,7 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
 
   return (
     <div className="big">
-      <BigHeader s={s} onQr={onQr} onBoard={onBoard} onMenu={onMenu} />
+      <BigHeader s={s} onBoard={onBoard} onMenu={onMenu} />
       {!s.board.connected && <div className="banner">Board offline · check Board Manager on {s.board.address}</div>}
       {s.rotateBoardDue && !s.match && (
         <div className="banner info">
@@ -25,14 +24,17 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
         </div>
       )}
       <main className="lobby-main">
-        <section className="lobby-qr">
-          <Qr text={url} />
+        <section className="lobby-start">
           <div className="lobby-text">
             <div className="kicker">{last ? 'READY FOR THE NEXT ONE' : 'NO MATCH YET'}</div>
-            <h1>Scan to take<br />control</h1>
-            <p>Your phone becomes the pilot: start a match, pick players, fix darts.</p>
-            <div className="url">or open <b style={{ color: 'var(--text)' }}>{url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</b></div>
+            <h1>Game on?</h1>
           </div>
+          <button className="btn primary" onClick={() => takeThen(onNew)}>New match</button>
+          {last && (
+            <button className="btn secondary" onClick={() => takeThen(() => act({ type: 'rematch' }))}>
+              Rematch {last.players.filter(p => !p.left).map(p => p.name).join(' vs ')}
+            </button>
+          )}
         </section>
         <aside className="lobby-side">
           <nav className="lobby-nav">
@@ -55,15 +57,6 @@ export function Lobby({ s, onMenu, onQr, onBoard, onNew, onPlayers, overlay }: {
               </div>
             </div>
           )}
-          <div className="card lobby-actions">
-            <div className="muted" style={{ fontSize: 'calc(22 * var(--u))' }}>{s.you.isPilot ? 'Using this screen as the pilot?' : `Pilot: ${s.pilot?.deviceName ?? 'nobody yet'}`}</div>
-            <button className="btn primary" onClick={() => takeThen(onNew)}>New match here</button>
-            {last && (
-              <button className="btn secondary" onClick={() => takeThen(() => act({ type: 'rematch' }))}>
-                Rematch {last.players.filter(p => !p.left).map(p => p.name).join(' vs ')}
-              </button>
-            )}
-          </div>
         </aside>
       </main>
       <HowToOverlay s={s} />
