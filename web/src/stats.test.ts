@@ -204,6 +204,8 @@ describe('Checkout % format', () => {
     expect(X01_METRICS.checkoutPct.fmt(8)).toBe('8.0%');
     expect(X01_METRICS.checkoutPct.fmt(33.7)).toBe('33.7%');
     expect(X01_METRICS.checkoutPct.fmt(null)).toBe('–');
+    expect(X01_METRICS.checkoutPct.plain(8)).toBe('8.0'); // the profile tile, without the unit
+    expect(X01_METRICS.checkoutPct.plain(null)).toBe('–');
     expect(x01CompareRows([{ ...X, checkoutPct: 8 }, { ...X, checkoutPct: 10.1 }]).find(r => r.label === 'Checkout %')!.values).toEqual(['8.0%', '10.1%']);
   });
 });

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Delta } from '../stats.ts';
 import { MIN_TREND, chartScale } from '../stats.ts';
 
@@ -9,7 +10,7 @@ export function DeltaTag({ d }: { d: Delta | null }) {
 export interface StatProps {
   l: string;
   v: string;
-  s?: string;
+  s?: ReactNode;
   hl?: boolean;
   main?: boolean;
   delta?: Delta | null;

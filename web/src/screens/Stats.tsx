@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, isGameId } from '../../../games/index.ts';
 import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
@@ -8,7 +8,7 @@ import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Stat, DeltaTag, TrendChart } from '../components/StatParts.tsx';
 import { Dropdown, Icon, Logo } from '../components/ui.tsx';
-import { MIN_TREND, X01_METRICS, delta, doubleName, fmtFixed, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile, x01Delta } from '../stats.ts';
+import { MIN_TREND, X01_METRICS, delta, doubleName, fmtPct, percent, previousLabel, profileMetrics, visitShare, winTile, x01Delta } from '../stats.ts';
 import { getJson, useAsync, useJson } from '../useJson.ts';
 import { fmtAvg, fmtNum, shortDate, store } from '../util.ts';
 
@@ -101,12 +101,9 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
   const { data: heat } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=x01&window=${w}`);
   const [me, setMe] = useState(store.get(ME_KEY));
   const [vs, setVs] = useState<number | null>(null);
-  if (error) return <p className="muted">This player does not exist.</p>;
-  if (!data) return <p className="muted">Loading…</p>;
-  const x = data.x01;
-  const prev = data.previous;
-  const since = previousLabel(w);
-  const empty = x.darts === 0 && data.results.played === 0;
+  // The name stays while the next Okno loads, so the header does not jump.
+  const name = useRef('');
+  if (data) name.current = data.player.name;
   const isMe = me === String(id);
   const toggleMe = () => {
     const v = isMe ? null : String(id);
@@ -116,10 +113,23 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="option-row" style={{ flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{data.player.name}</h2>
+        <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{name.current}</h2>
         <button className={`chip ${isMe ? 'on' : ''}`} onClick={toggleMe}>{isMe ? 'This is me ✓' : 'This is me'}</button>
       </div>
       <WindowPicker value={w} onChange={setW} />
+      {error ? <p className="muted">This player does not exist.</p> : !data ? <p className="muted">Loading…</p> : <ProfileBody id={id} w={w} data={data} heat={heat} vs={vs} setVs={setVs} />}
+    </div>
+  );
+}
+
+/** The statistics of an X01 profile, below the header and the Okno picker, which stay while it loads. */
+function ProfileBody({ id, w, data, heat, vs, setVs }: { id: number; w: StatsWindow; data: PlayerStatsResponse; heat: HeatResponse | null; vs: number | null; setVs: (v: number | null) => void }) {
+  const x = data.x01;
+  const prev = data.previous;
+  const since = previousLabel(w);
+  const empty = x.darts === 0 && data.results.played === 0;
+  return (
+    <>
       {empty ? (
         <p className="muted" style={{ margin: 0 }}>No darts in this window.</p>
       ) : (
@@ -127,7 +137,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
           <div className="stat-grid main">
             <Stat main hl l={X01_METRICS.avg.label} v={fmtAvg(x.avg)} delta={x01Delta('avg', x, prev)} vs={since} />
             <Stat main l={X01_METRICS.first9.label} v={fmtAvg(x.first9)} delta={x01Delta('first9', x, prev)} vs={since} />
-            <Stat main l={X01_METRICS.checkoutPct.label} v={fmtFixed(1)(x.checkoutPct)} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
+            <Stat main l={X01_METRICS.checkoutPct.label} v={X01_METRICS.checkoutPct.plain(x.checkoutPct)} s={`${x.checkoutHits} / ${x.checkoutAttempts} darts`}
               delta={x01Delta('checkoutPct', x, prev)} vs={since} />
           </div>
           <TrendChartBox points={data.trend.map(t => t.avg)} avg={x.avg} />
@@ -136,7 +146,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
             <Stat l="Bust rate" v={fmtPct(x.bustRate)} s={`${x.busts} of ${x.visits} visits`} />
             <Stat l="Highest visit" v={fmtNum(x.highestVisit)} />
             <Stat l="Highest checkout" v={fmtNum(x.highestCheckout)} />
-            <Stat l="Best leg" v={fmtNum(x.bestLeg)} s={x.bestLegStart === null ? 'darts' : `darts · ${x.bestLegStart}`} />
+            <Stat l="Best leg" v={fmtNum(x.bestLeg)} s={<span className="nobreak">{x.bestLegStart === null ? 'darts' : `darts · ${x.bestLegStart}`}</span>} />
             <Stat l="60+" v={fmtPct(visitShare(x.c60, x))} s={`${x.c60} visits`} />
             <Stat l="80+" v={fmtPct(visitShare(x.c80, x))} s={`${x.c80} visits`} />
             <Stat l="100+" v={fmtPct(visitShare(x.c100, x))} s={`${x.c100} visits`} />
@@ -173,7 +183,7 @@ function Profile({ id, w, setW }: { id: number; w: StatsWindow; setW: (w: StatsW
         </div>
       )}
       {!empty && <FunFacts distance={heat?.[0]?.distance} darts={x.darts} />}
-    </div>
+    </>
   );
 }
 
@@ -182,14 +192,22 @@ const GAME_KEY = 'itdarts.statsGame';
 function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: StatsWindow; setW: (w: StatsWindow) => void }) {
   const { data, error } = useJson<GameStatsResponse>(`/api/stats/players/${id}?game=${game}&window=${w}`);
   const { data: heat } = useJson<HeatResponse>(`/api/stats/heat?ids=${id}&game=${game}&window=${w}`);
-  if (error) return <p className="muted">This player does not exist.</p>;
-  if (!data) return <p className="muted">Loading…</p>;
+  const name = useRef('');
+  if (data) name.current = data.player.name;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{name.current}</h2>
+      <WindowPicker value={w} onChange={setW} />
+      {error ? <p className="muted">This player does not exist.</p> : !data ? <p className="muted">Loading…</p> : <GameBody game={game} w={w} data={data} heat={heat} />}
+    </div>
+  );
+}
+
+function GameBody({ game, w, data, heat }: { game: GameId; w: StatsWindow; data: GameStatsResponse; heat: HeatResponse | null }) {
   const shown = profileMetrics(game, data);
   const win = winTile(data);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>{data.player.name}</h2>
-      <WindowPicker value={w} onChange={setW} />
+    <>
       {data.played === 0 ? <p className="muted" style={{ margin: 0 }}>No {GAMES[game].name} in this window.</p> : (
         <>
           <div className="stat-grid main">
@@ -211,7 +229,7 @@ function GameProfile({ id, game, w, setW }: { id: number; game: GameId; w: Stats
         </div>
       )}
       {data.played > 0 && <FunFacts distance={heat?.[0]?.distance} darts={data.totals.darts} />}
-    </div>
+    </>
   );
 }
 

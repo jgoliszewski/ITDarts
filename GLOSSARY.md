@@ -111,7 +111,7 @@ Zakres danych, z którego liczymy statystykę: czasowy (7 dni … all time) albo
 _Avoid_: okres, filtr
 
 **Poprzednie Okno**:
-Okno tuż przed wybranym, z którego liczymy strzałkę zmiany: okres tej samej długości przed oknem czasowym albo poprzednie 10 / 100 legów (minigierki: meczów). Nie istnieje dla „All time” ani przy mniej niż 3 legach (meczach).
+Okno tuż przed wybranym, z którego liczymy strzałkę zmiany: okres tej samej długości przed oknem czasowym albo poprzednie 10 / 100 legów (minigierki: meczów). Nie istnieje dla „All time”, gdy wybrane Okno jest puste (nie ma w nim żadnego legu ani meczu) ani przy mniej niż 3 legach (meczach).
 _Avoid_: okres bazowy, baseline
 
 ## Efekty
