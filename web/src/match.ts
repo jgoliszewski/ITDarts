@@ -27,10 +27,17 @@ export interface Controls {
   primary: { label: string; cmd: Command } | null;
   /** “End match” next to “Next leg” when match mode is off. */
   endInstead: boolean;
+  /** “Finish” in Free throw: ends the game with Save, no question (docs/GRY.md#free-throw). */
+  finish: boolean;
   canUndo: boolean;
 }
 
 export function controls(s: ClientState): Controls {
+  const c = baseControls(s);
+  return { ...c, finish: s.match?.game === 'freethrow' && s.match.view.phase === 'throwing' && !s.match.intro };
+}
+
+function baseControls(s: ClientState): Omit<Controls, 'finish'> {
   const m = s.match;
   if (!m) return { hint: '', primary: null, endInstead: false, canUndo: false };
   const v = m.view;

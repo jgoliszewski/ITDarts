@@ -174,9 +174,10 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
         )}
       </div>
       {(!inBull || c.canUndo) && (
-        <div className={`p-actions ${c.endInstead ? 'three' : ''}`}>
+        <div className={`p-actions ${c.endInstead || c.finish ? 'three' : ''}`}>
           <button className="btn" onClick={() => act({ type: 'undo' })}>Undo</button>
           {c.endInstead && <button className="btn" onClick={onEnd}>End match</button>}
+          {c.finish && <button className="btn" onClick={() => act({ type: 'endMatch', save: true })}>Finish</button>}
           {c.primary ? <button className="btn primary" onClick={() => act(c.primary!.cmd)}>{c.primary.label}</button> : <span />}
         </div>
       )}

@@ -308,7 +308,8 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
 
   // The last row of the right column; the third button (Reroll or End match) gets a row above Undo and the main action.
   const third = reroll ? <button className="btn" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
-    : c.endInstead ? <button className="btn" onClick={onEnd}>End match</button> : null;
+    : c.endInstead ? <button className="btn" onClick={onEnd}>End match</button>
+    : c.finish ? <button className="btn" onClick={() => act({ type: 'endMatch', save: true })}>Finish</button> : null;
   const actions = isPilot && (third || c.canUndo || c.primary) && (
     <div className="side-actions">
       {third && <div className="third">{third}</div>}

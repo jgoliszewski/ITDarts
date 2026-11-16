@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch } from './match.ts';
-import { dartTone } from './match.ts';
+import { controls, dartTone } from './match.ts';
+import type { ClientState } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
 describe('minigame dart tile colour', () => {
@@ -24,5 +25,17 @@ describe('minigame dart tile colour', () => {
       expect(tone(game, true)).toBe('');
       expect(tone(game, false)).toBe('dead');
     }
+  });
+});
+
+describe('Finish in Free throw', () => {
+  const st = (game: string, phase: string, takeout = false) =>
+    ({ match: { game, intro: false, bullTakeout: false, options: {}, view: { phase, visit: { darts: [], dartsLeft: 3 } } }, board: { connected: true, takeout: { active: takeout } } }) as unknown as ClientState;
+
+  it('shows while throwing, also during the takeout, and only in Free throw', () => {
+    expect(controls(st('freethrow', 'throwing')).finish).toBe(true);
+    expect(controls(st('freethrow', 'throwing', true)).finish).toBe(true);
+    expect(controls(st('freethrow', 'matchWon')).finish).toBe(false);
+    expect(controls(st('randomco', 'throwing')).finish).toBe(false);
   });
 });
