@@ -104,6 +104,10 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 
 - Gra tylko w przeglądarce kiosku na laptopie. Edge dostaje flagę `--autoplay-policy=no-user-gesture-required`. Telefony milczą.
 - **Master volume i Mute** (2026-11-18): Pilot ustawia w menu poziom 0–100% (krok 5%) i wyciszenie. Mnożą wszystko, co gra kiosk: dźwięki reguł, callera, wbudowane dźwięki (zmiana gracza, trafienie, pudło) i podglądy na `/effects`. Kiosk ma jeden wspólny `GainNode` przed głośnikami (`web/src/sound.ts`), ustawiany ze stanu z rampą 50 ms, więc gainy liczone przez serwer (głośność efektów × głośność pliku, głośność callera) się nie zmieniają. Mute daje 0 i nie rusza Sounds ani Caller; odmutowanie wraca do zapisanego poziomu. Oba ustawienia są lokalne dla laptopa (SQLite `settings`, jak przełączniki), nie w `effects/effects.json`.
+  - **Podgląd poziomu:** po zmianie Volume serwer wysyła do kiosku krótki wbudowany dźwięk zmiany gracza (`turn`) z głośnością efektów i dźwięku, więc jest go słychać na kiosku, także gdy suwak rusza telefon-Pilot (`server/hub.ts`, komenda `effects`). Podgląd idzie po stanie z nowym poziomem, żeby zagrał przez nowy master. Nie gra przy Mute, przy Sounds off ani przy komendach bez `master` (Mute/Unmute, przełączniki). Na telefonach nic nie gra, bo podgląd gra tylko kiosk.
+  - **Bez kontroli:** komenda z Pilota wymaga kontroli („Take control first”), ale `PUT /api/effects/settings` (strona `/effects`) może zmienić master i Mute z dowolnego urządzenia w LAN, tak samo jak Sounds, Caller i LEDs. To świadome, bo `/effects` jest otwarte dla każdego.
+  - **Symulator LED** (`web/src/ledsim`) gra przez ten sam master, ale nie dostaje stanu, więc zawsze ma 100%.
+  - **Punkt odczytu do testów:** `globalThis.itdartsMaster()` w `web/src/sound.ts` zwraca poziom i wartość węzła master (sprawdzenia przez CDP w `dev:shot`). Tylko odczyt.
 - **Biblioteka dźwięków** to wspólna lista plików. Reguły wybierają z niej, a jeden plik może służyć wielu regułom.
   - Upload z UI, także z telefonu: mp3, wav lub ogg, do 2 MB i 10 s (pierwotnie 5 MB, zmienione przy przeniesieniu do repo).
   - Przy każdym pliku jest odsłuch, zmiana nazwy i suwak głośności, bo pliki z różnych źródeł mają różny poziom.
@@ -128,7 +132,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
     - Set won: G → C → C o stopień wyżej, z dzwonkami, żeby nie brzmiał jak High finish;
     - No score: marimba w dół bez zjazdu; Bust: marimba w dół i niski zjazd; Player out: niska marimba w dół i długi zjazd.
   - Strony z propozycjami nie ma w repo. Strojenie to liczby w `sound.ts`.
-- Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Głośność całości ustawiamy w Windows.
+- Na stronie efektów są osobne poziomy głośności dla efektów i dla callera. Zostają jako proporcje, a głośność całości ustawia master z menu Pilota (wyżej). Głośnik laptopa ma swój poziom w Windows, którego aplikacja nie rusza.
 
 ### Wbudowane dźwięki
 
@@ -231,6 +235,8 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 | Wygrany mecz | konfetti |
 | T20, Bull | błysk kafelka lotki |
 
+**Reduced motion** (od 2026-11-18, `prefers-reduced-motion: reduce`, jeden blok na końcu `web/src/styles.css`) obejmuje też Momenty. Zostaje przezroczystość i kolor, znika przesunięcie, skalowanie i ruch ciągły: „180” bez skalowania (tło nadal gaśnie), plakietka 140+ bez przesunięcia, konfetti ukryte, serca i karty bez „pop”, drabinka i odometr 121 od razu w stanie końcowym, spinner takeoutu stoi. Bez ustawienia wszystko działa jak dotąd. Sprawdzone na emulacji CDP dla „180” i spinnera, pozostałe reguły tylko w kodzie ([DESIGN.md](../DESIGN.md#ruch)).
+
 W Free throw grają te same animacje z tych samych faktów (180, 140+ z sumą Tury w plakietce, błysk kafelka).
 
 Z implementacji (2026-10-26):
@@ -326,4 +332,4 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 
 ## Pilot
 
-W menu Pilota są suwak „Volume” z przyciskiem „Mute”/„Unmute” ([Dźwięk](#dźwięk)), trzy przełączniki: Sounds, Caller i LEDs, oraz wejście „Effects”. Ich stan trzyma serwer, więc przetrwa restart. Suwak zapisuje po puszczeniu; na laptopie zagra wtedy krótki dźwięk zmiany gracza na nowym poziomie.
+W menu Pilota są suwak „Volume” z przyciskiem „Mute”/„Unmute” ([Dźwięk](#dźwięk)), trzy przełączniki: Sounds, Caller i LEDs, oraz wejście „Effects”. Ich stan trzyma serwer, więc przetrwa restart. Suwak zapisuje po puszczeniu, a kiosk gra wtedy krótki dźwięk zmiany gracza na nowym poziomie z każdego Pilota, chyba że jest Mute albo Sounds off ([Dźwięk](#dźwięk)); przy Mute suwak jest wygaszony.

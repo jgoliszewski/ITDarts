@@ -12,7 +12,7 @@ Wymaga Node 24 LTS.
 
 „Close app” w menu Pilota zamyka kiosk i serwer. Dane (SQLite, backupy) lądują w `data/`.
 
-Efekty wyklikane na stronie `/effects` (reguły, dźwięki, stany bazowe ledów) serwer zapisuje od razu w `effects/` w repo. Żeby przenieść je na inny komputer, commitujesz i pushujesz `effects/`, a tam robisz pull. Działający serwer sam wczyta zmieniony plik. Adres WLED i przełączniki Sounds i LEDs zostają lokalnie. Szczegóły są w [EFEKTY.md](docs/EFEKTY.md#konfiguracja-w-repo).
+Efekty wyklikane na stronie `/effects` (reguły, dźwięki, stany bazowe ledów) serwer zapisuje od razu w `effects/` w repo. Żeby przenieść je na inny komputer, commitujesz i pushujesz `effects/`, a tam robisz pull. Działający serwer sam wczyta zmieniony plik. Adres WLED, przełączniki Sounds i LEDs oraz głośność główna z Mute zostają lokalnie. Szczegóły są w [EFEKTY.md](docs/EFEKTY.md#konfiguracja-w-repo).
 
 ### Konfiguracja (`config.json`)
 
@@ -62,4 +62,4 @@ npm run typecheck
 - `bugs/`: zgłoszenia z „Report a bug” w menu, jeden plik JSON na zgłoszenie ([UI.md](docs/UI.md#zgłaszanie-błędów)).
 - `assets/caller/<głos>/`: nagrania callera, czyli głosu sędziego w X01, jeden folder na głos ([EFEKTY.md](docs/EFEKTY.md#caller)). Co mówi, liczy `games/x01/caller.ts`.
 - `assets/opona/`: grafika opony wokół tarczy do druku i jej generator ([README](assets/opona/README.md)).
-- `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` i `/effects` dla wszystkich.
+- `web/`: React SPA. Ekran wyników i lobby na szerokim ekranie, Pilot na telefonie, `/stats` i `/effects` dla wszystkich. Style są w `web/src/styles.css`, a tokeny (kolory, typografia, odstępy, ruch) opisuje [DESIGN.md](DESIGN.md).

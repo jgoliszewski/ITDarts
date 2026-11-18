@@ -31,7 +31,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players” albo „Free throw is for 1 player”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
-- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op, Bull-off) są widoczne od razu, zanim ktoś zostanie dodany (od 2026-10-27). Bez graczy „Start match” jest wyszarzony.
+- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op, Bull-off) są widoczne od razu, zanim ktoś zostanie dodany (od 2026-10-27). Bez graczy przycisk startu jest wyszarzony i mówi „Add players to start” (od 2026-11-18 stoi w nim też powód każdej innej blokady).
 
 ### Opis gry („How to play”)
 

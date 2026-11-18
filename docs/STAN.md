@@ -1,13 +1,24 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-16. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-18. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
 - **`main`:** cała aplikacja v1, minigierki i efekty. `feat/v1` jest w niej w całości wmergowana.
+- **`feat/ui-overhaul`:** przeróbka UI/UX (wpis niżej), jeszcze niewmergowana.
 
 ## Gotowe
 
+- **Przeróbka UI/UX** (2026-11-18, gałąź `feat/ui-overhaul`, [UI.md](UI.md), [STATYSTYKI.md](STATYSTYKI.md), [EFEKTY.md](EFEKTY.md), tokeny w [DESIGN.md](../DESIGN.md), plan, audyty, decyzje i raporty ticketów w `.scratch/ui-overhaul/`): wszystkie ekrany poza `/effects` i Momentami, według decyzji D1–D8 z `.scratch/ui-overhaul/DECISIONS.md`.
+  - **System:** `DESIGN.md` jako źródło tokenów (kolory, typografia, odstępy, promienie, ruch), press zamiast hover, cele co najmniej 44 px i tekst co najmniej 16 px na kiosku, kolory „wyłączone” z kontrastem 3:1, pomarańcz tylko dla „teraz i głównego”.
+  - **Ruch:** subtelne dialogi, sheety, zakładki, toasty i crossfade ekranów (~200 ms), `prefers-reduced-motion` także dla Momentów ([UI.md](UI.md#ruch-ui)).
+  - **Ekran wyników:** wariant D (suma Tury i checkout albo BUST w prawej połowie hero, pigułka tylko „Checked out” i „Needs a double to start”), panel Tury w 121, Random Checkouts, Gotcha i Knockout, neutralne kafelki lotek w grach punktowych, Cricket od 5 graczy z numerem i inicjałami, „Ready”, wygaszone lotki przy double in, serca w Killerze, legenda w Higher or Lower, Poprawka na laptopie.
+  - **Pilot i telefon:** menu jako okno dialogowe, master Volume i Mute z podglądem na kiosku z każdego Pilota, okna „Remove Bob?” i „Can't remove Bob”, Tura nad paskiem, zakładki Poprawki ze strzałkami, widz z nagłówkiem Tury, safe area i `100dvh`.
+  - **Start i lobby:** Setup z kompaktowymi kafelkami poniżej 1100 px, kolejnością gra → gracze → opcje, przyciskiem „Start · Gra · N players” i laptopową listą kolejności zawsze w widoku (do 8 graczy); lobby i PhoneHome z rekordami biura minigierek ([UI.md](UI.md#lobby-i-qr)).
+  - **Stats, Players, podsumowanie:** Okna 30D / 3M / All / Last 10 z „More”, Recent matches w każdej grze, puste stany, dane bez pomarańczu, Manage zwinięte na górze Players, Archive z Undo, podsumowanie w skali TV, widok solo z deltą względem 30 dni bez tego meczu, kolor gracza 3 żółty.
+  - **Sprawdzone:** `npm test` 674/674 i `npm run typecheck` OK (2026-11-18); testy czystych funkcji z mutacjami przy każdym tickecie; zrzuty z `npm run dev:shot` (1920×1080, 1280×720, 375 px, przed i po, galerie `index.html` w `.scratch/ui-overhaul/t0*/`); pomiary CDP: cele poniżej 44 px (0 naruszeń), tekst poniżej 16 px, elementy ucięte, mieszczenie się Setupu (32 kombinacje 1–8 graczy na 1280×720 i 1513×690) i podsumowania na TV; wartości stylów w każdej klatce animacji (dialogi, menu, toasty, arkusze, drabinka 121); `prefers-reduced-motion` na emulacji CDP („180”, spinner takeoutu); węzeł master w kiosku i restart serwera z zapisanym poziomem; podgląd głośności z telefonu-Pilota (oscylatory na kiosku).
+  - **Niesprawdzone:** prawdziwy dotyk na laptopie (tylko emulacja); prawdziwy telefon: przewijanie strony palcem zaczęte na heatmapie (headless Chrome nie przewija, sprawdzone tylko zdarzenia wskaźnika), safe area (tylko emulacja insetów) i `100dvh`; kiosk z dźwiękiem master na żywo (sprawdzony węzeł, nie głośnik); `prefers-reduced-motion` na prawdziwym systemie (reguły poza „180” i spinnerem tylko w kodzie); Cricket z 8 długimi imionami powyżej „Aleksandra” na 1280; przewijanie listy rekordów w lobby przy kilkunastu wariantach; rekord co-op otwierający Setup bez graczy; `<details>` jako flex (Manage) w starszym Safari.
+  - **Znane drobiazgi:** niestabilny test `database is not open` w `server/hub.test.ts` (timer intro po zamknięciu bazy) wyszedł w części przebiegów; commit `7f72707` sam się nie kompiluje, bo `App.tsx` podaje `preset` do `Setup` dopiero od `0b85395` (gałąź jako całość jest zielona); `'Team'` w tytule Random Checkouts dla 2 graczy (`games/report.ts`) zostaje do backlogu.
 - **Statystyki v2** (2026-11-16, gałąź `stats-v2`, [STATYSTYKI.md](STATYSTYKI.md), plan i makieta w `.scratch/stats-v2/`): `/stats` odpowiada najpierw na „czy się poprawiam”.
   - **Profil X01:** Average, First 9 i Checkout % ze strzałką względem poprzedniego Okna, wykres Average mecz po meczu (od 3 meczów), Bust rate, Highest visit, Best leg z wynikiem startowym, 60+/80+/100+ jako % Tur, tabela double, sekcja „Fun facts” (Darts, Distance walked). Usunięty Until 170.
   - **Minigierki:** liczniki jako średnia na mecz, główna statystyka gry ze strzałką (kierunek „lepiej” w jednym miejscu, `web/src/stats.ts`), winrate z meczów versus albo samo „Played”, w Higher or Lower „Visits survived”.

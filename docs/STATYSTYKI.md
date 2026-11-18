@@ -111,12 +111,17 @@ Mała sekcja „Fun facts” na dole profilu: **Darts** (liczba rzuconych lotek)
 
 - Widok „Stats” jest tylko do odczytu i otwiera się z dowolnego urządzenia w LAN bez przejmowania Pilota.
 - Zawartość: lista graczy, profil gracza z oknami i progresem, rekordy biura X01, head-to-head.
+- **Układ `/stats`** (od 2026-11-18): na liście najpierw gracze i wejście do Compare, potem rekordy biura. Rekordy leżą w siatce, każda tabela pokazuje 5 najlepszych, a reszta jest pod „Show top 10” (nagłówek „Top 10 ·” tylko, gdy tabela ma 10 wierszy). Chipy gier stoją w jednym przewijanym rzędzie na grupę gier (poniżej 600 px).
+- **Kolory** (D3, od 2026-11-18): dane są bez pomarańczu. Linia i kropki wykresu Average oraz paski w tabeli double mają kolor drugiego poziomu tekstu, a obie liczby head-to-head kolor tekstu. Pomarańcz zostaje na głównej metryce profilu, na #1 w rekordach i na głównym przycisku. Strzałki zmiany są zielone albo czerwone, jak w „Progres”. Kolory graczy (różowy, turkusowy, żółty, zielony) są tylko w Compare i podsumowaniu meczu ([UI.md](UI.md#podsumowanie-meczu)).
+- **Profil** (od 2026-11-18): imię i „This is me” stoją nad wyborem gry. Główna zmiana ma postać pigułki („▲ 2.4 pp” na zielonym albo czerwonym tle). Pod osią wykresu Average są daty pierwszego, środkowego i ostatniego meczu. Double z mniej niż 5 prób są przygaszone. Gracz, który nigdy nie grał, widzi „Dee hasn't played yet. Pick Dee in New match.”, a gracz bez meczów danej gry w Oknie w legach „… hasn't played Football yet”. Puste Okno czasowe pokazuje „Nothing in the last 30 days” i „Show all time”.
+- **Zarchiwizowany gracz** otwarty wprost z `/stats/:id` dostaje imię z odpowiedzi API (`window=all`), bo nie ma go na liście.
 - Telefon pamięta wybór „to ja” i otwiera się od razu na tym profilu.
 - **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), a „Distance walked” w km jest w sekcji ciekawostek na dole profilu.
 - **Porównanie graczy** na `/stats/compare`, wejście przyciskiem „Compare” na liście graczy:
   - dokładnie dwóch zarejestrowanych graczy, wybieranych w dwóch polach „X VS Y” pod oknem czasu (od 2026-10-28; wcześniej chipy 2–4), plus gra i okno;
   - tabela z kolumną na gracza i wierszami jak w profilu tej gry, z podświetloną najlepszą wartością;
-  - pod nią heatmapa z linią i dystans w km. Head-to-head zostaje w profilu.
+  - pod nią heatmapa z linią i dystans w km. Od 1100 px tabela i heatmapa stoją obok siebie. Head-to-head zostaje w profilu;
+  - gdy jeden z graczy nie ma danej gry w Oknie, nad tabelą stoi notka „Dee has no Football in this window.”. Imiona są tylko w polach wyboru, tabela nie powtarza ich drugi raz.
 - **Distance walked:** każda Tura to przejście do tarczy i z powrotem, czyli 2 × odległość od linii do tarczy (`ocheMeters` w `config.json`, domyślnie 2,37 m). Bull-off się nie liczy.
 - W trakcie meczu Ekran wyników pokazuje tylko to, co ustala [UI.md](UI.md). Historii tam nie ma.
 - Makiety widoku robimy przy implementacji statystyk.
