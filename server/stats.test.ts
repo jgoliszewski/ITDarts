@@ -154,6 +154,36 @@ describe('Average trend', () => {
   });
 });
 
+describe('recent matches', () => {
+  it('shows the score from the player\'s side, own legs first', () => {
+    saveX01([A(), B()], quickLeg(1), 1, OPTS, 'finished'); // Anna 1-0, Bob 0-1
+    db.saveMatch({ game: 'x01', options: OPTS, roster: [A(), B()], startedAt: NOW - DAY - 1000, endedAt: NOW - DAY, status: 'finished',
+      winners: [1], sets: [], legs: [], legsWon: [1, 2] }); // Bob 2-1
+    const recent = (id: number) => stats.player(id, 'all')!.recent.map(r => r.score).sort();
+    expect(recent(bob)).toEqual(['0–1', '2–1']);
+    expect(recent(anna)).toEqual(['1–0', '1–2']);
+  });
+
+  it('lists only X01 matches of the Okno', () => {
+    saveX01([A(), B()], sixty(1), 1, OPTS, 'ended');
+    saveX01([A(), B()], sixty(30), 30, OPTS, 'ended');
+    db.saveMatch({ game: 'atc', options: {}, roster: [A()], startedAt: NOW - DAY - 1000, endedAt: NOW - DAY, status: 'finished', winners: [], sets: [], legs: [], stats: [{ darts: 9 }] });
+    expect(stats.player(anna, '7d')!.recent).toHaveLength(1);
+    expect(stats.player(anna, '90d')!.recent).toHaveLength(2); // the minigame never shows
+  });
+
+  it('respects a leg Okno', () => {
+    for (let i = 12; i >= 2; i--) saveX01([A(), B()], sixty(i), i, OPTS, 'ended');
+    saveX01([B(), A()], sixty(1), 1, OPTS, 'ended'); // Bob throws, Anna sits: no leg of hers
+    expect(stats.player(anna, 'all')!.recent).toHaveLength(10); // capped at 10
+    expect(stats.player(anna, 'all')!.recent.map(r => r.endedAt)).toContain(NOW - DAY);
+    const l10 = stats.player(anna, 'l10')!.recent.map(r => r.endedAt);
+    expect(l10).toHaveLength(10);
+    expect(l10).not.toContain(NOW - DAY); // outside the 10 legs
+    expect(l10).toContain(NOW - 11 * DAY);
+  });
+});
+
 describe('minigame stats', () => {
   const o = {};
   const mini = (roster: RosterEntry[], daysAgo: number, extra: Partial<SaveMatch> & { stats: Record<string, number>[] }) =>

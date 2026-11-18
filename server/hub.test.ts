@@ -11,7 +11,6 @@ import type { Config } from './config.ts';
 import { Db } from './db.ts';
 import type { Effects } from './effects/index.ts';
 import { Hub } from './hub.ts';
-import { Stats } from './stats.ts';
 import type { Command, ServerMessage } from './protocol.ts';
 
 let dir: string;
@@ -229,7 +228,6 @@ describe('saving a Gotcha match', () => {
     await pilot({ type: 'endMatch', save: true });
     expect(legsWon()).toEqual([3, 2]);
     expect(db.lastMatch()!.players.map(p => p.value)).toEqual(['3', '2']);
-    expect(new Stats(db).player(players[0], 'all')!.recent[0].score).toBe('3–2');
   });
 
   it('keeps Won for First to 1', async () => {

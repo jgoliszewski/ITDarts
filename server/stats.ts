@@ -183,14 +183,19 @@ export class Stats {
     const results = this.resultMatches(playerId, w, matchIds);
     const won = results.filter(r => r.won).length;
 
+    // X01 matches of the Okno, as `resultMatches` counts them but without the counts_results filter.
+    const rWhere = ['mp.player_id = ?', "m.game = 'x01'"];
+    const rArgs: number[] = [playerId];
+    if (legLimit(w)) rWhere.push(`m.id IN (${matchIds.map(() => '?').join(',') || 'NULL'})`), rArgs.push(...matchIds);
+    else if (since(w, this.now())) rWhere.push('m.ended_at >= ?'), rArgs.push(since(w, this.now()));
     const recent = (this.db.sql.prepare(`
       SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.won, mp.removed,
         (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
         (SELECT GROUP_CONCAT(COALESCE(p2.name, o.guest_name), ', ') FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
           WHERE o.match_id = m.id AND o.position != mp.position) AS opponents,
-        (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position) o) AS score
+        (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position != mp.position, position) o) AS score
       FROM matches m JOIN match_players mp ON mp.match_id = m.id
-      WHERE mp.player_id = ? ORDER BY m.ended_at DESC LIMIT 10`).all(playerId) as
+      WHERE ${rWhere.join(' AND ')} ORDER BY m.ended_at DESC LIMIT 10`).all(...rArgs) as
       { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; won: number; removed: number; players: number; opponents: string | null; score: string }[])
       .filter(r => r.game in GAMES)
       .map(r => {
@@ -203,7 +208,7 @@ export class Stats {
           description: game.describe(options, r.players),
           opponents: r.opponents ?? 'Solo',
           result: result as PlayerStatsResponse['recent'][number]['result'],
-          score: r.game === 'x01' || game.points?.show(options) ? r.score : '',
+          score: r.score,
         };
       });
 
