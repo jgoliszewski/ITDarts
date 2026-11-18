@@ -162,6 +162,9 @@ describe('recent matches', () => {
     const recent = (id: number) => stats.player(id, 'all')!.recent.map(r => r.score).sort();
     expect(recent(bob)).toEqual(['0–1', '2–1']);
     expect(recent(anna)).toEqual(['1–0', '1–2']);
+    const results = (id: number) => stats.player(id, 'all')!.recent.map(r => `${r.result} ${r.score}`).sort();
+    expect(results(anna)).toEqual(['lost 1–2', 'won 1–0']);
+    expect(results(bob)).toEqual(['lost 0–1', 'won 2–1']);
   });
 
   it('lists only X01 matches of the Okno', () => {
