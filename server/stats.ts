@@ -1,12 +1,12 @@
 // Read-only statistics over stored history (docs/STATYSTYKI.md). Computed on demand, no cache.
 import type { Dart } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
-import { GAMES } from '../games/index.ts';
+import { GAMES, GAME_GROUPS } from '../games/index.ts';
 import type { X01Options, X01Stats } from '../games/x01/index.ts';
 import { x01Stats } from '../games/x01/index.ts';
 import type { Db } from './db.ts';
 import { walked } from '../games/report.ts';
-import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from './protocol.ts';
+import type { GameStatsResponse, H2HResponse, HeatResponse, LobbyRecord, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from './protocol.ts';
 
 export const WINDOWS: StatsWindow[] = ['7d', '30d', '90d', '365d', 'all', 'l10', 'l100'];
 
@@ -306,6 +306,26 @@ export class Stats {
         return { label: this.variantLabel(game, v), value: rec.format(best.value) };
       }),
     };
+  }
+
+  /**
+   * The lobby's records (D6): the best result of every minigame variant played, in the order of the game groups and
+   * by label within a game, with the options of the record's match so the lobby can set the same game up again.
+   */
+  lobbyRecords(): LobbyRecord[] {
+    const played = this.db.sql.prepare('SELECT DISTINCT game, variant FROM matches WHERE variant IS NOT NULL').all() as { game: GameId; variant: string }[];
+    const order = GAME_GROUPS.flatMap(g => g.ids);
+    return order.flatMap(game => {
+      const g = GAMES[game];
+      const rec = g.record;
+      if (!rec) return [];
+      return played.filter(p => p.game === game).flatMap(({ variant }) => {
+        const best = this.db.records(variant, rec.better, 1)[0];
+        if (!best) return [];
+        return [{ game, key: variant, label: this.variantLabel(game, variant), value: rec.format(best.value), who: best.who, at: best.at,
+          options: g.normalizeOptions(JSON.parse(best.options)), players: best.players }];
+      }).sort((a, b) => a.label.localeCompare(b.label));
+    });
   }
 
   /** Top 10 of every record variant played so far. */

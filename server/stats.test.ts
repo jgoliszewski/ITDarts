@@ -10,6 +10,7 @@ import { Db } from './db.ts';
 import type { RosterEntry } from './protocol.ts';
 import type { SaveMatch } from './db.ts';
 import { Stats } from './stats.ts';
+import { GAMES } from '../games/index.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = 1000 * DAY;
@@ -375,5 +376,39 @@ describe('player list', () => {
     expect(row(anna).matches).toBe(3);
     expect(row(bob).matches).toBe(1);
     expect(row(cy).matches).toBe(0);
+  });
+});
+
+// D6 (ui-overhaul DECISIONS.md): the lobby shows the office record of every minigame variant played, with the options
+// of the record's match, so a tap opens New match with that game set up the same way.
+describe('lobby records', () => {
+  const save = (game: string, options: object, variant: string, roster: RosterEntry[], scores: (number | null)[], daysAgo: number) =>
+    db.saveMatch({
+      game: game as SaveMatch['game'], options, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+      winners: [], sets: [], legs: [], variant, scores, stats: roster.map(() => ({})),
+    } as SaveMatch);
+
+  it('is empty without minigame records', () => {
+    expect(stats.lobbyRecords()).toEqual([]);
+  });
+
+  it('gives the best result of each variant with the options of its match, in the order of the game groups', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [90], 3);
+    save('atc', { target: 'any', order: 'random', skips: true }, 'atc:any:skips', [A()], [30], 5);
+    save('atc', { target: 'any', order: 'clockwise', skips: true }, 'atc:any:skips', [B()], [24], 4);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 2);
+    const r = stats.lobbyRecords();
+    expect(r.map(x => x.key)).toEqual(['atc:any:skips', '121:v3:refill:coop', 'shanghai:solo:7']);
+    // ATC: fewer darts is better, so Bob's 24 with the clockwise order; the order is not in the key, the match keeps it.
+    expect(r[0]).toMatchObject({ game: 'atc', value: '24 darts', who: 'Bob', at: NOW - 4 * DAY, players: 1 });
+    expect(r[0].options).toMatchObject({ target: 'any', order: 'clockwise', skips: true });
+    expect(r[1]).toMatchObject({ game: '121', value: 'Target 140', who: 'Anna & Bob', players: 2 });
+    expect(r[2]).toMatchObject({ game: 'shanghai', label: 'Shanghai · Solo · 7 rounds', value: '90 points', who: 'Bob' });
+    expect(r[2].options).toMatchObject({ rounds: 7 });
+  });
+
+  it('fills the options the record match did not save with the game defaults', () => {
+    save('atc', {}, 'atc:any:skips', [A()], [20], 1);
+    expect(stats.lobbyRecords()[0].options).toEqual(GAMES.atc.normalizeOptions({}));
   });
 });

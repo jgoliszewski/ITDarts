@@ -223,6 +223,20 @@ export interface GameStatsResponse {
 /** Dart positions per player in one game and window; `distance` in metres. */
 export type HeatResponse = { player: PlayerInfo; heat: PlayerHeat; distance: number }[];
 
+/** An office record of a minigame variant for the lobby (D6): the tile opens New match with `options`. */
+export interface LobbyRecord {
+  game: GameId;
+  key: string;
+  label: string;
+  value: string;
+  who: string;
+  at: number;
+  /** The record match's options, normalized; the variant key alone can't give them back (ATC's order is not in it). */
+  options: unknown;
+  /** Players in the record match: a co-op record needs two or more. */
+  players: number;
+}
+
 export interface RecordTable {
   key: string;
   label: string;
