@@ -115,7 +115,8 @@ function RecentMatches({ rows, game }: { rows: RecentMatch[]; game: GameId }) {
         <div key={r.id} className="match-row">
           <span className={`res ${r.result === 'played' ? 'saved' : r.result}`}>{r.result === 'saved' ? 'ENDED' : r.result.toUpperCase()}</span>
           <div className="grow">{r.opponents === null ? 'Solo' : `vs ${r.opponents}`}<small>{r.description.startsWith(prefix) ? r.description.slice(prefix.length) : r.description} · {shortDate(r.endedAt)}</small></div>
-          {r.score && <span className="num">{r.score}</span>}
+          {/* A bare “Won” only repeats the result on the left. */}
+          {r.score && r.score !== 'Won' && <span className="num">{r.score}</span>}
         </div>
       ))}
     </div>
@@ -390,8 +391,13 @@ function GamePicker({ game, setGame }: { game: GameId; setGame: (g: GameId) => v
  * One player's stats with the game and window pickers: on /stats and on the pilot's Players. The name and “This is me”
  * sit above the game picker, once, for every game; `embedded` leaves the name to the screen's own header (Players).
  */
-export function PlayerStats({ id, name, embedded = false }: { id: number; name: string; embedded?: boolean }) {
+export function PlayerStats({ id, embedded = false }: { id: number; embedded?: boolean }) {
   const { w, setW, game, setGame } = useStatsPrefs();
+  const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
+  const player = list?.find(p => p.id === id);
+  const name = player?.name ?? '';
+  // Never played anything: no pickers, just the way in (AUDIT C#9).
+  const never = player?.lastPlayed === null;
   const [me, setMe] = useState(store.get(ME_KEY));
   const isMe = me === String(id);
   const toggleMe = () => {
@@ -405,10 +411,12 @@ export function PlayerStats({ id, name, embedded = false }: { id: number; name: 
         {!embedded && <h2 className="profile-name">{name}</h2>}
         <button className={`chip ${isMe ? 'on' : ''}`} aria-pressed={isMe} onClick={toggleMe}>{isMe ? 'This is me ✓' : 'This is me'}</button>
       </div>
+      {never ? <div className="box"><EmptyState title={`${name} hasn't played yet`} text={`Pick ${name} in New match.`} /></div> : <>
       <GamePicker game={game} setGame={setGame} />
       <div key={game} className="game-fade">
         {game === 'x01' ? <Profile key={id} id={id} name={name} w={w} setW={setW} /> : <GameProfile key={`${id}-${game}`} id={id} name={name} game={game} w={w} setW={setW} />}
       </div>
+      </>}
     </>
   );
 }
@@ -435,7 +443,7 @@ export function StatsPage({ path }: { path: string }) {
         <h1>{compare ? 'Compare' : id ? 'Player' : 'Stats'}</h1>
         <Logo />
       </header>
-      {compare ? <ComparePage /> : id ? <PlayerStats id={id} name={list?.find(p => p.id === id)?.name ?? ''} /> : (
+      {compare ? <ComparePage /> : id ? <PlayerStats id={id} /> : (
         <>
           <GamePicker game={game} setGame={setGame} />
           <div key={game} className="profile game-fade">

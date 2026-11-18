@@ -54,7 +54,7 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
           Archive hides the player from lists and keeps the stats. Delete removes the name; matches stay as “Deleted player”.
         </div>
       </details>
-      <PlayerStats id={p.id} name={p.name} embedded />
+      <PlayerStats id={p.id} embedded />
     </>
   );
 

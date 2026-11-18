@@ -1,14 +1,17 @@
-import type { ClientState } from '../../../server/protocol.ts';
+import type { ClientState, GameStatsResponse, PlayerStatsResponse } from '../../../server/protocol.ts';
 import type { MatchReport } from '../../../games/report.ts';
+import type { Row } from '../components/Compare.tsx';
 import { CompareTable, fmtDistance, gameRows, playerColor, x01Rows } from '../components/Compare.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
+import { DeltaTag } from '../components/StatParts.tsx';
 import { Logo, act } from '../components/ui.tsx';
+import { versusAverage } from '../stats.ts';
+import { useJson } from '../useJson.ts';
+
+const figureRows = (r: MatchReport): Row[] => (r.x01 ? x01Rows(r.x01) : r.totals ? gameRows(r.game, r.totals) : []);
 
 function compareRows(r: MatchReport) {
-  return [
-    ...(r.x01 ? x01Rows(r.x01) : r.totals ? gameRows(r.game, r.totals) : []),
-    { label: 'Distance walked', values: r.distance.map(fmtDistance) },
-  ];
+  return [...figureRows(r), { label: 'Distance walked', values: r.distance.map(fmtDistance) }];
 }
 
 /** Random Checkouts: one line per drawn number (docs/UI.md, Podsumowanie meczu). */
@@ -23,7 +26,8 @@ function Checkouts({ r }: { r: MatchReport }) {
           <li key={i} className={c.closer === null ? 'open' : ''}>
             <span className="co-no">{i + 1}</span>
             <b className="co-num">{c.number}</b>
-            <span className="co-who" style={c.closer === null ? undefined : { color: playerColor(c.closer) }}>{c.closer === null ? 'Not closed' : r.names[c.closer]}</span>
+            {/* The player's colour as a dot: the name stays in text colour, readable on the card. */}
+            <span className="co-who">{c.closer === null ? 'Not closed' : <><i style={{ background: playerColor(c.closer) }} />{r.names[c.closer]}</>}</span>
             <span className="co-stat">{c.closer !== null && <>{c.darts} {c.darts === 1 ? 'dart' : 'darts'} · </>}{c.visits} {c.visits === 1 ? 'visit' : 'visits'}{c.busts > 0 && <> · {c.busts} {c.busts === 1 ? 'bust' : 'busts'}</>}</span>
             <span className="co-finish">{c.finish}</span>
             {c.firstVisit && <em>1st visit</em>}
@@ -34,12 +38,41 @@ function Checkouts({ r }: { r: MatchReport }) {
   );
 }
 
+/** A solo match against the player's own 30 days: “▲ 29.0 vs your 30-day average”. Nothing for a guest. */
+function VersusAverage({ r }: { r: MatchReport }) {
+  const id = r.ids[0];
+  const { data } = useJson<PlayerStatsResponse | GameStatsResponse>(
+    id == null ? null : `/api/stats/players/${id}?window=30d${r.game === 'x01' ? '' : `&game=${r.game}`}`);
+  const d = data && versusAverage(r.game, { x01: r.x01?.[0], totals: r.totals?.[0] }, data);
+  if (!d) return null;
+  return <div className="vs-avg"><DeltaTag d={d} /> vs your 30-day average</div>;
+}
+
+/** One player: no comparison, the figures as tiles (AUDIT C#6). */
+function SoloTiles({ r }: { r: MatchReport }) {
+  return (
+    <div className="solo-tiles">
+      {figureRows(r).map(row => (
+        <div key={row.label} className="solo-tile">
+          <span className="l">{row.label}</span>
+          <span className="num">{row.values[0]}</span>
+        </div>
+      ))}
+      <div className="solo-tile">
+        <span className="l">Distance walked</span>
+        <span className="num">{fmtDistance(r.distance[0])}</span>
+      </div>
+    </div>
+  );
+}
+
 /** After the match: who won, the players side by side and the heatmap (docs/UI.md, Podsumowanie meczu). */
 export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: boolean; onNew: () => void; onMenu: () => void }) {
   const r = s.summary!;
   const pilot = s.you.isPilot;
+  const solo = r.names.length === 1;
   return (
-    <div className={`summary ${wide ? 'wide' : ''}`}>
+    <div className={`summary ${wide ? 'wide' : ''} ${solo ? 'solo' : ''} ${r.names.length > 2 ? 'many' : ''}`}>
       <header className="summary-head">
         <Logo />
         <span className="muted">{r.description}</span>
@@ -49,10 +82,11 @@ export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: bool
         <div className="kicker">{r.kicker}</div>
         <h1>{r.title}</h1>
         {r.line && <div className="line">{r.line}</div>}
+        {solo && <VersusAverage r={r} />}
       </section>
       <main className="summary-body">
         <div className="summary-left">
-          <CompareTable names={r.names} rows={compareRows(r)} left={r.left} />
+          {solo ? <SoloTiles r={r} /> : <CompareTable names={r.names} rows={compareRows(r)} left={r.left} />}
           {r.checkouts && <Checkouts r={r} />}
         </div>
         <Heatmap players={r.names.map((name, i) => ({ name, color: playerColor(i), heat: r.heat[i] }))} />
