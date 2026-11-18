@@ -9,6 +9,7 @@ import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
+import { wheelSideways } from '../components/interaction.ts';
 import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
 import { startLabel } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
@@ -225,6 +226,19 @@ function MiniSection({ game, options, players, setOptions: save }: { game: GameI
   );
 }
 
+/** On the laptop the add buttons are one row that scrolls sideways: the mouse wheel scrolls it too (React 19 ref cleanup). */
+function sidewaysWheel(el: HTMLElement | null) {
+  if (!el) return;
+  const on = (e: WheelEvent) => {
+    const left = wheelSideways(e.deltaX, e.deltaY, el.scrollLeft, el.scrollWidth, el.clientWidth);
+    if (left === null) return;
+    e.preventDefault();
+    el.scrollLeft = left;
+  };
+  el.addEventListener('wheel', on, { passive: false });
+  return () => el.removeEventListener('wheel', on);
+}
+
 export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game: GameId; options: unknown } | null; onClose: () => void }) {
   // The last game played is preselected, or the game of a lobby record with its options; the tiles keep their fixed groups.
   const [game, setGame] = useState<GameId>(() => preset?.game ?? lastGame());
@@ -297,12 +311,12 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     : null;
 
   const playersSection = (
-    <section className="section setup-players">
+    <section key="players" className="section setup-players">
       <div className="option-row">
         <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
         <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
       </div>
-      {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <div className="add-players">
+      {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <div className="add-players" ref={sidewaysWheel}>
       {recent.length > 0 && (
         <div className="recent-players">
           {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
@@ -327,7 +341,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     </section>
   );
   const optionsSection = (
-    <section className="section setup-options">
+    <section key="options" className="section setup-options">
       <div className="option-row">
         <h2 className="setup-game-name">{g.name}</h2>
         <HowToButton onClick={() => setHowTo(true)} />

@@ -103,3 +103,16 @@ export function createModalStack<E>(dom: ModalDom<E>) {
  */
 export const SLOP = 8;
 export const sidewaysDrag = (dx: number, dy: number): boolean => Math.abs(dx) > SLOP && Math.abs(dx) > Math.abs(dy);
+
+/**
+ * Where a mouse wheel moves a row that scrolls sideways: a vertical turn scrolls it left or right, so a laptop without
+ * a touchpad reaches every name. Null when the wheel is not for the row (sideways already, nothing to scroll, or at the
+ * end in that direction), so the page scrolls as usual.
+ */
+export function wheelSideways(dx: number, dy: number, left: number, scrollWidth: number, clientWidth: number): number | null {
+  if (dy === 0 || Math.abs(dx) >= Math.abs(dy)) return null;
+  const max = scrollWidth - clientWidth;
+  if (max <= 0) return null;
+  const next = Math.min(max, Math.max(0, left + dy));
+  return next === left ? null : next;
+}
