@@ -1,5 +1,8 @@
 // Pure logic behind shared UI interactions, kept apart from React so it can be tested without a DOM.
 
+/** --dur-exit in styles.css: how long an exit plays before the element goes (a test keeps the two equal). */
+export const EXIT_MS = 150;
+
 /** 'back': shown again while it was leaving; the content never left, so it must not play its entrance again. */
 export type PresenceState = 'gone' | 'shown' | 'leaving' | 'back';
 
@@ -59,7 +62,7 @@ export function stepOf(prev: Step | null, value: number): Step {
   return prev.value === value ? prev : { value, step: value - prev.value };
 }
 
-export interface ModalDom<E> {
+interface ModalDom<E> {
   contains(box: E, el: E): boolean;
   /** Connected and not inside anything inert. */
   usable(el: E): boolean;
@@ -101,7 +104,7 @@ export function createModalStack<E>(dom: ModalDom<E>) {
  * A finger on the heatmap: the page scrolls up and down (touch-action pan-y), so the split line moves only once the
  * finger has gone sideways past the slop and more sideways than up or down. The mouse and the handle drag at once.
  */
-export const SLOP = 8;
+const SLOP = 8;
 export const sidewaysDrag = (dx: number, dy: number): boolean => Math.abs(dx) > SLOP && Math.abs(dx) > Math.abs(dy);
 
 /**

@@ -44,11 +44,11 @@ function BoardTest({ s, now, controls }: { s: ClientState; now: number; controls
       <div className="bt-side">
       <section className="box">
         <div className="option-row">
-          <div style={{ fontSize: 20, fontWeight: 800 }}>Test board</div>
+          <div style={{ fontSize: 'var(--fs-ui-lg)', fontWeight: 800 }}>Test board</div>
           <button className="btn primary" onClick={() => void act({ type: 'boardTest', on: false })}>Done</button>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--muted2)' }}>Throw darts: they show here and do not count in the match.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '116px minmax(0, 1fr)', rowGap: 8, fontSize: 14 }}>
+        <div style={{ fontSize: 'var(--fs-ui-sm)', color: 'var(--muted2)' }}>Throw darts: they show here and do not count in the match.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '116px minmax(0, 1fr)', rowGap: 8, fontSize: 'var(--fs-ui-sm)' }}>
           {row('Connection', b.connected ? 'Connected' : 'Offline')}
           {row('Detection', b.detecting ? 'On' : 'Off')}
           {row('Takeout', b.takeout.active ? `In progress · ${ago(b.takeout.since!, now).replace(' ago', '')}` : 'No')}
@@ -58,7 +58,7 @@ function BoardTest({ s, now, controls }: { s: ClientState; now: number; controls
       </section>
       {controls}
       <section className="box bt-events">
-        <div className="caps" style={{ fontSize: 13 }}>Events</div>
+        <div className="caps" style={{ fontSize: 'var(--fs-ui-sm)' }}>Events</div>
         {b.log.length ? (
           <ol className="board-log">
             {b.log.map((e, i) => (
@@ -116,9 +116,9 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
     <div className="board-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
       {actions.map(x => (
         <button key={x.a} disabled={disabled} onClick={() => (CONFIRM[x.a] ? setConfirm(x.a) : run(x.a))}
-          style={{ height: testing ? 64 : 96, borderRadius: 22, background: x.danger ? 'var(--red-bg)' : 'var(--card2)', color: x.danger ? 'var(--red-soft)' : 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
+          style={{ height: testing ? 64 : 96, borderRadius: 22, background: disabled ? 'var(--disabled-bg)' : x.danger ? 'var(--red-bg)' : 'var(--card2)', color: disabled ? 'var(--disabled-fg)' : x.danger ? 'var(--red-soft)' : 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: 4, padding: '0 18px', textAlign: 'left' }}>
           <span className="ba-title">{x.title}</span>
-          <span className="ba-sub" style={{ color: x.danger ? 'var(--red-soft)' : 'var(--muted2)' }}>{x.sub}</span>
+          <span className="ba-sub" style={{ color: disabled ? 'var(--disabled-fg)' : x.danger ? 'var(--red-soft)' : 'var(--muted2)' }}>{x.sub}</span>
         </button>
       ))}
     </div>
@@ -135,8 +135,8 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
   const body = testing ? <><BoardTest s={s} now={now} controls={controls} />{dialog}</> : (
     <>
       <section className="box">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 20, fontWeight: 800 }}><span className={`dot ${pill.dot}`} />{status}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '116px minmax(0, 1fr)', rowGap: 8, fontSize: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'var(--fs-ui-lg)', fontWeight: 800 }}><span className={`dot ${pill.dot}`} />{status}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '116px minmax(0, 1fr)', rowGap: 8, fontSize: 'var(--fs-ui-sm)' }}>
           <span className="muted">Address</span><span>{b.address}</span>
           <span className="muted">Board Manager</span><span>{b.version ? `v${b.version}` : '–'}</span>
           <span className="muted">Last event</span><span>{b.lastEvent ? `${b.lastEvent.text} · ${ago(b.lastEvent.at, now)}` : '–'}</span>
@@ -148,8 +148,8 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
       <section className="box">
         <div className="option-row">
           <div>
-            <div style={{ fontSize: 17, fontWeight: 800 }}>Fake board</div>
-            <div style={{ fontSize: 12, color: 'var(--muted2)' }}>Click darts in a browser instead of throwing</div>
+            <div style={{ fontSize: 'var(--fs-ui-md)', fontWeight: 800 }}>Fake board</div>
+            <div style={{ fontSize: 'var(--fs-ui-xs)', color: 'var(--muted2)' }}>Click darts in a browser instead of throwing</div>
           </div>
           <Switch on={b.fake} label="Fake board" onChange={on => void act({ type: 'fakeBoard', on })} />
         </div>
@@ -163,12 +163,12 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
       {controls}
       {!wide && (
         <section className="box">
-          <div className="caps" style={{ fontSize: 13 }}>This device</div>
-          <div style={{ fontSize: 15, color: 'var(--soft)' }}>You are the pilot. The laptop shows the scoreboard only.</div>
+          <div className="caps" style={{ fontSize: 'var(--fs-ui-sm)' }}>This device</div>
+          <div style={{ fontSize: 'var(--fs-ui-md)', color: 'var(--soft)' }}>You are the pilot. The laptop shows the scoreboard only.</div>
           <button className="btn" onClick={onShowQr}>Show QR on the big screen</button>
         </section>
       )}
-      <div style={{ marginTop: 'auto', fontSize: 13, color: 'var(--muted2)' }}>Camera and detection settings stay in Board Manager (:{b.address.split(':')[1] ?? '3180'}).</div>
+      <div style={{ marginTop: 'auto', fontSize: 'var(--fs-ui-sm)', color: 'var(--muted2)' }}>Camera and detection settings stay in Board Manager (:{b.address.split(':')[1] ?? '3180'}).</div>
       {dialog}
     </>
   );
@@ -181,7 +181,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
         <div className="scrim" onClick={close} />
         <aside ref={drawer} tabIndex={-1} className="drawer" role="dialog" aria-modal="true" aria-label="Board panel">
           <div className="option-row">
-            <div style={{ fontSize: 32, fontWeight: 800 }}>Board</div>
+            <div style={{ fontSize: 'var(--fs-ui-2xl)', fontWeight: 800 }}>Board</div>
             <button className="icon-btn" style={{ width: 52, height: 52, background: 'var(--raised)' }} aria-label="Close" onClick={close}>{Icon.close(22)}</button>
           </div>
           {body}

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf, tabKey, wheelSideways } from './interaction.ts';
+import { readFileSync } from 'node:fs';
+import { EXIT_MS, createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf, tabKey, wheelSideways } from './interaction.ts';
 
 describe('createPresence', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -258,5 +259,13 @@ describe('wheelSideways', () => {
     expect(wheelSideways(0, 100, 0, 400, 400)).toBeNull();
     expect(wheelSideways(120, 100, 0, 1000, 400)).toBeNull();
     expect(wheelSideways(0, 0, 0, 1000, 400)).toBeNull();
+  });
+});
+
+// EXIT_MS times the exits that styles.css animates with --dur-exit: the two must not drift apart (branch review).
+describe('EXIT_MS', () => {
+  it('matches the --dur-exit token', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toContain(`--dur-exit: ${EXIT_MS}ms;`);
   });
 });

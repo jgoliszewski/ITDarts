@@ -115,8 +115,8 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
     const r = m.record;
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--accent)', fontSize: 13 }}>Office record · {r.label}</div>
-        <b style={{ fontSize: 22 }}>{r.value ? `${r.value} · ${r.by}${r.at ? ` · ${shortDate(r.at)}` : ''}` : 'No record yet'}</b>
+        <div className="caps" style={{ color: 'var(--accent)', fontSize: 'var(--fs-ui-sm)' }}>Office record · {r.label}</div>
+        <b style={{ fontSize: 'var(--fs-ui-xl)' }}>{r.value ? `${r.value} · ${r.by}${r.at ? ` · ${shortDate(r.at)}` : ''}` : 'No record yet'}</b>
         <button className="btn block" onClick={() => act({ type: 'skipIntro' })}>Skip</button>
       </div>
     );
@@ -129,18 +129,18 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   if (isX01(m) && leg) {
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Leg {m.view.legNo} won</div>
-        <b style={{ fontSize: 22 }}>{m.roster[leg.winner].name}</b>
-        <span className="muted" style={{ fontSize: 14 }}>{label(leg.checkout)} · {leg.darts} darts · avg {fmtAvg(leg.avg)}</span>
+        <div className="caps" style={{ color: 'var(--green)', fontSize: 'var(--fs-ui-sm)' }}>Leg {m.view.legNo} won</div>
+        <b style={{ fontSize: 'var(--fs-ui-xl)' }}>{m.roster[leg.winner].name}</b>
+        <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>{label(leg.checkout)} · {leg.darts} darts · avg {fmtAvg(leg.avg)}</span>
       </div>
     );
   }
   if (v.phase === 'matchWon') {
     return (
       <div className="box">
-        <div className="caps" style={{ color: 'var(--green)', fontSize: 13 }}>Game over</div>
-        <b style={{ fontSize: 24 }}>{isX01(m) ? m.roster[m.view.matchWinner!].name : winnersOf(m)}</b>
-        {!isX01(m) && <span className="muted" style={{ fontSize: 14 }}>{m.view.result}</span>}
+        <div className="caps" style={{ color: 'var(--green)', fontSize: 'var(--fs-ui-sm)' }}>Game over</div>
+        <b style={{ fontSize: 'var(--fs-ui-xl)' }}>{isX01(m) ? m.roster[m.view.matchWinner!].name : winnersOf(m)}</b>
+        {!isX01(m) && <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>{m.view.result}</span>}
         {!isX01(m) && <NewRecord m={m} />}
         <button className="btn primary block" onClick={() => act({ type: 'closeMatch', then: 'summary' })}>Summary</button>
       </div>
@@ -152,7 +152,7 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
   if (m.game === 'killer' && m.view.canReroll) {
     return (
       <div className="box">
-        <span className="muted" style={{ fontSize: 14 }}>Numbers: {m.roster.map((r, i) => `${r.name} ${m.view.numbers[i]}`).join(' · ')}</span>
+        <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers: {m.roster.map((r, i) => `${r.name} ${m.view.numbers[i]}`).join(' · ')}</span>
         <button className="btn block" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
       </div>
     );
@@ -240,11 +240,12 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onRecord, onPlayers }: {
         </nav>
         {last && (
           <div className="box">
-            <span className="caps" style={{ fontSize: 13 }}>Last match · {last.description.replace(/^X01 · /, '')}</span>
+            <span className="caps" style={{ fontSize: 'var(--fs-ui-sm)' }}>Last match · {last.description.replace(/^X01 · /, '')}</span>
             {last.players.map((p, i) => (
-              <div key={i} className="option-row" style={{ opacity: p.left ? 0.5 : undefined }}>
-                <span style={{ fontWeight: p.winner || last.players.length === 1 ? 800 : 500, color: p.winner || last.players.length === 1 ? 'var(--text)' : 'var(--muted)' }}>{p.name}{p.left && ' · Left'}</span>
-                <span className="num" style={{ fontSize: 32, color: p.winner || last.players.length === 1 ? 'var(--accent)' : 'var(--muted)' }}>{p.value}</span>
+              // As in the lobby: the winner in plain white, a removed player in --off (not faded).
+              <div key={i} className="option-row">
+                <span style={{ fontWeight: p.winner || last.players.length === 1 ? 800 : 500, color: p.left ? 'var(--off)' : p.winner || last.players.length === 1 ? 'var(--text)' : 'var(--muted)' }}>{p.name}{p.left && ' · Left'}</span>
+                <span className="num" style={{ fontSize: 'var(--fs-ui-2xl)', color: p.left ? 'var(--off)' : p.winner || last.players.length === 1 ? 'var(--text)' : 'var(--muted)' }}>{p.value}</span>
               </div>
             ))}
           </div>

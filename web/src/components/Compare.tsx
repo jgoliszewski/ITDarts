@@ -146,7 +146,7 @@ export function CompareTable({ names, rows, left = [], hideNames = false }: { na
   );
   const bar = (r: Row, i: number) => {
     const f = fill(r, i);
-    return <div className="cmp-track">{f !== null && <i style={{ width: `${f * 100}%`, background: playerColor(i) }} />}</div>;
+    return <div className="cmp-track">{f !== null && <i style={{ width: `${f * 100}%`, background: left[i] ? 'var(--off)' : playerColor(i) }} />}</div>;
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>

@@ -83,8 +83,8 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
         return (
           <div key={`${r.playerId ?? 'g'}-${r.name}`} className={`list-row roster-row ${drag?.from === i ? 'held' : ''}`}
             style={{ transform: `translateY(${shift}px)` }}>
-            <span className="num" style={{ fontSize: 24, color: 'var(--accent)', width: 18 }}>{i + 1}</span>
-            <span className="grow">{r.name}{r.playerId === null && <span className="muted" style={{ fontWeight: 500, fontSize: 13 }}> · guest</span>}</span>
+            <span className="num" style={{ fontSize: 'var(--fs-ui-xl)', color: 'var(--muted)', width: 18 }}>{i + 1}</span>
+            <span className="grow">{r.name}{r.playerId === null && <span className="muted" style={{ fontWeight: 500, fontSize: 'var(--fs-ui-sm)' }}> · guest</span>}</span>
             <button className="icon-btn" style={{ background: 'transparent', color: 'var(--muted2)' }} aria-label={`Remove ${r.name}`}
               onClick={() => setRoster(roster.filter((_, j) => j !== i))}>{Icon.close(18)}</button>
             <span aria-label={`Move ${r.name}: drag, or press up or down`} role="button" tabIndex={0} className="grip"
@@ -149,18 +149,18 @@ function X01Section({ options, setOptions }: { options: X01Options; setOptions: 
       {mm.kind !== 'off' && (
         <div className={`steppers ${mm.kind === 'sets' ? 'two' : ''}`}>
           <div className="option-row">
-            <div><b style={{ fontSize: 15 }}>First to</b><div className="muted" style={{ fontSize: 13 }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
+            <div><b style={{ fontSize: 'var(--fs-ui-md)' }}>First to</b><div className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>{mm.kind === 'legs' ? 'legs to win the match' : 'sets to win the match'}</div></div>
             <Stepper label={mm.kind} value={mm.firstTo} min={1} max={mm.kind === 'legs' ? 21 : 11} onChange={v => setOptions({ ...options, matchMode: { ...mm, firstTo: v } })} />
           </div>
           {mm.kind === 'sets' && (
             <div className="option-row">
-              <div><b style={{ fontSize: 15 }}>Legs per set</b><div className="muted" style={{ fontSize: 13 }}>first to this many legs wins a set</div></div>
+              <div><b style={{ fontSize: 'var(--fs-ui-md)' }}>Legs per set</b><div className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>first to this many legs wins a set</div></div>
               <Stepper label="legs per set" value={mm.legsPerSet} min={1} max={7} onChange={v => setOptions({ ...options, matchMode: { ...mm, legsPerSet: v } })} />
             </div>
           )}
         </div>
       )}
-      {mm.kind === 'off' && <div className="muted" style={{ fontSize: 13 }}>After each leg you choose: next leg or end the match.</div>}
+      {mm.kind === 'off' && <div className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>After each leg you choose: next leg or end the match.</div>}
       <div className="section"><Label def={x01Def('bullOff')} text="Bull-off" />
         <Seg value={options.bullOff} options={[['off', 'Off'], ['closest', 'Closest'], ['pdc', 'PDC rules']]} onChange={v => setOptions({ ...options, bullOff: v })} />
       </div>
@@ -220,8 +220,8 @@ function MiniSection({ game, options, players, setOptions: save }: { game: GameI
           <Seg value={options[d.key!] as string} options={d.choices as [string, string][]} onChange={v => setOptions({ ...options, [d.key!]: v })} />
         </div>
       ))}
-      {game === '121' && players > 1 && <div className="muted" style={{ fontSize: 13 }}>With 2 or more players 121 is played in Co-op: one shared target.</div>}
-      {game === 'killer' && <div className="muted" style={{ fontSize: 13 }}>Numbers are drawn at the start. Reroll them before the first dart.</div>}
+      {game === '121' && players > 1 && <div className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>With 2 or more players 121 is played in Co-op: one shared target.</div>}
+      {game === 'killer' && <div className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers are drawn at the start. Reroll them before the first dart.</div>}
     </>
   );
 }
@@ -313,7 +313,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
   const playersSection = (
     <section key="players" className="section setup-players">
       <div className="option-row">
-        <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
+        <div className="caps" style={{ fontSize: 'var(--fs-ui-sm)' }}>Players · throwing order</div>
         <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
       </div>
       {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <div className="add-players" ref={sidewaysWheel}>
@@ -330,7 +330,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
         </form>
       ) : (
         <div className="chip-row">
-          {others.length > 0 && <span className="muted" style={{ fontSize: 13 }}>{recent.length ? 'Others' : 'Players'}</span>}
+          {others.length > 0 && <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>{recent.length ? 'Others' : 'Players'}</span>}
           {others.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
           <button className="chip guest" onClick={startGuest}>+ Guest</button>
         </div>

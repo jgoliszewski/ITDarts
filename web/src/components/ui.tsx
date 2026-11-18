@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { PresenceState } from './interaction.ts';
-import { createModalStack, createPresence, listboxKey } from './interaction.ts';
+import { EXIT_MS, createModalStack, createPresence, listboxKey } from './interaction.ts';
 import QRCode from 'qrcode';
 import type { ClientState, Command } from '../../../server/protocol.ts';
 import type { Result } from '../net.ts';
@@ -115,9 +115,6 @@ export interface Toast {
   /** Playing its exit; removed after EXIT_MS. */
   leaving?: boolean;
 }
-
-/** --dur-exit: how long an exit plays before the element goes. */
-export const EXIT_MS = 150;
 
 let toasts: Toast[] = [];
 const toastListeners = new Set<() => void>();
