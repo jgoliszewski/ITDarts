@@ -369,10 +369,10 @@ describe('master volume and mute', () => {
     expect(out[fx]).toEqual({ type: 'fx', fx: { sound: { url: 'builtin:turn', gain: 0.8 * 0.75 }, anim: null, caller: null } });
   });
 
-  it('plays no preview while muted, nor for Mute or the switches', async () => {
+  it('plays no preview while muted or with Sounds off, nor for Mute or the switches', async () => {
     const { out } = withStore();
     const pilot = client(true);
-    for (const cmd of [{ muted: true }, { master: 30 }, { muted: false }, { sounds: false }] as const) await pilot({ type: 'effects', ...cmd });
+    for (const cmd of [{ muted: true }, { master: 30 }, { muted: false }, { sounds: false }, { master: 40 }] as const) await pilot({ type: 'effects', ...cmd });
     await new Promise(r => setImmediate(r));
     expect(out.filter(m => m.type === 'fx')).toEqual([]);
   });

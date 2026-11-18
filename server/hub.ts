@@ -664,11 +664,11 @@ export class Hub {
           ...(cmd.muted !== undefined && { muted: cmd.muted }),
         });
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
-        // A new level plays the Next player sound on the kiosk, also when a phone is the Pilot. It goes out after the
+        // A new level plays the Next player sound on the kiosk, also when a phone is the Pilot; not with Sounds off or Mute. It goes out after the
         // state with the level (the command's broadcast), so the kiosk plays it through the new master.
         const s = this.effects.store.settings();
         const turn = this.effects.store.sound(builtinId('turn'));
-        if (cmd.master !== undefined && !s.muted && turn) {
+        if (cmd.master !== undefined && s.sounds && !s.muted && turn) {
           setImmediate(() => this.sendFx({ sound: { url: turn.url, gain: (s.volume / 100) * (turn.volume / 100) }, anim: null, caller: null }));
         }
         return {};
