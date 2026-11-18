@@ -251,10 +251,13 @@ export function winTile(g: Pick<GameStatsResponse, 'played' | 'versus'>): { labe
 /** The chart shows from this many matches; fewer make a line that says nothing. */
 export const MIN_TREND = 3;
 
-/** Axis of the Average chart: whole steps around the data, never flat. */
+/**
+ * Axis of the Average chart: whole steps around the data, never flat, and at most 8 of them, so the labels do not
+ * crowd on a phone when one match is far from the rest.
+ */
 export function chartScale(points: number[]): { lo: number; hi: number; step: number } {
   const min = Math.min(...points), max = Math.max(...points);
-  const step = max - min > 40 ? 10 : 5;
+  const step = [5, 10, 20, 25, 50].find(s => Math.ceil(max / s) - Math.floor(min / s) <= 8) ?? 100;
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
   return { lo, hi: hi === lo ? hi + step : hi, step };

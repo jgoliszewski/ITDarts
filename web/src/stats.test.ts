@@ -260,6 +260,10 @@ describe('Average chart', () => {
     expect(chartScale([30, 30, 30])).toEqual({ lo: 30, hi: 35, step: 5 });
     expect(chartScale([10, 80])).toEqual({ lo: 10, hi: 80, step: 10 });
   });
+  it('takes a wider step when one match is far from the rest, so the axis keeps at most 8 steps', () => {
+    expect(chartScale([15, 120.6])).toEqual({ lo: 0, hi: 140, step: 20 });
+    expect(chartScale([0, 180])).toEqual({ lo: 0, hi: 200, step: 25 });
+  });
 });
 
 // A#24 (scoreboard audit): the Knockout card said "1 visits".
