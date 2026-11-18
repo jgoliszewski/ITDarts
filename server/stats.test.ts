@@ -441,10 +441,11 @@ describe('recent minigame matches', () => {
   it('lists opponents in the order they played and marks a solo X01 match with no opponents', () => {
     saveX01([A()], quickLeg(1), 1, OPTS, 'finished');
     db.saveMatch({ game: 'x01', options: OPTS, roster: [B(), A(), { playerId: cy, name: 'Cy' }], startedAt: NOW - 2 * DAY - 1000, endedAt: NOW - 2 * DAY, status: 'ended',
-      winners: [], sets: [], legs: [] });
+      winners: [], sets: [], legs: [], legsWon: [2, 1, 0] });
     const r = stats.player(anna, 'all')!.recent;
     expect(r[0].opponents).toBeNull();
     expect(r[1].opponents).toBe('Bob, Cy');
+    expect(r[1].score).toBe('1–2–0'); // own legs first, then the others in their playing order
   });
 
   it('marks a match the player left, a match ended without a result and a loss, with guests among the opponents', () => {

@@ -166,12 +166,21 @@ export class Stats {
     }).sort((a, b) => a.endedAt - b.endedAt || a.matchId - b.matchId);
   }
 
+  /**
+   * Adds the Okno as a condition on matches `m`: a time Okno is the matches ended inside it, a leg Okno the X01
+   * matches of those legs (`x01MatchIds`), or no condition when null (a minigame plays one leg per match).
+   */
+  private inWindow(w: StatsWindow, x01MatchIds: number[] | null, where: string[], args: (number | string)[]) {
+    if (legLimit(w)) {
+      if (x01MatchIds) where.push(`m.id IN (${x01MatchIds.map(() => '?').join(',') || 'NULL'})`), args.push(...x01MatchIds);
+    } else if (since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
+  }
+
   /** Matches that count for winrate and head-to-head, within the window. */
   private resultMatches(playerId: number, w: StatsWindow, x01MatchIds: number[]) {
     const where = ['mp.player_id = ?', 'mp.removed = 0', 'm.counts_results = 1', "m.game = 'x01'"];
     const args: number[] = [playerId];
-    if (legLimit(w)) where.push(`m.id IN (${x01MatchIds.map(() => '?').join(',') || 'NULL'})`), args.push(...x01MatchIds);
-    else if (since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
+    this.inWindow(w, x01MatchIds, where, args);
     return this.db.sql.prepare(`
       SELECT m.id, (m.winner_position = mp.position) AS won FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE ${where.join(' AND ')}`).all(...args) as { id: number; won: number }[];
@@ -214,14 +223,13 @@ export class Stats {
   private recent(playerId: number, game: GameId, w: StatsWindow, x01MatchIds: number[] = []): RecentMatch[] {
     const where = ['mp.player_id = ?', 'm.game = ?'];
     const args: (number | string)[] = [playerId, game];
-    if (legLimit(w) && game === 'x01') where.push(`m.id IN (${x01MatchIds.map(() => '?').join(',') || 'NULL'})`), args.push(...x01MatchIds);
-    else if (!legLimit(w) && since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
+    this.inWindow(w, game === 'x01' ? x01MatchIds : null, where, args);
     const rows = this.db.sql.prepare(`
       SELECT m.id, m.ended_at, m.options, m.status, m.winner_position, mp.won, mp.removed, mp.score, mp.legs_won, mp.stats,
         (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
-        (SELECT GROUP_CONCAT(n, ', ') FROM (SELECT COALESCE(p2.name, o.guest_name) AS n FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
-          WHERE o.match_id = m.id AND o.position != mp.position ORDER BY o.position)) AS opponents,
-        (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position != mp.position, position) o) AS legs
+        (SELECT GROUP_CONCAT(COALESCE(p2.name, o.guest_name), ', ' ORDER BY o.position) FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
+          WHERE o.match_id = m.id AND o.position != mp.position) AS opponents,
+        (SELECT GROUP_CONCAT(o.legs_won, '–' ORDER BY o.position != mp.position, o.position) FROM match_players o WHERE o.match_id = m.id) AS legs
       FROM matches m JOIN match_players mp ON mp.match_id = m.id
       WHERE ${where.join(' AND ')} ORDER BY m.ended_at DESC LIMIT 10`).all(...args) as
       { id: number; ended_at: number; options: string; status: string; winner_position: number | null; won: number | null; removed: number; score: number | null; legs_won: number; stats: string | null; players: number; opponents: string | null; legs: string }[];
