@@ -58,6 +58,8 @@ Później (policzą się wstecz z zapisanych lotek): celność (% treble, sektor
 
 **Bez trendu:** główny kafelek bez porównania (patrz Progres) mówi dlaczego: „No trend for All time”, „No trend · fewer than 3 legs before” (minigierki: matches), a Checkout % „No trend · fewer than 10 attempts”. Zmiana wartości procentowej jest w punktach procentowych („▲ 2.4 pp”).
 
+**Podsumowanie solo** (Summary jednego Gracza, nie Gościa) ma pod wynikiem linię „▲ 24.2 vs your 30-day average”: główna statystyka gry z tego meczu (X01: Average) wobec średniej Gracza z 30 dni (`GET /api/stats/players/:id?window=30d`, w minigierkach z `&game=`). Mecz jest już zapisany, gdy Summary się pokazuje, więc widok odejmuje go od Okna: X01 z Averages i lotek (`avg × darts`), minigierki z sum (`totals`) i liczby meczów. Gdy w 30 dniach nie ma innego meczu, linii nie ma.
+
 **Recent matches** pokazuje profil każdej gry, nie tylko X01: do 10 ostatnich meczów tej gry w Oknie (w Oknie w legach minigierki: ostatnie 10 meczów), przeciwnicy w kolejności rzucania albo „Solo”, wynik ze strony gracza (X01: jego legi pierwsze, minigierki: wynik jak w Lobby).
 
 ## Progres

@@ -332,16 +332,24 @@ describe('percentage changes', () => {
 });
 
 describe('solo summary against the average', () => {
+  // The Okno already holds the match (saved before the summary), so each fixture adds it to the player's other matches.
   const game = (totals: Record<string, number>, matches: number) => ({ totals, matches }) as GameStatsResponse;
-  it('compares the match headline with the average of the Okno', () => {
-    // Free throw: 3 darts for 90 against 60 per 3 darts.
-    expect(versusAverage('freethrow', { totals: { darts: 3, points: 90 } }, game({ darts: 30, points: 600 }, 4))).toEqual({ text: '▲ 30.0', tone: 'good' });
-    expect(versusAverage('randomco', { totals: { checkouts: 2, checkoutDarts: 10 } }, game({ checkouts: 4, checkoutDarts: 12 }, 2))).toEqual({ text: '▲ 2.0', tone: 'bad' });
-    // Football: 3 goals in this match against 6 in 3 matches.
-    expect(versusAverage('football', { totals: { goals: 3 } }, game({ goals: 6 }, 3))).toEqual({ text: '▲ 1.0', tone: 'good' });
+  it('compares the match headline with the average of the other matches in the Okno', () => {
+    // Free throw: 3 darts for 90; the other 4 matches 30 darts for 600, 60 per 3 darts.
+    expect(versusAverage('freethrow', { totals: { darts: 3, points: 90 } }, game({ darts: 33, points: 690 }, 5))).toEqual({ text: '▲ 30.0', tone: 'good' });
+    // Random Checkouts: 5 darts per checkout here, 3 in the other 2 matches; fewer is better.
+    expect(versusAverage('randomco', { totals: { checkouts: 2, checkoutDarts: 10 } }, game({ checkouts: 6, checkoutDarts: 22 }, 3))).toEqual({ text: '▲ 2.0', tone: 'bad' });
+    // Football: 3 goals here against 6 in the other 3 matches.
+    expect(versusAverage('football', { totals: { goals: 3 } }, game({ goals: 9 }, 4))).toEqual({ text: '▲ 1.0', tone: 'good' });
   });
-  it('takes the Average in X01', () => {
-    expect(versusAverage('x01', { x01: { ...X, avg: 45.5 } }, { x01: { ...X, avg: 50 } } as PlayerStatsResponse)).toEqual({ text: '▼ 4.5', tone: 'bad' });
+  it('takes the Average in X01, without the match', () => {
+    // 45.5 over 30 darts here, 50 over 90 darts before: the Okno says 48.88 over 120 darts.
+    const okno = { x01: { ...X, avg: 48.88, darts: 120 } } as PlayerStatsResponse;
+    expect(versusAverage('x01', { x01: { ...X, avg: 45.5, darts: 30 } }, okno)).toEqual({ text: '▼ 4.5', tone: 'bad' });
+  });
+  it('has no line for the first match in the Okno, never “= 0.0”', () => {
+    expect(versusAverage('x01', { x01: { ...X, avg: 45.5, darts: 30 } }, { x01: { ...X, avg: 45.5, darts: 30 } } as PlayerStatsResponse)).toBeNull();
+    expect(versusAverage('freethrow', { totals: { darts: 3, points: 90 } }, game({ darts: 3, points: 90 }, 1))).toBeNull();
   });
   it('is null without a headline, without the match figure or without an average', () => {
     expect(versusAverage('x01', {}, { x01: X } as PlayerStatsResponse)).toBeNull();

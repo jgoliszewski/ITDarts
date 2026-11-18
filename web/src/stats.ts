@@ -217,13 +217,22 @@ export function profileMetrics(game: GameId, g: Pick<GameStatsResponse, 'totals'
 
 /**
  * The solo summary's line: the game's headline figure of this match against the player's average over the Okno
- * (X01: the Average). Null without a headline or without an average to compare with.
+ * (X01: the Average). The match is saved before the summary shows, so it is taken out of the Okno first: the
+ * average is the player's other matches. Null without a headline, without the match figure or with no other match.
  */
 export function versusAverage(game: GameId, match: { x01?: X01Stats; totals?: Record<string, number> }, avg: PlayerStatsResponse | GameStatsResponse): Delta | null {
-  if (game === 'x01') return match.x01 && 'x01' in avg ? delta(match.x01.avg, avg.x01.avg, 'higher') : null;
+  if (game === 'x01') {
+    if (!match.x01 || !('x01' in avg)) return null;
+    const m = match.x01, w = avg.x01;
+    // Average is points per 3 darts, so the points come back as avg × darts / 3.
+    const darts = w.darts - m.darts;
+    if (m.avg === null || w.avg === null || darts <= 0) return null;
+    return delta(m.avg, Math.round(((w.avg * w.darts - m.avg * m.darts) / darts) * 100) / 100, 'higher');
+  }
   const m = METRICS[game]?.find(x => x.main && x.better);
-  if (!m || !match.totals || !('totals' in avg)) return null;
-  return delta(m.value(match.totals, 1), m.value(avg.totals, avg.matches), m.better!, m.digits, m.fmt === fmtPct ? 'pp' : '');
+  if (!m || !match.totals || !('totals' in avg) || avg.matches <= 1) return null;
+  const others = Object.fromEntries(Object.entries(avg.totals).map(([k, v]) => [k, v - (match.totals![k] ?? 0)]));
+  return delta(m.value(match.totals, 1), m.value(others, avg.matches - 1), m.better!, m.digits, m.fmt === fmtPct ? 'pp' : '');
 }
 
 /** The winrate tile: wins over versus matches; a game with only solo matches shows just how many were played. */
