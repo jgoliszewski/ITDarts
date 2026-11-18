@@ -10,6 +10,7 @@ import type { X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
+import { startLabel } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
@@ -67,6 +68,7 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
   }, [dropped]);
 
   const order = roster.map((_, i) => i);
+  if (roster.length === 0) return <div className="roster-empty">Tap a player above to add</div>;
   return (
     <div className={`roster-list ${dropped ? 'dropped' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
       {order.map(i => {
@@ -84,7 +86,15 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
             <span className="grow">{r.name}{r.playerId === null && <span className="muted" style={{ fontWeight: 500, fontSize: 13 }}> · guest</span>}</span>
             <button className="icon-btn" style={{ background: 'transparent', color: 'var(--muted2)' }} aria-label={`Remove ${r.name}`}
               onClick={() => setRoster(roster.filter((_, j) => j !== i))}>{Icon.close(18)}</button>
-            <span aria-label="Drag to reorder" role="button" style={{ color: '#5A5A60', display: 'flex', padding: '12px 8px', touchAction: 'none', cursor: 'grab' }}
+            <span aria-label={`Move ${r.name}: drag, or press up or down`} role="button" tabIndex={0} className="grip"
+              onKeyDown={e => {
+                const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
+                if (to < 0 || to >= roster.length) return;
+                e.preventDefault();
+                const next = [...roster];
+                [next[i], next[to]] = [next[to], next[i]];
+                setRoster(next);
+              }}
               onPointerDown={e => {
                 (e.target as Element).setPointerCapture(e.pointerId);
                 start.current = e.clientY;
@@ -215,10 +225,11 @@ function MiniSection({ game, options, players, setOptions: save }: { game: GameI
   );
 }
 
-export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
-  // The last game played is preselected; the tiles keep their fixed groups.
-  const [game, setGame] = useState<GameId>(lastGame);
-  const [allOptions, setAllOptions] = useState<Partial<Record<GameId, Record<string, unknown>>>>({});
+export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game: GameId; options: unknown } | null; onClose: () => void }) {
+  // The last game played is preselected, or the game of a lobby record with its options; the tiles keep their fixed groups.
+  const [game, setGame] = useState<GameId>(() => preset?.game ?? lastGame());
+  const [allOptions, setAllOptions] = useState<Partial<Record<GameId, Record<string, unknown>>>>(
+    () => (preset ? { [preset.game]: GAMES[preset.game].normalizeOptions(preset.options) as Record<string, unknown> } : {}));
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -226,6 +237,8 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
   const [howTo, setHowTo] = useState(false);
 
   const g = GAMES[game];
+  // The chosen game is in sight on entry, also deep in the list or in the laptop's scrolling column (B#4).
+  useEffect(() => { document.querySelector('.game-tile.on')?.scrollIntoView({ block: 'nearest' }); }, []);
   const options = allOptions[game] ?? loadOptions(game);
   const setOptions = (o: Record<string, unknown>) => {
     setAllOptions({ ...allOptions, [game]: o });
@@ -290,7 +303,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
       </header>
       <div className="phone-body" style={{ gap: 24 }}>
         <section className="section setup-games">
-          <div className="caps">Game</div>
+          <div className="caps setup-games-title">Game</div>
           {GAME_GROUPS.map(({ group, title, ids }) => (
             <div key={group} className="game-group">
               <h3 className="caps game-group-title">{title}</h3>
@@ -313,9 +326,11 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
 
         <section className="section setup-options">
           <div className="option-row">
-            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{g.name}</h2>
+            <h2 className="setup-game-name">{g.name}</h2>
             <HowToButton onClick={() => setHowTo(true)} />
           </div>
+          {/* Under 1100 px the game tiles are compact, so the game's line moves here (D4). */}
+          <p className="setup-blurb">{g.blurb}</p>
           {game === 'x01'
             ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
             : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
@@ -349,7 +364,7 @@ export function Setup({ s, onClose }: { s: ClientState; onClose: () => void }) {
         </section>
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
-        <button className="btn primary" disabled={!!blocked || busy} onClick={startMatch}>{blocked ?? 'Start match'}</button>
+        <button className="btn primary" disabled={!!blocked || busy} onClick={startMatch}>{blocked ?? startLabel(g.name, roster.length)}</button>
       </div>
     </div>
   );
