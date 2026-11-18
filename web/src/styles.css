@@ -420,6 +420,8 @@ button:focus-visible, input:focus-visible, [role='button']:focus-visible { outli
 .phone-header .title { flex: 1; font-size: var(--fs-ui-md); font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .phone-header h1 { flex: 1; margin: 0; font-size: 22px; font-weight: 800; }
 .phone-header .pill { height: 44px; padding: 0 14px; background: var(--card); font-size: var(--fs-ui-sm); }
+/* For a watcher the board status is plain text: no fill, so it doesn't read as a button (B#17). */
+.phone-header div.pill { background: none; padding: 0 var(--sp-1); color: var(--muted); }
 .phone-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
 .phone-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .phone-nav .btn { text-decoration: none; }
@@ -529,9 +531,9 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .wide-fix .sheet-head span b { font-family: var(--num); font-size: var(--fs-ui-2xl); color: var(--accent); }
 .wide-fix .seg button { height: 48px; font-size: var(--fs-ui-md); }
 .wide-fix .fix-grid { grid-template-columns: 72px repeat(3, minmax(0, 1fr)); gap: 10px; }
+.wide-fix .fix-grid.bare { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .wide-fix .fix-grid .rl { font-size: var(--fs-ui-md); }
 .wide-fix .fix-grid .cl { font-size: var(--fs-ui-sm); }
-.wide-fix .fix-grid.bare { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .wide-fix .mult-row button { height: 48px; font-size: var(--fs-ui-md); }
 
 /* ---------- stats ---------- */
