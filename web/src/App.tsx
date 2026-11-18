@@ -249,7 +249,7 @@ export function App() {
   if (path.startsWith('/effects')) return <><EffectsPage /><Toasts /></>;
   return (
     <>
-      {!connected && state && <div className="banner" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 80 }}>Lost connection to ITDarts · reconnecting…</div>}
+      {!connected && state && <div className="banner fixed">Lost connection to ITDarts · reconnecting…</div>}
       {state ? <Main s={state} /> : (
         <div className="center-msg" style={{ height: '100%' }}>
           <Logo />
