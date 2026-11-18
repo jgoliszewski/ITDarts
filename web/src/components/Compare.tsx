@@ -137,8 +137,9 @@ export function fill(r: Row, i: number): number | null {
 /**
  * Players side by side like Autodarts: per row the label in the middle, values on the sides with the best one
  * in a pill of its player's colour, and bars under them. Two players mirror around the middle; more get a column each.
+ * `hideNames` when the screen names the players already (Compare's pickers).
  */
-export function CompareTable({ names, rows, left = [] }: { names: string[]; rows: Row[]; left?: boolean[] }) {
+export function CompareTable({ names, rows, left = [], hideNames = false }: { names: string[]; rows: Row[]; left?: boolean[]; hideNames?: boolean }) {
   const two = names.length === 2;
   const value = (r: Row, best: Set<number>, i: number) => (
     <span className={`cmp-val ${best.has(i) ? 'best' : ''}`} style={best.has(i) ? { background: playerColor(i) } : undefined}>{r.values[i]}</span>
@@ -149,9 +150,9 @@ export function CompareTable({ names, rows, left = [] }: { names: string[]; rows
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
-      <div className="cmp-names">{names.map((n, i) => left[i]
+      {!hideNames && <div className="cmp-names">{names.map((n, i) => left[i]
         ? <span key={i} className="left">{n}<small>Left</small></span>
-        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
+        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>}
       {rows.map(r => {
         const best = bestOf(r, left);
         // One player has nothing to measure against: no bars at all.

@@ -54,6 +54,12 @@ Później (policzą się wstecz z zapisanych lotek): celność (% treble, sektor
 - **Czasowe:** 7 dni, 30 dni, 3 miesiące, rok, all time.
 - **W legach:** ostatnie 10, ostatnie 100, all.
 
+**Przełącznik Okien** (od 2026-11-18) to jedna kontrolka. Na co dzień pokazuje cztery Okna: **30D, 3M, All, Last 10** (w minigierkach „Last 10 matches”, bo tam jeden leg to jeden mecz). Pozostałe trzy (7D, 1Y, Last 100) są pod przyciskiem **„More”**, który rozwija je w tym samym rzędzie. Gdy zapamiętane Okno jest jednym z ukrytych, przełącznik od razu pokazuje wszystkie siedem. Na telefonie rząd przewija się w bok zamiast łamać. Gracz, który danej gry nigdy nie grał, nie widzi przełącznika, tylko pusty stan „Pick … in New match”; puste Okno czasowe ma przycisk „Show all time”.
+
+**Bez trendu:** główny kafelek bez porównania (patrz Progres) mówi dlaczego: „No trend for All time”, „No trend · fewer than 3 legs before” (minigierki: matches), a Checkout % „No trend · fewer than 10 attempts”. Zmiana wartości procentowej jest w punktach procentowych („▲ 2.4 pp”).
+
+**Recent matches** pokazuje profil każdej gry, nie tylko X01: do 10 ostatnich meczów tej gry w Oknie (w Oknie w legach minigierki: ostatnie 10 meczów), przeciwnicy w kolejności rzucania albo „Solo”, wynik ze strony gracza (X01: jego legi pierwsze, minigierki: wynik jak w Lobby).
+
 ## Progres
 
 Profil odpowiada najpierw na „czy się poprawiam”, więc statystyki porównujemy z **poprzednim Oknem** (`GET /api/stats/players/:id`, pole `previous`; w minigierkach `previous` w odpowiedzi gry).

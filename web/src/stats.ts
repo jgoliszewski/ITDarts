@@ -35,6 +35,14 @@ export function delta(cur: number | null | undefined, prev: number | null | unde
 
 // ---------- Okna ----------
 
+/** Why a headline has no change: All time has nothing before it; otherwise the previous Okno was too thin (docs/STATYSTYKI.md, Progres). */
+export const noTrendNote = (w: StatsWindow, unit: 'legs' | 'matches' = 'legs'): string =>
+  w === 'all' ? 'No trend for All time' : `No trend · fewer than 3 ${unit} before`;
+
+/** “the last 30 days”: the Okno in a sentence; leg Okna and All time have no end before which nothing was played. */
+export const windowPhrase = (w: StatsWindow): string | null =>
+  ({ '7d': 'the last 7 days', '30d': 'the last 30 days', '90d': 'the last 3 months', '365d': 'the last year' } as Partial<Record<StatsWindow, string>>)[w] ?? null;
+
 /** The Okna in picker order; `SHOWN` always, the rest under More (docs/STATYSTYKI.md, Okna). */
 export const WINDOWS: StatsWindow[] = ['7d', '30d', '90d', '365d', 'all', 'l10', 'l100'];
 const SHOWN: StatsWindow[] = ['30d', '90d', 'all', 'l10'];

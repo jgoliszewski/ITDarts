@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { X01Stats } from '../../games/x01/stats.ts';
+import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { pick } from './useJson.ts';
 import { GAMES } from '../../games/index.ts';
 import { TrendChart } from './components/StatParts.tsx';
 import { fill, gameCompareRows, gameRows, gameStats, playerColor, x01CompareRows, x01Rows } from './components/Compare.tsx';
-import { X01_METRICS, x01Delta, MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, versusAverage, visitShare, windowLabel, windowsShown, winTile } from './stats.ts';
+import { X01_METRICS, x01Delta, MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, versusAverage, visitShare, noTrendNote, windowLabel, windowPhrase, windowsShown, winTile } from './stats.ts';
 import type { GameStatsResponse, PlayerStatsResponse } from '../../server/protocol.ts';
 
 describe('delta', () => {
@@ -223,7 +224,7 @@ describe('winrate tile', () => {
 });
 
 describe('Average chart', () => {
-  const draw = (points: number[], avg: number | null) => renderToStaticMarkup(TrendChart({ points, avg }) as never);
+  const draw = (points: number[], avg: number | null) => renderToStaticMarkup(createElement(TrendChart, { points, avg }));
   it('draws the dashed line only for the average of the Okno, and nothing below 3 matches', () => {
     expect(draw([50, 40, 30], 45)).toContain('class="mean"');
     expect(draw([50, 40, 30], null)).not.toContain('class="mean"');
@@ -244,6 +245,12 @@ describe('Average chart', () => {
     const down = gap(draw([50, 60, 40], 50)), up = gap(draw([50, 40, 60], 50));
     expect(down).toBeGreaterThan(0);
     expect(up).toBeLessThan(0);
+  });
+  it('dates the first, middle and last match under the axis', () => {
+    const day = (d: number) => new Date(2026, 10, d, 12).getTime();
+    const m = renderToStaticMarkup(createElement(TrendChart, { points: [50, 40, 30, 60, 55], avg: null, dates: [1, 2, 3, 4, 5].map(day) }));
+    expect([...m.matchAll(/class="tick">(\d+ Nov)</g)].map(x => x[1])).toEqual(['1 Nov', '3 Nov', '5 Nov']);
+    expect(m).toContain('aria-label="Average match by match: 50.0, 40.0, 30.0, 60.0, 55.0"');
   });
   it('needs 3 matches', () => {
     expect(MIN_TREND).toBe(3);
@@ -296,6 +303,16 @@ describe('Okna', () => {
     expect(windowLabel('l10', 'matches')).toBe('Last 10 matches');
     expect(windowLabel('l100')).toBe('Last 100 legs');
     expect(windowLabel('90d')).toBe('3M');
+  });
+  it('says why a headline has no trend', () => {
+    expect(noTrendNote('all')).toBe('No trend for All time');
+    expect(noTrendNote('30d', 'matches')).toBe('No trend · fewer than 3 matches before');
+  });
+  it('names time Okna in a sentence, not leg Okna or All time', () => {
+    expect(windowPhrase('30d')).toBe('the last 30 days');
+    expect(windowPhrase('365d')).toBe('the last year');
+    expect(windowPhrase('l10')).toBeNull();
+    expect(windowPhrase('all')).toBeNull();
   });
 });
 
