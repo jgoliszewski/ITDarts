@@ -36,15 +36,16 @@ export function Keypad({ cur, onPick }: { cur: Dart | null; onPick: (d: Dart) =>
       <div className="num-grid">
         {Array.from({ length: 20 }, (_, i) => <Key key={i} n={i + 1} m={mult} cur={cur} onPick={onPick} small bare />)}
       </div>
-      <Others cur={cur} onPick={onPick} />
+      <Others cur={cur} onPick={onPick} bare />
     </>
   );
 }
 
-function Others({ cur, onPick }: { cur: Dart | null; onPick: (d: Dart) => void }) {
+/** Miss, 25 and Bull. Under Nearby they keep the row label column; under All (`bare`) they line up with the keypad. */
+function Others({ cur, onPick, bare }: { cur: Dart | null; onPick: (d: Dart) => void; bare?: boolean }) {
   return (
-    <div className="fix-grid">
-      <span className="rl">Other</span>
+    <div className={`fix-grid ${bare ? 'bare' : ''}`}>
+      {!bare && <span className="rl">Other</span>}
       <Key n={0} m={1} cur={cur} onPick={onPick} small />
       <Key n={25} m={1} cur={cur} onPick={onPick} small />
       <Key n={25} m={2} cur={cur} onPick={onPick} small />
@@ -95,13 +96,21 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
       {wide && <button className="btn danger" onClick={onClose}>Cancel</button>}
     </div>
   );
+  // Real tabs (B#20): selected, and pointing at the keys they show.
   const tabs = (
-    <div className="seg" role="tablist">
-      <button role="tab" aria-pressed={tab === 'nearby'} onClick={() => setTab('nearby')}>Nearby</button>
-      <button role="tab" aria-pressed={tab === 'all'} onClick={() => setTab('all')}>All</button>
+    <div className="seg" role="tablist" aria-label="Keys">
+      {(['nearby', 'all'] as const).map(t => (
+        <button key={t} role="tab" id={`fix-tab-${t}`} aria-selected={tab === t} aria-controls="fix-panel" onClick={() => setTab(t)}>
+          {t === 'nearby' ? 'Nearby' : 'All'}
+        </button>
+      ))}
     </div>
   );
-  const pad = tab === 'nearby' ? <Nearby cur={target.dart} onPick={onPick} /> : <Keypad cur={target.dart} onPick={onPick} />;
+  const pad = (
+    <div id="fix-panel" role="tabpanel" aria-labelledby={`fix-tab-${tab}`} className="fix-panel">
+      {tab === 'nearby' ? <Nearby cur={target.dart} onPick={onPick} /> : <Keypad cur={target.dart} onPick={onPick} />}
+    </div>
+  );
 
   if (wide) {
     return (
@@ -125,7 +134,6 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
     <>
       <div className="scrim" onClick={onClose} />
       <div ref={box} tabIndex={-1} className="sheet" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="grab" />
         {head}
         {tabs}
         {pad}

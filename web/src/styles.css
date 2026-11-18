@@ -162,7 +162,7 @@ button:focus-visible, input:focus-visible, [role='button']:focus-visible { outli
 .icon-btn { width: 44px; height: 44px; border-radius: var(--r-pill); background: var(--card); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-pill); background: var(--card); }
 .seg button { height: var(--tap); border-radius: var(--r-pill); font-size: var(--fs-ui-sm); font-weight: 700; color: var(--soft); }
-.seg button[aria-pressed='true'] { color: var(--ink); }
+.seg button:is([aria-pressed='true'], [aria-selected='true']) { color: var(--ink); }
 .field { height: 52px; padding: 0 16px; border-radius: var(--r-key); border: 1px solid var(--line); background: transparent; color: var(--text); font-size: var(--fs-ui-md); outline: none; width: 100%; }
 .field:focus { border-color: var(--accent); }
 
@@ -472,8 +472,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .option-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
 /* ---------- fix sheet ---------- */
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-modal); background: var(--sheet); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: 12px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; max-width: 560px; margin: 0 auto; max-height: 100vh; overflow: auto; }
-.sheet .grab { align-self: center; width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--faint); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-modal); background: var(--sheet); border-radius: var(--r-sheet) var(--r-sheet) 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; max-width: 560px; margin: 0 auto; max-height: 100vh; max-height: 100dvh; overflow: auto; }
 .sheet-head { display: flex; align-items: baseline; justify-content: space-between; }
 .sheet-head b { font-size: var(--fs-ui-lg); font-weight: 800; }
 .sheet-head span { font-size: var(--fs-ui-sm); color: var(--muted); }
@@ -497,6 +496,9 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .wide-fix .board-wrap p { position: absolute; left: 0; right: 0; bottom: -30px; margin: 0; text-align: center; font-size: var(--fs-ui-sm); line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Keys shrink on short laptop screens so the left column never scrolls. */
 .wide-fix .key { height: clamp(52px, 8.4vh, 96px); }
+/* Under All the Other row has no label column, so Miss, 25 and Bull line up with the keypad (B#20). */
+.fix-grid.bare { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fix-panel { display: flex; flex-direction: column; gap: inherit; }
 .wide-fix .key b { font-size: var(--fs-ui-xl); }
 .wide-fix .key small { font-size: var(--fs-ui-sm); }
 .wide-fix .key.sm { height: clamp(44px, 6.6vh, 76px); }
@@ -1216,7 +1218,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* Segments, mult row and chips: the selected background fades in under the text (M11). */
 .seg button, .mult-row button, .chip { position: relative; isolation: isolate; }
 .seg button::before, .mult-row button::before, .chip::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--text); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-.seg button[aria-pressed='true']::before, .mult-row button[aria-pressed='true']::before, .chip.on::before { opacity: 1; }
+.seg button:is([aria-pressed='true'], [aria-selected='true'])::before, .mult-row button[aria-pressed='true']::before, .chip.on::before { opacity: 1; }
 /* Menu (A#14): items, then the switches and the one destructive item, each group apart. */
 .dialog.menu { width: min(420px, calc(100vw - 32px)); gap: 8px; animation-duration: var(--dur-fast); }
 .dialog.menu h2 { margin-bottom: 8px; }
