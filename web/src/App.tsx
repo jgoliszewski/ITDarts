@@ -9,7 +9,7 @@ import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx'
 import type { LobbyRecord } from '../../server/protocol.ts';
 import { endsNormally, isX01, presetFor } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
-import { builtinSound, playCaller, playSound, setMaster } from './sound.ts';
+import { playCaller, playSound, setMaster } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -44,8 +44,9 @@ function useScreenFade(key: string) {
 }
 
 /**
- * Master volume over everything the kiosk plays, and Mute (docs/EFEKTY.md, Dźwięk). The slider saves when let go; on the
- * laptop a short Next player sound plays at the new level. Mute leaves Sounds and Caller as they are.
+ * Master volume over everything the kiosk plays, and Mute (docs/EFEKTY.md, Dźwięk). The slider saves when let go and the
+ * server then plays a short Next player sound on the kiosk at the new level, from any Pilot. Mute leaves Sounds and
+ * Caller as they are and greys the slider out.
  */
 function MasterVolume({ s }: { s: ClientState }) {
   const [moving, setMoving] = useState<number | null>(null);
@@ -53,18 +54,14 @@ function MasterVolume({ s }: { s: ClientState }) {
   const muted = s.effects.muted;
   const commit = async () => {
     if (moving === null) return;
-    const r = await act({ type: 'effects', master: moving });
+    await act({ type: 'effects', master: moving });
     setMoving(null);
-    if (r.ok && s.you.isLocal && !muted) {
-      setMaster(moving, muted);
-      builtinSound('turn', 0.75);
-    }
   };
   return (
     <div className="master-volume">
       <div className="master-head"><b>Volume</b><span className="num">{muted ? `Muted · ${level}%` : `${level}%`}</span></div>
       <div className="master-controls">
-        <input type="range" min={0} max={100} step={5} value={level} aria-label="Volume" aria-valuetext={`${level} percent`}
+        <input type="range" min={0} max={100} step={5} value={level} disabled={muted} aria-label="Volume" aria-valuetext={`${level} percent`}
           onChange={e => setMoving(Number(e.target.value))} onPointerUp={() => void commit()} onKeyUp={() => void commit()} onBlur={() => void commit()} />
         <button className="btn" aria-pressed={muted} onClick={() => void act({ type: 'effects', muted: !muted })}>{muted ? 'Unmute' : 'Mute'}</button>
       </div>

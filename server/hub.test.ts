@@ -325,10 +325,11 @@ describe('master volume and mute', () => {
     hub = new Hub(db, board as unknown as Board, { dataDir: dir, extraBackupDir: null, ocheMeters: 2.37, port: 0 } as Config, effects as unknown as Effects, () => undefined, () => undefined);
     const ws = Object.assign(new EventEmitter(), { OPEN: 1, readyState: 1, send: (s: string) => ws.emit('out', JSON.parse(s)) });
     let last: Extract<ServerMessage, { type: 'state' }>['state'] | undefined;
-    ws.on('out', (m: ServerMessage) => m.type === 'state' && (last = m.state));
+    const out: ServerMessage[] = [];
+    ws.on('out', (m: ServerMessage) => (out.push(m), m.type === 'state' && (last = m.state)));
     hub.connect(ws as never, true);
     ws.emit('message', JSON.stringify({ type: 'hello', clientId: 'kiosk', deviceName: 'test' }));
-    return { store, state: () => last! };
+    return { store, out, state: () => last! };
   }
 
   it('starts at 100 % and not muted', () => {
@@ -350,6 +351,30 @@ describe('master volume and mute', () => {
     await pilot({ type: 'effects', muted: true });
     const again = new EffectsStore(db, join(dir, 'effects'), dir, []);
     expect(again.settings()).toMatchObject({ master: 35, muted: true });
+  });
+
+  it('plays a Next player preview on the kiosk at the new level, after the state that carries it (CARRY 04b)', async () => {
+    const { out, store } = withStore();
+    store.updateSettings({ volume: 80 });
+    const pilot = client(false);
+    await pilot({ type: 'takeControl' });
+    out.length = 0;
+    expect(await pilot({ type: 'effects', master: 40 })).toMatchObject({ ok: true });
+    await new Promise(r => setImmediate(r));
+    const fx = out.findIndex(m => m.type === 'fx');
+    const level = out.findIndex(m => m.type === 'state' && m.state.effects.master === 40);
+    expect(fx).toBeGreaterThan(level);
+    expect(level).toBeGreaterThanOrEqual(0);
+    // The real Next player sound: the effects volume times its own (75 %).
+    expect(out[fx]).toEqual({ type: 'fx', fx: { sound: { url: 'builtin:turn', gain: 0.8 * 0.75 }, anim: null, caller: null } });
+  });
+
+  it('plays no preview while muted, nor for Mute or the switches', async () => {
+    const { out } = withStore();
+    const pilot = client(true);
+    for (const cmd of [{ muted: true }, { master: 30 }, { muted: false }, { sounds: false }] as const) await pilot({ type: 'effects', ...cmd });
+    await new Promise(r => setImmediate(r));
+    expect(out.filter(m => m.type === 'fx')).toEqual([]);
   });
 
   it('refuses a level out of 0–100 and a device that is not the Pilot', async () => {

@@ -1110,6 +1110,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .master-controls input { flex: 1; min-width: 0; height: var(--tap); margin: 0; }
 .master-controls .btn { flex: none; min-width: 112px; height: var(--tap); }
 .master-controls .btn[aria-pressed='true'] { background: var(--red-bg); color: var(--red-soft); }
+/* Muted: the level stays visible but can't change until Unmute. */
+.master-controls input:disabled { accent-color: var(--off); cursor: default; }
 
 /* ---------- lobby records (D6) ---------- */
 /* Under the last match: one tile per minigame variant with a record; the list scrolls inside the card when long. */

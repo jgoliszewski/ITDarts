@@ -29,6 +29,7 @@ import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
 import { UserError, cleanName } from './db.ts';
+import { builtinId } from './effects/builtin.ts';
 import type { Effects, Fx } from './effects/index.ts';
 import { rotateBoardDue } from './rotate.ts';
 import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
@@ -663,6 +664,13 @@ export class Hub {
           ...(cmd.muted !== undefined && { muted: cmd.muted }),
         });
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
+        // A new level plays the Next player sound on the kiosk, also when a phone is the Pilot. It goes out after the
+        // state with the level (the command's broadcast), so the kiosk plays it through the new master.
+        const s = this.effects.store.settings();
+        const turn = this.effects.store.sound(builtinId('turn'));
+        if (cmd.master !== undefined && !s.muted && turn) {
+          setImmediate(() => this.sendFx({ sound: { url: turn.url, gain: (s.volume / 100) * (turn.volume / 100) }, anim: null, caller: null }));
+        }
         return {};
       }
       case 'ledsWhite':
