@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -162,5 +162,35 @@ describe('remove dialog line (B#8)', () => {
 
   it('says why when there is no way out', () => {
     expect(removeIntro(false, false, 'Only two would be left: end the match instead')).toBe('Only two would be left: end the match instead');
+  });
+});
+
+// B#17 and the turn card (docs/UI.md, Tura i takeout): the phone's This turn line says what the scoreboard says.
+describe('phone This turn line', () => {
+  const d = (s: string) => ({ dart: parseDart(s)!, at: 0 });
+  const mini = (game: string, view: object, good = [true, false, true], verdict: object | null = null) =>
+    ({ game, view: { visit: { darts: [d('T20'), d('S5'), d('S1')], good, verdict }, ...view } }) as unknown as LiveMatch;
+
+  it('shows the X01 visit total as the turn sum, BUST in red after a bust', () => {
+    expect(turnHead({ game: 'x01', view: { visit: { total: 85, bust: false } } } as unknown as LiveMatch)).toEqual({ text: '85', tone: 'sum' });
+    expect(turnHead({ game: 'x01', view: { visit: { total: 85, bust: true } } } as unknown as LiveMatch)).toEqual({ text: 'BUST', tone: 'bad' });
+  });
+
+  it('shows what the visit scored in scoring minigames, with a sign in Bullseye', () => {
+    expect(turnHead(mini('121', {}))).toEqual({ text: '61', tone: 'sum' });
+    expect(turnHead(mini('hol', { sum: 41 }))).toEqual({ text: '41', tone: 'sum' });
+    expect(turnHead(mini('bullseye', { visitPoints: -2 }))).toEqual({ text: '−2', tone: 'sum' });
+  });
+
+  it('counts hits, or marks in Cricket, in games counted in hits', () => {
+    expect(turnHead(mini('atc', {}))).toEqual({ text: '2 hits', tone: 'count' });
+    expect(turnHead(mini('atc', {}, [false, true, false]))).toEqual({ text: '1 hit', tone: 'count' });
+    expect(turnHead(mini('atc', {}, [false, false, false]))).toEqual({ text: '0 hits', tone: 'count' });
+    expect(turnHead(mini('cricket', { visitMarks: 4 }))).toEqual({ text: '4 marks', tone: 'count' });
+  });
+
+  it("shows the finished visit's verdict in its colour", () => {
+    expect(turnHead(mini('killer', {}, [false, false, false], { text: 'Life lost', tone: 'bad' }))).toEqual({ text: 'LIFE LOST', tone: 'bad' });
+    expect(turnHead(mini('121', {}, [true, true, true], { text: 'Checkout', tone: 'good' }))).toEqual({ text: 'CHECKOUT', tone: 'good' });
   });
 });

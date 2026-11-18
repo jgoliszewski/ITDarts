@@ -130,6 +130,20 @@ export function visitScored(m: LiveMatch): number | null {
   }
 }
 
+/**
+ * The phone's This turn line (B#17), like the turn card on the scoreboard: the visit's total in orange (`sum`), BUST or the
+ * finished visit's verdict in its colour, and in games counted in hits how many so far (marks in Cricket).
+ */
+export function turnHead(m: LiveMatch): { text: string; tone: 'sum' | 'count' | 'good' | 'bad' } {
+  if (isX01(m)) return m.view.visit.bust ? { text: 'BUST', tone: 'bad' } : { text: String(m.view.visit.total), tone: 'sum' };
+  if (m.view.visit.verdict) return { text: m.view.visit.verdict.text.toUpperCase(), tone: m.view.visit.verdict.tone };
+  if (m.game === 'bullseye') return { text: signed(m.view.visitPoints, true), tone: 'sum' };
+  const scored = visitScored(m);
+  if (scored !== null) return { text: String(scored), tone: 'sum' };
+  const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [m.view.visit.good.filter(Boolean).length, 'hit'];
+  return { text: `${n} ${unit}${n === 1 ? '' : 's'}`, tone: 'count' };
+}
+
 /** Games whose hero has the right half with This turn and the route or the score to beat (variant D); the rest keep their own. */
 export const turnPanel = (m: LiveMatch): boolean =>
   m.game === 'x01' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout';

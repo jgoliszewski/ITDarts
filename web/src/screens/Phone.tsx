@@ -1,23 +1,27 @@
 import { label } from '../../../games/darts.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
+import type { ReactNode } from 'react';
 import type { Dart } from '../../../games/darts.ts';
-import { signed } from '../../../games/turns.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, dartTone, dartValue, isX01, pickProps, playOrder, rematchLabel, removedNote, shortDescription, winnersOf } from '../match.ts';
+import type { LobbyRecord } from '../../../server/protocol.ts';
+import { controls, dartTone, dartValue, isX01, legTarget, pickProps, playOrder, rematchLabel, removedNote, shortDescription, turnHead, winnersOf, x01Dead } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
+import { Records } from './Lobby.tsx';
 import { NewRecord } from './MiniBoard.tsx';
-import { boardPill } from './Scoreboard.tsx';
+import { Pips, boardPill } from './Scoreboard.tsx';
 
 function PhoneHeader({ s, title, onMenu, onBoard }: { s: ClientState; title: string; onMenu: () => void; onBoard?: () => void }) {
   const pill = boardPill(s);
+  const inner = <><span className={`dot ${pill.dot}`} />{pill.text}</>;
+  // Only the pilot opens the board panel; for anyone else the status is plain text, not a button (B#17).
   return (
     <header className="phone-header">
       <div className="title">{title}</div>
-      <button className="pill" aria-label={`Board: ${pill.text}`} onClick={onBoard} disabled={!onBoard} style={{ opacity: 1 }}>
-        <span className={`dot ${pill.dot}`} />{pill.text}
-      </button>
+      {onBoard
+        ? <button className="pill" aria-label={`Board: ${pill.text}`} onClick={onBoard}>{inner}</button>
+        : <div className="pill">{inner}</div>}
       <button className="icon-btn" aria-label="Menu" onClick={onMenu}>{Icon.menu()}</button>
     </header>
   );
@@ -31,10 +35,13 @@ function Players({ m, onPick }: { m: LiveMatch; onPick?: (i: number) => void }) 
       {playOrder(m).map(i => {
         const r = m.roster[i];
         const active = i === v.current && v.phase !== 'bulloff';
-        let meta: string, big: string, out = false;
+        let meta: ReactNode, big: string, out = false;
         if (isX01(m)) {
+          // Legs as dots toward the target, like the rows on the scoreboard.
+          const target = legTarget(m);
           const sets = m.options.matchMode.kind === 'sets' ? `${m.view.sets[i]} sets · ` : '';
-          meta = `${sets}${legsWord(m.view.legs[i])} · avg ${fmtAvg(m.view.stats[i].matchAvg)}`;
+          const avg = `avg ${fmtAvg(m.view.stats[i].matchAvg)}`;
+          meta = target ? <>{sets}<Pips won={m.view.legs[i]} of={target} />{avg}</> : `${sets}${legsWord(m.view.legs[i])} · ${avg}`;
           big = String(m.view.scores[i]);
         } else {
           ({ meta, value: big, out } = m.view.rows[i]);
@@ -77,12 +84,27 @@ function Darts({ m, editable, onDart }: { m: LiveMatch; editable: boolean; onDar
             : <div key={i} className="p-dart empty" />;
         }
         const inner = <><span className="num">{dartValue(m, d)}</span><span className="lbl">{label(d.dart)}</span></>;
-        // In minigames a dart that did nothing is dimmed; Bullseye colours by points like the scoreboard.
-        const tone = isX01(m) ? '' : m.game === 'bullseye' ? dartTone(m, m.view.visit.good[i], d) : !m.view.visit.good[i] ? 'dead' : '';
+        // As on the scoreboard (D1): neutral in scoring games, a dart that did nothing dimmed, green and red in games counted in hits.
+        const tone = isX01(m) ? (x01Dead(m)[i] ? 'dead' : '') : dartTone(m, m.view.visit.good[i], d);
         return editable
           ? <button key={`${i}-${flash}`} className={`p-dart ${tone} ${flash === i ? 'flash' : ''}`} onClick={() => onDart(i)}>{inner}</button>
           : <div key={i} className={`p-dart ${tone}`}>{inner}</div>;
       })}
+    </div>
+  );
+}
+
+/** This turn: whose, what it made so far, and the darts; just above the action bar, in reach of the thumb (B#10). */
+function Turn({ m, editable, onDart, hint }: { m: LiveMatch; editable: boolean; onDart: (i: number) => void; hint?: string }) {
+  const head = turnHead(m);
+  return (
+    <div className="section p-turn">
+      <div className="p-turn-head">
+        <span className="caps">{m.roster[m.view.current].name} · this turn</span>
+        <span className={`num ${head.tone}`}>{head.text}</span>
+      </div>
+      <Darts m={m} editable={editable} onDart={onDart} />
+      {hint !== undefined && <div className="p-hint">{hint}</div>}
     </div>
   );
 }
@@ -154,18 +176,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
       <div className="phone-body">
         <Players m={m} onPick={onPlayer} />
         <PhaseCard s={s} m={m} />
-        {!inBull && (
-          <div className="section">
-            <div className="p-turn-head">
-              <span className="caps">{m.roster[v.current].name} · this turn</span>
-              {isX01(m)
-                ? <span className="num" style={{ color: m.view.visit.bust ? 'var(--red)' : undefined }}>{m.view.visit.bust ? 'BUST' : m.view.visit.total}</span>
-                : <span className="num">{m.game === 'hol' ? m.view.sum ?? 0 : m.game === 'bullseye' ? signed(m.view.visitPoints, true) : m.view.hero.big}</span>}
-            </div>
-            <Darts m={m} editable onDart={onFix} />
-            <div className="p-hint">{checkoutHint(m) ?? c.hint}</div>
-          </div>
-        )}
+        {!inBull && <Turn m={m} editable onDart={onFix} hint={checkoutHint(m) ?? c.hint} />}
         {offline && !inBull && v.phase === 'throwing' && v.visit.dartsLeft > 0 && (
           <div className="section">
             <span className="caps">Enter dart {v.visit.darts.length + 1}</span>
@@ -174,7 +185,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
         )}
       </div>
       {(!inBull || c.canUndo) && (
-        <div className={`p-actions ${c.endInstead || c.finish ? 'three' : ''}`}>
+        <div className={`p-actions ${c.endInstead || c.finish ? 'three' : 'lead'}`}>
           <button className="btn" onClick={() => act({ type: 'undo' })}>Undo</button>
           {c.endInstead && <button className="btn" onClick={onEnd}>End match</button>}
           {c.finish && <button className="btn" onClick={() => act({ type: 'endMatch', save: true })}>Finish</button>}
@@ -195,7 +206,7 @@ export function PhoneWatch({ s, onMenu }: { s: ClientState; onMenu: () => void }
         {m ? (
           <>
             <Players m={m} />
-            {m.view.phase !== 'bulloff' && <Darts m={m} editable={false} onDart={() => undefined} />}
+            {m.view.phase !== 'bulloff' && <Turn m={m} editable={false} onDart={() => undefined} />}
           </>
         ) : (
           <div className="center-msg">
@@ -203,18 +214,20 @@ export function PhoneWatch({ s, onMenu }: { s: ClientState; onMenu: () => void }
             <p>Take control to start one, or look at the stats.</p>
           </div>
         )}
+        <div className="p-hint">{s.pilot ? `Pilot: ${s.pilot.deviceName}` : 'Nobody is the pilot yet'}</div>
       </div>
-      <div className="p-actions">
+      <div className="p-actions lead">
         <a className="btn" href="/stats" style={{ textDecoration: 'none' }}>Stats</a>
         <button className="btn primary" onClick={() => act({ type: 'takeControl' })}>Take control</button>
       </div>
-      <div className="p-hint" style={{ paddingBottom: 12 }}>{s.pilot ? `Pilot: ${s.pilot.deviceName}` : 'Nobody is the pilot yet'}</div>
     </div>
   );
 }
 
 /** Pilot phone with no match running. */
-export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientState; onMenu: () => void; onBoard: () => void; onNew: () => void; onPlayers: () => void }) {
+export function PhoneHome({ s, onMenu, onBoard, onNew, onRecord, onPlayers }: {
+  s: ClientState; onMenu: () => void; onBoard: () => void; onNew: () => void; onRecord: (r: LobbyRecord) => void; onPlayers: () => void;
+}) {
   const last = s.lastMatch;
   return (
     <div className="phone">
@@ -236,6 +249,8 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
             ))}
           </div>
         )}
+        {/* The office records from the lobby: the phone does everything the kiosk does (docs/UI.md, Ekrany i tryby). */}
+        <Records lastId={last?.id} onPick={onRecord} />
         <div className="phone-start">
           <div className="caps">{last ? 'Ready for the next one' : 'No match yet'}</div>
           <h2>Game on?</h2>

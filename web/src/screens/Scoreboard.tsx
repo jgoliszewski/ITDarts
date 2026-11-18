@@ -43,7 +43,7 @@ export function BigHeader({ s, sub, game, onBoard, onMenu }: { s: ClientState; s
   );
 }
 
-function Pips({ won, of }: { won: number; of: number }) {
+export function Pips({ won, of }: { won: number; of: number }) {
   return <div className="pips">{Array.from({ length: of }, (_, i) => <span key={i} className={`pip ${i < won ? 'on' : ''}`} />)}</div>;
 }
 

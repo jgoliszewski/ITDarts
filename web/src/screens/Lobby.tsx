@@ -13,7 +13,7 @@ import { BigHeader } from './Scoreboard.tsx';
  * game groups. A tap opens New match with that game set up like the record's match. The list scrolls inside its card
  * when there are more than fit; reloaded whenever a new match is saved.
  */
-function Records({ lastId, onPick }: { lastId: number | undefined; onPick: (r: LobbyRecord) => void }) {
+export function Records({ lastId, onPick }: { lastId: number | undefined; onPick: (r: LobbyRecord) => void }) {
   const [records, setRecords] = useState<LobbyRecord[] | null>(null);
   useEffect(() => {
     let live = true;

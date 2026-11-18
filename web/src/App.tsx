@@ -205,6 +205,7 @@ function Main({ s }: { s: ClientState }) {
     else setScreen(what);
   };
 
+  const openRecord = (r: LobbyRecord) => { setPreset({ game: r.game, options: r.options }); setScreen('setup'); };
   const pilotOnly = s.you.isPilot ? screen : 'main';
   // A record's preset is one-shot: leaving the setup in any way (or losing control) drops it (review t04).
   useEffect(() => setPreset(p => presetFor(p, pilotOnly)), [pilotOnly]);
@@ -267,7 +268,7 @@ function Main({ s }: { s: ClientState }) {
     );
     return m
       ? <Scoreboard s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onRecord={r => { setPreset({ game: r.game, options: r.options }); setScreen('setup'); }} onPlayers={() => setScreen('players')} overlay={overlay} />;
+      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onRecord={openRecord} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;
@@ -275,7 +276,7 @@ function Main({ s }: { s: ClientState }) {
     <>
       {m
         ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={setRemoveOf} />
-        : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} />}
+        : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onRecord={openRecord} onPlayers={() => setScreen('players')} />}
       {dialogs}
     </>
   );
