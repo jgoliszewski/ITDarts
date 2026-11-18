@@ -9,7 +9,7 @@ import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx'
 import type { LobbyRecord } from '../../server/protocol.ts';
 import { endsNormally, isX01 } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
-import { playCaller, playSound } from './sound.ts';
+import { builtinSound, playCaller, playSound, setMaster } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -43,6 +43,35 @@ function useScreenFade(key: string) {
   }, [key]);
 }
 
+/**
+ * Master volume over everything the kiosk plays, and Mute (docs/EFEKTY.md, Dźwięk). The slider saves when let go; on the
+ * laptop a short Next player sound plays at the new level. Mute leaves Sounds and Caller as they are.
+ */
+function MasterVolume({ s }: { s: ClientState }) {
+  const [moving, setMoving] = useState<number | null>(null);
+  const level = moving ?? s.effects.master;
+  const muted = s.effects.muted;
+  const commit = async () => {
+    if (moving === null) return;
+    const r = await act({ type: 'effects', master: moving });
+    setMoving(null);
+    if (r.ok && s.you.isLocal && !muted) {
+      setMaster(moving, muted);
+      builtinSound('turn', 0.75);
+    }
+  };
+  return (
+    <div className="master-volume">
+      <div className="master-head"><b>Volume</b><span className="num">{muted ? `Muted · ${level}%` : `${level}%`}</span></div>
+      <div className="master-controls">
+        <input type="range" min={0} max={100} step={5} value={level} aria-label="Volume" aria-valuetext={`${level} percent`}
+          onChange={e => setMoving(Number(e.target.value))} onPointerUp={() => void commit()} onKeyUp={() => void commit()} onBlur={() => void commit()} />
+        <button className="btn" aria-pressed={muted} onClick={() => void act({ type: 'effects', muted: !muted })}>{muted ? 'Unmute' : 'Mute'}</button>
+      </div>
+    </div>
+  );
+}
+
 function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr' | 'bug' | 'close') => void }) {
   const pilot = s.you.isPilot;
   const item = (label: string, run: () => void, danger = false) => (
@@ -69,7 +98,7 @@ function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClo
       {item('Report a bug', () => open('bug'))}
       {/* Pilot switches; the server keeps them, so they survive a restart. */}
       {pilot && (
-        <div className="menu-group"><div className="seg">
+        <div className="menu-group"><MasterVolume s={s} /><div className="seg">
           <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
           <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
           <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
@@ -256,6 +285,9 @@ function Main({ s }: { s: ClientState }) {
 export function App() {
   const path = usePath();
   const { state, connected } = useSnapshot();
+  // Every page of this browser plays through the master: the kiosk, and the previews on /effects.
+  const master = state?.effects.master, muted = state?.effects.muted;
+  useEffect(() => { if (master !== undefined) setMaster(master, !!muted); }, [master, muted]);
   if (path.startsWith('/stats')) return <><StatsPage path={path} /><Toasts /></>;
   if (path.startsWith('/effects')) return <><EffectsPage /><Toasts /></>;
   return (

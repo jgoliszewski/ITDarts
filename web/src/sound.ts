@@ -15,6 +15,38 @@ function audio(): AudioContext | null {
   return ctx;
 }
 
+/**
+ * Master volume and Mute (docs/EFEKTY.md, Dźwięk): one gain between every sound of the kiosk and the speakers, so rule
+ * files, the caller and the built-in sounds all follow it and the server's own gains stay as they are.
+ */
+let master: GainNode | null = null;
+let masterLevel = 1;
+
+/** The master gain for a level in % and Mute: 0–1, 0 when muted. */
+export const masterGain = (volume: number, muted: boolean): number => (muted ? 0 : Math.min(100, Math.max(0, volume)) / 100);
+
+function dest(a: AudioContext): GainNode {
+  if (!master) {
+    master = a.createGain();
+    master.gain.value = masterLevel;
+    master.connect(a.destination);
+  }
+  return master;
+}
+
+/** Sets the master from the Pilot's settings, with a 50 ms ramp so a change never clicks. */
+export function setMaster(volume: number, muted: boolean) {
+  masterLevel = masterGain(volume, muted);
+  if (!master || !ctx) return;
+  const t = ctx.currentTime;
+  master.gain.cancelScheduledValues(t);
+  master.gain.setValueAtTime(master.gain.value, t);
+  master.gain.linearRampToValueAtTime(masterLevel, t + 0.05);
+}
+
+/** For the live check (CDP): the level asked for and what the master node plays now. */
+(globalThis as { itdartsMaster?: () => { level: number; node: number | null } }).itdartsMaster = () => ({ level: masterLevel, node: master?.gain.value ?? null });
+
 const buffers = new Map<string, Promise<AudioBuffer | null>>();
 let playing: AudioBufferSourceNode | null = null;
 /** When the effect sound or the turn sound ends, in AudioContext time; the caller waits for it. */
@@ -46,7 +78,7 @@ export async function playFile(url: string, gain: number) {
   src.buffer = buf;
   const g = a.createGain();
   g.gain.value = gain;
-  src.connect(g).connect(a.destination);
+  src.connect(g).connect(dest(a));
   src.onended = () => {
     if (playing === src) playing = null;
   };
@@ -73,7 +105,7 @@ function playToEnd(a: AudioContext, buf: AudioBuffer, gain: number): Promise<voi
     src.buffer = buf;
     const g = a.createGain();
     g.gain.value = gain;
-    src.connect(g).connect(a.destination);
+    src.connect(g).connect(dest(a));
     src.onended = () => done();
     src.start();
   });
@@ -110,12 +142,12 @@ function reverb(a: AudioContext): GainNode {
   conv.buffer = buf;
   wet = a.createGain();
   wet.gain.value = 0.4;
-  wet.connect(conv).connect(a.destination);
+  wet.connect(conv).connect(dest(a));
   return wet;
 }
 
 function out(a: AudioContext, node: AudioNode, space: number) {
-  node.connect(a.destination);
+  node.connect(dest(a));
   if (space > 0) {
     const g = a.createGain();
     g.gain.value = space;

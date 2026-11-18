@@ -103,6 +103,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 ## Dźwięk
 
 - Gra tylko w przeglądarce kiosku na laptopie. Edge dostaje flagę `--autoplay-policy=no-user-gesture-required`. Telefony milczą.
+- **Master volume i Mute** (2026-11-18): Pilot ustawia w menu poziom 0–100% (krok 5%) i wyciszenie. Mnożą wszystko, co gra kiosk: dźwięki reguł, callera, wbudowane dźwięki (zmiana gracza, trafienie, pudło) i podglądy na `/effects`. Kiosk ma jeden wspólny `GainNode` przed głośnikami (`web/src/sound.ts`), ustawiany ze stanu z rampą 50 ms, więc gainy liczone przez serwer (głośność efektów × głośność pliku, głośność callera) się nie zmieniają. Mute daje 0 i nie rusza Sounds ani Caller; odmutowanie wraca do zapisanego poziomu. Oba ustawienia są lokalne dla laptopa (SQLite `settings`, jak przełączniki), nie w `effects/effects.json`.
 - **Biblioteka dźwięków** to wspólna lista plików. Reguły wybierają z niej, a jeden plik może służyć wielu regułom.
   - Upload z UI, także z telefonu: mp3, wav lub ogg, do 2 MB i 10 s (pierwotnie 5 MB, zmienione przy przeniesieniu do repo).
   - Przy każdym pliku jest odsłuch, zmiana nazwy i suwak głośności, bo pliki z różnych źródeł mają różny poziom.
@@ -325,4 +326,4 @@ Grilling z 2026-10-26, po pierwszych testach: jedna długa strona była nieczyte
 
 ## Pilot
 
-W menu Pilota są trzy przełączniki: Sounds, Caller i LEDs, oraz wejście „Effects”. Ich stan trzyma serwer, więc przetrwa restart.
+W menu Pilota są suwak „Volume” z przyciskiem „Mute”/„Unmute” ([Dźwięk](#dźwięk)), trzy przełączniki: Sounds, Caller i LEDs, oraz wejście „Effects”. Ich stan trzyma serwer, więc przetrwa restart. Suwak zapisuje po puszczeniu; na laptopie zagra wtedy krótki dźwięk zmiany gracza na nowym poziomie.

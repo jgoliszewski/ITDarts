@@ -21,6 +21,9 @@ export interface EffectsSettings {
   sounds: boolean;
   caller: boolean;
   leds: boolean;
+  /** Master volume in % over everything the kiosk plays, and Mute; the Pilot's, kept on this laptop. */
+  master: number;
+  muted: boolean;
   /** Effects volume in %, on top of each sound's own volume (repo). */
   volume: number;
   /** Caller volume in % (repo). */
@@ -87,6 +90,8 @@ interface LocalSettings {
   sounds: boolean;
   caller: boolean;
   leds: boolean;
+  master: number;
+  muted: boolean;
   address: string;
 }
 
@@ -327,7 +332,7 @@ export class EffectsStore {
     const row = this.db.sql.prepare("SELECT value FROM settings WHERE key = 'effects'").get() as { value: string } | undefined;
     // Older rows held every setting; only the local ones are read now.
     const s = row ? (JSON.parse(row.value) as Partial<LocalSettings> & { wled?: { address?: string } }) : {};
-    return { sounds: s.sounds ?? true, caller: s.caller ?? true, leds: s.leds ?? true, address: s.address ?? s.wled?.address ?? '' };
+    return { sounds: s.sounds ?? true, caller: s.caller ?? true, leds: s.leds ?? true, master: s.master ?? 100, muted: s.muted ?? false, address: s.address ?? s.wled?.address ?? '' };
   }
 
   private saveLocal(l: LocalSettings) {
@@ -338,7 +343,7 @@ export class EffectsStore {
     const l = this.local();
     const s = this.data.settings;
     return {
-      sounds: l.sounds, caller: l.caller, leds: l.leds, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice,
+      sounds: l.sounds, caller: l.caller, leds: l.leds, master: l.master, muted: l.muted, volume: s.volume, callerVolume: s.callerVolume, callerVoice: s.callerVoice,
       builtinVolume: { ...s.builtinVolume },
       wled: { address: l.address, base: { ...s.base } },
     };
@@ -352,6 +357,8 @@ export class EffectsStore {
     if ('sounds' in p) l.sounds = !!p.sounds;
     if ('caller' in p) l.caller = !!p.caller;
     if ('leds' in p) l.leds = !!p.leds;
+    if ('master' in p) l.master = int(p.master, 0, 100) ?? fail('Volume is 0–100');
+    if ('muted' in p) l.muted = !!p.muted;
     if ('volume' in p) s.volume = int(p.volume, 0, 100) ?? fail('Volume is 0–100');
     if ('callerVolume' in p) s.callerVolume = int(p.callerVolume, 0, 100) ?? fail('Caller volume is 0–100');
     if ('callerVoice' in p) s.callerVoice = typeof p.callerVoice === 'string' && CALLER_VOICE.test(p.callerVoice) ? p.callerVoice : fail('Pick a caller voice from the list');

@@ -177,7 +177,7 @@ Menu ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikon
 - **Na telefonie-Pilocie** dochodzi Show QR, które pokazuje nakładkę QR na Ekranie wyników. Telefon bez kontroli go nie ma.
 - **Bez kontroli:** Take control i Stats.
 - **Report a bug:** w każdym menu, także bez kontroli ([Zgłaszanie błędów](#zgłaszanie-błędów)).
-- **Efekty:** w menu meczu i ogólnym są przełączniki Sounds, Caller i LEDs. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Układ strony z zakładkami opisuje [EFEKTY.md](EFEKTY.md#układ-strony), a makiety to A1–A4 i C.
+- **Efekty:** w menu meczu i ogólnym są suwak „Volume” (master 0–100%, krok 5%, zapis po puszczeniu) z przyciskiem „Mute”/„Unmute” i przełączniki Sounds, Caller i LEDs ([EFEKTY.md](EFEKTY.md#dźwięk)); tylko u Pilota. W każdym menu, także bez kontroli, jest wejście „Effects” na stronę `/effects` ([EFEKTY.md](EFEKTY.md)). Układ strony z zakładkami opisuje [EFEKTY.md](EFEKTY.md#układ-strony), a makiety to A1–A4 i C.
 
 ## Players
 

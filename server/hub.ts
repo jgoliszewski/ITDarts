@@ -272,7 +272,7 @@ export class Hub {
       rotateBoardDue: rotateBoardDue(this.db.boardRotatedAt(), new Date()),
       boardTest: this.boardTest,
       howTo: this.howTo,
-      effects: { ...(({ sounds, caller, leds, volume }) => ({ sounds, caller, leds, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
+      effects: { ...(({ sounds, caller, leds, master, muted, volume }) => ({ sounds, caller, leds, master, muted, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
   }
 
@@ -659,6 +659,8 @@ export class Hub {
           ...(cmd.sounds !== undefined && { sounds: cmd.sounds }),
           ...(cmd.caller !== undefined && { caller: cmd.caller }),
           ...(cmd.leds !== undefined && { leds: cmd.leds }),
+          ...(cmd.master !== undefined && { master: cmd.master }),
+          ...(cmd.muted !== undefined && { muted: cmd.muted }),
         });
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
         return {};

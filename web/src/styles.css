@@ -1014,6 +1014,15 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .hearts .gain { animation: pop 0.45s ease-out both; }
 .ladder .rung.current .flag { top: calc(50% + calc(54 * var(--u))); }
 
+/* ---------- master volume in the pilot menu ---------- */
+.master-volume { display: flex; flex-direction: column; gap: var(--sp-1); }
+.master-head { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-ui-md); }
+.master-head .num { font-size: var(--fs-ui-lg); color: var(--soft); }
+.master-controls { display: flex; align-items: center; gap: var(--sp-3); }
+.master-controls input { flex: 1; min-width: 0; height: var(--tap); margin: 0; }
+.master-controls .btn { flex: none; min-width: 112px; height: var(--tap); }
+.master-controls .btn[aria-pressed='true'] { background: var(--red-bg); color: var(--red-soft); }
+
 /* ---------- lobby records (D6) ---------- */
 /* Under the last match: one tile per minigame variant with a record; the list scrolls inside the card when long. */
 .lobby-side > .lobby-records { flex: 1; min-height: 0; overflow: hidden; }

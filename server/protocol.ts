@@ -125,8 +125,8 @@ export interface ClientState {
   boardTest: number | null;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
-  /** Pilot switches and the effects volume (0–100). `rev` changes with every effects change. */
-  effects: { sounds: boolean; caller: boolean; leds: boolean; volume: number; rev: number };
+  /** Pilot switches, the master volume over all kiosk sound (0–100) with Mute, and the effects volume (0–100). `rev` changes with every effects change. */
+  effects: { sounds: boolean; caller: boolean; leds: boolean; master: number; muted: boolean; volume: number; rev: number };
 }
 
 export type PlayerCommand =
@@ -162,7 +162,7 @@ export type Command =
   | { type: 'showQr'; show: boolean }
   | { type: 'boardRotated' }
   | { type: 'player'; cmd: PlayerCommand }
-  | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
+  | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean; master?: number; muted?: boolean }
   | { type: 'ledsWhite' }
   | { type: 'closeApp' }
   | { type: 'report'; text: string; where: string; userAgent: string };
