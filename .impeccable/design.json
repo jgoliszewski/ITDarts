@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T10:48:35.458Z",
+  "title": "Design System: ITDarts",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Pomarańcz ITBOOM",
+        "canonical": "#F58224",
+        "tonalRamp": [
+          "#3D2109",
+          "#723C11",
+          "#A65818",
+          "#DB7420",
+          "#F68F3B",
+          "#F8AA6A",
+          "#FAC599",
+          "#FDE0C8"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Atrament",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#040404",
+          "#080808",
+          "#0C0C0C",
+          "#0F0F0F",
+          "#2A2A2A",
+          "#5E5E5E",
+          "#909090",
+          "#C4C4C4"
+        ]
+      },
+      "green": {
+        "role": "tertiary",
+        "displayName": "Zieleń",
+        "canonical": "#3CCB7F",
+        "tonalRamp": [
+          "#0F3320",
+          "#1C5E3B",
+          "#298A56",
+          "#36B571",
+          "#51D18D",
+          "#7BDCA8",
+          "#A4E7C4",
+          "#CEF2DF"
+        ]
+      },
+      "amber": {
+        "role": "tertiary",
+        "displayName": "Bursztyn",
+        "canonical": "#F5B83D",
+        "tonalRamp": [
+          "#3D2E0F",
+          "#72551C",
+          "#A67D29",
+          "#DBA436",
+          "#F6C052",
+          "#F8CF7B",
+          "#FADEA5",
+          "#FDEDCF"
+        ]
+      },
+      "red": {
+        "role": "tertiary",
+        "displayName": "Czerwień",
+        "canonical": "#FF5A5F",
+        "tonalRamp": [
+          "#401718",
+          "#762A2C",
+          "#AD3D40",
+          "#E45055",
+          "#FF6C70",
+          "#FF8F92",
+          "#FFB2B5",
+          "#FFD6D7"
+        ]
+      },
+      "p1": {
+        "role": "tertiary",
+        "displayName": "Gracz 1, różowy",
+        "canonical": "#E0325F",
+        "tonalRamp": [
+          "#380D18",
+          "#68172C",
+          "#982240",
+          "#C82D55",
+          "#E34870",
+          "#EA7492",
+          "#F1A0B5",
+          "#F7CCD7"
+        ]
+      },
+      "p2": {
+        "role": "tertiary",
+        "displayName": "Gracz 2, turkusowy",
+        "canonical": "#16B2C9",
+        "tonalRamp": [
+          "#062D32",
+          "#0A535D",
+          "#0F7988",
+          "#149FB3",
+          "#2FBACF",
+          "#61CBDA",
+          "#93DBE6",
+          "#C5ECF2"
+        ]
+      },
+      "p3": {
+        "role": "tertiary",
+        "displayName": "Gracz 3, żółty",
+        "canonical": "#F5D63D",
+        "tonalRamp": [
+          "#3D360F",
+          "#72631C",
+          "#A69129",
+          "#DBBF36",
+          "#F6DA52",
+          "#F8E37B",
+          "#FAECA5",
+          "#FDF5CF"
+        ]
+      },
+      "p4": {
+        "role": "tertiary",
+        "displayName": "Gracz 4, zielony",
+        "canonical": "#3CCB7F",
+        "tonalRamp": [
+          "#0F3320",
+          "#1C5E3B",
+          "#298A56",
+          "#36B571",
+          "#51D18D",
+          "#7BDCA8",
+          "#A4E7C4",
+          "#CEF2DF"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Tło",
+        "canonical": "#0A0A0B",
+        "tonalRamp": [
+          "#030303",
+          "#050505",
+          "#070707",
+          "#09090A",
+          "#242425",
+          "#595959",
+          "#8D8D8E",
+          "#C2C2C2"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Karta",
+        "canonical": "#141416",
+        "tonalRamp": [
+          "#050506",
+          "#09090A",
+          "#0E0E0F",
+          "#121214",
+          "#2D2D2F",
+          "#606061",
+          "#929293",
+          "#C4C4C5"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Podniesiona",
+        "canonical": "#1F1F23",
+        "tonalRamp": [
+          "#080809",
+          "#0E0E10",
+          "#151518",
+          "#1C1C1F",
+          "#37373B",
+          "#67676A",
+          "#979799",
+          "#C7C7C8"
+        ]
+      },
+      "off": {
+        "role": "neutral",
+        "displayName": "Stan wyłączony",
+        "canonical": "#6E6E75",
+        "tonalRamp": [
+          "#1C1C1D",
+          "#333336",
+          "#4B4B4F",
+          "#626268",
+          "#7E7E84",
+          "#9D9DA1",
+          "#BCBCBF",
+          "#DBDBDD"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Tekst",
+        "canonical": "#F5F5F5",
+        "tonalRamp": [
+          "#3D3D3D",
+          "#727272",
+          "#A6A6A6",
+          "#DBDBDB",
+          "#F6F6F6",
+          "#F8F8F8",
+          "#FAFAFA",
+          "#FDFDFD"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "tv-mega": {
+        "displayName": "TV mega",
+        "purpose": "Wynik w hero. Tylko ta liczba."
+      },
+      "tv-label": {
+        "displayName": "TV label",
+        "purpose": "Minimum na kiosku: max(16px, 18u)."
+      },
+      "ui-md": {
+        "displayName": "UI body",
+        "purpose": "Treść, etykiety, przyciski, toasty na Pilocie i /stats."
+      }
+    },
+    "units": {
+      "note": "Wartości tv-*, rounded.card/row/tile i kioskowe odstępy to px makiety 1920×1080. W kodzie: calc(N * var(--u)), --u = min(100vw/1920, 100vh/1080).",
+      "kioskTextMin": "max(16px, calc(18 * var(--u)))"
+    },
+    "touch": {
+      "min": "44px",
+      "kiosk": "max(44px, calc(N * var(--u)))"
+    },
+    "shadows": [
+      {
+        "name": "shadow-float",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.5)",
+        "purpose": "Toast, lista Dropdown, dymek informacji."
+      },
+      {
+        "name": "shadow-tag",
+        "value": "0 2px 8px rgba(0, 0, 0, 0.5)",
+        "purpose": "Plakietki na heatmapie."
+      }
+    ],
+    "scrim": [
+      {
+        "name": "scrim",
+        "value": "rgba(10, 10, 11, 0.8)",
+        "purpose": "Dialog, sheet, drawer, karta Tury."
+      },
+      {
+        "name": "scrim-solid",
+        "value": "rgba(10, 10, 11, 0.92)",
+        "purpose": "Tylko QR."
+      }
+    ],
+    "zIndex": [
+      {
+        "name": "z-row",
+        "value": 1
+      },
+      {
+        "name": "z-overlay",
+        "value": 20
+      },
+      {
+        "name": "z-actions",
+        "value": 30
+      },
+      {
+        "name": "z-editor",
+        "value": 35
+      },
+      {
+        "name": "z-fx",
+        "value": 40
+      },
+      {
+        "name": "z-scrim",
+        "value": 40
+      },
+      {
+        "name": "z-qr",
+        "value": 45
+      },
+      {
+        "name": "z-modal",
+        "value": 50
+      },
+      {
+        "name": "z-screen",
+        "value": 60
+      },
+      {
+        "name": "z-toast",
+        "value": 70
+      },
+      {
+        "name": "z-banner",
+        "value": 80
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Wejścia, press, zmiany stanu."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Sheet i drawer od krawędzi."
+      },
+      {
+        "name": "dur-press",
+        "value": "120ms",
+        "purpose": ":active."
+      },
+      {
+        "name": "dur-fast",
+        "value": "150ms",
+        "purpose": "Zakładki, segmenty, chipy, switch, strzałki, dropdown, dymek."
+      },
+      {
+        "name": "dur-base",
+        "value": "200ms",
+        "purpose": "Dialog, scrim, toast, crossfade ekranu."
+      },
+      {
+        "name": "dur-sheet",
+        "value": "250ms",
+        "purpose": "FixSheet na telefonie, Panel tarczy."
+      },
+      {
+        "name": "dur-exit",
+        "value": "150ms",
+        "purpose": "Każde wyjście."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "dialog-stack",
+        "value": "560px"
+      },
+      {
+        "name": "stats-compact",
+        "value": "600px"
+      },
+      {
+        "name": "setup-3col",
+        "value": "1100px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button primary",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Jedna główna akcja na ekran.",
+      "html": "<button class=\"ds-btn-primary\">Next player</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border-radius:9999px;border:0;font:600 16px Inter,system-ui,sans-serif;background:#F58224;color:#111111;font-weight:800;transition:transform var(--dur-press,120ms) cubic-bezier(.23,1,.32,1)}.ds-btn-primary:active{transform:scale(.97)}.ds-btn-primary:focus-visible{outline:2px solid #F58224;outline-offset:2px}"
+    },
+    {
+      "name": "Button primary disabled",
+      "kind": "button",
+      "refersTo": "button-primary-disabled",
+      "description": "Zablokowana główna akcja bez opacity: tekst 5,04:1.",
+      "html": "<button class=\"ds-btn-off\" disabled>Start match</button>",
+      "css": ".ds-btn-off{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border-radius:9999px;border:0;font:800 16px Inter,system-ui,sans-serif;background:#1F1F23;color:#8E8E94;cursor:default}"
+    },
+    {
+      "name": "Button secondary",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Domyślny przycisk.",
+      "html": "<button class=\"ds-btn-secondary\">Undo</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border-radius:9999px;border:0;font:600 16px Inter,system-ui,sans-serif;background:#1F1F23;color:#F5F5F5;transition:transform var(--dur-press,120ms) cubic-bezier(.23,1,.32,1)}.ds-btn-secondary:active{transform:scale(.97)}.ds-btn-secondary:focus-visible{outline:2px solid #F58224;outline-offset:2px}"
+    },
+    {
+      "name": "Button danger",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Akcja destrukcyjna.",
+      "html": "<button class=\"ds-btn-danger\">Remove from match</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 24px;border-radius:9999px;border:0;font:600 16px Inter,system-ui,sans-serif;background:#2A1A1B;color:#FF8A8E;font-weight:700;transition:transform var(--dur-press,120ms) cubic-bezier(.23,1,.32,1)}.ds-btn-danger:active{transform:scale(.97)}.ds-btn-danger:focus-visible{outline:2px solid #F58224;outline-offset:2px}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip-on",
+      "description": "Wybór (zaznaczony): tło text, tekst ink, 44 px.",
+      "html": "<button class=\"ds-chip on\">X01</button>",
+      "css": ".ds-chip{height:44px;padding:0 16px;border-radius:9999px;border:1px solid #2E2E33;background:transparent;color:#F5F5F5;font:600 14px Inter,system-ui,sans-serif;display:inline-flex;align-items:center}.ds-chip.on{background:#F5F5F5;color:#111111;border-color:#F5F5F5}.ds-chip:active{transform:scale(.97)}.ds-chip:focus-visible{outline:2px solid #F58224;outline-offset:2px}"
+    },
+    {
+      "name": "Player row (active)",
+      "kind": "custom",
+      "refersTo": "player-row-active",
+      "description": "Aktywny gracz na Ekranie wyników: pomarańcz + ink.",
+      "html": "<div class=\"ds-prow\"><div><b>Kuba</b><span>avg 54.3</span></div><i>301</i></div>",
+      "css": ".ds-prow{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-radius:26px;background:#F58224;color:#111111;font-family:Inter,system-ui,sans-serif}.ds-prow b{display:block;font-size:30px;font-weight:700}.ds-prow span{font-size:24px;font-weight:600;color:#3A2410}.ds-prow i{font:700 88px/1 \"Barlow Condensed\",Inter,sans-serif;font-style:normal}"
+    },
+    {
+      "name": "Dart tile X01",
+      "kind": "custom",
+      "refersTo": "dart-tile-x01",
+      "description": "Neutralny kafelek lotki w X01 (D1): pole duże, wartość mała.",
+      "html": "<div class=\"ds-tile\"><b>T20</b><span>60</span></div>",
+      "css": ".ds-tile{width:230px;height:160px;border-radius:26px;background:#1F1F23;color:#F5F5F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.ds-tile b{font:700 96px/.9 \"Barlow Condensed\",Inter,sans-serif}.ds-tile span{font:700 22px Inter,system-ui,sans-serif}"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "Komunikat z shadow-float.",
+      "html": "<div class=\"ds-toast\">Dart corrected</div>",
+      "css": ".ds-toast{background:#26262B;color:#F5F5F5;border-radius:20px;padding:12px 16px;font:600 16px Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Tablica przy oche",
+    "overview": "Ekran wyników to tablica wyników w pubie: czyta się ją z trzech metrów, w półmroku, w przerwie między rzutami. Pilot to druga strona tej samej tablicy: wąski, ciemny, obsługiwany kciukiem jedną ręką, kiedy w drugiej jest lotka. System ma dwie skale, ale jeden charakter. Czarne tło, szare karty bez obramowań, jedna pomarańcza dla tego, co dzieje się teraz (aktywny gracz, główna akcja), liczby w wąskim Barlow Condensed, które da się odczytać z daleka, i reszta tekstu w Inter.\n\nGęstość jest niska na Ekranie wyników i średnia na Pilocie. Na Ekranie wyników liczy się to, co widać z oche: wynik 400 px, imię, trzy lotki. Na Pilocie liczy się to, co da się trafić kciukiem: 44 px minimum, przyciski w kształcie pigułki, press zamiast hover. Dekoracja jest zbędna, a ruch jest po to, żeby potwierdzić dotyk albo pokazać, skąd coś przyszło, nigdy po to, żeby opóźnić odczyt wyniku. Celebracja należy do Momentów ([docs/EFEKTY.md](docs/EFEKTY.md)), nie do UI.\n\nOdrzucone wprost (z [docs/UI.md](docs/UI.md)): kolory per gracz poza Summary i Compare, jasny motyw, emoji zamiast ikon, pełne serca, ruch w liczbach wyniku.",
+    "keyCharacteristics": [
+      "Jeden ciemny motyw, tylko angielski w UI, czcionki lokalne (offline, bez CDN).",
+      "Jeden akcent `#F58224`. Czarny (`ink`) tekst na pomarańczowym, nigdy biały.",
+      "Czytelność z daleka wygrywa z estetyką: rozmiar i kontrast przed ozdobą.",
+      "Dotyk przed myszą: stan `:active`, bez `:hover` (poza `(hover: hover) and (pointer: fine)`).",
+      "Głębia z warstw odcieni szarości; cień tylko dla rzeczy, które unoszą się nad treścią."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Pomarańcz oznacza „teraz” i „główne”. Jeśli na jednym ekranie jest go więcej niż aktywny gracz, jedna główna akcja i najwyżej jedna liczba, coś jest źle. Dlatego kafelki lotek w X01 są neutralne (D1), a dane na `/stats` w `soft` (D3).",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink-On-Orange Rule",
+        "body": "Na pomarańczowym tle zawsze `ink` (7,28:1). Biały ma za słaby kontrast (2,4:1).",
+        "section": "colors"
+      },
+      {
+        "name": "The Off Floor Rule",
+        "body": "Nic, co niesie stan (wygrany/niewygrany, życie, wycofany), nie schodzi poniżej 3:1. Tylko dekoracja (`line`, `faint`) może.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Metres Rule",
+        "body": "Z trzech metrów czyta się to, co ma ≥ 24u (30u dla imion). Tekst `tv-label` jest do podpisania, nie do czytania.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Are Barlow Rule",
+        "body": "Każda liczba o znaczeniu (wynik, średnia, delta, mm) to `Barlow Condensed` z `tabular-nums`. Imię i opis to Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Powierzchnie są płaskie. Cień dostaje element, który może zasłonić treść, i tylko `shadow-float` albo `shadow-tag`.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Layer Order Rule",
+        "body": "Wiersz przycisków Pilota (`z-actions`) leży nad nakładką (`z-overlay`), a Moment (`z-fx`) nad kartą Tury. Nie zmieniaj tej kolejności przy nowych warstwach.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** używać jednego akcentu `#F58224` tylko dla „teraz” i „główne”: aktywny gracz, jedna główna akcja, główna metryka, suma Tury.",
+      "**Do** pisać `ink` (`#111111`) na pomarańczowym, zielonym, czerwonym, żółtym i kolorach graczy.",
+      "**Do** trzymać jeden ciemny motyw i UI wyłącznie po angielsku (dokumentacja po polsku).",
+      "**Do** ładować Barlow Condensed i Inter lokalnie: aplikacja działa offline, bez CDN i zewnętrznych czcionek, skryptów i obrazów.",
+      "**Do** animować tylko `transform` i `opacity` (wyjątek: tor 48×28 switcha, kolor błysku kropek).",
+      "**Do** dawać stan `:active` każdemu elementowi, który da się stuknąć, i `:focus-visible` (obrys 2 px `accent`).",
+      "**Do** trzymać 44 × 44 px minimum także na kiosku przy 1280×720: `max(44px, calc(N * var(--u)))`.",
+      "**Do** trzymać tekst na kiosku ≥ `max(16px, calc(18 * var(--u)))`.",
+      "**Do** oznaczać stany wyłączone `off` / `off-on-accent` (≥ 3:1) i tekst nieaktywnego przycisku `disabled-fg` (≥ 4,5:1).",
+      "**Do** wybierać wartość z drabinki (typografia, odstępy, promienie, z-index, czasy), zamiast wpisywać nową.",
+      "**Do** zaczynać każdy nowy Moment od wpisu w `ORDER` (`games/effects.ts`) przed Momentami padającymi tą samą lotką.",
+      "**Do** dawać pustym danym `EmptyState` z jedną akcją, a brak porównania pokazywać jako „–”, nie jako 0.",
+      "**Do** dopisywać zmianę decyzji z UI.md do UI.md w tym samym PR."
+    ],
+    "donts": [
+      "**Don't** dodawać drugiego akcentu ani koloru per gracz poza Summary i Compare (zostaje do trybu drużynowego).",
+      "**Don't** pisać białego tekstu na pomarańczowym (2,4:1).",
+      "**Don't** dodawać jasnego motywu ani przełącznika motywu.",
+      "**Don't** używać emoji jako ikon ani pełnych serc (konturowe SVG; w tekście ♡).",
+      "**Don't** animować liczb wyniku, kafelków lotek w Turze, wejścia karty Tury ani zmiany aktywnego gracza.",
+      "**Don't** dodawać `:hover` poza `@media (hover: hover) and (pointer: fine)`. Pilot to dotyk.",
+      "**Don't** używać `opacity` do stanu wyłączonego tekstu i ikon niosących informację (kontrast spada poniżej 3:1).",
+      "**Don't** używać `#111` ani `#0A0A0B` wprost w CSS: `--ink`, `--bg`.",
+      "**Don't** wpisywać `box-shadow` ani `rgba(…)` scrimu inline: `shadow-float`, `shadow-tag`, `scrim`.",
+      "**Don't** nakładać na prawą kolumnę ani wiersz przycisków Ekranu wyników niczego poza przyciskami Pilota (karta Tury, toasty, bull-off).",
+      "**Don't** reklamować telefonu na Ekranie wyników laptopa (QR, „on the pilot”).",
+      "**Don't** kopiować wartości `px` z Pilota na Ekran wyników ani odwrotnie: dwie drabinki, dwie odległości.",
+      "**Don't** ukrywać czytelności z daleka za estetyką: gdy ładniejsze koliduje z czytelnym z trzech metrów, wygrywa czytelne."
+    ]
+  }
+}
