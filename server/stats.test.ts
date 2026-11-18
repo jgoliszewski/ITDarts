@@ -402,6 +402,8 @@ describe('lobby records', () => {
     // ATC: fewer darts is better, so Bob's 24 with the clockwise order; the order is not in the key, the match keeps it.
     expect(r[0]).toMatchObject({ game: 'atc', value: '24 darts', who: 'Bob', at: NOW - 4 * DAY });
     expect(r[0].options).toMatchObject({ target: 'any', order: 'clockwise', skips: true });
+    // The tile names the record match's order, which the variant leaves out (DECISIONS, after the branch review).
+    expect(r[0].label).toBe('ATC · Any · Skips · Clockwise');
     expect(r[1]).toMatchObject({ game: '121', value: 'Target 140', who: 'Anna & Bob' });
     expect(r[2]).toMatchObject({ game: 'shanghai', label: 'Shanghai · Solo · 7 rounds', value: '90 points', who: 'Bob' });
     expect(r[2].options).toMatchObject({ rounds: 7 });
