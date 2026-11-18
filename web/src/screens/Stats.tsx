@@ -176,7 +176,7 @@ function ProfileBody({ id, w, data, heat, vs, setVs }: { id: number; w: StatsWin
           {data.recent.map(r => (
             <div key={r.id} className="match-row">
               <span className={`res ${r.result === 'played' ? 'saved' : r.result}`}>{r.result === 'saved' ? 'ENDED' : r.result.toUpperCase()}</span>
-              <div className="grow">{r.opponents === 'Solo' ? 'Solo' : `vs ${r.opponents}`}<small>{r.description.replace(/^X01 · /, '')} · {shortDate(r.endedAt)}</small></div>
+              <div className="grow">{r.opponents === null ? 'Solo' : `vs ${r.opponents}`}<small>{r.description.replace(/^X01 · /, '')} · {shortDate(r.endedAt)}</small></div>
               <span className="num" style={{ fontSize: 22 }}>{r.score}</span>
             </div>
           ))}

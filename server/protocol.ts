@@ -190,7 +190,7 @@ export interface PlayerStatsResponse {
   /** The player's Average in each X01 match of the Okno, oldest first. */
   trend: { matchId: number; endedAt: number; avg: number }[];
   results: { played: number; won: number; winrate: number | null };
-  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played' | 'left'; score: string }[];
+  recent: RecentMatch[];
   opponents: { id: number; name: string; played: number; won: number }[];
 }
 
@@ -218,6 +218,8 @@ export interface GameStatsResponse {
   previous: { matches: number; totals: Record<string, number> } | null;
   /** Best result per record variant. */
   bests: { label: string; value: string }[];
+  /** The last matches of this game in the Okno, newest first, 10 at most. */
+  recent: RecentMatch[];
 }
 
 /** Dart positions per player in one game and window; `distance` in metres. */
@@ -233,6 +235,16 @@ export interface LobbyRecord {
   at: number;
   /** The record match's options, normalized; the variant key alone can't give them back (ATC's order is not in it). */
   options: unknown;
+}
+
+/** A row of Recent matches: `opponents` null for a solo match, `score` from the player's side (X01 legs, minigame result). */
+export interface RecentMatch {
+  id: number;
+  endedAt: number;
+  description: string;
+  opponents: string | null;
+  result: 'won' | 'lost' | 'saved' | 'played' | 'left';
+  score: string;
 }
 
 export interface RecordTable {

@@ -464,7 +464,7 @@ export class Hub {
       const legs = game.compact(rec.events, n, rec.options);
       if (report) {
         this.summary = matchReport({
-          game: rec.game, description: game.describe(rec.options, n), names: rec.roster.map(r => r.name), legs, view,
+          game: rec.game, description: game.describe(rec.options, n), names: rec.roster.map(r => r.name), ids: rec.roster.map(r => r.playerId), legs, view,
           checkOut: rec.game === 'x01' ? rec.options.checkOut : null, startScore: rec.game === 'x01' ? rec.options.startScore : undefined, ended: status === 'ended', ocheMeters: this.cfg.ocheMeters,
         });
       }

@@ -6,7 +6,8 @@ import type { X01Options, X01Stats } from '../games/x01/index.ts';
 import { x01Stats } from '../games/x01/index.ts';
 import type { Db } from './db.ts';
 import { walked } from '../games/report.ts';
-import type { GameStatsResponse, H2HResponse, HeatResponse, LobbyRecord, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from './protocol.ts';
+import type { GameStatsResponse, H2HResponse, HeatResponse, LobbyRecord, PlayerListItem, PlayerStatsResponse, RecentMatch, RecordTable, StatsWindow } from './protocol.ts';
+import { resultValue } from './db.ts';
 
 export const WINDOWS: StatsWindow[] = ['7d', '30d', '90d', '365d', 'all', 'l10', 'l100'];
 
@@ -183,34 +184,7 @@ export class Stats {
     const results = this.resultMatches(playerId, w, matchIds);
     const won = results.filter(r => r.won).length;
 
-    // X01 matches of the Okno, as `resultMatches` counts them but without the counts_results filter.
-    const rWhere = ['mp.player_id = ?', "m.game = 'x01'"];
-    const rArgs: number[] = [playerId];
-    if (legLimit(w)) rWhere.push(`m.id IN (${matchIds.map(() => '?').join(',') || 'NULL'})`), rArgs.push(...matchIds);
-    else if (since(w, this.now())) rWhere.push('m.ended_at >= ?'), rArgs.push(since(w, this.now()));
-    const recent = (this.db.sql.prepare(`
-      SELECT m.id, m.game, m.ended_at, m.options, m.status, m.winner_position, mp.won, mp.removed,
-        (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
-        (SELECT GROUP_CONCAT(COALESCE(p2.name, o.guest_name), ', ') FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
-          WHERE o.match_id = m.id AND o.position != mp.position) AS opponents,
-        (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position != mp.position, position) o) AS score
-      FROM matches m JOIN match_players mp ON mp.match_id = m.id
-      WHERE ${rWhere.join(' AND ')} ORDER BY m.ended_at DESC LIMIT 10`).all(...rArgs) as
-      { id: number; game: GameId; ended_at: number; options: string; status: string; winner_position: number | null; won: number; removed: number; players: number; opponents: string | null; score: string }[])
-      .filter(r => r.game in GAMES)
-      .map(r => {
-        const game = GAMES[r.game];
-        const options = game.normalizeOptions(JSON.parse(r.options));
-        const result = r.removed ? 'left' : r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost';
-        return {
-          id: r.id,
-          endedAt: r.ended_at,
-          description: game.describe(options, r.players),
-          opponents: r.opponents ?? 'Solo',
-          result: result as PlayerStatsResponse['recent'][number]['result'],
-          score: r.score,
-        };
-      });
+    const recent = this.recent(playerId, 'x01', w, matchIds);
 
     const ids = results.map(r => r.id);
     const opponents = ids.length === 0 ? [] : (this.db.sql.prepare(`
@@ -230,6 +204,39 @@ export class Stats {
       recent,
       opponents,
     };
+  }
+
+  /**
+   * The player's last 10 matches of one game in the Okno, newest first. A leg Okno is the X01 matches of those legs
+   * (`x01MatchIds`); in a minigame, one leg per match, simply the last matches. Opponents in their playing order, null
+   * when solo; the score from the player's side: own legs first in X01, the result in minigames.
+   */
+  private recent(playerId: number, game: GameId, w: StatsWindow, x01MatchIds: number[] = []): RecentMatch[] {
+    const where = ['mp.player_id = ?', 'm.game = ?'];
+    const args: (number | string)[] = [playerId, game];
+    if (legLimit(w) && game === 'x01') where.push(`m.id IN (${x01MatchIds.map(() => '?').join(',') || 'NULL'})`), args.push(...x01MatchIds);
+    else if (!legLimit(w) && since(w, this.now())) where.push('m.ended_at >= ?'), args.push(since(w, this.now()));
+    const rows = this.db.sql.prepare(`
+      SELECT m.id, m.ended_at, m.options, m.status, m.winner_position, mp.won, mp.removed, mp.score, mp.legs_won, mp.stats,
+        (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
+        (SELECT GROUP_CONCAT(n, ', ') FROM (SELECT COALESCE(p2.name, o.guest_name) AS n FROM match_players o LEFT JOIN players p2 ON p2.id = o.player_id
+          WHERE o.match_id = m.id AND o.position != mp.position ORDER BY o.position)) AS opponents,
+        (SELECT GROUP_CONCAT(o.legs_won, '–') FROM (SELECT legs_won FROM match_players WHERE match_id = m.id ORDER BY position != mp.position, position) o) AS legs
+      FROM matches m JOIN match_players mp ON mp.match_id = m.id
+      WHERE ${where.join(' AND ')} ORDER BY m.ended_at DESC LIMIT 10`).all(...args) as
+      { id: number; ended_at: number; options: string; status: string; winner_position: number | null; won: number | null; removed: number; score: number | null; legs_won: number; stats: string | null; players: number; opponents: string | null; legs: string }[];
+    const g = GAMES[game];
+    return rows.map(r => {
+      const options = g.normalizeOptions(JSON.parse(r.options));
+      return {
+        id: r.id,
+        endedAt: r.ended_at,
+        description: g.describe(options, r.players),
+        opponents: r.opponents,
+        result: r.removed ? 'left' : r.status === 'ended' ? 'saved' : r.won ? 'won' : r.winner_position === null ? 'played' : 'lost',
+        score: game === 'x01' ? r.legs : resultValue(game, options, r),
+      };
+    });
   }
 
   h2h(a: number, b: number, w: StatsWindow): H2HResponse | null {
@@ -305,6 +312,7 @@ export class Stats {
         const best = this.db.records(v, rec.better, 1, playerId)[0];
         return { label: this.variantLabel(game, v), value: rec.format(best.value) };
       }),
+      recent: this.recent(playerId, game, w),
     };
   }
 

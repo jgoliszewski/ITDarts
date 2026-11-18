@@ -74,3 +74,22 @@ describe('match report', () => {
     }).checkouts).toBeNull();
   });
 });
+
+// C#6 (stats audit): a solo summary compares with the player's own history, so it needs to know who played.
+describe('match report players', () => {
+  it('keeps each player id next to the name, guests as null, removed players last like the names', () => {
+    const atc = GAMES.atc;
+    const opts = atc.normalizeOptions({});
+    const events = [{ t: 'dart', dart: parseDart('S1')!, at: 1 }];
+    const view = { ...atc.view(events as TurnEvent[], 3, opts), removed: ['match', null, null] as ('match' | null)[] };
+    const r = matchReport({ game: 'atc', description: 'ATC', names: ['Ann', 'Bob', 'Guest 1'], ids: [7, 9, null], legs: [], view, checkOut: null, ended: true, ocheMeters: 2.5 });
+    expect(r.names).toEqual(['Bob', 'Guest 1', 'Ann']);
+    expect(r.ids).toEqual([9, null, 7]);
+  });
+
+  it('has no ids when the caller does not know them', () => {
+    const atc = GAMES.atc;
+    const r = matchReport({ game: 'atc', description: 'ATC', names: ['Ann'], legs: [], view: atc.view([], 1, atc.normalizeOptions({})), checkOut: null, ended: true, ocheMeters: 2.5 });
+    expect(r.ids).toEqual([null]);
+  });
+});

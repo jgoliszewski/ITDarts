@@ -167,6 +167,22 @@ export interface RecordRow {
 
 export class UserError extends Error {}
 
+/**
+ * A player's result in one minigame match, as the lobby and Recent matches show it: the record value, the games won
+ * when the game counts them, Free throw's average of 3 darts, or "Won".
+ */
+export function resultValue(gameId: GameId, options: unknown, p: { score: number | null; legs_won: number; stats: string | null; won: number | null }): string {
+  const game = GAMES[gameId];
+  if (p.score !== null && game.record) return game.record.format(p.score);
+  if (game.points?.show(options)) return String(p.legs_won);
+  if (gameId === 'freethrow') {
+    // Free throw has no result of its own: its line is the average of 3 darts, as on the scoreboard.
+    const s = p.stats ? (JSON.parse(p.stats) as { darts?: number; points?: number }) : null;
+    return s?.darts ? (((s.points ?? 0) / s.darts) * 3).toFixed(1) : '';
+  }
+  return p.won ? 'Won' : '';
+}
+
 const nameKey = (name: string) => name.trim().toLocaleLowerCase('en');
 
 export function cleanName(name: unknown): string {
@@ -369,18 +385,8 @@ export class Db {
       WHERE mp.match_id = ? ORDER BY mp.position`).all(m.id) as { position: number; name: string; won: number; legs_won: number; sets_won: number; score: number | null; removed: number; stats: string | null; avg: number | null }[];
     const options = game.normalizeOptions(JSON.parse(m.options));
     const x01 = m.game === 'x01';
-    // Free throw has no result of its own: its line is the average of 3 darts, as on the scoreboard.
-    const average = (json: string | null) => {
-      const s = json ? JSON.parse(json) as { darts?: number; points?: number } : null;
-      return s?.darts ? ((s.points ?? 0) / s.darts * 3).toFixed(1) : '';
-    };
     const sets = players.some(p => p.sets_won > 0);
-    const value = (p: (typeof players)[number]) =>
-      x01 ? String(sets ? p.sets_won : p.legs_won)
-      : p.score !== null && game.record ? game.record.format(p.score)
-      : game.points?.show(options) ? String(p.legs_won)
-      : m.game === 'freethrow' ? average(p.stats)
-      : p.won ? 'Won' : '';
+    const value = (p: (typeof players)[number]) => (x01 ? String(sets ? p.sets_won : p.legs_won) : resultValue(m.game, options, p));
     const last = this.sql.prepare(`
       SELECT d.n, d.m FROM legs l JOIN visits v ON v.leg_id = l.id AND v.checkout = 1
       JOIN darts d ON d.visit_id = v.id WHERE l.match_id = ? ORDER BY l.id DESC, d.idx DESC LIMIT 1`).get(m.id) as { n: number; m: 1 | 2 | 3 } | undefined;

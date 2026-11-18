@@ -412,3 +412,38 @@ describe('lobby records', () => {
     expect(stats.lobbyRecords()[0].options).toEqual(GAMES.atc.normalizeOptions({}));
   });
 });
+
+// C#19 (stats audit): minigame profiles list their own recent matches, per Okno, with the result as the lobby shows it.
+describe('recent minigame matches', () => {
+  const atc = (roster: RosterEntry[], daysAgo: number, scores: (number | null)[], winners: number[] = []) =>
+    db.saveMatch({ game: 'atc', options: {}, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+      winners, sets: [], legs: [], variant: 'atc:any:skips', scores, stats: roster.map(() => ({ darts: 30 })) } as SaveMatch);
+
+  it('lists only that game in the Okno, newest first, with the record result and no opponents when solo', () => {
+    atc([A()], 3, [26]);
+    atc([A(), B()], 10, [31, 40], [0]);
+    atc([A()], 45, [28]);
+    saveX01([A(), B()], quickLeg(2), 2, OPTS, 'finished');
+    const r = stats.game(anna, 'atc', '30d')!.recent;
+    expect(r.map(x => x.endedAt)).toEqual([NOW - 3 * DAY, NOW - 10 * DAY]);
+    expect(r[0]).toMatchObject({ opponents: null, score: '26 darts', result: 'played' });
+    expect(r[1]).toMatchObject({ opponents: 'Bob', score: '31 darts', result: 'won' });
+    expect(stats.game(anna, 'atc', 'all')!.recent).toHaveLength(3);
+  });
+
+  it('takes the last matches in a Last 10 Okno and keeps 10 at most', () => {
+    for (let i = 12; i >= 1; i--) atc([A()], i, [20 + i]);
+    const r = stats.game(anna, 'atc', 'l10')!.recent;
+    expect(r).toHaveLength(10);
+    expect(r[0].endedAt).toBe(NOW - DAY);
+  });
+
+  it('lists opponents in the order they played and marks a solo X01 match with no opponents', () => {
+    saveX01([A()], quickLeg(1), 1, OPTS, 'finished');
+    db.saveMatch({ game: 'x01', options: OPTS, roster: [B(), A(), { playerId: cy, name: 'Cy' }], startedAt: NOW - 2 * DAY - 1000, endedAt: NOW - 2 * DAY, status: 'ended',
+      winners: [], sets: [], legs: [] });
+    const r = stats.player(anna, 'all')!.recent;
+    expect(r[0].opponents).toBeNull();
+    expect(r[1].opponents).toBe('Bob, Cy');
+  });
+});
