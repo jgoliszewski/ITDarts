@@ -187,8 +187,8 @@ button:focus-visible, input:focus-visible, [role='button']:focus-visible { outli
 .toast.error { background: var(--red-bg); color: var(--red-soft); }
 .toast .btn { height: var(--tap); padding: 0 16px; font-size: var(--fs-ui-sm); }
 .big ~ .toasts { width: calc(720 * var(--u)); gap: calc(12 * var(--u)); }
-.big ~ .toasts .toast { padding: calc(16 * var(--u)) calc(24 * var(--u)); border-radius: var(--r-row); gap: calc(16 * var(--u)); font-size: max(15px, var(--fs-tv-meta)); }
-.big ~ .toasts .toast .btn { height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(24 * var(--u)); font-size: max(14px, calc(22 * var(--u))); }
+.big ~ .toasts .toast { padding: calc(16 * var(--u)) calc(24 * var(--u)); border-radius: var(--r-row); gap: calc(16 * var(--u)); font-size: max(16px, var(--fs-tv-meta)); }
+.big ~ .toasts .toast .btn { height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(24 * var(--u)); font-size: max(16px, calc(22 * var(--u))); }
 .banner { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--red-bg); color: var(--red-soft); font-weight: 700; padding: 8px 16px; font-size: var(--fs-ui-md); }
 .banner.fixed { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-banner); }
 .banner-btn { padding: 2px 14px; font-size: inherit; }
@@ -997,6 +997,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* ---------- shared components and UI motion (DESIGN.md, Ruch; audit M3–M17). Moments keep their own. ---------- */
 /* Presence keeps a closing box for its exit; it adds no box of its own. */
 .presence { display: contents; }
+/* Shown again during its exit: it never left, so no entrance (no flash from 0). */
+.presence.back > * { animation: none; }
 /* Segments, mult row and chips: the selected background fades in under the text (M11). */
 .seg button, .mult-row button, .chip { position: relative; isolation: isolate; }
 .seg button::before, .mult-row button::before, .chip::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--text); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
@@ -1026,7 +1028,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 @keyframes drawer-in { from { transform: translateX(100%); } }
 .leaving > .drawer { animation: drawer-out var(--dur-exit) var(--ease-out) forwards; }
 @keyframes drawer-out { to { transform: translateX(100%); } }
-.wide-fix { animation: dialog-in var(--dur-base) var(--ease-out); }
+.wide-fix { animation: wide-in var(--dur-base) var(--ease-out); }
+@keyframes wide-in { from { opacity: 0; scale: 0.98; } }
 .leaving > .wide-fix { animation: dialog-out var(--dur-exit) var(--ease-out) forwards; }
 /* Dropdown list and info bubble open from where they hang (M8, M9). */
 .pick-list { transform-origin: top center; animation: pop-in var(--dur-fast) var(--ease-out); }

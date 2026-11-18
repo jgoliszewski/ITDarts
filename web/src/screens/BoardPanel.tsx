@@ -106,6 +106,10 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
   // The laptop drawer is a modal (A#15): Escape closes it, focus stays inside.
   const drawer = useRef<HTMLElement>(null);
   useModal(drawer, close, wide && !testing);
+  // Test board on the laptop covers the screen: a modal of its own, so focus moves into it, not back under it.
+  // Escape leaves the test for the panel.
+  const test = useRef<HTMLDivElement>(null);
+  useModal(test, () => void act({ type: 'boardTest', on: false }), wide && testing);
 
   // The same buttons in the panel and in Test board, lower in the test so the events keep their room.
   const controls = (
@@ -170,7 +174,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
   );
 
   // A full screen on the laptop: the board as big as it fits, events beside it, nothing to scroll.
-  if (wide && testing) return <div className="board-test-full">{body}</div>;
+  if (wide && testing) return <div ref={test} tabIndex={-1} className="board-test-full" role="dialog" aria-modal="true" aria-label="Test board">{body}</div>;
   if (wide) {
     return (
       <>

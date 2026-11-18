@@ -33,7 +33,9 @@ export function ladderWindow(target: number, record: number | null): Rung[] {
 /**
  * How the value moved last time. The step holds until the value changes again, so later renders (every snapshot from
  * the server) keep the same key and class and the slide or roll it started plays to the end. Derived state, so the
- * render stays pure under StrictMode.
+ * render stays pure under StrictMode. Keep `stepOf` in state, not in a ref: a ref written during render gave step 0
+ * on the next snapshot and cut the slide off (K10/K11 in the motion audit). No test covers this wiring (vitest has no
+ * DOM); the live check is in .scratch/ui-overhaul/t02/EVIDENCE.md.
  */
 function useStep(value: number): number {
   const [last, setLast] = useState(() => stepOf(null, value));

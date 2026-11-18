@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PresenceState } from './interaction.ts';
-import { createPresence, listboxKey } from './interaction.ts';
+import { createModalStack, createPresence, listboxKey } from './interaction.ts';
 import QRCode from 'qrcode';
 import type { ClientState, Command } from '../../../server/protocol.ts';
 import type { Result } from '../net.ts';
@@ -165,27 +165,47 @@ export async function act(cmd: Command): Promise<Result> {
 /**
  * Keeps its children on screen while they play their exit: when they turn to nothing, the last ones stay for EXIT_MS
  * inside a `display: contents` box marked `leaving` (CSS plays the exit) and `inert` (no clicks, no focus).
+ * Shown again during the exit, the same box comes `back` at once, without its entrance, and focus goes back in.
  * Usage: `<Presence>{open && <Dialog … />}</Presence>`.
  */
 export function Presence({ children }: { children: ReactNode }) {
   const show = children !== null && children !== undefined && children !== false;
   const last = useRef<ReactNode>(null);
   if (show) last.current = children;
+  const wrap = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<PresenceState>(show ? 'shown' : 'gone');
   const [presence] = useState(() => createPresence(EXIT_MS, setState));
   useEffect(() => presence.set(show), [presence, show]);
   useEffect(() => () => presence.dispose(), [presence]);
+  // Inert took the focus away while it was leaving; the modal stayed mounted, so it won't move focus in by itself.
+  useEffect(() => {
+    const box = wrap.current?.querySelector<HTMLElement>('[aria-modal]');
+    if (state === 'back' && box && !box.contains(document.activeElement)) focusFirst(box);
+  }, [state]);
   if (!show && state === 'gone') return null;
-  return <div className={`presence ${show ? '' : 'leaving'}`} inert={!show}>{show ? children : last.current}</div>;
+  const mark = !show ? 'leaving' : state === 'back' ? 'back' : '';
+  return <div ref={wrap} className={`presence ${mark}`} inert={!show}>{show ? children : last.current}</div>;
 }
 
 const FOCUSABLE = 'button:not(:disabled), [href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])';
-/** Open modals, the last on top: only the top one answers Escape and keeps Tab. */
-const modals: HTMLElement[] = [];
+const focusables = (box: HTMLElement) => [...box.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(e => e.getClientRects().length > 0);
+/** The first action that isn't destructive, else the box itself. */
+function focusFirst(box: HTMLElement) {
+  (focusables(box).find(e => !e.classList.contains('danger')) ?? box).focus({ preventScroll: true });
+}
+/** Open modals: only the top one answers Escape and keeps Tab; closing one puts focus back where it makes sense. */
+const modals = createModalStack<HTMLElement>({
+  contains: (box, el) => box.contains(el),
+  usable: el => el.isConnected && !el.closest('[inert]'),
+  focus: el => el.focus({ preventScroll: true }),
+  focusIn: focusFirst,
+  active: () => (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null),
+});
 
 /**
  * A modal box (dialog, menu, sheet, drawer): focus moves in on open (to what has autofocus, else the first action that
- * isn't destructive), Tab and Shift+Tab stay inside, Escape closes the top one, and focus goes back to where it was.
+ * isn't destructive), Tab and Shift+Tab stay inside, Escape closes the top one (unless something inside already used
+ * it, like an open list), and focus goes back to where it came from (createModalStack).
  * Pass `active` false while the box isn't on screen (a component that renders it only sometimes).
  */
 export function useModal(ref: RefObject<HTMLElement | null>, onClose: () => void, active = true) {
@@ -196,16 +216,15 @@ export function useModal(ref: RefObject<HTMLElement | null>, onClose: () => void
   useEffect(() => {
     const box = ref.current;
     if (!active || !box) return;
-    const focusable = () => [...box.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(e => e.getClientRects().length > 0);
-    modals.push(box);
-    if (!box.contains(document.activeElement)) (focusable().find(e => !e.classList.contains('danger')) ?? box).focus({ preventScroll: true });
+    const done = modals.open(box, back);
+    if (!box.contains(document.activeElement)) focusFirst(box);
     const key = (e: KeyboardEvent) => {
-      if (modals.at(-1) !== box) return;
+      if (!modals.isTop(box) || e.defaultPrevented) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         close.current();
       } else if (e.key === 'Tab') {
-        const all = focusable();
+        const all = focusables(box);
         const inside = box.contains(document.activeElement);
         if (all.length === 0) e.preventDefault();
         else if (e.shiftKey && (!inside || document.activeElement === all[0])) { e.preventDefault(); all.at(-1)!.focus(); }
@@ -215,8 +234,7 @@ export function useModal(ref: RefObject<HTMLElement | null>, onClose: () => void
     addEventListener('keydown', key);
     return () => {
       removeEventListener('keydown', key);
-      modals.splice(modals.indexOf(box), 1);
-      if (back?.isConnected && !back.closest('[inert]')) back.focus({ preventScroll: true });
+      done();
     };
   }, [ref, back, active]);
 }
