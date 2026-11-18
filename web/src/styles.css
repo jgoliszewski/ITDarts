@@ -186,10 +186,9 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .toasts { position: fixed; z-index: var(--z-toast); left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(560px, calc(100vw - 32px)); pointer-events: none; }
 .toast { pointer-events: auto; background: var(--toast); color: var(--text); border-radius: var(--r-box); padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: var(--fs-ui-md); box-shadow: var(--shadow-float); width: 100%; }
 /* On the wide screen toasts sit under the header at the left edge, over the hero, clear of the right column. */
-.big ~ .toasts { bottom: auto; top: calc(96 * var(--u)); left: calc(40 * var(--u)); transform: none; width: min(560px, calc(100vw - 720 * var(--u))); }
+.big ~ .toasts { bottom: auto; top: calc(96 * var(--u)); left: calc(40 * var(--u)); transform: none; width: calc(720 * var(--u)); gap: calc(12 * var(--u)); }
 .toast.error { background: var(--red-bg); color: var(--red-soft); }
 .toast .btn { height: var(--tap); padding: 0 16px; font-size: var(--fs-ui-sm); }
-.big ~ .toasts { width: calc(720 * var(--u)); gap: calc(12 * var(--u)); }
 .big ~ .toasts .toast { padding: calc(16 * var(--u)) calc(24 * var(--u)); border-radius: var(--r-row); gap: calc(16 * var(--u)); font-size: max(16px, var(--fs-tv-meta)); }
 .big ~ .toasts .toast .btn { height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(24 * var(--u)); font-size: max(16px, calc(22 * var(--u))); }
 .banner { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--red-bg); color: var(--red-soft); font-weight: 700; padding: 8px 16px; font-size: var(--fs-ui-md); }
@@ -962,14 +961,13 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* ---------- match summary, comparison and heatmap (docs/UI.md, Podsumowanie meczu, Heatmapa) ---------- */
 .summary { min-height: 100vh; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 16px 16px 0; max-width: 560px; margin: 0 auto; }
 .summary-body > * { min-width: 0; }
-.summary.wide { max-width: none; height: 100vh; overflow: hidden; padding: 24px 40px 0; }
+/* On the TV the summary is read from the oche: everything in u, like the scoreboard (AUDIT C#2). */
+.summary.wide { max-width: none; height: 100vh; overflow: hidden; padding: calc(24 * var(--u)) calc(40 * var(--u)) 0; gap: calc(8 * var(--u)); }
 .summary-head { display: flex; align-items: center; gap: 16px; }
 .summary-head .muted { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .summary-title .kicker { font-size: var(--fs-ui-sm); font-weight: 700; letter-spacing: 2px; color: var(--green); }
 .summary-title h1 { margin: 2px 0 0; font-size: var(--fs-ui-2xl); font-weight: 800; line-height: 1.1; overflow-wrap: anywhere; }
 .summary-title .line { font-family: var(--num); font-size: var(--fs-ui-2xl); font-weight: 700; color: var(--accent); }
-/* On the TV the summary is read from the oche: everything in u, like the scoreboard (AUDIT C#2). */
-.summary.wide { padding: calc(24 * var(--u)) calc(40 * var(--u)) 0; gap: calc(8 * var(--u)); }
 .summary.wide .summary-head .btn, .summary.wide .summary-actions .btn { height: max(var(--tap), calc(52 * var(--u))); font-size: max(16px, calc(20 * var(--u))); }
 .summary.wide .summary-actions { padding: calc(12 * var(--u)) 0 calc(20 * var(--u)); gap: calc(12 * var(--u)); }
 .summary.wide .summary-head .muted { font-size: var(--fs-tv-meta); }
@@ -1153,7 +1151,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 
 /* ---------- lobby records (D6) ---------- */
 /* Under the last match: one tile per minigame variant with a record; the list scrolls inside the card when long. */
-.lobby-side > .lobby-records { flex: 1; min-height: 0; overflow: hidden; }
+.lobby-side > .lobby-records { flex: 1; min-height: calc(240 * var(--u)); overflow: hidden; }
 .lobby-records .record-list { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
 .record-tile { position: relative; overflow: hidden; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(4 * var(--u)); min-height: max(var(--tap), calc(132 * var(--u))); padding: calc(16 * var(--u)) calc(20 * var(--u)); border-radius: var(--r-tile); background: var(--card2); text-align: left; }
 .record-tile > :not(.record-icon) { position: relative; max-width: 100%; }
@@ -1170,7 +1168,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .last-match.many { gap: calc(8 * var(--u)); }
 .last-match.many .last-row .n { font-size: max(16px, calc(26 * var(--u))); }
 .last-match.many .last-row .num { font-size: calc(44 * var(--u)); }
-.lobby-side > .lobby-records { min-height: calc(240 * var(--u)); }
 /* The same records on the phone pilot's home, in px: the list runs with the page, no scroll inside. */
 .phone .lobby-records { border-radius: var(--r-box); padding: var(--sp-5) 20px; gap: var(--sp-3); }
 .phone .lobby-records .caps { font-size: var(--fs-ui-sm); }
