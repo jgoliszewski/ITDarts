@@ -107,7 +107,6 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - **Podgląd poziomu:** po zmianie Volume serwer wysyła do kiosku krótki wbudowany dźwięk zmiany gracza (`turn`) z głośnością efektów i dźwięku, więc jest go słychać na kiosku, także gdy suwak rusza telefon-Pilot (`server/hub.ts`, komenda `effects`). Podgląd idzie po stanie z nowym poziomem, żeby zagrał przez nowy master. Nie gra przy Mute, przy Sounds off ani przy komendach bez `master` (Mute/Unmute, przełączniki). Na telefonach nic nie gra, bo podgląd gra tylko kiosk.
   - **Bez kontroli:** komenda z Pilota wymaga kontroli („Take control first”), ale `PUT /api/effects/settings` (strona `/effects`) może zmienić master i Mute z dowolnego urządzenia w LAN, tak samo jak Sounds, Caller i LEDs. To świadome, bo `/effects` jest otwarte dla każdego.
   - **Symulator LED** (`web/src/ledsim`) gra przez ten sam master, ale nie dostaje stanu, więc zawsze ma 100%.
-  - **Punkt odczytu do testów:** `globalThis.itdartsMaster()` w `web/src/sound.ts` zwraca poziom i wartość węzła master (sprawdzenia przez CDP w `dev:shot`). Tylko odczyt.
 - **Biblioteka dźwięków** to wspólna lista plików. Reguły wybierają z niej, a jeden plik może służyć wielu regułom.
   - Upload z UI, także z telefonu: mp3, wav lub ogg, do 2 MB i 10 s (pierwotnie 5 MB, zmienione przy przeniesieniu do repo).
   - Przy każdym pliku jest odsłuch, zmiana nazwy i suwak głośności, bo pliki z różnych źródeł mają różny poziom.
@@ -235,7 +234,7 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 | Wygrany mecz | konfetti |
 | T20, Bull | błysk kafelka lotki |
 
-**Reduced motion** (od 2026-11-18, `prefers-reduced-motion: reduce`, jeden blok na końcu `web/src/styles.css`) obejmuje też Momenty. Zostaje przezroczystość i kolor, znika przesunięcie, skalowanie i ruch ciągły: „180” bez skalowania (tło nadal gaśnie), plakietka 140+ bez przesunięcia, konfetti ukryte, serca i karty bez „pop”, drabinka i odometr 121 od razu w stanie końcowym, spinner takeoutu stoi. Bez ustawienia wszystko działa jak dotąd. Sprawdzone na emulacji CDP dla „180” i spinnera, pozostałe reguły tylko w kodzie ([DESIGN.md](../DESIGN.md#ruch)).
+**Reduced motion** (od 2026-11-18, `prefers-reduced-motion: reduce`, jeden blok na końcu `web/src/styles.css`) obejmuje też Momenty. Zostaje przezroczystość i kolor, znika przesunięcie, skalowanie i ruch ciągły: „180” bez skalowania (tło nadal gaśnie), plakietka 140+ bez przesunięcia, konfetti ukryte, serca i karty bez „pop”, drabinka i odometr 121 od razu w stanie końcowym, spinner takeoutu stoi. Bez ustawienia wszystko działa jak dotąd. Jedna zmiana poza tym blokiem (zaakceptowana po review brancha, 2026-11-18): utracone serce Momentu „Life lost” gaśnie do koloru `--off` zamiast `#3A3A40`, bo z daleka jest wtedy lepiej widoczne (Off Floor Rule z [DESIGN.md](../DESIGN.md)). Sprawdzone na emulacji CDP dla „180” i spinnera, pozostałe reguły tylko w kodzie ([DESIGN.md](../DESIGN.md#ruch)).
 
 W Free throw grają te same animacje z tych samych faktów (180, 140+ z sumą Tury w plakietce, błysk kafelka).
 

@@ -54,7 +54,7 @@ Później (policzą się wstecz z zapisanych lotek): celność (% treble, sektor
 - **Czasowe:** 7 dni, 30 dni, 3 miesiące, rok, all time.
 - **W legach:** ostatnie 10, ostatnie 100, all.
 
-**Przełącznik Okien** (od 2026-11-18) to jedna kontrolka. Na co dzień pokazuje cztery Okna: **30D, 3M, All, Last 10** (w minigierkach „Last 10 matches”, bo tam jeden leg to jeden mecz). Pozostałe trzy (7D, 1Y, Last 100) są pod przyciskiem **„More”**, który rozwija je w tym samym rzędzie. Gdy zapamiętane Okno jest jednym z ukrytych, przełącznik od razu pokazuje wszystkie siedem. Na telefonie rząd przewija się w bok zamiast łamać. Gracz, który danej gry nigdy nie grał, nie widzi przełącznika, tylko pusty stan „Pick … in New match”; puste Okno czasowe ma przycisk „Show all time”.
+**Przełącznik Okien** (od 2026-11-18) to jedna kontrolka. Na co dzień pokazuje cztery Okna: **30D, 3M, All, Last 10** (w minigierkach „Last 10 matches”, bo tam jeden leg to jeden mecz). Pozostałe trzy (7D, 1Y, Last 100) są pod przyciskiem **„More”**, który rozwija je w tym samym rzędzie. Gdy zapamiętane Okno jest jednym z ukrytych, przełącznik od razu pokazuje wszystkie siedem. Na telefonie rząd przewija się w bok zamiast łamać. Gracz, który danej gry nigdy nie grał, w Oknach All, Last 10 i Last 100 nie widzi przełącznika, tylko pusty stan „Pick … in New match”. W Oknie czasowym (np. 30D) przełącznik zostaje, a pod nim stoi „Nothing in the last 30 days” z przyciskiem „Show all time”.
 
 **Bez trendu:** główny kafelek bez porównania (patrz Progres) mówi dlaczego: „No trend for All time”, „No trend · fewer than 3 legs before” (minigierki: matches), a Checkout % „No trend · fewer than 10 attempts”. Zmiana wartości procentowej jest w punktach procentowych („▲ 2.4 pp”).
 

@@ -199,7 +199,7 @@ components:
     textColor: "{colors.text}"
     typography: "{typography.ui-sm}"
     rounded: "{rounded.pill}"
-    padding: "0 16px"
+    padding: "0 14px"
     height: "44px"
   chip-on:
     backgroundColor: "{colors.text}"
@@ -224,7 +224,7 @@ components:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.text}"
     rounded: "{rounded.sheet}"
-    padding: "12px 16px 20px"
+    padding: "20px 16px 20px"
     width: "560px"
   drawer:
     backgroundColor: "{colors.drawer}"
