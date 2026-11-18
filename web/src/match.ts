@@ -136,3 +136,19 @@ export const turnPanel = (m: LiveMatch): boolean =>
 
 /** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
 export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());
+
+/**
+ * X01 with double in: darts before the opening double don't count, so their tiles are dimmed like a dead dart in 121.
+ * The player was already in at the visit's start when they are in now and their score had left the start before it.
+ */
+export function x01Dead(m: X01Match): boolean[] {
+  const v = m.view;
+  const darts = v.visit.darts;
+  const p = v.visit.player;
+  if (m.options.checkIn === 'straight') return darts.map(() => false);
+  let inn = v.checkedIn[p] && v.scores[p] + (v.visit.bust ? 0 : v.visit.total) !== m.options.startScore;
+  return darts.map(d => {
+    if (!inn && d.dart.m === 2 && d.dart.n > 0) inn = true;
+    return !inn;
+  });
+}

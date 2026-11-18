@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, turnPanel, visitScored } from './match.ts';
+import { controls, dartTone, heroCorner, initials, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -89,5 +89,34 @@ describe('hero with a This turn panel', () => {
 describe('Cricket column initials (5+ players)', () => {
   it('takes two letters of a name, a guest keeps its number', () => {
     expect(['Anna', 'Aleksandra', 'Guest 2', 'Guest 12', 'Bo', 'Ż'].map(initials)).toEqual(['AN', 'AL', 'G2', 'G12', 'BO', 'Ż']);
+  });
+});
+
+describe('visit total, more games', () => {
+  it('takes Shanghai visit points and treats an empty Higher or Lower sum as 0', () => {
+    expect(visitScored({ game: 'shanghai', view: { visitPoints: 42, visit: { darts: [] } } } as unknown as LiveMatch)).toBe(42);
+    expect(visitScored({ game: 'hol', view: { sum: null, visit: { darts: [] } } } as unknown as LiveMatch)).toBe(0);
+  });
+});
+
+// Review t03: with double in, darts before the opening double don't count and are dimmed like a dead dart in 121.
+describe('X01 darts that do not count before the double in', () => {
+  const d = (s: string) => ({ dart: parseDart(s)!, at: 0 });
+  const x = (darts: string[], o: { checkIn?: string; score: number; checkedIn: boolean; total: number }) => ({
+    game: 'x01', options: { checkIn: o.checkIn ?? 'double', startScore: 501 },
+    view: { current: 0, scores: [o.score], checkedIn: [o.checkedIn], visit: { player: 0, darts: darts.map(d), total: o.total, bust: false } },
+  }) as unknown as X01Match;
+
+  it('dims every dart while the player is not in', () => {
+    expect(x01Dead(x(['S20', 'T5'], { score: 501, checkedIn: false, total: 0 }))).toEqual([true, true]);
+  });
+
+  it('counts the opening double and the darts after it', () => {
+    expect(x01Dead(x(['S20', 'D10', 'S5'], { score: 476, checkedIn: true, total: 25 }))).toEqual([true, false, false]);
+  });
+
+  it('dims nothing once the player was in before the visit, or with a straight in', () => {
+    expect(x01Dead(x(['S20', 'T5'], { score: 300, checkedIn: true, total: 35 }))).toEqual([false, false]);
+    expect(x01Dead(x(['S20', 'T5'], { checkIn: 'straight', score: 466, checkedIn: true, total: 35 }))).toEqual([false, false]);
   });
 });

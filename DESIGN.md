@@ -31,6 +31,7 @@ colors:
   red: "#FF5A5F"
   red-soft: "#FF8A8E"
   red-bg: "#2A1A1B"
+  green-bg: "#13261C"
   p1: "#E0325F"
   p2: "#16B2C9"
   p3: "#F5D63D"
@@ -327,6 +328,7 @@ Brak. System ma jeden akcent z założenia.
 ### Tertiary (kolory stanów)
 - **Zieleń** (`green`): „Ready”, trafienie (kafelek lotki w grach liczonych trafieniami, ikona zaliczenia), wygrana, `kicker` kart wyników.
 - **Bursztyn** (`amber`, tło `amber-bg`): takeout, remis w bull-offie, baner informacyjny.
+- **Zielone tło** (`green-bg` `#13261C`): tylko pigułka „Checked out” w rogu hero X01 (zielony tekst `green` na `green-bg`). Para dla `amber`/`amber-bg` (pigułka „Needs a double to start”) i `red`/`red-bg`.
 - **Czerwień** (`red`, `red-soft` na tekst, tło `red-bg`): bust, pudło w grach liczonych trafieniami, życia (serca), restart, błędy. `red-soft` zawsze na `red-bg`, `red` na `card` i `bg` (6,03:1).
 
 ### Kolory graczy (tylko Summary i Compare)
@@ -367,6 +369,13 @@ Dwie drabinki, bo dwie odległości czytania. Nie mieszaj ich: Ekran wyników u�
 - **tv-name** (700, 30 / 26 compact): imię w wierszu listy, kicker kart.
 - **tv-meta** (600, 24): meta wiersza, „Pull the darts”, podpisy.
 - **tv-label** (700, 18, 0.08em, wersaliki): etykiety `caps`. **Minimum na kiosku.**
+
+**Wyjątki lokalne wariantu D** (Ekran wyników, prototyp `proto/x01-variants.html?v=D`; świadomie poza drabinką, wpisane w regułach CSS, nie jako tokeny):
+- imię w wierszu listy **36u** (do 4 graczy; kompaktowo 26u), meta wiersza **26u**;
+- etykieta „CHECKOUT”/„SETUP”/„THIS TURN” w prawej połowie hero **26u**;
+- suma Tury „THIS TURN” w prawej połowie hero **220u** (`accent`, szara przy 0; w 121 obok drabinki 160u), trasa 3-lotkowa 60u;
+- pigułka statusu w rogu hero **32u** (800, wysokość 60u);
+- numer miejsca w nagłówku kolumny Cricketa od 5 graczy **44u** (inicjały 24u, legenda numer → imię 34u/40u).
 
 **Minimum tekstu na kiosku:** `max(16px, calc(18 * var(--u)))`. Przy 1280×720 `u` = 0,667 i 18u to 12 px, więc podłoga 16 px ratuje czytelność. Nic na Ekranie wyników nie jest mniejsze, także podpisy 11–16u z dzisiejszego kodu.
 

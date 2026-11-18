@@ -10,7 +10,7 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartTone, heroCorner, isX01, legTarget, pickProps, playOrder, removedNote, visitScored } from '../match.ts';
+import { controls, dartTone, heroCorner, isX01, legTarget, pickProps, playOrder, removedNote, visitScored, x01Dead } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
 import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, TurnPanel, hasBoard } from './MiniBoard.tsx';
@@ -58,6 +58,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
   const target = legTarget(m);
   const visit = v.visit;
   const corner = heroCorner(m);
+  const dead = x01Dead(m);
   return (
     <section className="hero split">
       <div className="hero-top">
@@ -83,7 +84,7 @@ function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null
               : <div key={i} className="dart-tile empty" />;
           }
           const tile = <DartFace m={m} rec={d} />;
-          const cls = `dart-tile ${flash === i ? 'flash' : ''}`;
+          const cls = `dart-tile ${dead[i] ? 'dead' : ''} ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
@@ -187,7 +188,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                     : <div key={i} className="dart-tile empty" />;
                 }
                 const tile = <DartFace m={m} rec={d} />;
-                const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i], d) : ''}`;
+                const cls = `dart-tile ${isX01(m) ? (x01Dead(m)[i] ? 'dead' : '') : dartTone(m, good![i], d)}`;
                 return canEdit
                   ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
                   : <div key={i} className={cls}>{tile}</div>;

@@ -67,13 +67,16 @@ export function Hearts({ lives, max = LIVES, losing = false }: { lives: number; 
   );
 }
 
-/** Knockout: the round's lowest visit so far, big next to the visit, green once the visit is past it (bug report 2026-10-30). */
+/**
+ * Knockout: the round's lowest visit so far is the hero's big number, green once this visit is past it (bug report
+ * 2026-10-30); the visit itself is This turn in the panel, like in every game. Before anyone has thrown: only "First to throw", no number.
+ */
 function ToBeat({ lowest, visit }: { lowest: number | null; visit: number }) {
-  if (lowest === null) return <div className="hero-checkout ko-beat"><div className="caps">First to throw</div></div>;
+  const safe = lowest !== null && visit > lowest;
   return (
-    <div className={`hero-checkout ko-beat ${visit > lowest ? 'safe' : ''}`}>
-      <div className="caps">{visit > lowest ? 'Beaten' : 'To beat'}</div>
-      <div className="num">{lowest}</div>
+    <div className={`mini-big ${safe ? 'safe' : ''}`}>
+      <div className="caps">{lowest === null ? 'First to throw' : safe ? 'Beaten' : 'To beat'}</div>
+      {lowest !== null && <div className="num">{lowest}</div>}
     </div>
   );
 }
@@ -188,17 +191,16 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
       </div>
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
-        <div className="mini-big">
+        {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
           <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
-        </div>
+        </div>}
       </div>}
       {split && (
-        <TurnPanel total={m.game === 'knockout' ? undefined : visitScored(m) ?? 0}>
+        <TurnPanel total={visitScored(m) ?? 0}>
           {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
-          {m.game === 'knockout' && <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} />}
         </TurnPanel>
       )}
       {legend && (
