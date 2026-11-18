@@ -1,7 +1,9 @@
+import type { KeyboardEvent } from 'react';
 import { useRef, useState } from 'react';
 import type { Coords, Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER, label, value } from '../../../games/darts.ts';
 import { Dartboard } from './Dartboard.tsx';
+import { tabKey } from './interaction.ts';
 import { useModal } from './ui.tsx';
 
 export interface FixTarget {
@@ -96,11 +98,19 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
       {wide && <button className="btn danger" onClick={onClose}>Cancel</button>}
     </div>
   );
-  // Real tabs (B#20): selected, and pointing at the keys they show.
+  // Real tabs (B#20): selected, pointing at the keys they show, and moved with the arrow keys (one tab stop).
+  const TABS = ['nearby', 'all'] as const;
+  const onTabKey = (e: KeyboardEvent) => {
+    const next = tabKey(e.key, TABS.indexOf(tab), TABS.length);
+    if (next === null) return;
+    e.preventDefault();
+    setTab(TABS[next]);
+    document.getElementById(`fix-tab-${TABS[next]}`)?.focus();
+  };
   const tabs = (
-    <div className="seg" role="tablist" aria-label="Keys">
-      {(['nearby', 'all'] as const).map(t => (
-        <button key={t} role="tab" id={`fix-tab-${t}`} aria-selected={tab === t} aria-controls="fix-panel" onClick={() => setTab(t)}>
+    <div className="seg" role="tablist" aria-label="Keys" onKeyDown={onTabKey}>
+      {TABS.map(t => (
+        <button key={t} role="tab" id={`fix-tab-${t}`} aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} aria-controls="fix-panel" onClick={() => setTab(t)}>
           {t === 'nearby' ? 'Nearby' : 'All'}
         </button>
       ))}

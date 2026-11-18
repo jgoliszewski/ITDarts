@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf } from './interaction.ts';
+import { createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf, tabKey } from './interaction.ts';
 
 describe('createPresence', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -221,5 +221,22 @@ describe('sidewaysDrag', () => {
     expect(sidewaysDrag(6, 0)).toBe(false);
     expect(sidewaysDrag(9, 2)).toBe(true);
     expect(sidewaysDrag(-20, 5)).toBe(true);
+  });
+});
+
+// Review t06: a tablist moves with the arrow keys (APG), wrapping round; Home and End go to the ends.
+describe('tabKey', () => {
+  it('moves to the next and previous tab, wrapping round', () => {
+    expect(tabKey('ArrowRight', 0, 2)).toBe(1);
+    expect(tabKey('ArrowRight', 1, 2)).toBe(0);
+    expect(tabKey('ArrowLeft', 0, 3)).toBe(2);
+    expect(tabKey('ArrowLeft', 2, 3)).toBe(1);
+  });
+
+  it('jumps to the ends and ignores other keys', () => {
+    expect(tabKey('Home', 2, 3)).toBe(0);
+    expect(tabKey('End', 0, 3)).toBe(2);
+    expect(tabKey('Enter', 1, 3)).toBeNull();
+    expect(tabKey('ArrowDown', 1, 3)).toBeNull();
   });
 });

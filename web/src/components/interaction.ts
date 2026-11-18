@@ -27,6 +27,17 @@ export function createPresence(exitMs: number, onChange: (s: PresenceState) => v
   };
 }
 
+/** The tab a key moves to in a tablist (APG): arrows left and right wrap round, Home and End go to the ends; null for other keys. */
+export function tabKey(key: string, current: number, count: number): number | null {
+  switch (key) {
+    case 'ArrowRight': return (current + 1) % count;
+    case 'ArrowLeft': return (current - 1 + count) % count;
+    case 'Home': return 0;
+    case 'End': return count - 1;
+    default: return null;
+  }
+}
+
 /** What a key does in an open listbox: move the focus, pick the focused option or close. */
 export function listboxKey(key: string, focused: number, count: number): { focus: number } | { pick: number } | { close: true } | null {
   switch (key) {
