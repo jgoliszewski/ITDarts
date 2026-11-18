@@ -32,6 +32,7 @@ colors:
   red-soft: "#FF8A8E"
   red-bg: "#2A1A1B"
   green-bg: "#13261C"
+  green-band: "#1F4D33"
   p1: "#E0325F"
   p2: "#16B2C9"
   p3: "#F5D63D"
@@ -329,6 +330,7 @@ Brak. System ma jeden akcent z założenia.
 - **Zieleń** (`green`): „Ready”, trafienie (kafelek lotki w grach liczonych trafieniami, ikona zaliczenia), wygrana, `kicker` kart wyników.
 - **Bursztyn** (`amber`, tło `amber-bg`): takeout, remis w bull-offie, baner informacyjny.
 - **Zielone tło** (`green-bg` `#13261C`): tylko pigułka „Checked out” w rogu hero X01 (zielony tekst `green` na `green-bg`). Para dla `amber`/`amber-bg` (pigułka „Needs a double to start”) i `red`/`red-bg`.
+- **Zielone pasmo** (`green-band` `#1F4D33`): tylko zakres „in range” na skali Higher or Lower.
 - **Czerwień** (`red`, `red-soft` na tekst, tło `red-bg`): bust, pudło w grach liczonych trafieniami, życia (serca), restart, błędy. `red-soft` zawsze na `red-bg`, `red` na `card` i `bg` (6,03:1).
 
 ### Kolory graczy (tylko Summary i Compare)
