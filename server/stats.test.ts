@@ -446,4 +446,18 @@ describe('recent minigame matches', () => {
     expect(r[0].opponents).toBeNull();
     expect(r[1].opponents).toBe('Bob, Cy');
   });
+
+  it('marks a match the player left, a match ended without a result and a loss, with guests among the opponents', () => {
+    const G = { playerId: null, name: 'Guest 1' };
+    const save = (roster: RosterEntry[], daysAgo: number, extra: Partial<SaveMatch>) =>
+      db.saveMatch({ game: 'atc', options: {}, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+        winners: [], sets: [], legs: [], variant: 'atc:any:skips', scores: roster.map(() => null), stats: roster.map(() => ({ darts: 30 })), ...extra } as SaveMatch);
+    save([A(), G, B()], 1, { winners: [2], removed: [true, false, false] });
+    save([A(), B()], 2, { status: 'ended' });
+    save([G, A()], 3, { winners: [0] });
+    // Left a match that was then ended without a result: leaving is what happened to the player.
+    save([B(), A()], 4, { status: 'ended', removed: [false, true] });
+    const r = stats.game(anna, 'atc', '30d')!.recent;
+    expect(r.map(x => [x.result, x.opponents])).toEqual([['left', 'Guest 1, Bob'], ['saved', 'Bob'], ['lost', 'Guest 1'], ['left', 'Bob']]);
+  });
 });
