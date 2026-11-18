@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import type { PresenceState } from './interaction.ts';
 import { createModalStack, createPresence, listboxKey } from './interaction.ts';
 import QRCode from 'qrcode';
@@ -44,6 +44,7 @@ export function Dropdown<T extends string | number>({ value, options, color, onC
   const ref = useRef<HTMLDivElement>(null);
   const btn = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
+  const id = useId();
   useEffect(() => {
     if (!open) return;
     const out = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
@@ -67,7 +68,7 @@ export function Dropdown<T extends string | number>({ value, options, color, onC
   };
   return (
     <div className="pick" ref={ref}>
-      <button ref={btn} className={`pick-btn ${open ? 'open' : ''}`} aria-haspopup="listbox" aria-expanded={open}
+      <button ref={btn} id={id} className={`pick-btn ${open ? 'open' : ''}`} aria-haspopup="listbox" aria-expanded={open}
         onClick={() => (open ? close(false) : show())}
         onKeyDown={e => { if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); show(); } }}>
         <i style={{ background: color }} />
@@ -75,7 +76,7 @@ export function Dropdown<T extends string | number>({ value, options, color, onC
         {Icon.down(18)}
       </button>
       {open && (
-        <ul className="pick-list" role="listbox" ref={list} onKeyDown={onKey}>
+        <ul className="pick-list" role="listbox" aria-labelledby={id} ref={list} onKeyDown={onKey}>
           {options.map((o, i) => (
             <li key={o.value} role="presentation">
               <button type="button" role="option" aria-selected={o.value === value} tabIndex={i === focused ? 0 : -1}

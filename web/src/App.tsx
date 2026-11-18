@@ -210,7 +210,8 @@ function Main({ s }: { s: ClientState }) {
   // A record's preset is one-shot: leaving the setup in any way (or losing control) drops it (review t04).
   useEffect(() => setPreset(p => presetFor(p, pilotOnly)), [pilotOnly]);
   const sheet = fix && m && (
-    <FixSheet target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
+    // Keyed by width: turning to the wide layout swaps the sheet's box, and the new box needs its own focus trap.
+    <FixSheet key={wide ? 'wide' : 'sheet'} target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
   );
   const dialogs = (
     <>
