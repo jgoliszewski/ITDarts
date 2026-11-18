@@ -1303,7 +1303,9 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* Full-screen layers fade in like a screen change (M15). */
 .howto-screen, .qr-overlay, .board-test-full, .fx-modal { animation: fade-in var(--dur-base) var(--ease-out); }
 /* Throwing order in Setup (T5): rows make room with a short slide; the held row follows the finger, and the drop doesn't animate. */
-.roster-row { position: relative; z-index: var(--z-row); transition: transform var(--dur-fast) var(--ease-out); }
+.roster-row { position: relative; z-index: var(--z-row); transition: transform var(--dur-fast) var(--ease-out); animation: row-in var(--dur-fast) var(--ease-out); }
+/* A player added to the order drops in at the end, so you see where they went (M16); removing is instant. */
+@keyframes row-in { from { opacity: 0; transform: translateY(-4px); } }
 .roster-row.held { z-index: calc(var(--z-row) + 1); transition: none; }
 .roster-list.dropped .roster-row { transition: none; }
 /* Page loads between /, /stats and /effects crossfade (M14). */
@@ -1334,5 +1336,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   .dialog, .wide-fix, .sheet, .drawer, .pick-list, .info-bubble, .toast, .big ~ .toasts .toast { animation-name: fade-in; }
   .leaving > .dialog, .leaving > .wide-fix, .leaving > .sheet, .leaving > .drawer, .toasts .toast.leaving { animation-name: fade-out; }
   .switch span, .roster-row { transition: none; }
+  .roster-row { animation-name: fade-in; }
+  /* Disclosure arrows flip without turning. */
+  .manage > summary::after, .fx-group svg, .pick-btn svg { transition: none; }
 }
 @keyframes heart-fade { 0%, 60% { color: var(--red); } 100% { color: var(--off); } }

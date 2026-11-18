@@ -39,7 +39,10 @@ function useScreenFade(key: string) {
   useLayoutEffect(() => {
     if (prev.current === key) return;
     prev.current = key;
-    document.getElementById('root')?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+    // The tokens from styles.css; the build may write 200ms as .2s.
+    const css = getComputedStyle(document.documentElement);
+    const dur = css.getPropertyValue('--dur-base').trim();
+    document.getElementById('root')?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: parseFloat(dur) * (dur.endsWith('ms') ? 1 : 1000), easing: css.getPropertyValue('--ease-out').trim() });
   }, [key]);
 }
 
