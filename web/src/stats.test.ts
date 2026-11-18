@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { X01Stats } from '../../games/x01/stats.ts';
+import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { pick } from './useJson.ts';
 import { GAMES } from '../../games/index.ts';
 import { TrendChart } from './components/StatParts.tsx';
-import { gameCompareRows, gameRows, gameStats, x01CompareRows, x01Rows } from './components/Compare.tsx';
-import { X01_METRICS, x01Delta, MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, visitShare, winTile } from './stats.ts';
+import { fill, gameCompareRows, gameRows, gameStats, playerColor, x01CompareRows, x01Rows } from './components/Compare.tsx';
+import { X01_METRICS, x01Delta, MIN_TREND, chartScale, delta, doubleName, METRICS, percent, perMatch, previousLabel, profileMetrics, sharedBestLeg, versusAverage, visitShare, noTrendNote, windowLabel, windowPhrase, windowsShown, winTile } from './stats.ts';
+import type { GameStatsResponse, PlayerStatsResponse } from '../../server/protocol.ts';
 
 describe('delta', () => {
   it('is green when the figure moved the better way and red when it did not', () => {
@@ -118,7 +120,7 @@ describe('the figures of each game', () => {
     const [goals] = profileMetrics('football', tot({ goals: 9 }, 3, { matches: 3, totals: { goals: 6 } }));
     expect(goals).toMatchObject({ label: 'Goals', value: '3.0', sub: '9 in total', main: true, delta: { text: '▲ 1.0', tone: 'good' } });
     const [hit, dart] = profileMetrics('atc', tot({ hits: 5, darts: 20 }, 2, { matches: 3, totals: { hits: 4, darts: 10 } }));
-    expect(hit).toMatchObject({ value: '25%', delta: { text: '▼ 15.0', tone: 'bad' } });
+    expect(hit).toMatchObject({ value: '25%', delta: { text: '▼ 15.0 pp', tone: 'bad' } });
     expect(dart).toMatchObject({ value: '20', delta: null });
   });
 
@@ -181,7 +183,7 @@ describe('the figures of each game', () => {
 
   it('turns an X01 arrow by the direction of the figure, from the one definition', () => {
     expect(X01_METRICS.bustRate.better).toBe('lower');
-    expect(x01Delta('checkoutPct', { ...X, checkoutPct: 25 }, { avg: 50, first9: 55, checkoutPct: 20 })).toEqual({ text: '▲ 5.0', tone: 'good' });
+    expect(x01Delta('checkoutPct', { ...X, checkoutPct: 25 }, { avg: 50, first9: 55, checkoutPct: 20 })).toEqual({ text: '▲ 5.0 pp', tone: 'good' });
     expect(x01Delta('avg', { ...X, avg: 48 }, { avg: 50, first9: 55, checkoutPct: 20 })).toEqual({ text: '▼ 2.0', tone: 'bad' });
     expect(x01Delta('avg', X, null)).toBeNull();
   });
@@ -222,7 +224,7 @@ describe('winrate tile', () => {
 });
 
 describe('Average chart', () => {
-  const draw = (points: number[], avg: number | null) => renderToStaticMarkup(TrendChart({ points, avg }) as never);
+  const draw = (points: number[], avg: number | null) => renderToStaticMarkup(createElement(TrendChart, { points, avg }));
   it('draws the dashed line only for the average of the Okno, and nothing below 3 matches', () => {
     expect(draw([50, 40, 30], 45)).toContain('class="mean"');
     expect(draw([50, 40, 30], null)).not.toContain('class="mean"');
@@ -244,6 +246,12 @@ describe('Average chart', () => {
     expect(down).toBeGreaterThan(0);
     expect(up).toBeLessThan(0);
   });
+  it('dates the first, middle and last match under the axis', () => {
+    const day = (d: number) => new Date(2026, 10, d, 12).getTime();
+    const m = renderToStaticMarkup(createElement(TrendChart, { points: [50, 40, 30, 60, 55], avg: null, dates: [1, 2, 3, 4, 5].map(day) }));
+    expect([...m.matchAll(/class="tick">(\d+ Nov)</g)].map(x => x[1])).toEqual(['1 Nov', '3 Nov', '5 Nov']);
+    expect(m).toContain('aria-label="Average match by match: 50.0, 40.0, 30.0, 60.0, 55.0"');
+  });
   it('needs 3 matches', () => {
     expect(MIN_TREND).toBe(3);
   });
@@ -251,5 +259,105 @@ describe('Average chart', () => {
     expect(chartScale([31.2, 48.8])).toEqual({ lo: 30, hi: 50, step: 5 });
     expect(chartScale([30, 30, 30])).toEqual({ lo: 30, hi: 35, step: 5 });
     expect(chartScale([10, 80])).toEqual({ lo: 10, hi: 80, step: 10 });
+  });
+  it('takes a wider step when one match is far from the rest, so the axis keeps at most 8 steps', () => {
+    expect(chartScale([15, 120.6])).toEqual({ lo: 0, hi: 140, step: 20 });
+    expect(chartScale([0, 180])).toEqual({ lo: 0, hi: 200, step: 25 });
+  });
+});
+
+// A#24 (scoreboard audit): the Knockout card said "1 visits".
+describe('Knockout visits on the live card', () => {
+  it('says one visit in the singular', () => {
+    expect(gameStats('knockout', { points: 60, visits: 1 })[0][2]).toBe('1 visit');
+    expect(gameStats('knockout', { points: 120, visits: 2 })[0][2]).toBe('2 visits');
+    expect(gameStats('knockout', {})[0][2]).toBe('0 visits');
+  });
+});
+describe('bars in the comparison', () => {
+  const row = (nums: (number | null)[], better: 'higher' | 'lower' = 'higher') => ({ label: 'x', values: nums.map(String), nums, better });
+  it('splits the bar by share, 1/value when less is better', () => {
+    expect(fill(row([30, 10]), 0)).toBe(0.75);
+    expect(fill(row([10, 30], 'lower'), 0)).toBe(0.75);
+  });
+  it('has no bar when there is nothing to compare with: one value, or one player', () => {
+    expect(fill(row([42, null]), 0)).toBeNull();
+    expect(fill(row([42]), 0)).toBeNull();
+    expect(fill(row([null, 5, null]), 1)).toBeNull();
+    expect(fill(row([0, 0]), 0)).toBe(0);
+  });
+  it('has no bar for a player without a value or a row without a direction', () => {
+    expect(fill(row([null, 5, 7]), 0)).toBeNull();
+    expect(fill({ label: 'Darts', values: ['3', '4'], nums: [3, 4] }, 0)).toBeNull();
+  });
+  it('colours players from the tokens, round after four', () => {
+    expect([0, 1, 2, 3, 4].map(playerColor)).toEqual(['var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)', 'var(--p1)']);
+  });
+});
+
+describe('Okna', () => {
+  it('shows the four everyday Okna, all seven once More is open', () => {
+    expect(windowsShown(false, '30d')).toEqual(['30d', '90d', 'all', 'l10']);
+    expect(windowsShown(true, '30d')).toEqual(['7d', '30d', '90d', '365d', 'all', 'l10', 'l100']);
+  });
+  it('opens More when the current Okno is one of the hidden ones', () => {
+    for (const w of ['7d', '365d', 'l100'] as const) expect(windowsShown(false, w)).toContain(w);
+  });
+  it('counts matches in minigames and legs in X01', () => {
+    expect(windowLabel('l10', 'matches')).toBe('Last 10 matches');
+    expect(windowLabel('l100')).toBe('Last 100 legs');
+    expect(windowLabel('90d')).toBe('3M');
+  });
+  it('says why a headline has no trend', () => {
+    expect(noTrendNote('all')).toBe('No trend for All time');
+    expect(noTrendNote('30d', 'matches')).toBe('No trend · fewer than 3 matches before');
+  });
+  it('names time Okna in a sentence, not leg Okna or All time', () => {
+    expect(windowPhrase('30d')).toBe('the last 30 days');
+    expect(windowPhrase('365d')).toBe('the last year');
+    expect(windowPhrase('l10')).toBeNull();
+    expect(windowPhrase('all')).toBeNull();
+  });
+});
+
+describe('percentage changes', () => {
+  it('move in points', () => {
+    expect(delta(22.5, 20, 'higher', 1, 'pp')).toEqual({ text: '▲ 2.5 pp', tone: 'good' });
+    expect(delta(20, 20, 'higher', 1, 'pp')).toEqual({ text: '= 0.0 pp', tone: 'flat' });
+    expect(x01Delta('checkoutPct', X, { avg: 50, first9: 50, checkoutPct: 25 })).toEqual({ text: '▼ 5.0 pp', tone: 'bad' });
+    expect(x01Delta('avg', X, { avg: 48, first9: 50, checkoutPct: 25 })).toEqual({ text: '▲ 2.0', tone: 'good' });
+  });
+  it('in minigames too, only for percentages', () => {
+    const hit = profileMetrics('atc', { totals: { hits: 30, darts: 100 }, matches: 2, previous: { matches: 2, totals: { hits: 20, darts: 100 } } });
+    expect(hit[0].delta).toEqual({ text: '▲ 10.0 pp', tone: 'good' });
+    const goals = profileMetrics('football', { totals: { goals: 9 }, matches: 3, previous: { matches: 3, totals: { goals: 6 } } });
+    expect(goals[0].delta).toEqual({ text: '▲ 1.0', tone: 'good' });
+  });
+});
+
+describe('solo summary against the average', () => {
+  // The Okno already holds the match (saved before the summary), so each fixture adds it to the player's other matches.
+  const game = (totals: Record<string, number>, matches: number) => ({ totals, matches }) as GameStatsResponse;
+  it('compares the match headline with the average of the other matches in the Okno', () => {
+    // Free throw: 3 darts for 90; the other 4 matches 30 darts for 600, 60 per 3 darts.
+    expect(versusAverage('freethrow', { totals: { darts: 3, points: 90 } }, game({ darts: 33, points: 690 }, 5))).toEqual({ text: '▲ 30.0', tone: 'good' });
+    // Random Checkouts: 5 darts per checkout here, 3 in the other 2 matches; fewer is better.
+    expect(versusAverage('randomco', { totals: { checkouts: 2, checkoutDarts: 10 } }, game({ checkouts: 6, checkoutDarts: 22 }, 3))).toEqual({ text: '▲ 2.0', tone: 'bad' });
+    // Football: 3 goals here against 6 in the other 3 matches.
+    expect(versusAverage('football', { totals: { goals: 3 } }, game({ goals: 9 }, 4))).toEqual({ text: '▲ 1.0', tone: 'good' });
+  });
+  it('takes the Average in X01, without the match', () => {
+    // 45.5 over 30 darts here, 50 over 90 darts before: the Okno says 48.88 over 120 darts.
+    const okno = { x01: { ...X, avg: 48.88, darts: 120 } } as PlayerStatsResponse;
+    expect(versusAverage('x01', { x01: { ...X, avg: 45.5, darts: 30 } }, okno)).toEqual({ text: '▼ 4.5', tone: 'bad' });
+  });
+  it('has no line for the first match in the Okno, never “= 0.0”', () => {
+    expect(versusAverage('x01', { x01: { ...X, avg: 45.5, darts: 30 } }, { x01: { ...X, avg: 45.5, darts: 30 } } as PlayerStatsResponse)).toBeNull();
+    expect(versusAverage('freethrow', { totals: { darts: 3, points: 90 } }, game({ darts: 3, points: 90 }, 1))).toBeNull();
+  });
+  it('is null without a headline, without the match figure or without an average', () => {
+    expect(versusAverage('x01', {}, { x01: X } as PlayerStatsResponse)).toBeNull();
+    expect(versusAverage('atc', { totals: { hits: 1, darts: 3 } }, game({}, 0))).toBeNull();
+    expect(versusAverage('x01', { x01: X }, game({ darts: 3 }, 1))).toBeNull();
   });
 });

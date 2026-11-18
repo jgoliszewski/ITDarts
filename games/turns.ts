@@ -376,6 +376,8 @@ export interface RecordDef<O> {
   variant: (o: O, players: number) => { key: string; label: string } | null;
   better: 'lower' | 'higher';
   format: (v: number) => string;
+  /** Options of the record's own match that its variant leaves out (ATC's order), added to the lobby tile's label. */
+  extra?: (o: O) => string;
 }
 
 export interface GameModule<O = any, V = any> {

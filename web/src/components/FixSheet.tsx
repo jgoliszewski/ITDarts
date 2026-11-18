@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { useRef, useState } from 'react';
 import type { Coords, Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER, label, value } from '../../../games/darts.ts';
 import { Dartboard } from './Dartboard.tsx';
+import { tabKey } from './interaction.ts';
+import { useModal } from './ui.tsx';
 
 export interface FixTarget {
   /** Dart index in the visit. */
@@ -35,15 +38,16 @@ export function Keypad({ cur, onPick }: { cur: Dart | null; onPick: (d: Dart) =>
       <div className="num-grid">
         {Array.from({ length: 20 }, (_, i) => <Key key={i} n={i + 1} m={mult} cur={cur} onPick={onPick} small bare />)}
       </div>
-      <Others cur={cur} onPick={onPick} />
+      <Others cur={cur} onPick={onPick} bare />
     </>
   );
 }
 
-function Others({ cur, onPick }: { cur: Dart | null; onPick: (d: Dart) => void }) {
+/** Miss, 25 and Bull. Under Nearby they keep the row label column; under All (`bare`) they line up with the keypad. */
+function Others({ cur, onPick, bare }: { cur: Dart | null; onPick: (d: Dart) => void; bare?: boolean }) {
   return (
-    <div className="fix-grid">
-      <span className="rl">Other</span>
+    <div className={`fix-grid ${bare ? 'bare' : ''}`}>
+      {!bare && <span className="rl">Other</span>}
       <Key n={0} m={1} cur={cur} onPick={onPick} small />
       <Key n={25} m={1} cur={cur} onPick={onPick} small />
       <Key n={25} m={2} cur={cur} onPick={onPick} small />
@@ -82,34 +86,47 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
 }) {
   const adding = target.dart === null;
   const [tab, setTab] = useState<'nearby' | 'all'>(adding ? 'all' : 'nearby');
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    addEventListener('keydown', k);
-    return () => removeEventListener('keydown', k);
-  }, [onClose]);
+  const box = useRef<HTMLDivElement>(null);
+  useModal(box, onClose);
 
   const title = adding ? `Add dart ${target.index + 1}` : `Fix dart ${target.index + 1}`;
   const head = (
     <div className="sheet-head">
       <b>{title}</b>
-      <span>{adding ? who : <>read as <b style={{ color: 'var(--text)', fontSize: 14 }}>{label(target.dart!)}</b></>}</span>
+      <span>{adding ? who : <>read as <b>{label(target.dart!)}</b></>}</span>
       {/* On the wide screen Cancel sits in the header so the keypad fits without scrolling. */}
       {wide && <button className="btn danger" onClick={onClose}>Cancel</button>}
     </div>
   );
+  // Real tabs (B#20): selected, pointing at the keys they show, and moved with the arrow keys (one tab stop).
+  const TABS = ['nearby', 'all'] as const;
+  const onTabKey = (e: KeyboardEvent) => {
+    const next = tabKey(e.key, TABS.indexOf(tab), TABS.length);
+    if (next === null) return;
+    e.preventDefault();
+    setTab(TABS[next]);
+    document.getElementById(`fix-tab-${TABS[next]}`)?.focus();
+  };
   const tabs = (
-    <div className="seg" role="tablist">
-      <button role="tab" aria-pressed={tab === 'nearby'} onClick={() => setTab('nearby')}>Nearby</button>
-      <button role="tab" aria-pressed={tab === 'all'} onClick={() => setTab('all')}>All</button>
+    <div className="seg" role="tablist" aria-label="Keys" onKeyDown={onTabKey}>
+      {TABS.map(t => (
+        <button key={t} role="tab" id={`fix-tab-${t}`} aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} aria-controls="fix-panel" onClick={() => setTab(t)}>
+          {t === 'nearby' ? 'Nearby' : 'All'}
+        </button>
+      ))}
     </div>
   );
-  const pad = tab === 'nearby' ? <Nearby cur={target.dart} onPick={onPick} /> : <Keypad cur={target.dart} onPick={onPick} />;
+  const pad = (
+    <div id="fix-panel" role="tabpanel" aria-labelledby={`fix-tab-${tab}`} className="fix-panel">
+      {tab === 'nearby' ? <Nearby cur={target.dart} onPick={onPick} /> : <Keypad cur={target.dart} onPick={onPick} />}
+    </div>
+  );
 
   if (wide) {
     return (
       <>
         <div className="scrim" onClick={onClose} />
-        <div className="wide-fix" role="dialog" aria-modal="true" aria-label={title}>
+        <div ref={box} tabIndex={-1} className="wide-fix" role="dialog" aria-modal="true" aria-label={title}>
           <div className="left">
             {head}
             {tabs}
@@ -126,8 +143,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="grab" />
+      <div ref={box} tabIndex={-1} className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         {head}
         {tabs}
         {pad}

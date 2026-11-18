@@ -2,6 +2,7 @@ import type { PointerEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { PlayerHeat } from '../../../games/report.ts';
 import { SHOWN, TargetBoard, coordsSpot } from './Dartboard.tsx';
+import { sidewaysDrag } from './interaction.ts';
 import { Dropdown } from './ui.tsx';
 
 // The same board as everywhere else (TargetBoard); heat is painted on a canvas laid over it.
@@ -74,6 +75,8 @@ export function Heatmap({ players }: { players: HeatPlayer[] }) {
   const a = players[Math.min(pair[0], players.length - 1)], b = split ? players[Math.min(pair[1], players.length - 1)] : null;
   const shown = b ? [a, b] : [a];
 
+  // Where a finger went down, and whether it is moving the line yet (a finger that scrolls the page never is).
+  const press = useRef<{ x: number; y: number; on: boolean } | null>(null);
   const drag = (e: PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     setPos(Math.max(0, Math.min(1, (e.clientX - box.left) / box.width)));
@@ -89,16 +92,31 @@ export function Heatmap({ players }: { players: HeatPlayer[] }) {
     <div className="heatmap">
       {/* Names sit on the line; pickers only when there are more players than halves. */}
       {players.length > 2 && <div className="heat-picks">{picker(0)}<span className="vs">VS</span>{picker(1)}</div>}
-      <div className="heat-board" onPointerDown={split ? e => { e.currentTarget.setPointerCapture(e.pointerId); drag(e); } : undefined}
-        onPointerMove={split ? e => e.buttons && drag(e) : undefined}>
+      <div className="heat-board"
+        onPointerDown={split ? e => {
+          const now = e.pointerType !== 'touch' || !!(e.target as Element).closest('.heat-line span');
+          press.current = { x: e.clientX, y: e.clientY, on: now };
+          if (now) { e.currentTarget.setPointerCapture(e.pointerId); drag(e); }
+        } : undefined}
+        onPointerMove={split ? e => {
+          const p = press.current;
+          if (!p || !e.buttons) return;
+          if (!p.on) {
+            if (!sidewaysDrag(e.clientX - p.x, e.clientY - p.y)) return;
+            p.on = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }
+          drag(e);
+        } : undefined}
+        onPointerUp={() => { press.current = null; }} onPointerCancel={() => { press.current = null; }}>
         <TargetBoard cleared={[]} target={null} ring={null} darts={[]} label="Heatmap" />
         <Layer darts={a.heat.darts} clip={b ? `inset(0 calc(100% - ${pct}) 0 0)` : 'none'} />
         {b && <Layer darts={b.heat.darts} clip={`inset(0 0 0 ${pct})`} />}
         {b && (
           <div className="heat-line" style={{ left: pct }}>
             {/* Whose half is whose: a name tag on each side of the line. */}
-            <b className="l" style={{ background: a.color }}>{a.name}</b>
-            <b className="r" style={{ background: b.color }}>{b.name}</b>
+            <b className="l" style={{ background: a.color }} title={a.name}>{a.name}</b>
+            <b className="r" style={{ background: b.color }} title={b.name}>{b.name}</b>
             <span>↔</span>
           </div>
         )}

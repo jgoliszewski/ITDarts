@@ -10,6 +10,7 @@ import { Db } from './db.ts';
 import type { RosterEntry } from './protocol.ts';
 import type { SaveMatch } from './db.ts';
 import { Stats } from './stats.ts';
+import { GAMES } from '../games/index.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = 1000 * DAY;
@@ -151,6 +152,39 @@ describe('Average trend', () => {
     saveX01([A(), B()], [...throws(NOW, 'S1', 'S1', 'S1')], 1, OPTS, 'ended'); // only Anna threw
     expect(stats.player(bob, 'all')!.trend).toEqual([]);
     expect(stats.player(anna, 'all')!.trend).toHaveLength(1);
+  });
+});
+
+describe('recent matches', () => {
+  it('shows the score from the player\'s side, own legs first', () => {
+    saveX01([A(), B()], quickLeg(1), 1, OPTS, 'finished'); // Anna 1-0, Bob 0-1
+    db.saveMatch({ game: 'x01', options: OPTS, roster: [A(), B()], startedAt: NOW - DAY - 1000, endedAt: NOW - DAY, status: 'finished',
+      winners: [1], sets: [], legs: [], legsWon: [1, 2] }); // Bob 2-1
+    const recent = (id: number) => stats.player(id, 'all')!.recent.map(r => r.score).sort();
+    expect(recent(bob)).toEqual(['0–1', '2–1']);
+    expect(recent(anna)).toEqual(['1–0', '1–2']);
+    const results = (id: number) => stats.player(id, 'all')!.recent.map(r => `${r.result} ${r.score}`).sort();
+    expect(results(anna)).toEqual(['lost 1–2', 'won 1–0']);
+    expect(results(bob)).toEqual(['lost 0–1', 'won 2–1']);
+  });
+
+  it('lists only X01 matches of the Okno', () => {
+    saveX01([A(), B()], sixty(1), 1, OPTS, 'ended');
+    saveX01([A(), B()], sixty(30), 30, OPTS, 'ended');
+    db.saveMatch({ game: 'atc', options: {}, roster: [A()], startedAt: NOW - DAY - 1000, endedAt: NOW - DAY, status: 'finished', winners: [], sets: [], legs: [], stats: [{ darts: 9 }] });
+    expect(stats.player(anna, '7d')!.recent).toHaveLength(1);
+    expect(stats.player(anna, '90d')!.recent).toHaveLength(2); // the minigame never shows
+  });
+
+  it('respects a leg Okno', () => {
+    for (let i = 12; i >= 2; i--) saveX01([A(), B()], sixty(i), i, OPTS, 'ended');
+    saveX01([B(), A()], sixty(1), 1, OPTS, 'ended'); // Bob throws, Anna sits: no leg of hers
+    expect(stats.player(anna, 'all')!.recent).toHaveLength(10); // capped at 10
+    expect(stats.player(anna, 'all')!.recent.map(r => r.endedAt)).toContain(NOW - DAY);
+    const l10 = stats.player(anna, 'l10')!.recent.map(r => r.endedAt);
+    expect(l10).toHaveLength(10);
+    expect(l10).not.toContain(NOW - DAY); // outside the 10 legs
+    expect(l10).toContain(NOW - 11 * DAY);
   });
 });
 
@@ -342,5 +376,91 @@ describe('player list', () => {
     expect(row(anna).matches).toBe(3);
     expect(row(bob).matches).toBe(1);
     expect(row(cy).matches).toBe(0);
+  });
+});
+
+// D6 (ui-overhaul DECISIONS.md): the lobby shows the office record of every minigame variant played, with the options
+// of the record's match, so a tap opens New match with that game set up the same way.
+describe('lobby records', () => {
+  const save = (game: string, options: object, variant: string, roster: RosterEntry[], scores: (number | null)[], daysAgo: number) =>
+    db.saveMatch({
+      game: game as SaveMatch['game'], options, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+      winners: [], sets: [], legs: [], variant, scores, stats: roster.map(() => ({})),
+    } as SaveMatch);
+
+  it('is empty without minigame records', () => {
+    expect(stats.lobbyRecords()).toEqual([]);
+  });
+
+  it('gives the best result of each variant with the options of its match, in the order of the game groups', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [90], 3);
+    save('atc', { target: 'any', order: 'random', skips: true }, 'atc:any:skips', [A()], [30], 5);
+    save('atc', { target: 'any', order: 'clockwise', skips: true }, 'atc:any:skips', [B()], [24], 4);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 2);
+    const r = stats.lobbyRecords();
+    expect(r.map(x => x.key)).toEqual(['atc:any:skips', '121:v3:refill:coop', 'shanghai:solo:7']);
+    // ATC: fewer darts is better, so Bob's 24 with the clockwise order; the order is not in the key, the match keeps it.
+    expect(r[0]).toMatchObject({ game: 'atc', value: '24 darts', who: 'Bob', at: NOW - 4 * DAY });
+    expect(r[0].options).toMatchObject({ target: 'any', order: 'clockwise', skips: true });
+    // The tile names the record match's order, which the variant leaves out (DECISIONS, after the branch review).
+    expect(r[0].label).toBe('ATC · Any · Skips · Clockwise');
+    expect(r[1]).toMatchObject({ game: '121', value: 'Target 140', who: 'Anna & Bob' });
+    expect(r[2]).toMatchObject({ game: 'shanghai', label: 'Shanghai · Solo · 7 rounds', value: '90 points', who: 'Bob' });
+    expect(r[2].options).toMatchObject({ rounds: 7 });
+  });
+
+  it('fills the options the record match did not save with the game defaults', () => {
+    save('atc', {}, 'atc:any:skips', [A()], [20], 1);
+    expect(stats.lobbyRecords()[0].options).toEqual(GAMES.atc.normalizeOptions({}));
+  });
+});
+
+// C#19 (stats audit): minigame profiles list their own recent matches, per Okno, with the result as the lobby shows it.
+describe('recent minigame matches', () => {
+  const atc = (roster: RosterEntry[], daysAgo: number, scores: (number | null)[], winners: number[] = []) =>
+    db.saveMatch({ game: 'atc', options: {}, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+      winners, sets: [], legs: [], variant: 'atc:any:skips', scores, stats: roster.map(() => ({ darts: 30 })) } as SaveMatch);
+
+  it('lists only that game in the Okno, newest first, with the record result and no opponents when solo', () => {
+    atc([A()], 3, [26]);
+    atc([A(), B()], 10, [31, 40], [0]);
+    atc([A()], 45, [28]);
+    saveX01([A(), B()], quickLeg(2), 2, OPTS, 'finished');
+    const r = stats.game(anna, 'atc', '30d')!.recent;
+    expect(r.map(x => x.endedAt)).toEqual([NOW - 3 * DAY, NOW - 10 * DAY]);
+    expect(r[0]).toMatchObject({ opponents: null, score: '26 darts', result: 'played' });
+    expect(r[1]).toMatchObject({ opponents: 'Bob', score: '31 darts', result: 'won' });
+    expect(stats.game(anna, 'atc', 'all')!.recent).toHaveLength(3);
+  });
+
+  it('takes the last matches in a Last 10 Okno and keeps 10 at most', () => {
+    for (let i = 12; i >= 1; i--) atc([A()], i, [20 + i]);
+    const r = stats.game(anna, 'atc', 'l10')!.recent;
+    expect(r).toHaveLength(10);
+    expect(r[0].endedAt).toBe(NOW - DAY);
+  });
+
+  it('lists opponents in the order they played and marks a solo X01 match with no opponents', () => {
+    saveX01([A()], quickLeg(1), 1, OPTS, 'finished');
+    db.saveMatch({ game: 'x01', options: OPTS, roster: [B(), A(), { playerId: cy, name: 'Cy' }], startedAt: NOW - 2 * DAY - 1000, endedAt: NOW - 2 * DAY, status: 'ended',
+      winners: [], sets: [], legs: [], legsWon: [2, 1, 0] });
+    const r = stats.player(anna, 'all')!.recent;
+    expect(r[0].opponents).toBeNull();
+    expect(r[1].opponents).toBe('Bob, Cy');
+    expect(r[1].score).toBe('1–2–0'); // own legs first, then the others in their playing order
+  });
+
+  it('marks a match the player left, a match ended without a result and a loss, with guests among the opponents', () => {
+    const G = { playerId: null, name: 'Guest 1' };
+    const save = (roster: RosterEntry[], daysAgo: number, extra: Partial<SaveMatch>) =>
+      db.saveMatch({ game: 'atc', options: {}, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+        winners: [], sets: [], legs: [], variant: 'atc:any:skips', scores: roster.map(() => null), stats: roster.map(() => ({ darts: 30 })), ...extra } as SaveMatch);
+    save([A(), G, B()], 1, { winners: [2], removed: [true, false, false] });
+    save([A(), B()], 2, { status: 'ended' });
+    save([G, A()], 3, { winners: [0] });
+    // Left a match that was then ended without a result: leaving is what happened to the player.
+    save([B(), A()], 4, { status: 'ended', removed: [false, true] });
+    const r = stats.game(anna, 'atc', '30d')!.recent;
+    expect(r.map(x => [x.result, x.opponents])).toEqual([['left', 'Guest 1, Bob'], ['saved', 'Bob'], ['lost', 'Guest 1'], ['left', 'Bob']]);
   });
 });

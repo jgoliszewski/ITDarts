@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
+import { plural } from '../../../games/turns.ts';
 import type { GameStatsResponse } from '../../../server/protocol.ts';
 import { BAND_BETTER, METRICS, X01_BANDS, X01_METRICS, fmtPct, sharedBestLeg, visitShare } from '../stats.ts';
 
-/** Fixed player colours by place in the match or comparison (docs/UI.md, Podsumowanie meczu). */
-export const PLAYER_COLORS = ['#e0325f', '#16b2c9', '#f0a020', '#3ccb7f'];
-export const playerColor = (i: number) => PLAYER_COLORS[i % PLAYER_COLORS.length];
+/** Fixed player colours by place in the match or comparison (docs/UI.md, Podsumowanie meczu): the --p1…--p4 tokens. */
+export const playerColor = (i: number) => `var(--p${(i % 4) + 1})`;
 
 const pct = (a: number | undefined, b: number | undefined) => (b ? `${Math.round(((a ?? 0) / b) * 1000) / 10}%` : '–');
 
@@ -16,7 +16,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
     case 'atc':
     case 'fullboard': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Darts', String(t.darts ?? 0)]];
     case 'gotcha': return [['Gotchas', String(t.gotchas ?? 0), 'rivals sent back to 0']];
-    case 'knockout': return [['Average visit', t.visits ? (t.points / t.visits).toFixed(1) : '–', `${t.visits ?? 0} visits`]];
+    case 'knockout': return [['Average visit', t.visits ? (t.points / t.visits).toFixed(1) : '–', plural(t.visits ?? 0, 'visit')]];
     case 'football': return [['Goals', String(t.goals ?? 0)]];
     case 'freethrow': return [
       ['Average', t.darts ? ((t.points / t.darts) * 3).toFixed(1) : '–', 'per 3 darts'],
@@ -111,7 +111,6 @@ export function gameCompareRows(game: GameId, gs: Pick<GameStatsResponse, 'total
 }
 
 export const fmtDistance = (metres: number) => (metres >= 1000 ? `${(metres / 1000).toFixed(2)} km` : `${Math.round(metres)} m`);
-export const fmtKm = (metres: number) => `${(metres / 1000).toFixed(2)} km`;
 
 /** The best value's players; those in `skip` (removed from the match) have no place. */
 function bestOf(r: Row, skip: boolean[] = []): Set<number> {
@@ -122,10 +121,14 @@ function bestOf(r: Row, skip: boolean[] = []): Set<number> {
   return new Set(r.nums.flatMap((n, i) => (n === best && !skip[i] ? [i] : [])));
 }
 
-/** How full a value's bar is: its share of all players' values, like Autodarts; for 'lower' rows the share of 1/value. */
-function fill(r: Row, i: number): number | null {
+/**
+ * How full a value's bar is: its share of all players' values, like Autodarts; for 'lower' rows the share of 1/value.
+ * No bar when there is nothing to compare with: fewer than two values.
+ */
+export function fill(r: Row, i: number): number | null {
   const v = r.nums?.[i];
   if (!r.better || v == null) return null;
+  if (r.nums!.filter(n => n !== null).length < 2) return null;
   const score = (n: number) => (r.better === 'lower' ? (n > 0 ? 1 / n : 0) : n);
   const sum = r.nums!.reduce<number>((t, n) => t + (n === null ? 0 : score(n)), 0);
   return sum > 0 ? score(v) / sum : 0;
@@ -134,24 +137,26 @@ function fill(r: Row, i: number): number | null {
 /**
  * Players side by side like Autodarts: per row the label in the middle, values on the sides with the best one
  * in a pill of its player's colour, and bars under them. Two players mirror around the middle; more get a column each.
+ * `hideNames` when the screen names the players already (Compare's pickers).
  */
-export function CompareTable({ names, rows, left = [] }: { names: string[]; rows: Row[]; left?: boolean[] }) {
+export function CompareTable({ names, rows, left = [], hideNames = false }: { names: string[]; rows: Row[]; left?: boolean[]; hideNames?: boolean }) {
   const two = names.length === 2;
   const value = (r: Row, best: Set<number>, i: number) => (
     <span className={`cmp-val ${best.has(i) ? 'best' : ''}`} style={best.has(i) ? { background: playerColor(i) } : undefined}>{r.values[i]}</span>
   );
   const bar = (r: Row, i: number) => {
     const f = fill(r, i);
-    return <div className="cmp-track">{f !== null && <i style={{ width: `${f * 100}%`, background: playerColor(i) }} />}</div>;
+    return <div className="cmp-track">{f !== null && <i style={{ width: `${f * 100}%`, background: left[i] ? 'var(--off)' : playerColor(i) }} />}</div>;
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
-      <div className="cmp-names">{names.map((n, i) => left[i]
+      {!hideNames && <div className="cmp-names">{names.map((n, i) => left[i]
         ? <span key={i} className="left">{n}<small>Left</small></span>
-        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
+        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>}
       {rows.map(r => {
         const best = bestOf(r, left);
-        const bars = !!r.better && !!r.nums;
+        // One player has nothing to measure against: no bars at all.
+        const bars = !!r.better && !!r.nums && names.length > 1;
         return two ? (
           <div key={r.label} className="cmp-row">
             <div className="cmp-line">{value(r, best, 0)}<span className="cmp-label">{r.label}</span>{value(r, best, 1)}</div>

@@ -1,6 +1,7 @@
 // 121 ladder of targets as a vertical chain of numbered dots with the record flag, and the odometer for the target (docs/GRY.md#121).
-import { useRef } from 'react';
+import { useState } from 'react';
 import { START_TARGET } from '../../../games/121.ts';
+import { stepOf } from './interaction.ts';
 
 /** Targets ahead of the current one on the ladder. */
 export const AHEAD = 3;
@@ -29,12 +30,18 @@ export function ladderWindow(target: number, record: number | null): Rung[] {
   return rungs;
 }
 
-/** Remembers the previous value across renders and says how it moved. */
+/**
+ * How the value moved last time. The step holds until the value changes again, so later renders (every snapshot from
+ * the server) keep the same key and class and the slide or roll it started plays to the end. Derived state, so the
+ * render stays pure under StrictMode. Keep `stepOf` in state, not in a ref: a ref written during render gave step 0
+ * on the next snapshot and cut the slide off (K10/K11 in the motion audit). No test covers this wiring (vitest has no
+ * DOM); the live check is in .scratch/ui-overhaul/t02/EVIDENCE.md.
+ */
 function useStep(value: number): number {
-  const prev = useRef(value);
-  const step = value - prev.current;
-  prev.current = value;
-  return step;
+  const [last, setLast] = useState(() => stepOf(null, value));
+  const next = stepOf(last, value);
+  if (next !== last) setLast(next);
+  return next.step;
 }
 
 export function Ladder({ target, record }: { target: number; record: number | null }) {

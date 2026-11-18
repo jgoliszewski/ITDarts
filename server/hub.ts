@@ -29,6 +29,7 @@ import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
 import { UserError, cleanName } from './db.ts';
+import { builtinId } from './effects/builtin.ts';
 import type { Effects, Fx } from './effects/index.ts';
 import { rotateBoardDue } from './rotate.ts';
 import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
@@ -272,7 +273,7 @@ export class Hub {
       rotateBoardDue: rotateBoardDue(this.db.boardRotatedAt(), new Date()),
       boardTest: this.boardTest,
       howTo: this.howTo,
-      effects: { ...(({ sounds, caller, leds, volume }) => ({ sounds, caller, leds, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
+      effects: { ...(({ sounds, caller, leds, master, muted, volume }) => ({ sounds, caller, leds, master, muted, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
     };
   }
 
@@ -335,6 +336,12 @@ export class Hub {
     if (l.rec.game === 'gotcha' || l.rec.game === 'knockout') return callerLinesGotcha(cs);
     if (l.rec.game === 'freethrow') return callerLinesFreethrow(cs);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
+  }
+
+  /** Stops the timers before the database closes, so none of them broadcasts from a closed database. */
+  close() {
+    for (const t of [this.introTimer, this.qrTimer, this.testTimer]) if (t) clearTimeout(t);
+    this.introTimer = this.qrTimer = this.testTimer = null;
   }
 
   private endIntro() {
@@ -464,7 +471,7 @@ export class Hub {
       const legs = game.compact(rec.events, n, rec.options);
       if (report) {
         this.summary = matchReport({
-          game: rec.game, description: game.describe(rec.options, n), names: rec.roster.map(r => r.name), legs, view,
+          game: rec.game, description: game.describe(rec.options, n), names: rec.roster.map(r => r.name), ids: rec.roster.map(r => r.playerId), legs, view,
           checkOut: rec.game === 'x01' ? rec.options.checkOut : null, startScore: rec.game === 'x01' ? rec.options.startScore : undefined, ended: status === 'ended', ocheMeters: this.cfg.ocheMeters,
         });
       }
@@ -659,8 +666,17 @@ export class Hub {
           ...(cmd.sounds !== undefined && { sounds: cmd.sounds }),
           ...(cmd.caller !== undefined && { caller: cmd.caller }),
           ...(cmd.leds !== undefined && { leds: cmd.leds }),
+          ...(cmd.master !== undefined && { master: cmd.master }),
+          ...(cmd.muted !== undefined && { muted: cmd.muted }),
         });
         if (this.effects.store.settings().leds !== leds) this.effects.applyBase();
+        // A new level plays the Next player sound on the kiosk, also when a phone is the Pilot; not with Sounds off or Mute. It goes out after the
+        // state with the level (the command's broadcast), so the kiosk plays it through the new master.
+        const s = this.effects.store.settings();
+        const turn = this.effects.store.sound(builtinId('turn'));
+        if (cmd.master !== undefined && s.sounds && !s.muted && turn) {
+          setImmediate(() => this.sendFx({ sound: { url: turn.url, gain: (s.volume / 100) * (turn.volume / 100) }, anim: null, caller: null }));
+        }
         return {};
       }
       case 'ledsWhite':

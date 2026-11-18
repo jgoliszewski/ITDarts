@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ClientState, PlayerInfo } from '../../../server/protocol.ts';
-import { Dialog, Icon, act } from '../components/ui.tsx';
+import { Dialog, Icon, Presence, act, toast } from '../components/ui.tsx';
 import { PlayerStats } from './Stats.tsx';
 
 type Pending = { kind: 'anonymize' | 'merge'; player: PlayerInfo } | null;
@@ -28,26 +28,33 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
     </button>
   );
 
-  // One player: their stats first, management below.
+  // Archive is undone from the toast, so it needs no confirmation.
+  const archive = async (q: PlayerInfo) => {
+    const to = !q.archived;
+    if (!(await act({ type: 'player', cmd: { action: 'archive', id: q.id, archived: to } })).ok) return;
+    toast({ text: `${q.name} ${to ? 'archived' : 'restored'}`, action: { label: 'Undo', run: () => void act({ type: 'player', cmd: { action: 'archive', id: q.id, archived: !to } }) } });
+  };
+
+  // One player: Manage first, folded, then their stats (DECISIONS D7).
   const p = s.players.find(x => x.id === open);
   const detail = p && (
     <>
-      <PlayerStats id={p.id} />
-      <div className="box" style={{ gap: 10 }}>
-        <div className="caps" style={{ fontSize: 13 }}>Manage</div>
+      <details className="box manage">
+        <summary className="caps">Manage</summary>
         <form className="option-row" onSubmit={async e => { e.preventDefault(); await act({ type: 'player', cmd: { action: 'rename', id: p.id, name: rename } }); }}>
           <input className="field" value={rename} maxLength={24} onChange={e => setRename(e.target.value)} aria-label={`New name for ${p.name}`} />
           <button className="btn" type="submit" disabled={rename.trim() === p.name}>Rename</button>
         </form>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
           <button className="btn" onClick={() => { setPending({ kind: 'merge', player: p }); setMergeInto(null); }}>Merge…</button>
-          <button className="btn" onClick={() => act({ type: 'player', cmd: { action: 'archive', id: p.id, archived: !p.archived } })}>{p.archived ? 'Restore' : 'Archive'}</button>
+          <button className="btn" onClick={() => void archive(p)}>{p.archived ? 'Restore' : 'Archive'}</button>
           <button className="btn danger" onClick={() => setPending({ kind: 'anonymize', player: p })}>Delete…</button>
         </div>
-        <div className="muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
+        <div className="muted note">
           Archive hides the player from lists and keeps the stats. Delete removes the name; matches stay as “Deleted player”.
         </div>
-      </div>
+      </details>
+      <PlayerStats id={p.id} embedded />
     </>
   );
 
@@ -55,7 +62,7 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
     <div className="phone" style={{ maxWidth: 640 }}>
       <header className="phone-header">
         <button className="icon-btn" style={{ background: 'transparent' }} aria-label="Back" onClick={() => (p ? setOpen(null) : onClose())}>{Icon.back(22)}</button>
-        <h1>{p ? p.name : 'Players'}</h1>
+        <h1 title={p?.name}>{p ? p.name : 'Players'}</h1>
       </header>
       <div className="phone-body">
         {detail || <>
@@ -74,15 +81,15 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
         </>}
       </div>
 
-      {pending?.kind === 'anonymize' && (
+      <Presence>{pending?.kind === 'anonymize' && (
         <Dialog title={`Delete ${pending.player.name}?`} onClose={() => setPending(null)} actions={<>
           <button className="btn" onClick={() => setPending(null)}>Cancel</button>
           <button className="btn danger" onClick={async () => { await act({ type: 'player', cmd: { action: 'anonymize', id: pending.player.id } }); setPending(null); setOpen(null); }}>Delete name</button>
         </>}>
           <p>The name is removed for good and the player disappears from lists. Their matches stay, shown as “Deleted player”, so other players' stats don't change.</p>
         </Dialog>
-      )}
-      {pending?.kind === 'merge' && (
+      )}</Presence>
+      <Presence>{pending?.kind === 'merge' && (
         <Dialog title={`Merge ${pending.player.name} into…`} onClose={() => setPending(null)} actions={<>
           <button className="btn" onClick={() => setPending(null)}>Cancel</button>
           <button className="btn primary" disabled={mergeInto === null} onClick={async () => {
@@ -98,7 +105,7 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
             ))}
           </div>
         </Dialog>
-      )}
+      )}</Presence>
     </div>
   );
 }

@@ -10,8 +10,8 @@ import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import { Db } from './db.ts';
 import type { Effects } from './effects/index.ts';
+import { EffectsStore } from './effects/store.ts';
 import { Hub } from './hub.ts';
-import { Stats } from './stats.ts';
 import type { Command, ServerMessage } from './protocol.ts';
 
 let dir: string;
@@ -56,8 +56,24 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  hub.close();
   db.close();
   rmSync(dir, { recursive: true, force: true });
+});
+
+describe('closing the hub', () => {
+  it('stops the record intro timer, so it does not broadcast after the database closes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const pilot = client(true);
+      await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'off' }, roster: roster(2) });
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+      hub.close();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('the remove command', () => {
@@ -229,7 +245,6 @@ describe('saving a Gotcha match', () => {
     await pilot({ type: 'endMatch', save: true });
     expect(legsWon()).toEqual([3, 2]);
     expect(db.lastMatch()!.players.map(p => p.value)).toEqual(['3', '2']);
-    expect(new Stats(db).player(players[0], 'all')!.recent[0].score).toBe('3–2');
   });
 
   it('keeps Won for First to 1', async () => {
@@ -315,5 +330,74 @@ describe('coords from the Pilot', () => {
     expect((hub as unknown as { live: { view: { points: number[] } } }).live.view.points).toEqual([-1, 0]);
     await pilot(dart('S20'));
     expect(events().at(-1)).not.toHaveProperty('coords');
+  });
+});
+
+// Master volume and Mute (ui-overhaul DECISIONS.md): a Pilot setting of this laptop, kept in SQLite like Sounds.
+describe('master volume and mute', () => {
+  function withStore() {
+    const store = new EffectsStore(db, join(dir, 'effects'), dir, []);
+    const effects = { fire, setBase: () => undefined, applyBase: () => undefined, store };
+    hub = new Hub(db, board as unknown as Board, { dataDir: dir, extraBackupDir: null, ocheMeters: 2.37, port: 0 } as Config, effects as unknown as Effects, () => undefined, () => undefined);
+    const ws = Object.assign(new EventEmitter(), { OPEN: 1, readyState: 1, send: (s: string) => ws.emit('out', JSON.parse(s)) });
+    let last: Extract<ServerMessage, { type: 'state' }>['state'] | undefined;
+    const out: ServerMessage[] = [];
+    ws.on('out', (m: ServerMessage) => (out.push(m), m.type === 'state' && (last = m.state)));
+    hub.connect(ws as never, true);
+    ws.emit('message', JSON.stringify({ type: 'hello', clientId: 'kiosk', deviceName: 'test' }));
+    return { store, out, state: () => last! };
+  }
+
+  it('starts at 100 % and not muted', () => {
+    const { state } = withStore();
+    expect(state().effects).toMatchObject({ master: 100, muted: false });
+  });
+
+  it('saves the level and Mute from the Pilot without touching Sounds and Caller, and keeps them after a restart', async () => {
+    const { state } = withStore();
+    const pilot = client(true);
+    expect(await pilot({ type: 'effects', master: 35 })).toMatchObject({ ok: true });
+    expect(await pilot({ type: 'effects', muted: true })).toMatchObject({ ok: true });
+    await new Promise(r => setImmediate(r));
+    expect(state().effects).toMatchObject({ master: 35, muted: true, sounds: true, caller: true });
+    // Unmute brings the level back.
+    await pilot({ type: 'effects', muted: false });
+    await new Promise(r => setImmediate(r));
+    expect(state().effects).toMatchObject({ master: 35, muted: false });
+    await pilot({ type: 'effects', muted: true });
+    const again = new EffectsStore(db, join(dir, 'effects'), dir, []);
+    expect(again.settings()).toMatchObject({ master: 35, muted: true });
+  });
+
+  it('plays a Next player preview on the kiosk at the new level, after the state that carries it (CARRY 04b)', async () => {
+    const { out, store } = withStore();
+    store.updateSettings({ volume: 80 });
+    const pilot = client(false);
+    await pilot({ type: 'takeControl' });
+    out.length = 0;
+    expect(await pilot({ type: 'effects', master: 40 })).toMatchObject({ ok: true });
+    await new Promise(r => setImmediate(r));
+    const fx = out.findIndex(m => m.type === 'fx');
+    const level = out.findIndex(m => m.type === 'state' && m.state.effects.master === 40);
+    expect(fx).toBeGreaterThan(level);
+    expect(level).toBeGreaterThanOrEqual(0);
+    // The real Next player sound: the effects volume times its own (75 %).
+    expect(out[fx]).toEqual({ type: 'fx', fx: { sound: { url: 'builtin:turn', gain: 0.8 * 0.75 }, anim: null, caller: null } });
+  });
+
+  it('plays no preview while muted or with Sounds off, nor for Mute or the switches', async () => {
+    const { out } = withStore();
+    const pilot = client(true);
+    for (const cmd of [{ muted: true }, { master: 30 }, { muted: false }, { sounds: false }, { master: 40 }] as const) await pilot({ type: 'effects', ...cmd });
+    await new Promise(r => setImmediate(r));
+    expect(out.filter(m => m.type === 'fx')).toEqual([]);
+  });
+
+  it('refuses a level out of 0–100 and a device that is not the Pilot', async () => {
+    const { store } = withStore();
+    const pilot = client(true), phone = client(false);
+    expect(await pilot({ type: 'effects', master: 140 })).toMatchObject({ ok: false });
+    expect(await phone({ type: 'effects', master: 10 })).toMatchObject({ ok: false, error: 'Take control first' });
+    expect(store.settings().master).toBe(100);
   });
 });

@@ -88,6 +88,10 @@ _Avoid_: losowanie
 Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co-op.
 _Avoid_: team, drużyna (zostaje na przyszły tryb drużynowy)
 
+**Rekord biura**:
+Najlepszy wynik wariantu minigierki w biurze. Pokazuje go Ekran rekordu przed grą, kafelki „Office records” w lobby (stuknięcie otwiera „New match” z tym wariantem) i tabele na `/stats`.
+_Avoid_: high score, top score
+
 **Ekran rekordu**:
 Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry.
 _Avoid_: intro, splash

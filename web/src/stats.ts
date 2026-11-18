@@ -17,19 +17,43 @@ export const fmtPct = (n: number | null) => (n === null ? '–' : `${n}%`);
 export const fmtFixed = (digits: number) => (n: number | null) => (n === null ? '–' : n.toFixed(digits));
 
 export interface Delta {
-  /** “▲ 2.4”, “▼ 1.3” or “= 0.0”. */
+  /** “▲ 2.4”, “▼ 1.3”, “= 0.0”; a percentage moves in points: “▲ 2.4 pp”. */
   text: string;
   tone: 'good' | 'bad' | 'flat';
 }
 
 /** The change from `prev` to `cur`; green when it moved the better way. Null when either side is missing. */
-export function delta(cur: number | null | undefined, prev: number | null | undefined, better: Better, digits = 1): Delta | null {
+export function delta(cur: number | null | undefined, prev: number | null | undefined, better: Better, digits = 1, unit = ''): Delta | null {
   if (cur == null || prev == null) return null;
   const scale = 10 ** digits;
   const d = Math.round((cur - prev) * scale) / scale;
-  if (d === 0) return { text: `= ${(0).toFixed(digits)}`, tone: 'flat' };
+  const u = unit ? ` ${unit}` : '';
+  if (d === 0) return { text: `= ${(0).toFixed(digits)}${u}`, tone: 'flat' };
   const good = better === 'higher' ? d > 0 : d < 0;
-  return { text: `${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(digits)}`, tone: good ? 'good' : 'bad' };
+  return { text: `${d > 0 ? '▲' : '▼'} ${Math.abs(d).toFixed(digits)}${u}`, tone: good ? 'good' : 'bad' };
+}
+
+// ---------- Okna ----------
+
+/** Why a headline has no change: All time has nothing before it; otherwise the previous Okno was too thin (docs/STATYSTYKI.md, Progres). */
+export const noTrendNote = (w: StatsWindow, unit: 'legs' | 'matches' = 'legs'): string =>
+  w === 'all' ? 'No trend for All time' : `No trend · fewer than 3 ${unit} before`;
+
+/** “the last 30 days”: the Okno in a sentence; leg Okna and All time have no end before which nothing was played. */
+export const windowPhrase = (w: StatsWindow): string | null =>
+  ({ '7d': 'the last 7 days', '30d': 'the last 30 days', '90d': 'the last 3 months', '365d': 'the last year' } as Partial<Record<StatsWindow, string>>)[w] ?? null;
+
+/** The Okna in picker order; `SHOWN` always, the rest under More (docs/STATYSTYKI.md, Okna). */
+export const WINDOWS: StatsWindow[] = ['7d', '30d', '90d', '365d', 'all', 'l10', 'l100'];
+const SHOWN: StatsWindow[] = ['30d', '90d', 'all', 'l10'];
+
+/** The Okna the picker shows: the four everyday ones, all of them once More is open or the current one is hidden. */
+export const windowsShown = (more: boolean, current: StatsWindow): StatsWindow[] =>
+  more || !SHOWN.includes(current) ? WINDOWS : SHOWN;
+
+/** “30D”, “All”, “Last 10 legs”; minigames count matches where X01 counts legs. */
+export function windowLabel(w: StatsWindow, unit: 'legs' | 'matches' = 'legs'): string {
+  return { '7d': '7D', '30d': '30D', '90d': '3M', '365d': '1Y', all: 'All', l10: `Last 10 ${unit}`, l100: `Last 100 ${unit}` }[w];
 }
 
 /** “vs previous 30 days”; minigames count matches where X01 counts legs. */
@@ -87,7 +111,7 @@ export const BAND_BETTER: Better = 'higher';
 
 /** The arrow of an X01 figure against the previous Okno; its colour follows the figure's direction. */
 export function x01Delta(key: 'avg' | 'first9' | 'checkoutPct', x: X01Stats, prev: PlayerStatsResponse['previous']): Delta | null {
-  return delta(X01_METRICS[key].value(x), prev?.[key], X01_METRICS[key].better);
+  return delta(X01_METRICS[key].value(x), prev?.[key], X01_METRICS[key].better, 1, key === 'checkoutPct' ? 'pp' : '');
 }
 
 export const doubleName = (double: number) => (double === 25 ? 'Bull' : `D${double}`);
@@ -185,10 +209,30 @@ export function profileMetrics(game: GameId, g: Pick<GameStatsResponse, 'totals'
       label: m.label,
       value: m.fmt(cur),
       sub: m.sub?.(g.totals, g.matches),
-      delta: m.main && m.better ? delta(cur, prev, m.better, m.digits) : null,
+      delta: m.main && m.better ? delta(cur, prev, m.better, m.digits, m.fmt === fmtPct ? 'pp' : '') : null,
       main: !!m.main,
     };
   });
+}
+
+/**
+ * The solo summary's line: the game's headline figure of this match against the player's average over the Okno
+ * (X01: the Average). The match is saved before the summary shows, so it is taken out of the Okno first: the
+ * average is the player's other matches. Null without a headline, without the match figure or with no other match.
+ */
+export function versusAverage(game: GameId, match: { x01?: X01Stats; totals?: Record<string, number> }, avg: PlayerStatsResponse | GameStatsResponse): Delta | null {
+  if (game === 'x01') {
+    if (!match.x01 || !('x01' in avg)) return null;
+    const m = match.x01, w = avg.x01;
+    // Average is points per 3 darts, so the points come back as avg × darts / 3.
+    const darts = w.darts - m.darts;
+    if (m.avg === null || w.avg === null || darts <= 0) return null;
+    return delta(m.avg, Math.round(((w.avg * w.darts - m.avg * m.darts) / darts) * 100) / 100, 'higher');
+  }
+  const m = METRICS[game]?.find(x => x.main && x.better);
+  if (!m || !match.totals || !('totals' in avg) || avg.matches <= 1) return null;
+  const others = Object.fromEntries(Object.entries(avg.totals).map(([k, v]) => [k, v - (match.totals![k] ?? 0)]));
+  return delta(m.value(match.totals, 1), m.value(others, avg.matches - 1), m.better!, m.digits, m.fmt === fmtPct ? 'pp' : '');
 }
 
 /** The winrate tile: wins over versus matches; a game with only solo matches shows just how many were played. */
@@ -207,10 +251,13 @@ export function winTile(g: Pick<GameStatsResponse, 'played' | 'versus'>): { labe
 /** The chart shows from this many matches; fewer make a line that says nothing. */
 export const MIN_TREND = 3;
 
-/** Axis of the Average chart: whole steps around the data, never flat. */
+/**
+ * Axis of the Average chart: whole steps around the data, never flat, and at most 8 of them, so the labels do not
+ * crowd on a phone when one match is far from the rest.
+ */
 export function chartScale(points: number[]): { lo: number; hi: number; step: number } {
   const min = Math.min(...points), max = Math.max(...points);
-  const step = max - min > 40 ? 10 : 5;
+  const step = [5, 10, 20, 25, 50].find(s => Math.ceil(max / s) - Math.floor(min / s) <= 8) ?? 100;
   const lo = Math.floor(min / step) * step;
   const hi = Math.ceil(max / step) * step;
   return { lo, hi: hi === lo ? hi + step : hi, step };

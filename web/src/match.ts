@@ -104,3 +104,87 @@ export function winnersOf(m: MiniMatch): string {
   const names = m.view.winners.map(i => m.roster[i].name);
   return names.length ? names.join(' & ') : m.roster.length > 1 ? 'Team' : m.roster[0].name;
 }
+
+/**
+ * The X01 hero's corner pill (variant D, DECISIONS.md): green once checked out, amber while a double is needed to start.
+ * A bust has no pill: the big BUST next to the score says it.
+ */
+export function heroCorner(m: X01Match): { text: string; tone: 'good' | 'warn' } | null {
+  const v = m.view;
+  if (v.visit.bust) return null;
+  if (v.visit.checkout) return { text: 'Checked out', tone: 'good' };
+  return v.checkedIn[v.current] ? null : { text: 'Needs a double to start', tone: 'warn' };
+}
+
+/** What the visit scored, for the hero's This turn and the turn card; null in games counted in hits or marks. */
+export function visitScored(m: LiveMatch): number | null {
+  if (isX01(m)) return m.view.visit.bust ? 0 : m.view.visit.total;
+  switch (m.game) {
+    case 'hol': return m.view.sum ?? 0;
+    case 'shanghai': return m.view.visitPoints;
+    case 'knockout': return m.view.visitScore;
+    case 'freethrow': return m.view.visitTotal;
+    case '121': case 'randomco': case 'gotcha':
+      return m.view.visit.darts.reduce((a, d, i) => a + (m.view.visit.good[i] ? value(d.dart) : 0), 0);
+    default: return null;
+  }
+}
+
+/**
+ * The phone's This turn line (B#17), like the turn card on the scoreboard: the visit's total in orange (`sum`), BUST or the
+ * finished visit's verdict in its colour, and in games counted in hits how many so far (marks in Cricket).
+ */
+export function turnHead(m: LiveMatch): { text: string; tone: 'sum' | 'count' | 'good' | 'bad' } {
+  if (isX01(m)) return m.view.visit.bust ? { text: 'BUST', tone: 'bad' } : { text: String(m.view.visit.total), tone: 'sum' };
+  if (m.view.visit.verdict) return { text: m.view.visit.verdict.text.toUpperCase(), tone: m.view.visit.verdict.tone };
+  if (m.game === 'bullseye') return { text: signed(m.view.visitPoints, true), tone: 'sum' };
+  const scored = visitScored(m);
+  if (scored !== null) return { text: String(scored), tone: 'sum' };
+  const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [m.view.visit.good.filter(Boolean).length, 'hit'];
+  return { text: `${n} ${unit}${n === 1 ? '' : 's'}`, tone: 'count' };
+}
+
+/** Games whose hero has the right half with This turn and the route or the score to beat (variant D); the rest keep their own. */
+export const turnPanel = (m: LiveMatch): boolean =>
+  m.game === 'x01' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout';
+
+/** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
+export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());
+
+/**
+ * X01 with double in: darts before the opening double don't count, so their tiles are dimmed like a dead dart in 121.
+ * The player was already in at the visit's start when they are in now and their score had left the start before it.
+ */
+export function x01Dead(m: X01Match): boolean[] {
+  const v = m.view;
+  const darts = v.visit.darts;
+  const p = v.visit.player;
+  if (m.options.checkIn === 'straight') return darts.map(() => false);
+  let inn = v.checkedIn[p] && v.scores[p] + (v.visit.bust ? 0 : v.visit.total) !== m.options.startScore;
+  return darts.map(d => {
+    if (!inn && d.dart.m === 2 && d.dart.n > 0) inn = true;
+    return !inn;
+  });
+}
+
+/**
+ * The line under "Remove Bob?" (B#8): which ways out there are, or why there is none (`blocked`, from removeBlock).
+ */
+export function removeIntro(canLeg: boolean, canMatch: boolean, blocked: string | null): string {
+  if (canLeg && canMatch) return 'Out for this leg only, or for the rest of the match.';
+  if (canLeg) return 'Out for this leg only.';
+  if (canMatch) return 'Out for the rest of the match.';
+  return blocked ?? '';
+}
+
+/** The lobby's rematch button: up to three names, then only how many (B#13). */
+export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : `Rematch · ${names.length} players`);
+
+/** Setup's start button says what starts (B#4). */
+export const startLabel = (game: string, players: number): string => `Start · ${game} · ${players} ${players === 1 ? 'player' : 'players'}`;
+
+/**
+ * A lobby record's game and options for New match (D6) last only while the pilot has the setup open: any other screen
+ * (setup closed, control lost, which sends the screen to main) drops them, so a later New match opens the last game.
+ */
+export const presetFor = <T>(preset: T | null, screen: string): T | null => (screen === 'setup' ? preset : null);

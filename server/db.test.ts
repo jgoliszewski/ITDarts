@@ -226,7 +226,6 @@ describe('minigames', () => {
     saveAtc([{ playerId: a, name: 'Anna' }, { playerId: b, name: 'Bob' }], atcEvents(...a1, ...b1, ...a2, ...b2, ...a3, 'Miss', ...b3));
     expect(db.lastMatch()!.players.map(p => p.winner)).toEqual([true, true]);
     expect(new Stats(db).game(b, 'atc', 'all')).toMatchObject({ played: 1 });
-    expect(new Stats(db).player(a, 'all')!.recent[0].result).toBe('won');
   });
 
   it('leaves a removed player out of the co-op record lineup and marks him in the last match', () => {

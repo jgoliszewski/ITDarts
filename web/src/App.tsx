@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Coords, Dart } from '../../games/darts.ts';
 import type { ClientState } from '../../server/protocol.ts';
 import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
 import { RemoveDialog } from './components/RemoveDialog.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
-import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
-import { endsNormally, isX01 } from './match.ts';
+import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx';
+import type { LobbyRecord } from '../../server/protocol.ts';
+import { endsNormally, isX01, presetFor } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
-import { playCaller, playSound } from './sound.ts';
+import { playCaller, playSound, setMaster } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
 import { EffectsPage } from './screens/effects/index.tsx';
 import { Lobby } from './screens/Lobby.tsx';
@@ -32,51 +33,79 @@ function usePath(): string {
   return path;
 }
 
+/** Fades the app in when `key` changes (not on the first render). Opacity only, so it stays under reduced motion. */
+function useScreenFade(key: string) {
+  const prev = useRef(key);
+  useLayoutEffect(() => {
+    if (prev.current === key) return;
+    prev.current = key;
+    // The tokens from styles.css; the build may write 200ms as .2s.
+    const css = getComputedStyle(document.documentElement);
+    const dur = css.getPropertyValue('--dur-base').trim();
+    document.getElementById('root')?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: parseFloat(dur) * (dur.endsWith('ms') ? 1 : 1000), easing: css.getPropertyValue('--ease-out').trim() });
+  }, [key]);
+}
+
+/**
+ * Master volume over everything the kiosk plays, and Mute (docs/EFEKTY.md, Dźwięk). The slider saves when let go and the
+ * server then plays a short Next player sound on the kiosk at the new level, from any Pilot. Mute leaves Sounds and
+ * Caller as they are and greys the slider out.
+ */
+function MasterVolume({ s }: { s: ClientState }) {
+  const [moving, setMoving] = useState<number | null>(null);
+  const level = moving ?? s.effects.master;
+  const muted = s.effects.muted;
+  const commit = async () => {
+    if (moving === null) return;
+    await act({ type: 'effects', master: moving });
+    setMoving(null);
+  };
+  return (
+    <div className="master-volume">
+      <div className="master-head"><b>Volume</b><span className="num">{muted ? `Muted · ${level}%` : `${level}%`}</span></div>
+      <div className="master-controls">
+        <input type="range" min={0} max={100} step={5} value={level} disabled={muted} aria-label="Volume" aria-valuetext={`${level} percent`}
+          onChange={e => setMoving(Number(e.target.value))} onPointerUp={() => void commit()} onKeyUp={() => void commit()} onBlur={() => void commit()} />
+        <button className="btn" aria-pressed={muted} onClick={() => void act({ type: 'effects', muted: !muted })}>{muted ? 'Unmute' : 'Mute'}</button>
+      </div>
+    </div>
+  );
+}
+
 function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr' | 'bug' | 'close') => void }) {
   const pilot = s.you.isPilot;
   const item = (label: string, run: () => void, danger = false) => (
-    <button key={label} className={`btn block ${danger ? 'danger' : ''}`} style={{ justifyContent: 'flex-start', height: 56 }} onClick={() => { onClose(); run(); }}>{label}</button>
+    <button key={label} className={`btn block menu-item ${danger ? 'danger' : ''}`} onClick={() => { onClose(); run(); }}>{label}</button>
   );
-  // Pilot switches; the server keeps them, so they survive a restart.
-  const toggles = (
-    <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid var(--line)' }}><div className="seg" style={{ gridAutoColumns: '1fr' }}>
-      <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
-      <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
-      <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
-    </div></div>
-  );
+  // The one destructive item goes last, apart from the rest (A#14).
+  const end = pilot && (s.match ? item('End match', () => open('end'), true) : s.you.isLocal && item('Close app', () => open('close'), true));
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="dialog" role="menu" aria-label="Menu" style={{ gap: 8, width: 'min(420px, calc(100vw - 32px))' }}>
-        <h2 style={{ marginBottom: 8 }}>Menu</h2>
-        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
-        {!pilot ? (
-          <>
-            {item('Take control', () => void act({ type: 'takeControl' }))}
-            {item('Stats', () => (location.href = '/stats'))}
-            {item('Effects', () => (location.href = '/effects'))}
-          </>
-        ) : s.match ? (
-          <>
-            {item('How to play', () => open('howto'))}
-            {!wide && item('Show QR', () => open('qr'))}
-            {item('Effects', () => (location.href = '/effects'))}
-            {item('End match', () => open('end'), true)}
-          </>
-        ) : (
-          <>
-            {!wide && item('Show QR', () => open('qr'))}
-            {item('Effects', () => (location.href = '/effects'))}
-            {s.you.isLocal && item('Close app', () => open('close'), true)}
-          </>
-        )}
-        {item('Report a bug', () => open('bug'))}
-        {/* Switches sit apart from the menu items, just above Close. */}
-        {pilot && toggles}
-        <button className="btn ghost block" style={{ marginTop: 8 }} onClick={onClose}>Close</button>
-      </div>
-    </>
+    <Dialog title="Menu" className="menu" onClose={onClose} actions={<button className="btn ghost block" onClick={onClose}>Close</button>}>
+      {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
+      {!pilot ? (
+        <>
+          {item('Take control', () => void act({ type: 'takeControl' }))}
+          {item('Stats', () => (location.href = '/stats'))}
+          {item('Effects', () => (location.href = '/effects'))}
+        </>
+      ) : (
+        <>
+          {s.match && item('How to play', () => open('howto'))}
+          {!wide && item('Show QR', () => open('qr'))}
+          {item('Effects', () => (location.href = '/effects'))}
+        </>
+      )}
+      {item('Report a bug', () => open('bug'))}
+      {/* Pilot switches; the server keeps them, so they survive a restart. */}
+      {pilot && (
+        <div className="menu-group"><MasterVolume s={s} /><div className="seg">
+          <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
+          <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
+          <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
+        </div></div>
+      )}
+      {end && <div className="menu-group">{end}</div>}
+    </Dialog>
   );
 }
 
@@ -104,6 +133,8 @@ function BugDialog({ where, onClose }: { where: string; onClose: () => void }) {
 function Main({ s }: { s: ClientState }) {
   const wide = useWide();
   const [screen, setScreen] = useState<Screen>('main');
+  // A record tile in the lobby opens New match with its game and options (D6).
+  const [preset, setPreset] = useState<Pick<LobbyRecord, 'game' | 'options'> | null>(null);
   const [menu, setMenu] = useState(false);
   const [fix, setFix] = useState<FixTarget | null>(null);
   const [removeOf, setRemoveOf] = useState<number | null>(null);
@@ -177,14 +208,18 @@ function Main({ s }: { s: ClientState }) {
     else setScreen(what);
   };
 
+  const openRecord = (r: LobbyRecord) => { setPreset({ game: r.game, options: r.options }); setScreen('setup'); };
   const pilotOnly = s.you.isPilot ? screen : 'main';
+  // A record's preset is one-shot: leaving the setup in any way (or losing control) drops it (review t04).
+  useEffect(() => setPreset(p => presetFor(p, pilotOnly)), [pilotOnly]);
   const sheet = fix && m && (
-    <FixSheet target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
+    // Keyed by width: turning to the wide layout swaps the sheet's box, and the new box needs its own focus trap.
+    <FixSheet key={wide ? 'wide' : 'sheet'} target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
   );
   const dialogs = (
     <>
-      {menu && <Menu s={s} wide={wide} onClose={() => setMenu(false)} open={openFromMenu} />}
-      {endAsk && (
+      <Presence>{menu && <Menu s={s} wide={wide} onClose={() => setMenu(false)} open={openFromMenu} />}</Presence>
+      <Presence>{endAsk && (
         <Dialog title="End this match?" onClose={() => setEndAsk(null)} actions={<>
           <button className="btn" onClick={() => setEndAsk(null)}>Keep playing</button>
           <button className="btn danger" onClick={() => doEnd(false)}>Discard</button>
@@ -194,22 +229,31 @@ function Main({ s }: { s: ClientState }) {
             ? "Save ends the game: the most checkouts wins, and the darts go into everyone's stats. Discard removes the match completely."
             : "The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely."}</p>
         </Dialog>
-      )}
-      {closeAsk && (
+      )}</Presence>
+      <Presence>{closeAsk && (
         <Dialog title="Close the app?" onClose={() => setCloseAsk(false)} actions={<>
           <button className="btn" onClick={() => setCloseAsk(false)}>Cancel</button>
           <button className="btn danger" onClick={() => void act({ type: 'closeApp' })}>Close app</button>
         </>}>
           <p>This closes the kiosk and stops the server. Start it again with start.bat.</p>
         </Dialog>
-      )}
-      {bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}
-      {sheet}
-      {removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} />}
+      )}</Presence>
+      <Presence>{bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}</Presence>
+      <Presence>{sheet}</Presence>
+      <Presence>{removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} onEndMatch={() => askEnd('end')} />}</Presence>
     </>
   );
 
-  if (pilotOnly === 'setup') return <><Setup s={s} onClose={() => setScreen('main')} />{dialogs}</>;
+  // Screen changes fade in (DESIGN.md, Ruch: crossfade ~200 ms). The key names the screen, never match data, so a new
+  // dart or a new active player never fades anything.
+  const screenKey = pilotOnly === 'setup' || pilotOnly === 'players' || (pilotOnly === 'howto' && m) || (pilotOnly === 'board' && !wide)
+    ? pilotOnly
+    : !m && s.summary && pilotOnly !== 'board' ? 'summary'
+      : wide ? (m ? 'scoreboard' : 'lobby')
+        : !s.you.isPilot ? 'watch' : m ? 'pilot' : 'home';
+  useScreenFade(screenKey);
+
+  if (pilotOnly === 'setup') return <><Setup s={s} preset={preset} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'players') return <><Players s={s} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'howto' && m) return <><HowToScreen game={m.game} options={m.options} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'board' && !wide) {
@@ -222,13 +266,13 @@ function Main({ s }: { s: ClientState }) {
     const overlay = (
       <>
         {s.showQr && <QrOverlay s={s} onClose={() => { if (s.you.isPilot) void act({ type: 'showQr', show: false }); }} />}
-        {pilotOnly === 'board' && <BoardPanel s={s} wide onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />}
+        <Presence>{pilotOnly === 'board' && <BoardPanel s={s} wide onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />}</Presence>
         {dialogs}
       </>
     );
     return m
       ? <Scoreboard s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
+      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onRecord={openRecord} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;
@@ -236,7 +280,7 @@ function Main({ s }: { s: ClientState }) {
     <>
       {m
         ? <PhonePilot s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={setRemoveOf} />
-        : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} />}
+        : <PhoneHome s={s} onMenu={() => setMenu(true)} onBoard={() => setScreen('board')} onNew={() => setScreen('setup')} onRecord={openRecord} onPlayers={() => setScreen('players')} />}
       {dialogs}
     </>
   );
@@ -245,11 +289,14 @@ function Main({ s }: { s: ClientState }) {
 export function App() {
   const path = usePath();
   const { state, connected } = useSnapshot();
+  // Every page of this browser plays through the master: the kiosk, and the previews on /effects.
+  const master = state?.effects.master, muted = state?.effects.muted;
+  useEffect(() => { if (master !== undefined) setMaster(master, !!muted); }, [master, muted]);
   if (path.startsWith('/stats')) return <><StatsPage path={path} /><Toasts /></>;
   if (path.startsWith('/effects')) return <><EffectsPage /><Toasts /></>;
   return (
     <>
-      {!connected && state && <div className="banner" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 80 }}>Lost connection to ITDarts · reconnecting…</div>}
+      {!connected && state && <div className="banner fixed">Lost connection to ITDarts · reconnecting…</div>}
       {state ? <Main s={state} /> : (
         <div className="center-msg" style={{ height: '100%' }}>
           <Logo />

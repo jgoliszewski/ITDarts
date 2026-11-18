@@ -125,8 +125,8 @@ export interface ClientState {
   boardTest: number | null;
   /** “How to play” shown on the scoreboard. */
   howTo: { game: GameId; options: unknown } | null;
-  /** Pilot switches and the effects volume (0–100). `rev` changes with every effects change. */
-  effects: { sounds: boolean; caller: boolean; leds: boolean; volume: number; rev: number };
+  /** Pilot switches, the master volume over all kiosk sound (0–100) with Mute, and the effects volume (0–100). `rev` changes with every effects change. */
+  effects: { sounds: boolean; caller: boolean; leds: boolean; master: number; muted: boolean; volume: number; rev: number };
 }
 
 export type PlayerCommand =
@@ -162,7 +162,7 @@ export type Command =
   | { type: 'showQr'; show: boolean }
   | { type: 'boardRotated' }
   | { type: 'player'; cmd: PlayerCommand }
-  | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean }
+  | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean; master?: number; muted?: boolean }
   | { type: 'ledsWhite' }
   | { type: 'closeApp' }
   | { type: 'report'; text: string; where: string; userAgent: string };
@@ -190,7 +190,7 @@ export interface PlayerStatsResponse {
   /** The player's Average in each X01 match of the Okno, oldest first. */
   trend: { matchId: number; endedAt: number; avg: number }[];
   results: { played: number; won: number; winrate: number | null };
-  recent: { id: number; endedAt: number; description: string; opponents: string; result: 'won' | 'lost' | 'saved' | 'played' | 'left'; score: string }[];
+  recent: RecentMatch[];
   opponents: { id: number; name: string; played: number; won: number }[];
 }
 
@@ -218,10 +218,34 @@ export interface GameStatsResponse {
   previous: { matches: number; totals: Record<string, number> } | null;
   /** Best result per record variant. */
   bests: { label: string; value: string }[];
+  /** The last matches of this game in the Okno, newest first, 10 at most. */
+  recent: RecentMatch[];
 }
 
 /** Dart positions per player in one game and window; `distance` in metres. */
 export type HeatResponse = { player: PlayerInfo; heat: PlayerHeat; distance: number }[];
+
+/** An office record of a minigame variant for the lobby (D6): the tile opens New match with `options`. */
+export interface LobbyRecord {
+  game: GameId;
+  key: string;
+  label: string;
+  value: string;
+  who: string;
+  at: number;
+  /** The record match's options, normalized; the variant key alone can't give them back (ATC's order is not in it). */
+  options: unknown;
+}
+
+/** A row of Recent matches: `opponents` null for a solo match, `score` from the player's side (X01 legs, minigame result). */
+export interface RecentMatch {
+  id: number;
+  endedAt: number;
+  description: string;
+  opponents: string | null;
+  result: 'won' | 'lost' | 'saved' | 'played' | 'left';
+  score: string;
+}
 
 export interface RecordTable {
   key: string;

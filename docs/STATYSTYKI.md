@@ -54,6 +54,14 @@ Później (policzą się wstecz z zapisanych lotek): celność (% treble, sektor
 - **Czasowe:** 7 dni, 30 dni, 3 miesiące, rok, all time.
 - **W legach:** ostatnie 10, ostatnie 100, all.
 
+**Przełącznik Okien** (od 2026-11-18) to jedna kontrolka. Na co dzień pokazuje cztery Okna: **30D, 3M, All, Last 10** (w minigierkach „Last 10 matches”, bo tam jeden leg to jeden mecz). Pozostałe trzy (7D, 1Y, Last 100) są pod przyciskiem **„More”**, który rozwija je w tym samym rzędzie. Gdy zapamiętane Okno jest jednym z ukrytych, przełącznik od razu pokazuje wszystkie siedem. Na telefonie rząd przewija się w bok zamiast łamać. Gracz, który danej gry nigdy nie grał, w Oknach All, Last 10 i Last 100 nie widzi przełącznika, tylko pusty stan „Pick … in New match”. W Oknie czasowym (np. 30D) przełącznik zostaje, a pod nim stoi „Nothing in the last 30 days” z przyciskiem „Show all time”.
+
+**Bez trendu:** główny kafelek bez porównania (patrz Progres) mówi dlaczego: „No trend for All time”, „No trend · fewer than 3 legs before” (minigierki: matches), a Checkout % „No trend · fewer than 10 attempts”. Zmiana wartości procentowej jest w punktach procentowych („▲ 2.4 pp”).
+
+**Podsumowanie solo** (Summary jednego Gracza, nie Gościa) ma pod wynikiem linię „▲ 24.2 vs your 30-day average”: główna statystyka gry z tego meczu (X01: Average) wobec średniej Gracza z 30 dni (`GET /api/stats/players/:id?window=30d`, w minigierkach z `&game=`). Mecz jest już zapisany, gdy Summary się pokazuje, więc widok odejmuje go od Okna: X01 z Averages i lotek (`avg × darts`), minigierki z sum (`totals`) i liczby meczów. Gdy w 30 dniach nie ma innego meczu, linii nie ma.
+
+**Recent matches** pokazuje profil każdej gry, nie tylko X01: do 10 ostatnich meczów tej gry w Oknie (w Oknie w legach minigierki: ostatnie 10 meczów), przeciwnicy w kolejności rzucania albo „Solo”, wynik ze strony gracza (X01: jego legi pierwsze, minigierki: wynik jak w Lobby).
+
 ## Progres
 
 Profil odpowiada najpierw na „czy się poprawiam”, więc statystyki porównujemy z **poprzednim Oknem** (`GET /api/stats/players/:id`, pole `previous`; w minigierkach `previous` w odpowiedzi gry).
@@ -62,7 +70,7 @@ Profil odpowiada najpierw na „czy się poprawiam”, więc statystyki porównu
 - **Okno w legach** (10, 100) porównuje się z poprzednimi 10 albo 100 legami gracza według świeżości. W minigierkach, które mają jeden leg na mecz, to poprzednie N meczów.
 - **Brak porównania** (`null`): dla „All time”, gdy bieżące Okno nie ma żadnego legu (minigierki: meczu) i gdy poprzednie Okno ma mniej niż 3 legi (minigierki: 3 mecze). Samo Checkout % nie ma porównania, gdy bieżące albo poprzednie Okno ma mniej niż 10 prób checkoutu (jedno trafienie z jednej próby to nie 100%).
 - **Strzałka zmiany** pokazuje różnicę liczbą, zieloną przy poprawie i czerwoną przy spadku. Statystyki, w których mniej znaczy lepiej (Bust rate, Darts per checkout), mają odwrócony kolor. X01: Average, First 9, Checkout %. Winrate bez strzałki.
-- **Wykres Average** (`trend` w odpowiedzi): punkt to jeden mecz X01 z wybranego Okna, z Averagem gracza w tym meczu, rosnąco po czasie. Profil rysuje wykres od 3 punktów i tylko dla gracza (nie w Compare). Przerywana linia to Average całego Okna, ta sama liczba co na kafelku nad wykresem (ważona lotkami), a nie średnia z punktów. Mecz przecięty granicą Okna wchodzi do wykresu i do kafelków tylko z Turami, które mieszczą się w Oknie, więc jego punkt pokazuje Average tej części meczu.
+- **Wykres Average** (`trend` w odpowiedzi): punkt to jeden mecz X01 z wybranego Okna, z Averagem gracza w tym meczu, rosnąco po czasie. Oś ma najwyżej 8 kroków (krok 5, 10, 20, 25 albo 50; dalej 100), więc gdy jeden mecz leży daleko od reszty, etykiety osi się nie zlepiają. Profil rysuje wykres od 3 punktów i tylko dla gracza (nie w Compare). Przerywana linia to Average całego Okna, ta sama liczba co na kafelku nad wykresem (ważona lotkami), a nie średnia z punktów. Mecz przecięty granicą Okna wchodzi do wykresu i do kafelków tylko z Turami, które mieszczą się w Oknie, więc jego punkt pokazuje Average tej części meczu.
 
 ## Inne gry
 
@@ -103,12 +111,17 @@ Mała sekcja „Fun facts” na dole profilu: **Darts** (liczba rzuconych lotek)
 
 - Widok „Stats” jest tylko do odczytu i otwiera się z dowolnego urządzenia w LAN bez przejmowania Pilota.
 - Zawartość: lista graczy, profil gracza z oknami i progresem, rekordy biura X01, head-to-head.
+- **Układ `/stats`** (od 2026-11-18): na liście najpierw gracze i wejście do Compare, potem rekordy biura. Rekordy leżą w siatce, każda tabela pokazuje 5 najlepszych, a reszta jest pod „Show top 10” (nagłówek „Top 10 ·” tylko, gdy tabela ma 10 wierszy). Chipy gier stoją w jednym przewijanym rzędzie na grupę gier (poniżej 600 px).
+- **Kolory** (D3, od 2026-11-18): dane są bez pomarańczu. Linia i kropki wykresu Average oraz paski w tabeli double mają kolor drugiego poziomu tekstu, a obie liczby head-to-head kolor tekstu. Pomarańcz zostaje na głównej metryce profilu, na #1 w rekordach i na głównym przycisku. Strzałki zmiany są zielone albo czerwone, jak w „Progres”. Kolory graczy (różowy, turkusowy, żółty, zielony) są tylko w Compare i podsumowaniu meczu ([UI.md](UI.md#podsumowanie-meczu)).
+- **Profil** (od 2026-11-18): imię i „This is me” stoją nad wyborem gry. Główna zmiana ma postać pigułki („▲ 2.4 pp” na zielonym albo czerwonym tle). Pod osią wykresu Average są daty pierwszego, środkowego i ostatniego meczu. Double z mniej niż 5 prób są przygaszone. Gracz, który nigdy nie grał, widzi „Dee hasn't played yet. Pick Dee in New match.”, a gracz bez meczów danej gry w Oknie w legach „… hasn't played Football yet”. Puste Okno czasowe pokazuje „Nothing in the last 30 days” i „Show all time”.
+- **Zarchiwizowany gracz** otwarty wprost z `/stats/:id` dostaje imię z odpowiedzi API (`window=all`), bo nie ma go na liście.
 - Telefon pamięta wybór „to ja” i otwiera się od razu na tym profilu.
 - **Heatmapa w profilu gracza** z wybranej gry i okna ([UI.md](UI.md#heatmapa)), a „Distance walked” w km jest w sekcji ciekawostek na dole profilu.
 - **Porównanie graczy** na `/stats/compare`, wejście przyciskiem „Compare” na liście graczy:
   - dokładnie dwóch zarejestrowanych graczy, wybieranych w dwóch polach „X VS Y” pod oknem czasu (od 2026-10-28; wcześniej chipy 2–4), plus gra i okno;
   - tabela z kolumną na gracza i wierszami jak w profilu tej gry, z podświetloną najlepszą wartością;
-  - pod nią heatmapa z linią i dystans w km. Head-to-head zostaje w profilu.
+  - pod nią heatmapa z linią i dystans w km. Od 1100 px tabela i heatmapa stoją obok siebie. Head-to-head zostaje w profilu;
+  - gdy jeden z graczy nie ma danej gry w Oknie, nad tabelą stoi notka „Dee has no Football in this window.”. Imiona są tylko w polach wyboru, tabela nie powtarza ich drugi raz.
 - **Distance walked:** każda Tura to przejście do tarczy i z powrotem, czyli 2 × odległość od linii do tarczy (`ocheMeters` w `config.json`, domyślnie 2,37 m). Bull-off się nie liczy.
 - W trakcie meczu Ekran wyników pokazuje tylko to, co ustala [UI.md](UI.md). Historii tam nie ma.
 - Makiety widoku robimy przy implementacji statystyk.

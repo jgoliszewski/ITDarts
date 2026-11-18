@@ -220,6 +220,7 @@ export const atc: GameModule<AtcOptions, AtcView> = {
     }),
     better: 'lower',
     format: v => plural(v, 'dart'),
+    extra: o => choiceLabel(ATC_OPTIONS, o, 'order'),
   },
   normalizeOptions: input => normalizeByDefs(ATC_OPTIONS, ATC_DEFAULTS, input),
   describe: (o, players) => ['ATC', choiceLabel(ATC_OPTIONS, o, 'target'), choiceLabel(ATC_OPTIONS, o, 'order'),

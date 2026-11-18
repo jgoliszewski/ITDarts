@@ -1,4 +1,5 @@
 // Scoreboard parts for the minigames: hero, player list, game widgets, record screen and end screen.
+import type { ReactNode } from 'react';
 import { useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
 import { CRICKET_SECTORS } from '../../../games/cricket.ts';
@@ -11,7 +12,7 @@ import { Icon, act } from '../components/ui.tsx';
 import { TargetBoard } from '../components/Dartboard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
-import { dartTone, pickProps, playOrder, removedNote, winnersOf } from '../match.ts';
+import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
 import { shortDate } from '../util.ts';
 
 const TICKS = [0, 30, 60, 90, 120, 150, 180];
@@ -39,6 +40,7 @@ function HolScale({ lo, hi, sum, failed }: { lo: number; hi: number; sum: number
       {TICKS.filter(t => Math.abs(t - loAt) > 18 && Math.abs(t - hiAt) > 18).map(t => <span key={t} className="tick num" style={at(t)}>{t}</span>)}
       <span className="edge num" style={at(loAt)}>{lo}</span>
       <span className="edge num" style={at(hiAt)}>{hi}</span>
+      <span className="legend">Lose a life inside {lo}–{hi}</span>
     </div>
   );
 }
@@ -65,13 +67,16 @@ export function Hearts({ lives, max = LIVES, losing = false }: { lives: number; 
   );
 }
 
-/** Knockout: the round's lowest visit so far, big next to the visit, green once the visit is past it (bug report 2026-10-30). */
+/**
+ * Knockout: the round's lowest visit so far is the hero's big number, green once this visit is past it (bug report
+ * 2026-10-30); the visit itself is This turn in the panel, like in every game. Before anyone has thrown: only "First to throw", no number.
+ */
 function ToBeat({ lowest, visit }: { lowest: number | null; visit: number }) {
-  if (lowest === null) return <div className="hero-checkout ko-beat"><div className="caps">First to throw</div></div>;
+  const safe = lowest !== null && visit > lowest;
   return (
-    <div className={`hero-checkout ko-beat ${visit > lowest ? 'safe' : ''}`}>
-      <div className="caps">{visit > lowest ? 'Beaten' : 'To beat'}</div>
-      <div className="num">{lowest}</div>
+    <div className={`mini-big ${safe ? 'safe' : ''}`}>
+      <div className="caps">{lowest === null ? 'First to throw' : safe ? 'Beaten' : 'To beat'}</div>
+      {lowest !== null && <div className="num">{lowest}</div>}
     </div>
   );
 }
@@ -79,7 +84,21 @@ function ToBeat({ lowest, visit }: { lowest: number | null; visit: number }) {
 /** Checkout route, or setup darts for the next visit when no checkout is on. */
 export function RouteHint({ checkout, setup }: { checkout: string | null; setup: string | null }) {
   if (!checkout && !setup) return null;
-  return <div className={`hero-checkout ${checkout ? '' : 'setup'}`}><div className="caps">{checkout ? 'Checkout' : 'Setup'}</div><div className="num">{checkout ?? setup}</div></div>;
+  const route = checkout ?? setup!;
+  return <div className={`hero-checkout ${checkout ? '' : 'setup'} ${route.split('·').length > 2 ? 'long' : ''}`}><div className="caps">{checkout ? 'Checkout' : 'Setup'}</div><div className="num">{route}</div></div>;
+}
+
+/**
+ * The hero's right half (variant D, DECISIONS.md), apart from the score by a line: This turn with the visit total big, grey
+ * while it is 0, and under it the route, BUST or the score to beat. Without `total` only the lower part shows.
+ */
+export function TurnPanel({ total, children }: { total?: number; children?: ReactNode }) {
+  return (
+    <div className="panel">
+      {total !== undefined && <div className="turn"><div className="caps">This turn</div><div className={`num ${total ? '' : 'zero'}`}>{total}</div></div>}
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -145,6 +164,7 @@ export const knockoutNote = (m: MiniMatch): string | null =>
 
 /** The hero's line under the score: the game's own, with names where the game module has none. */
 function heroNote(m: MiniMatch): string {
+  if (m.game === 'killer') return m.view.killer[m.view.current] ? 'Hit a rival double' : 'Hit your double to become a killer';
   if (m.game === 'knockout' && m.view.visit.darts.length === 0) return knockoutNote(m) ?? m.view.hero.note;
   if (m.game === 'football' && m.view.ball !== null && m.view.ball !== m.view.current) {
     return `${m.roster[m.view.ball].name} has the ball · hit ${m.options.kickOff === 'any' ? 'the bull' : 'the bullseye'}`;
@@ -156,8 +176,11 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
   const v = m.view;
   const visit = v.visit;
   const board = hasBoard(m);
+  const split = turnPanel(m) && !board;
+  // Cricket from 5 players: the columns show a place number, the names stand here (A#3).
+  const legend = m.game === 'cricket' && m.roster.length > 4;
   return (
-    <section className={`hero ${board ? 'with-board' : ''} ${m.game === '121' ? 'with-ladder' : ''}`}>
+    <section className={`hero ${board ? 'with-board' : ''} ${m.game === '121' ? 'with-ladder' : ''} ${split ? 'split' : ''} ${legend ? 'with-legend' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>
@@ -165,17 +188,28 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd(m) === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
+        {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
       </div>
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
-        <div className="mini-big">
-          <div className="caps">{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
+        {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
+          <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
-        </div>
-        {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
-        {m.game === 'knockout' && <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} />}
+        </div>}
       </div>}
+      {split && (
+        <TurnPanel total={visitScored(m) ?? 0}>
+          {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
+        </TurnPanel>
+      )}
+      {legend && (
+        <div className="legend">
+          {playOrder(m).map((i, k) => (
+            <div key={i} className={i === v.current ? 'on' : ''}><span className="n num">{k + 1}</span><span className="who">{m.roster[i].name}</span></div>
+          ))}
+        </div>
+      )}
       {board && <RaceBoard m={m} />}
       {m.game === '121' && <Ladder target={m.view.target} record={m.record?.raw ?? null} />}
       {m.game !== 'hol' && heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
@@ -235,7 +269,8 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
   // Same as X01: full-size rows up to 4 players.
   const compact = m.roster.length > 4;
   // Small hearts under the name in the games with lives per player.
-  const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives } : null;
+  const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives }
+    : m.game === 'killer' ? { lives: m.view.lives, max: m.options.lives } : null;
   return (
     <div className="plist">
       {playOrder(m).map(i => {
@@ -249,7 +284,7 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
               <div className="name">{r.name}</div>
               {note ? <div className="meta"><span>{note}</span></div>
                 : hearts && !row.out
-                ? <div className="meta list-hearts" aria-label={row.meta}>{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</div>
+                ? <div className="meta list-hearts" aria-label={row.meta}>{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}{m.game === 'killer' && m.view.killer[i] && <b className="tag">Killer</b>}</div>
                 : <div className="meta"><span>{row.meta}</span></div>}
             </div>
             <div className="score num">{row.value}</div>
@@ -271,12 +306,13 @@ const MARK = [null, 1, 2, 3].map(n => n && (
 
 export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void }) {
   const v = m.view;
+  const many = m.roster.length > 4;
   return (
-    <div className="cricket" style={{ gridTemplateColumns: `calc(110 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
+    <div className={`cricket ${many ? 'many' : ''}`} style={{ gridTemplateColumns: `calc(110 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
-      {playOrder(m).map(i => (
+      {playOrder(m).map((i, k) => (
         <div key={i} className={`ch ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`} {...pickProps(onPick, i, m.roster[i].name)}>
-          <span className="n">{m.roster[i].name}</span>
+          {many ? <><span className="no num">{k + 1}</span><span className="ini">{initials(m.roster[i].name)}</span></> : <span className="n">{m.roster[i].name}</span>}
           {!v.solo && <span className="num">{v.points[i]}</span>}
           {v.removed[i] && <span className="left">Left</span>}
         </div>

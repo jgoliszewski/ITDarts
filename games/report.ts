@@ -21,6 +21,8 @@ export interface MatchReport {
   line: string;
   /** Players in the comparison: those removed from the match last (docs/UI.md#wycofanie-gracza). */
   names: string[];
+  /** Player ids as in `names`, null for a guest: a solo summary compares with the player's own history. */
+  ids: (number | null)[];
   /** Per player, as in `names`: removed from the match, shown greyed with “Left” and no place. */
   left: boolean[];
   heat: PlayerHeat[];
@@ -69,6 +71,8 @@ export function matchReport(m: {
   game: GameId;
   description: string;
   names: string[];
+  /** Player ids in roster order, null for a guest; unknown ids count as guests. */
+  ids?: (number | null)[];
   legs: LegRecord[];
   view: X01View | MiniView;
   checkOut: CheckOut | null;
@@ -108,6 +112,7 @@ export function matchReport(m: {
     title,
     line,
     names: at.map(i => m.names[i]),
+    ids: at.map(i => m.ids?.[i] ?? null),
     left: at.map(gone),
     heat: at.map(i => heat[i]),
     distance: at.map(i => walked(heat[i].visits, m.ocheMeters)),

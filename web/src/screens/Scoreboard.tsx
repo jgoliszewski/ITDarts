@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { label, value } from '../../../games/darts.ts';
+import { label } from '../../../games/darts.ts';
 import type { GameId } from '../../../games/index.ts';
 import type { Verdict } from '../../../games/turns.ts';
 import { signed } from '../../../games/turns.ts';
@@ -10,10 +10,10 @@ import { HowToOverlay } from '../components/HowTo.tsx';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Icon, Logo, Qr, act, pilotUrl } from '../components/ui.tsx';
 import type { X01Match } from '../match.ts';
-import { controls, dartTone, isX01, legTarget, pickProps, playOrder, removedNote } from '../match.ts';
+import { controls, dartTone, heroCorner, isX01, legTarget, pickProps, playOrder, removedNote, visitScored, x01Dead } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
-import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, hasBoard } from './MiniBoard.tsx';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, TurnPanel, hasBoard } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -26,7 +26,7 @@ export function boardPill(s: ClientState): { dot: string; text: string } {
   const phase = s.match?.view.phase;
   if (phase === 'legWon') return { dot: 'green', text: 'Leg won' };
   if (phase === 'matchWon') return { dot: 'green', text: 'Game over' };
-  return { dot: 'green', text: s.match ? 'Ready · throw' : 'Board ready' };
+  return { dot: 'green', text: s.match ? 'Ready' : 'Board ready' };
 }
 
 export function BigHeader({ s, sub, game, onBoard, onMenu }: { s: ClientState; sub?: string; game?: GameId; onBoard?: () => void; onMenu: () => void }) {
@@ -43,50 +43,52 @@ export function BigHeader({ s, sub, game, onBoard, onMenu }: { s: ClientState; s
   );
 }
 
-function Pips({ won, of }: { won: number; of: number }) {
+export function Pips({ won, of }: { won: number; of: number }) {
   return <div className="pips">{Array.from({ length: of }, (_, i) => <span key={i} className={`pip ${i < won ? 'on' : ''}`} />)}</div>;
 }
 
+/**
+ * X01 hero, variant D (DECISIONS.md): name and legs on top, the score big on the left, and on the right half This turn
+ * with the visit total and under it the checkout route or BUST. The corner pill only says "Checked out" or that a double
+ * is needed to start.
+ */
 function Hero({ m, flash, onDart, canEdit }: { m: X01Match; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const p = v.current;
   const target = legTarget(m);
   const visit = v.visit;
-  // Only states worth words; the dart tiles show how many darts are left.
-  const left = visit.bust ? 'Bust' : visit.checkout ? 'Checked out' : !v.checkedIn[p] ? 'Needs a double to start' : null;
+  const corner = heroCorner(m);
+  const dead = x01Dead(m);
   return (
-    <section className="hero">
+    <section className="hero split">
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[p].name}</div>
         {target ? <Pips won={v.legs[p]} of={target} /> : null}
         <div className="spacer" />
-        {left && <div className="hero-left">{left}</div>}
+        {corner && <div className={`status ${corner.tone}`}>{corner.text}</div>}
       </div>
       <div className="hero-score-row">
         <div className="hero-score num">{v.scores[p]}</div>
-        {visit.bust ? <div className="hero-bust num">BUST</div>
-          : <RouteHint checkout={v.checkout} setup={v.setup} />}
       </div>
+      <TurnPanel total={visitScored(m) ?? 0}>
+        {visit.bust ? <div className="hero-bust num">BUST</div> : <RouteHint checkout={v.checkout} setup={v.setup} />}
+      </TurnPanel>
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
           const d = visit.darts[i];
           if (!d) {
-            const addable = canEdit && i === visit.darts.length && visit.dartsLeft > 0 && v.phase === 'throwing';
+            const addable = canEdit && i === visit.darts.length && visit.dartsLeft > 0 && v.phase === 'throwing' && !visit.bust;
             return addable
               ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
               : <div key={i} className="dart-tile empty" />;
           }
           const tile = <DartFace m={m} rec={d} />;
-          const cls = `dart-tile ${flash === i ? 'flash' : ''}`;
+          const cls = `dart-tile ${dead[i] ? 'dead' : ''} ${flash === i ? 'flash' : ''}`;
           return canEdit
             ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
             : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
         })}
-        <div className="this-turn">
-          <div className="caps">This turn</div>
-          <div className="num">{visit.bust ? 0 : visit.total}</div>
-        </div>
       </div>
     </section>
   );
@@ -141,9 +143,9 @@ function StatsCards({ m }: { m: X01Match }) {
           {visits.map((x, i) => x === undefined ? <div key={i} className="none" /> : x === null ? <div key={i} className="bust num">BUST</div> : <div key={i} className="num">{x}</div>)}
         </div>
       </div>}
-      <div className="card" style={{ flex: 1, minHeight: 0 }}>
+      <div className="card stats-card">
         <div className="caps">{name} · This match</div>
-        <div className="mstats">
+        <div className={`mstats ${m.roster.length >= 4 ? 'tight' : ''}`}>
           {tiles.map(([l, val]) => <div key={l}><span className="l">{l}</span><span className="num">{val}</span></div>)}
         </div>
       </div>
@@ -162,12 +164,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
   const good = isX01(m) ? null : m.view.visit.good;
   const verdict: Verdict | null = isX01(m) ? (m.view.visit.bust ? { text: 'Bust', tone: 'bad' } : null) : m.view.visit.verdict;
   const hits = good?.filter(Boolean).length ?? 0;
-  const scored = isX01(m) ? m.view.visit.total
-    : m.game === 'hol' ? m.view.sum ?? 0
-    : m.game === 'shanghai' ? m.view.visitPoints
-    : m.game === 'knockout' ? m.view.visitScore
-    : m.game === 'freethrow' ? m.view.visitTotal
-    : m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' ? darts.reduce((a, d, i) => a + (good![i] ? value(d.dart) : 0), 0) : null;
+  const scored = visitScored(m);
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
   // Bullseye: the visit's points with a sign, +3 or −2.
@@ -191,7 +188,7 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
                     : <div key={i} className="dart-tile empty" />;
                 }
                 const tile = <DartFace m={m} rec={d} />;
-                const cls = `dart-tile ${good && !isX01(m) ? dartTone(m, good[i], d) : ''}`;
+                const cls = `dart-tile ${isX01(m) ? (x01Dead(m)[i] ? 'dead' : '') : dartTone(m, good![i], d)}`;
                 return canEdit
                   ? <button key={i} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
                   : <div key={i} className={cls}>{tile}</div>;

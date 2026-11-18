@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { removeBlock } from '../../../games/turns.ts';
 import type { LiveMatch } from '../../../server/protocol.ts';
-import { isX01 } from '../match.ts';
+import { isX01, removeIntro } from '../match.ts';
 import { Dialog, act } from './ui.tsx';
 
 /**
  * Wycofanie gracza (docs/UI.md#wycofanie-gracza): the pilot taps a player's row, picks how to remove them and confirms.
- * X01 offers the leg and the match, minigames only the match.
+ * X01 offers the leg and the match, minigames only the match. With no way out it offers to end the match instead.
  */
-export function RemoveDialog({ m, player, onClose }: { m: LiveMatch; player: number; onClose: () => void }) {
+export function RemoveDialog({ m, player, onClose, onEndMatch }: { m: LiveMatch; player: number; onClose: () => void; onEndMatch: () => void }) {
   const [scope, setScope] = useState<'match' | 'leg' | null>(null);
   const name = m.roster[player].name;
   const x01 = isX01(m);
@@ -33,12 +33,13 @@ export function RemoveDialog({ m, player, onClose }: { m: LiveMatch; player: num
   const canLeg = x01 && !why('leg');
   const canMatch = !why('match');
   return (
-    <Dialog title={name} className="one-row" onClose={onClose} actions={<>
+    <Dialog title={canLeg || canMatch ? `Remove ${name}?` : `Can't remove ${name}`} className="one-row" onClose={onClose} actions={<>
       <button className="btn" onClick={onClose}>Cancel</button>
       {canLeg && <button className="btn" onClick={() => setScope('leg')}>Remove from leg</button>}
       {canMatch && <button className="btn danger" onClick={() => setScope('match')}>{x01 ? 'Remove from match' : 'Remove player'}</button>}
+      {!canLeg && !canMatch && <button className="btn danger" onClick={() => { onClose(); onEndMatch(); }}>End match</button>}
     </>}>
-      {!canMatch && !canLeg && <p>{why('match')}</p>}
+      <p>{removeIntro(canLeg, canMatch, why('match'))}</p>
     </Dialog>
   );
 }
