@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createModalStack, createPresence, listboxKey, stepOf } from './interaction.ts';
+import { createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf } from './interaction.ts';
 
 describe('createPresence', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -209,5 +209,17 @@ describe('createModalStack', () => {
     closeA();
     closeA();
     expect(stack.isTop(b)).toBe(true);
+  });
+});
+
+describe('sidewaysDrag', () => {
+  it('lets a finger scroll the page: up and down never moves the line', () => {
+    expect(sidewaysDrag(0, 40)).toBe(false);
+    expect(sidewaysDrag(12, 30)).toBe(false);
+  });
+  it('moves the line once the finger goes sideways past the slop', () => {
+    expect(sidewaysDrag(6, 0)).toBe(false);
+    expect(sidewaysDrag(9, 2)).toBe(true);
+    expect(sidewaysDrag(-20, 5)).toBe(true);
   });
 });

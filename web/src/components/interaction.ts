@@ -85,3 +85,10 @@ export function createModalStack<E>(dom: ModalDom<E>) {
     },
   };
 }
+
+/**
+ * A finger on the heatmap: the page scrolls up and down (touch-action pan-y), so the split line moves only once the
+ * finger has gone sideways past the slop and more sideways than up or down. The mouse and the handle drag at once.
+ */
+export const SLOP = 8;
+export const sidewaysDrag = (dx: number, dy: number): boolean => Math.abs(dx) > SLOP && Math.abs(dx) > Math.abs(dy);

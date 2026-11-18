@@ -47,7 +47,7 @@ function H2H({ a, b, w }: { a: number; b: number; w: StatsWindow }) {
     <div className="box">
       <div className="caps">Head to head{w.startsWith('l') ? ' · last meetings' : ''}</div>
       <div className="h2h">
-        <div><b>{data.players[0].name}</b><div className="num" style={{ color: 'var(--accent)' }}>{data.wins[0]}</div><span className="muted">avg {fmtAvg(data.avg[0])}</span></div>
+        <div><b>{data.players[0].name}</b><div className="num">{data.wins[0]}</div><span className="muted">avg {fmtAvg(data.avg[0])}</span></div>
         <span className="muted">{data.played} {data.played === 1 ? 'match' : 'matches'}</span>
         <div><b>{data.players[1].name}</b><div className="num">{data.wins[1]}</div><span className="muted">avg {fmtAvg(data.avg[1])}</span></div>
       </div>
@@ -395,7 +395,9 @@ export function PlayerStats({ id, embedded = false }: { id: number; embedded?: b
   const { w, setW, game, setGame } = useStatsPrefs();
   const { data: list } = useJson<PlayerListItem[]>('/api/stats/players');
   const player = list?.find(p => p.id === id);
-  const name = player?.name ?? '';
+  // An archived player is not on the list: the name comes from the profile instead.
+  const { data: other } = useJson<PlayerStatsResponse>(list && !player ? `/api/stats/players/${id}?window=all` : null);
+  const name = player?.name ?? other?.player.name ?? '';
   // Never played anything: no pickers, just the way in (AUDIT C#9).
   const never = player?.lastPlayed === null;
   const [me, setMe] = useState(store.get(ME_KEY));

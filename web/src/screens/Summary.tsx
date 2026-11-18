@@ -81,7 +81,8 @@ export function Summary({ s, wide, onNew, onMenu }: { s: ClientState; wide: bool
       <section className="summary-title">
         <div className="kicker">{r.kicker}</div>
         <h1>{r.title}</h1>
-        {r.line && <div className="line">{r.line}</div>}
+        {/* Solo X01: the line is the legs won, a bare “1” that says nothing on its own. */}
+        {r.line && !(solo && r.x01) && <div className="line">{r.line}</div>}
         {solo && <VersusAverage r={r} />}
       </section>
       <main className="summary-body">
