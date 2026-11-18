@@ -152,3 +152,9 @@ export function x01Dead(m: X01Match): boolean[] {
     return !inn;
   });
 }
+
+/** The lobby's rematch button: up to three names, then only how many (B#13). */
+export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : `Rematch · ${names.length} players`);
+
+/** Setup's start button says what starts (B#4). */
+export const startLabel = (game: string, players: number): string => `Start · ${game} · ${players} ${players === 1 ? 'player' : 'players'}`;

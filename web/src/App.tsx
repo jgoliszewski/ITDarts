@@ -6,6 +6,7 @@ import { FixSheet } from './components/FixSheet.tsx';
 import { RemoveDialog } from './components/RemoveDialog.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx';
+import type { LobbyRecord } from '../../server/protocol.ts';
 import { endsNormally, isX01 } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
 import { playCaller, playSound } from './sound.ts';
@@ -103,6 +104,8 @@ function BugDialog({ where, onClose }: { where: string; onClose: () => void }) {
 function Main({ s }: { s: ClientState }) {
   const wide = useWide();
   const [screen, setScreen] = useState<Screen>('main');
+  // A record tile in the lobby opens New match with its game and options (D6).
+  const [preset, setPreset] = useState<Pick<LobbyRecord, 'game' | 'options'> | null>(null);
   const [menu, setMenu] = useState(false);
   const [fix, setFix] = useState<FixTarget | null>(null);
   const [removeOf, setRemoveOf] = useState<number | null>(null);
@@ -217,7 +220,7 @@ function Main({ s }: { s: ClientState }) {
         : !s.you.isPilot ? 'watch' : m ? 'pilot' : 'home';
   useScreenFade(screenKey);
 
-  if (pilotOnly === 'setup') return <><Setup s={s} onClose={() => setScreen('main')} />{dialogs}</>;
+  if (pilotOnly === 'setup') return <><Setup s={s} preset={preset} onClose={() => { setPreset(null); setScreen('main'); }} />{dialogs}</>;
   if (pilotOnly === 'players') return <><Players s={s} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'howto' && m) return <><HowToScreen game={m.game} options={m.options} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'board' && !wide) {
@@ -236,7 +239,7 @@ function Main({ s }: { s: ClientState }) {
     );
     return m
       ? <Scoreboard s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
+      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onRecord={r => { setPreset({ game: r.game, options: r.options }); setScreen('setup'); }} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;

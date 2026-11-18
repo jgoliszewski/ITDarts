@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, turnPanel, visitScored, x01Dead } from './match.ts';
+import { controls, dartTone, heroCorner, initials, rematchLabel, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -118,5 +118,19 @@ describe('X01 darts that do not count before the double in', () => {
   it('dims nothing once the player was in before the visit, or with a straight in', () => {
     expect(x01Dead(x(['S20', 'T5'], { score: 300, checkedIn: true, total: 35 }))).toEqual([false, false]);
     expect(x01Dead(x(['S20', 'T5'], { checkIn: 'straight', score: 466, checkedIn: true, total: 35 }))).toEqual([false, false]);
+  });
+});
+
+// B#13 and B#4 (lobby and setup audit): a rematch of many players doesn't list them all; Start says what starts.
+describe('lobby and setup labels', () => {
+  it('names up to three players in a rematch, then counts them', () => {
+    expect(rematchLabel(['Anna'])).toBe('Rematch Anna');
+    expect(rematchLabel(['Anna', 'Bob', 'Cy'])).toBe('Rematch Anna vs Bob vs Cy');
+    expect(rematchLabel(['Anna', 'Bob', 'Cy', 'Dee'])).toBe('Rematch · 4 players');
+  });
+
+  it('says the game and the players on the start button', () => {
+    expect(startLabel('Killer', 2)).toBe('Start · Killer · 2 players');
+    expect(startLabel('Free throw', 1)).toBe('Start · Free throw · 1 player');
   });
 });

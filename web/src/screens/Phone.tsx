@@ -5,7 +5,7 @@ import { signed } from '../../../games/turns.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { controls, dartTone, dartValue, isX01, pickProps, playOrder, removedNote, shortDescription, winnersOf } from '../match.ts';
+import { controls, dartTone, dartValue, isX01, pickProps, playOrder, rematchLabel, removedNote, shortDescription, winnersOf } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { NewRecord } from './MiniBoard.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -230,20 +230,20 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onPlayers }: { s: ClientS
             <span className="caps" style={{ fontSize: 13 }}>Last match · {last.description.replace(/^X01 · /, '')}</span>
             {last.players.map((p, i) => (
               <div key={i} className="option-row" style={{ opacity: p.left ? 0.5 : undefined }}>
-                <span style={{ fontWeight: p.winner ? 800 : 500, color: p.winner ? 'var(--text)' : 'var(--muted)' }}>{p.name}{p.left && ' · Left'}</span>
-                <span className="num" style={{ fontSize: 32, color: p.winner ? 'var(--accent)' : 'var(--muted)' }}>{p.value}</span>
+                <span style={{ fontWeight: p.winner || last.players.length === 1 ? 800 : 500, color: p.winner || last.players.length === 1 ? 'var(--text)' : 'var(--muted)' }}>{p.name}{p.left && ' · Left'}</span>
+                <span className="num" style={{ fontSize: 32, color: p.winner || last.players.length === 1 ? 'var(--accent)' : 'var(--muted)' }}>{p.value}</span>
               </div>
             ))}
           </div>
         )}
-        <div className="center-msg">
-          <h2>Ready for a match</h2>
-          <p>Pick a game and players. The big screen follows.</p>
+        <div className="phone-start">
+          <div className="caps">{last ? 'Ready for the next one' : 'No match yet'}</div>
+          <h2>Game on?</h2>
         </div>
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
         <button className="btn primary" onClick={onNew}>New match</button>
-        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>Rematch {last.players.filter(p => !p.left).map(p => p.name).join(' vs ')}</button>}
+        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>{rematchLabel(last.players.filter(p => !p.left).map(p => p.name))}</button>}
       </div>
     </div>
   );
