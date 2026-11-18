@@ -324,23 +324,12 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           ))}
         </section>
 
-        <section className="section setup-options">
-          <div className="option-row">
-            <h2 className="setup-game-name">{g.name}</h2>
-            <HowToButton onClick={() => setHowTo(true)} />
-          </div>
-          {/* Under 1100 px the game tiles are compact, so the game's line moves here (D4). */}
-          <p className="setup-blurb">{g.blurb}</p>
-          {game === 'x01'
-            ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
-            : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
-        </section>
-
         <section className="section setup-players">
           <div className="option-row">
             <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
             <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
           </div>
+          {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <>
           {recent.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
@@ -360,8 +349,22 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
             </div>
           )}
           {adding && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
+          </>}
           <RosterList roster={roster} setRoster={setRoster} />
         </section>
+
+        <section className="section setup-options">
+          <div className="option-row">
+            <h2 className="setup-game-name">{g.name}</h2>
+            <HowToButton onClick={() => setHowTo(true)} />
+          </div>
+          {/* Under 1100 px the game tiles are compact, so the game's line moves here (D4). */}
+          <p className="setup-blurb">{g.blurb}</p>
+          {game === 'x01'
+            ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
+            : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
+        </section>
+
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
         <button className="btn primary" disabled={!!blocked || busy} onClick={startMatch}>{blocked ?? startLabel(g.name, roster.length)}</button>

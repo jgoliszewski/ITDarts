@@ -594,7 +594,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
   .match-setup .setup-players { grid-column: 3; grid-row: 2; }
   .match-setup .p-actions { grid-column: 3; grid-row: 3; position: static; padding: 16px 0 0; background: none; }
   .match-setup .setup-options .section { gap: 6px; }
-  .match-setup .list-row { min-height: 48px; }
+  .match-setup .list-row { min-height: var(--tap); }
   .match-setup .steppers.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .match-setup .steppers.two .option-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .match-setup .steppers.two .muted { display: none; }
@@ -1053,6 +1053,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .setup-blurb { display: none; margin: 0; font-size: var(--fs-ui-sm); color: var(--muted); line-height: 1.4; }
 /* Throwing order: a 44 px grip in a readable grey; arrow keys move the row (B#16). */
 .grip { display: flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); flex-shrink: 0; color: var(--muted2); touch-action: none; cursor: grab; border-radius: var(--r-sm); }
+.roster-full { font-size: var(--fs-ui-sm); }
 .roster-empty { min-height: 56px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--line); border-radius: var(--r-key); color: var(--muted); font-size: var(--fs-ui-sm); }
 /* Phone and small laptop (D4, D5): compact game tiles without the line, three in a row; the game's line moves to the
    options, and the players come before the options. */
@@ -1064,8 +1065,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   .match-setup .game-tile small { margin-top: 0; }
   .match-setup .game-tile .tile-icon { width: 64px; height: 64px; right: -14px; bottom: -14px; }
   .match-setup .setup-blurb { display: block; }
-  .match-setup .setup-players { order: 2; }
-  .match-setup .setup-options { order: 3; }
 }
 /* Laptop: the group titles name the games, so no extra "Game" above them (B#19). */
 @media (min-width: 1100px) { .match-setup .setup-games-title { display: none; } }
