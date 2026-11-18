@@ -237,7 +237,7 @@ function Main({ s }: { s: ClientState }) {
       )}</Presence>
       <Presence>{bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}</Presence>
       <Presence>{sheet}</Presence>
-      <Presence>{removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} />}</Presence>
+      <Presence>{removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} onEndMatch={() => askEnd('end')} />}</Presence>
     </>
   );
 
