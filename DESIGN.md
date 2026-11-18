@@ -293,7 +293,7 @@ components:
 
 # Design System: ITDarts
 
-> Ten plik opisuje system **docelowy** po przeróbce UI (branch `feat/ui-overhaul`). Gdzie kod dziś odbiega od wartości poniżej, wygrywa DESIGN.md. Lista rozjazdów z `web/src/styles.css`: `.scratch/ui-overhaul/DESIGN-NOTES.md`. Decyzje produktowe: [docs/UI.md](docs/UI.md). Pojęcia: [GLOSSARY.md](GLOSSARY.md).
+> Ten plik opisuje system zaimplementowany w `web/src/styles.css`: tokeny z nagłówka są zmiennymi w `:root` (nazwy z myślnikiem przed cyfrą bez myślnika: `card-2` → `--card2`, `muted-2` → `--muted2`; `rounded.*` → `--r-*`, `spacing.sN` → `--sp-N`, `typography.*` → `--fs-*`). Decyzje produktowe: [docs/UI.md](docs/UI.md). Pojęcia: [GLOSSARY.md](GLOSSARY.md).
 
 **Jednostki.** Wartości w pikselach w tym pliku dla **Ekranu wyników** (kiosk: Ekran wyników, Lobby, Summary na TV, nakładki) to piksele makiety 1920×1080. W kodzie zawsze `calc(N * var(--u))`, gdzie `--u = min(100vw / 1920, 100vh / 1080)`. Wartości dla **Pilota** (telefon i laptop jako Pilot), `/stats` i `/effects` to zwykłe piksele CSS. Tokeny `tv-*` i `rounded.card/row/tile` są kioskowe, `ui-*` i `rounded.sheet/box/key/sm` są Pilota. Odstępy (`spacing`) są wspólne: te same liczby w px i w `u`.
 
