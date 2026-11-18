@@ -90,7 +90,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
   const head = (
     <div className="sheet-head">
       <b>{title}</b>
-      <span>{adding ? who : <>read as <b style={{ color: 'var(--text)', fontSize: 14 }}>{label(target.dart!)}</b></>}</span>
+      <span>{adding ? who : <>read as <b>{label(target.dart!)}</b></>}</span>
       {/* On the wide screen Cancel sits in the header so the keypad fits without scrolling. */}
       {wide && <button className="btn danger" onClick={onClose}>Cancel</button>}
     </div>

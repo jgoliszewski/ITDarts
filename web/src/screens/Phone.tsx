@@ -16,7 +16,7 @@ function PhoneHeader({ s, title, onMenu, onBoard }: { s: ClientState; title: str
     <header className="phone-header">
       <div className="title">{title}</div>
       <button className="pill" aria-label={`Board: ${pill.text}`} onClick={onBoard} disabled={!onBoard} style={{ opacity: 1 }}>
-        <span className={`dot ${pill.dot}`} />{pill.text.replace(' · throw', '')}
+        <span className={`dot ${pill.dot}`} />{pill.text}
       </button>
       <button className="icon-btn" aria-label="Menu" onClick={onMenu}>{Icon.menu()}</button>
     </header>
