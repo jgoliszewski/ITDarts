@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Coords, Dart } from '../../games/darts.ts';
 import type { ClientState } from '../../server/protocol.ts';
 import type { FixTarget } from './components/FixSheet.tsx';
 import { FixSheet } from './components/FixSheet.tsx';
 import { RemoveDialog } from './components/RemoveDialog.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
-import { Dialog, Logo, Toasts, act, toast } from './components/ui.tsx';
+import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx';
 import { endsNormally, isX01 } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
 import { playCaller, playSound } from './sound.ts';
@@ -32,51 +32,50 @@ function usePath(): string {
   return path;
 }
 
+/** Fades the app in when `key` changes (not on the first render). Opacity only, so it stays under reduced motion. */
+function useScreenFade(key: string) {
+  const prev = useRef(key);
+  useLayoutEffect(() => {
+    if (prev.current === key) return;
+    prev.current = key;
+    document.getElementById('root')?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+  }, [key]);
+}
+
 function Menu({ s, wide, onClose, open }: { s: ClientState; wide: boolean; onClose: () => void; open: (what: 'new' | 'end' | Screen | 'qr' | 'bug' | 'close') => void }) {
   const pilot = s.you.isPilot;
   const item = (label: string, run: () => void, danger = false) => (
-    <button key={label} className={`btn block ${danger ? 'danger' : ''}`} style={{ justifyContent: 'flex-start', height: 56 }} onClick={() => { onClose(); run(); }}>{label}</button>
+    <button key={label} className={`btn block menu-item ${danger ? 'danger' : ''}`} onClick={() => { onClose(); run(); }}>{label}</button>
   );
-  // Pilot switches; the server keeps them, so they survive a restart.
-  const toggles = (
-    <div style={{ marginTop: 8, paddingTop: 16, borderTop: '1px solid var(--line)' }}><div className="seg" style={{ gridAutoColumns: '1fr' }}>
-      <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
-      <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
-      <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
-    </div></div>
-  );
+  // The one destructive item goes last, apart from the rest (A#14).
+  const end = pilot && (s.match ? item('End match', () => open('end'), true) : s.you.isLocal && item('Close app', () => open('close'), true));
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="dialog" role="menu" aria-label="Menu" style={{ gap: 8, width: 'min(420px, calc(100vw - 32px))' }}>
-        <h2 style={{ marginBottom: 8 }}>Menu</h2>
-        {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
-        {!pilot ? (
-          <>
-            {item('Take control', () => void act({ type: 'takeControl' }))}
-            {item('Stats', () => (location.href = '/stats'))}
-            {item('Effects', () => (location.href = '/effects'))}
-          </>
-        ) : s.match ? (
-          <>
-            {item('How to play', () => open('howto'))}
-            {!wide && item('Show QR', () => open('qr'))}
-            {item('Effects', () => (location.href = '/effects'))}
-            {item('End match', () => open('end'), true)}
-          </>
-        ) : (
-          <>
-            {!wide && item('Show QR', () => open('qr'))}
-            {item('Effects', () => (location.href = '/effects'))}
-            {s.you.isLocal && item('Close app', () => open('close'), true)}
-          </>
-        )}
-        {item('Report a bug', () => open('bug'))}
-        {/* Switches sit apart from the menu items, just above Close. */}
-        {pilot && toggles}
-        <button className="btn ghost block" style={{ marginTop: 8 }} onClick={onClose}>Close</button>
-      </div>
-    </>
+    <Dialog title="Menu" className="menu" onClose={onClose} actions={<button className="btn ghost block" onClick={onClose}>Close</button>}>
+      {/* In a match only what the match needs. New match, Players and Stats are buttons on the main screen; Board panel is in the header. */}
+      {!pilot ? (
+        <>
+          {item('Take control', () => void act({ type: 'takeControl' }))}
+          {item('Stats', () => (location.href = '/stats'))}
+          {item('Effects', () => (location.href = '/effects'))}
+        </>
+      ) : (
+        <>
+          {s.match && item('How to play', () => open('howto'))}
+          {!wide && item('Show QR', () => open('qr'))}
+          {item('Effects', () => (location.href = '/effects'))}
+        </>
+      )}
+      {item('Report a bug', () => open('bug'))}
+      {/* Pilot switches; the server keeps them, so they survive a restart. */}
+      {pilot && (
+        <div className="menu-group"><div className="seg">
+          <button aria-pressed={s.effects.sounds} onClick={() => void act({ type: 'effects', sounds: !s.effects.sounds })}>Sounds {s.effects.sounds ? 'on' : 'off'}</button>
+          <button aria-pressed={s.effects.caller} onClick={() => void act({ type: 'effects', caller: !s.effects.caller })}>Caller {s.effects.caller ? 'on' : 'off'}</button>
+          <button aria-pressed={s.effects.leds} onClick={() => void act({ type: 'effects', leds: !s.effects.leds })}>LEDs {s.effects.leds ? 'on' : 'off'}</button>
+        </div></div>
+      )}
+      {end && <div className="menu-group">{end}</div>}
+    </Dialog>
   );
 }
 
@@ -183,8 +182,8 @@ function Main({ s }: { s: ClientState }) {
   );
   const dialogs = (
     <>
-      {menu && <Menu s={s} wide={wide} onClose={() => setMenu(false)} open={openFromMenu} />}
-      {endAsk && (
+      <Presence>{menu && <Menu s={s} wide={wide} onClose={() => setMenu(false)} open={openFromMenu} />}</Presence>
+      <Presence>{endAsk && (
         <Dialog title="End this match?" onClose={() => setEndAsk(null)} actions={<>
           <button className="btn" onClick={() => setEndAsk(null)}>Keep playing</button>
           <button className="btn danger" onClick={() => doEnd(false)}>Discard</button>
@@ -194,20 +193,29 @@ function Main({ s }: { s: ClientState }) {
             ? "Save ends the game: the most checkouts wins, and the darts go into everyone's stats. Discard removes the match completely."
             : "The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely."}</p>
         </Dialog>
-      )}
-      {closeAsk && (
+      )}</Presence>
+      <Presence>{closeAsk && (
         <Dialog title="Close the app?" onClose={() => setCloseAsk(false)} actions={<>
           <button className="btn" onClick={() => setCloseAsk(false)}>Cancel</button>
           <button className="btn danger" onClick={() => void act({ type: 'closeApp' })}>Close app</button>
         </>}>
           <p>This closes the kiosk and stops the server. Start it again with start.bat.</p>
         </Dialog>
-      )}
-      {bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}
-      {sheet}
-      {removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} />}
+      )}</Presence>
+      <Presence>{bug && <BugDialog where={`${location.pathname} ${s.you.isPilot ? 'pilot' : 'watch'} ${wide ? 'wide' : 'phone'} screen=${pilotOnly}`} onClose={() => setBug(false)} />}</Presence>
+      <Presence>{sheet}</Presence>
+      <Presence>{removeOf !== null && m && <RemoveDialog m={m} player={removeOf} onClose={() => setRemoveOf(null)} />}</Presence>
     </>
   );
+
+  // Screen changes fade in (DESIGN.md, Ruch: crossfade ~200 ms). The key names the screen, never match data, so a new
+  // dart or a new active player never fades anything.
+  const screenKey = pilotOnly === 'setup' || pilotOnly === 'players' || (pilotOnly === 'howto' && m) || (pilotOnly === 'board' && !wide)
+    ? pilotOnly
+    : !m && s.summary && pilotOnly !== 'board' ? 'summary'
+      : wide ? (m ? 'scoreboard' : 'lobby')
+        : !s.you.isPilot ? 'watch' : m ? 'pilot' : 'home';
+  useScreenFade(screenKey);
 
   if (pilotOnly === 'setup') return <><Setup s={s} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'players') return <><Players s={s} onClose={() => setScreen('main')} />{dialogs}</>;
@@ -222,7 +230,7 @@ function Main({ s }: { s: ClientState }) {
     const overlay = (
       <>
         {s.showQr && <QrOverlay s={s} onClose={() => { if (s.you.isPilot) void act({ type: 'showQr', show: false }); }} />}
-        {pilotOnly === 'board' && <BoardPanel s={s} wide onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />}
+        <Presence>{pilotOnly === 'board' && <BoardPanel s={s} wide onClose={() => setScreen('main')} onShowQr={() => act({ type: 'showQr', show: true })} />}</Presence>
         {dialogs}
       </>
     );

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Coords, Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER, label, value } from '../../../games/darts.ts';
 import { Dartboard } from './Dartboard.tsx';
+import { useModal } from './ui.tsx';
 
 export interface FixTarget {
   /** Dart index in the visit. */
@@ -82,11 +83,8 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
 }) {
   const adding = target.dart === null;
   const [tab, setTab] = useState<'nearby' | 'all'>(adding ? 'all' : 'nearby');
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    addEventListener('keydown', k);
-    return () => removeEventListener('keydown', k);
-  }, [onClose]);
+  const box = useRef<HTMLDivElement>(null);
+  useModal(box, onClose);
 
   const title = adding ? `Add dart ${target.index + 1}` : `Fix dart ${target.index + 1}`;
   const head = (
@@ -109,7 +107,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
     return (
       <>
         <div className="scrim" onClick={onClose} />
-        <div className="wide-fix" role="dialog" aria-modal="true" aria-label={title}>
+        <div ref={box} tabIndex={-1} className="wide-fix" role="dialog" aria-modal="true" aria-label={title}>
           <div className="left">
             {head}
             {tabs}
@@ -126,7 +124,7 @@ export function FixSheet({ target, visit, wide, who, onPick, onClose }: {
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={box} tabIndex={-1} className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="grab" />
         {head}
         {tabs}

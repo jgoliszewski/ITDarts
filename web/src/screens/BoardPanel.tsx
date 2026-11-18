@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { BoardAction, ClientState } from '../../../server/protocol.ts';
 import { DOT, TargetBoard, coordsSpot } from '../components/Dartboard.tsx';
-import { Dialog, Icon, act } from '../components/ui.tsx';
+import { Dialog, Icon, act, useModal } from '../components/ui.tsx';
 import { ago, useNow } from '../util.ts';
 import { Switch } from './effects/parts.tsx';
 import { boardPill } from './Scoreboard.tsx';
@@ -103,6 +103,9 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
     if (testing) void act({ type: 'boardTest', on: false });
     onClose();
   };
+  // The laptop drawer is a modal (A#15): Escape closes it, focus stays inside.
+  const drawer = useRef<HTMLElement>(null);
+  useModal(drawer, close, wide && !testing);
 
   // The same buttons in the panel and in Test board, lower in the test so the events keep their room.
   const controls = (
@@ -172,7 +175,7 @@ export function BoardPanel({ s, wide, onClose, onShowQr }: { s: ClientState; wid
     return (
       <>
         <div className="scrim" onClick={close} />
-        <aside className="drawer" aria-label="Board panel">
+        <aside ref={drawer} tabIndex={-1} className="drawer" role="dialog" aria-modal="true" aria-label="Board panel">
           <div className="option-row">
             <div style={{ fontSize: 32, fontWeight: 800 }}>Board</div>
             <button className="icon-btn" style={{ width: 52, height: 52, background: 'var(--raised)' }} aria-label="Close" onClick={close}>{Icon.close(22)}</button>

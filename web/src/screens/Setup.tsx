@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../../../games/index.ts';
 import type { RcOptions } from '../../../games/randomco.ts';
@@ -57,9 +57,18 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
   const ROW = row.current;
   const target = drag ? Math.max(0, Math.min(roster.length - 1, drag.from + Math.round(drag.dy / ROW))) : -1;
 
+  // The drop re-orders the rows and puts every shift back to 0 in one render: without transitions in that render the
+  // rows don't animate from their old slot (T5 in the motion audit); they come back two frames later.
+  const [dropped, setDropped] = useState(false);
+  useEffect(() => {
+    if (!dropped) return;
+    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setDropped(false))));
+    return () => cancelAnimationFrame(id);
+  }, [dropped]);
+
   const order = roster.map((_, i) => i);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
+    <div className={`roster-list ${dropped ? 'dropped' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
       {order.map(i => {
         const r = roster[i];
         let shift = 0;
@@ -69,8 +78,8 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
           else if (target <= i && i < drag.from) shift = ROW;
         }
         return (
-          <div key={`${r.playerId ?? 'g'}-${r.name}`} className="list-row"
-            style={{ transform: `translateY(${shift}px)`, transition: drag && i === drag.from ? 'none' : 'transform 0.15s', zIndex: drag?.from === i ? 2 : 1, position: 'relative' }}>
+          <div key={`${r.playerId ?? 'g'}-${r.name}`} className={`list-row roster-row ${drag?.from === i ? 'held' : ''}`}
+            style={{ transform: `translateY(${shift}px)` }}>
             <span className="num" style={{ fontSize: 24, color: 'var(--accent)', width: 18 }}>{i + 1}</span>
             <span className="grow">{r.name}{r.playerId === null && <span className="muted" style={{ fontWeight: 500, fontSize: 13 }}> · guest</span>}</span>
             <button className="icon-btn" style={{ background: 'transparent', color: 'var(--muted2)' }} aria-label={`Remove ${r.name}`}
@@ -88,6 +97,7 @@ function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (
                 const next = [...roster];
                 const [moved] = next.splice(drag.from, 1);
                 next.splice(target, 0, moved);
+                setDropped(true);
                 setDrag(null);
                 setRoster(next);
               }}
