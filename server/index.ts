@@ -41,6 +41,7 @@ async function shutdown() {
   board.stop();
   effectsStore.close();
   await app.close().catch(() => undefined);
+  hub.close();
   db.close();
   process.exit(0);
 }

@@ -56,8 +56,24 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  hub.close();
   db.close();
   rmSync(dir, { recursive: true, force: true });
+});
+
+describe('closing the hub', () => {
+  it('stops the record intro timer, so it does not broadcast after the database closes', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const pilot = client(true);
+      await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'off' }, roster: roster(2) });
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+      hub.close();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('the remove command', () => {

@@ -338,6 +338,12 @@ export class Hub {
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
+  /** Stops the timers before the database closes, so none of them broadcasts from a closed database. */
+  close() {
+    for (const t of [this.introTimer, this.qrTimer, this.testTimer]) if (t) clearTimeout(t);
+    this.introTimer = this.qrTimer = this.testTimer = null;
+  }
+
   private endIntro() {
     if (this.introTimer) clearTimeout(this.introTimer);
     this.introTimer = null;
