@@ -44,9 +44,6 @@ export function setMaster(volume: number, muted: boolean) {
   master.gain.linearRampToValueAtTime(masterLevel, t + 0.05);
 }
 
-/** For the live check (CDP): the level asked for and what the master node plays now. */
-(globalThis as { itdartsMaster?: () => { level: number; node: number | null } }).itdartsMaster = () => ({ level: masterLevel, node: master?.gain.value ?? null });
-
 const buffers = new Map<string, Promise<AudioBuffer | null>>();
 let playing: AudioBufferSourceNode | null = null;
 /** When the effect sound or the turn sound ends, in AudioContext time; the caller waits for it. */
