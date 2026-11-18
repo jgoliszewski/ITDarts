@@ -323,7 +323,7 @@ export class Stats {
         const best = this.db.records(variant, rec.better, 1)[0];
         if (!best) return [];
         return [{ game, key: variant, label: this.variantLabel(game, variant), value: rec.format(best.value), who: best.who, at: best.at,
-          options: g.normalizeOptions(JSON.parse(best.options)), players: best.players }];
+          options: g.normalizeOptions(JSON.parse(best.options)) }];
       }).sort((a, b) => a.label.localeCompare(b.label));
     });
   }

@@ -233,8 +233,6 @@ export interface LobbyRecord {
   at: number;
   /** The record match's options, normalized; the variant key alone can't give them back (ATC's order is not in it). */
   options: unknown;
-  /** Players in the record match: a co-op record needs two or more. */
-  players: number;
 }
 
 export interface RecordTable {

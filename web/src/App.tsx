@@ -7,7 +7,7 @@ import { RemoveDialog } from './components/RemoveDialog.tsx';
 import { HowToScreen } from './components/HowTo.tsx';
 import { Dialog, Logo, Presence, Toasts, act, toast } from './components/ui.tsx';
 import type { LobbyRecord } from '../../server/protocol.ts';
-import { endsNormally, isX01 } from './match.ts';
+import { endsNormally, isX01, presetFor } from './match.ts';
 import { onFx, useSnapshot } from './net.ts';
 import { builtinSound, playCaller, playSound, setMaster } from './sound.ts';
 import { BoardPanel } from './screens/BoardPanel.tsx';
@@ -209,6 +209,8 @@ function Main({ s }: { s: ClientState }) {
   };
 
   const pilotOnly = s.you.isPilot ? screen : 'main';
+  // A record's preset is one-shot: leaving the setup in any way (or losing control) drops it (review t04).
+  useEffect(() => setPreset(p => presetFor(p, pilotOnly)), [pilotOnly]);
   const sheet = fix && m && (
     <FixSheet target={fix} visit={m.view.visit.darts} wide={wide} who={m.roster[m.view.current].name} onPick={pickFix} onClose={() => setFix(null)} />
   );
@@ -249,7 +251,7 @@ function Main({ s }: { s: ClientState }) {
         : !s.you.isPilot ? 'watch' : m ? 'pilot' : 'home';
   useScreenFade(screenKey);
 
-  if (pilotOnly === 'setup') return <><Setup s={s} preset={preset} onClose={() => { setPreset(null); setScreen('main'); }} />{dialogs}</>;
+  if (pilotOnly === 'setup') return <><Setup s={s} preset={preset} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'players') return <><Players s={s} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'howto' && m) return <><HowToScreen game={m.game} options={m.options} onClose={() => setScreen('main')} />{dialogs}</>;
   if (pilotOnly === 'board' && !wide) {

@@ -161,9 +161,8 @@ export interface RecordRow {
   value: number;
   who: string;
   at: number;
-  /** The record match's options (JSON) and how many played it, to set the same game up again. */
+  /** The record match's options (JSON), to set the same game up again. */
   options: string;
-  players: number;
 }
 
 export class UserError extends Error {}
@@ -415,7 +414,6 @@ export class Db {
     if (variant.endsWith(':coop')) {
       return this.sql.prepare(`
         SELECT MAX(mp.score) AS value, m.ended_at AS at, m.options AS options,
-          (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players,
           (SELECT GROUP_CONCAT(name, ' & ') FROM (SELECT p2.name FROM match_players o JOIN players p2 ON p2.id = o.player_id
             WHERE o.match_id = m.id AND o.removed = 0 ORDER BY o.position)) AS who
         FROM matches m JOIN match_players mp ON mp.match_id = m.id
@@ -423,8 +421,7 @@ export class Db {
         GROUP BY m.id ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
     }
     return this.sql.prepare(`
-      SELECT mp.score AS value, m.ended_at AS at, p.name AS who, m.options AS options,
-        (SELECT COUNT(*) FROM match_players c WHERE c.match_id = m.id) AS players
+      SELECT mp.score AS value, m.ended_at AS at, p.name AS who, m.options AS options
       FROM matches m JOIN match_players mp ON mp.match_id = m.id JOIN players p ON p.id = mp.player_id
       WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
       ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];

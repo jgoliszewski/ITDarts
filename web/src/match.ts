@@ -158,3 +158,9 @@ export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `R
 
 /** Setup's start button says what starts (B#4). */
 export const startLabel = (game: string, players: number): string => `Start · ${game} · ${players} ${players === 1 ? 'player' : 'players'}`;
+
+/**
+ * A lobby record's game and options for New match (D6) last only while the pilot has the setup open: any other screen
+ * (setup closed, control lost, which sends the screen to main) drops them, so a later New match opens the last game.
+ */
+export const presetFor = <T>(preset: T | null, screen: string): T | null => (screen === 'setup' ? preset : null);

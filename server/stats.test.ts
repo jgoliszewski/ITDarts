@@ -400,9 +400,9 @@ describe('lobby records', () => {
     const r = stats.lobbyRecords();
     expect(r.map(x => x.key)).toEqual(['atc:any:skips', '121:v3:refill:coop', 'shanghai:solo:7']);
     // ATC: fewer darts is better, so Bob's 24 with the clockwise order; the order is not in the key, the match keeps it.
-    expect(r[0]).toMatchObject({ game: 'atc', value: '24 darts', who: 'Bob', at: NOW - 4 * DAY, players: 1 });
+    expect(r[0]).toMatchObject({ game: 'atc', value: '24 darts', who: 'Bob', at: NOW - 4 * DAY });
     expect(r[0].options).toMatchObject({ target: 'any', order: 'clockwise', skips: true });
-    expect(r[1]).toMatchObject({ game: '121', value: 'Target 140', who: 'Anna & Bob', players: 2 });
+    expect(r[1]).toMatchObject({ game: '121', value: 'Target 140', who: 'Anna & Bob' });
     expect(r[2]).toMatchObject({ game: 'shanghai', label: 'Shanghai · Solo · 7 rounds', value: '90 points', who: 'Bob' });
     expect(r[2].options).toMatchObject({ rounds: 7 });
   });

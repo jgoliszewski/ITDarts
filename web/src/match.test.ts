@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, rematchLabel, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -132,5 +132,23 @@ describe('lobby and setup labels', () => {
   it('says the game and the players on the start button', () => {
     expect(startLabel('Killer', 2)).toBe('Start · Killer · 2 players');
     expect(startLabel('Free throw', 1)).toBe('Start · Free throw · 1 player');
+  });
+});
+
+// Review t04: a record's game must not stick to a later New match after control was lost or the setup was left.
+describe('setup preset from a lobby record', () => {
+  const rec = { game: 'atc' as const, options: { order: 'random' } };
+  it('lives only while the setup is open for the pilot', () => {
+    expect(presetFor(rec, 'setup')).toBe(rec);
+    expect(presetFor(rec, 'main')).toBeNull();
+    expect(presetFor(rec, 'players')).toBeNull();
+    expect(presetFor(null, 'setup')).toBeNull();
+  });
+
+  it('is gone for the next New match once the pilot left the setup (lost control sends the screen to main)', () => {
+    let preset: typeof rec | null = rec;
+    preset = presetFor(preset, 'setup'); // the tile opened the setup
+    preset = presetFor(preset, 'main'); // a phone took control, the kiosk went back to the main screen
+    expect(presetFor(preset, 'setup')).toBeNull(); // New match later: the last game, not the record's
   });
 });
