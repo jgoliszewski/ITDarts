@@ -319,7 +319,7 @@ Odrzucone wprost (z [docs/UI.md](docs/UI.md)): kolory per gracz poza Summary i C
 Paleta ITBOOM: prawie czarne tło, karty w odcieniach szarości, pomarańcz jako jedyny akcent i trzy kolory stanów. Wartości są w frontmatterze (normatywne). Tu jest ich rola.
 
 ### Primary
-- **Pomarańcz ITBOOM** (`accent`): aktywny gracz (wiersz, hero), główna akcja (`button-primary`), główna metryka na `/stats`, #1 w rekordach, suma Tury na karcie Tury, zaznaczony kafelek gry. Nigdzie indziej. Kontrast na `bg` 7,63:1, na `card` 7,10:1.
+- **Pomarańcz ITBOOM** (`accent`): aktywny gracz (wiersz, hero), główna akcja (`button-primary`), główna metryka na `/stats`, #1 w rekordach, suma Tury na karcie Tury, zaznaczony kafelek gry. Poza tym tylko rekord i punkt odniesienia: „read as” w Poprawce, Ekran rekordu, chorągiewka „Best” w 121, „NEW RECORD”. Kontrast na `bg` 7,63:1, na `card` 7,10:1.
 - **Atrament** (`ink` = `on-accent`, `#111111`): tekst i ikony na pomarańczowym, zielonym, czerwonym, żółtym i kolorach graczy, oraz tekst na zaznaczonym segmencie i chipie (`text` jako tło). Zastępuje rozproszone `#111` i `#0A0A0B`. Kontrast na `accent` 7,28:1.
 - **Pomarańczowy atrament** (`accent-ink`): drugi poziom tekstu na pomarańczowym wierszu (meta, podpisy). 5,63:1 na `accent`.
 
