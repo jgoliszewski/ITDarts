@@ -540,8 +540,8 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .chart .grid { stroke: var(--line); }
 .chart .tick { fill: var(--muted2); font-size: 17px; }
 .chart .mean { stroke: var(--muted); stroke-dasharray: 6 6; }
-.chart .line { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linejoin: round; }
-.chart .dot { fill: var(--accent); }
+.chart .line { fill: none; stroke: var(--soft); stroke-width: 3; stroke-linejoin: round; }
+.chart .dot { fill: var(--soft); }
 .chart .last { fill: var(--text); font-size: 20px; font-weight: 700; }
 .player-card .delta { font-size: 18px; }
 .dbl { display: grid; grid-template-columns: 64px 1fr 56px 84px 64px; gap: 12px; align-items: center; padding: 8px 14px; border-radius: var(--r-sm); background: var(--card); font-size: var(--fs-ui-md); margin-top: 6px; }
@@ -549,7 +549,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .dbl .num { font-size: var(--fs-ui-lg); text-align: right; }
 .dbl.head span:nth-child(n+3) { text-align: right; }
 .dbl .bar { height: 8px; border-radius: var(--r-pill); background: var(--card2); overflow: hidden; }
-.dbl .bar i { display: block; height: 100%; background: var(--accent); border-radius: var(--r-pill); }
+.dbl .bar i { display: block; height: 100%; background: var(--soft); border-radius: var(--r-pill); }
 .fun .stat { background: none; border: 1px solid var(--line); padding: 10px 14px; }
 .fun .stat .num { font-size: 26px; color: var(--soft); }
 @media (max-width: 600px) { .dbl { grid-template-columns: 48px 1fr 40px 64px 52px; gap: 8px; } .stat.main .num { font-size: 48px; } }

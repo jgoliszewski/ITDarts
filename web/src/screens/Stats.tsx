@@ -3,7 +3,7 @@ import type { GameId } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, isGameId } from '../../../games/index.ts';
 import type { GameStatsResponse, H2HResponse, HeatResponse, PlayerListItem, PlayerStatsResponse, RecordTable, StatsWindow } from '../../../server/protocol.ts';
 import type { Row } from '../components/Compare.tsx';
-import { CompareTable, fmtKm, gameCompareRows, playerColor, x01CompareRows } from '../components/Compare.tsx';
+import { CompareTable, fmtDistance, gameCompareRows, playerColor, x01CompareRows } from '../components/Compare.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { Heatmap } from '../components/Heatmap.tsx';
 import { Stat, DeltaTag, TrendChart } from '../components/StatParts.tsx';
@@ -90,7 +90,7 @@ function FunFacts({ distance, darts }: { distance?: number; darts?: number }) {
       <div className="caps" style={{ fontSize: 13 }}>Fun facts</div>
       <div className="stat-grid">
         {darts !== undefined && <Stat l="Darts" v={String(darts)} />}
-        {distance ? <Stat l="Distance walked" v={fmtKm(distance)} /> : null}
+        {distance ? <Stat l="Distance walked" v={fmtDistance(distance)} /> : null}
       </div>
     </div>
   );
@@ -263,7 +263,7 @@ function CompareData({ ids, game, w }: { ids: number[]; game: GameId; w: StatsWi
       return x01CompareRows(ps.map(p => p.x01), [{ label: 'Winrate', values: winrate.map(fmtPct), nums: winrate, better: 'higher' as const }]);
     })()
     : gameCompareRows(game, data.stats as GameStatsResponse[]);
-  rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtKm(h.distance)) });
+  rows.push({ label: 'Distance walked', values: data.heat.map(h => fmtDistance(h.distance)) });
   return (
     <>
       <CompareTable names={names} rows={rows} />
