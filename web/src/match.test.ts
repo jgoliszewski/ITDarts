@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -150,5 +150,17 @@ describe('setup preset from a lobby record', () => {
     preset = presetFor(preset, 'setup'); // the tile opened the setup
     preset = presetFor(preset, 'main'); // a phone took control, the kiosk went back to the main screen
     expect(presetFor(preset, 'setup')).toBeNull(); // New match later: the last game, not the record's
+  });
+});
+
+describe('remove dialog line (B#8)', () => {
+  it('names the ways out the pilot has', () => {
+    expect(removeIntro(true, true, null)).toBe('Out for this leg only, or for the rest of the match.');
+    expect(removeIntro(false, true, null)).toBe('Out for the rest of the match.');
+    expect(removeIntro(true, false, 'Only two would be left')).toBe('Out for this leg only.');
+  });
+
+  it('says why when there is no way out', () => {
+    expect(removeIntro(false, false, 'Only two would be left: end the match instead')).toBe('Only two would be left: end the match instead');
   });
 });

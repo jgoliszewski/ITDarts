@@ -176,11 +176,11 @@ button:focus-visible, input:focus-visible, [role='button']:focus-visible { outli
 .dialog h2 { margin: 0; font-size: var(--fs-ui-xl); font-weight: 800; }
 .dialog p { margin: 0; color: var(--soft); line-height: 1.5; }
 .dialog .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-/* All actions in one line; a phone is too narrow for three, so there they stack full width. */
-.dialog.one-row { width: min(680px, calc(100vw - 32px)); }
-.dialog.one-row .actions { flex-wrap: nowrap; }
+/* All actions in one row of equal buttons across the box; a phone is too narrow for three, so there they stack full width (B#8). */
+.dialog.one-row { width: min(600px, calc(100vw - 32px)); }
+.dialog.one-row .actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
 .dialog.one-row .actions .btn { white-space: nowrap; }
-@media (max-width: 560px) { .dialog.one-row .actions { flex-direction: column-reverse; } }
+@media (max-width: 560px) { .dialog.one-row .actions { grid-auto-flow: row; } .dialog.one-row .actions > :first-child { order: 1; } }
 .toasts { position: fixed; z-index: var(--z-toast); left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; width: min(560px, calc(100vw - 32px)); pointer-events: none; }
 .toast { pointer-events: auto; background: var(--toast); color: var(--text); border-radius: var(--r-box); padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: var(--fs-ui-md); box-shadow: var(--shadow-float); width: 100%; }
 /* On the wide screen toasts sit under the header at the left edge, over the hero, clear of the right column. */

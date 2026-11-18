@@ -153,6 +153,16 @@ export function x01Dead(m: X01Match): boolean[] {
   });
 }
 
+/**
+ * The line under "Remove Bob?" (B#8): which ways out there are, or why there is none (`blocked`, from removeBlock).
+ */
+export function removeIntro(canLeg: boolean, canMatch: boolean, blocked: string | null): string {
+  if (canLeg && canMatch) return 'Out for this leg only, or for the rest of the match.';
+  if (canLeg) return 'Out for this leg only.';
+  if (canMatch) return 'Out for the rest of the match.';
+  return blocked ?? '';
+}
+
 /** The lobby's rematch button: up to three names, then only how many (B#13). */
 export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : `Rematch · ${names.length} players`);
 
