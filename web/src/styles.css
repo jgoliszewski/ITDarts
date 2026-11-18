@@ -1054,6 +1054,20 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* Throwing order: a 44 px grip in a readable grey; arrow keys move the row (B#16). */
 .grip { display: flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); flex-shrink: 0; color: var(--muted2); touch-action: none; cursor: grab; border-radius: var(--r-sm); }
 .roster-full { font-size: var(--fs-ui-sm); }
+.add-players { display: flex; flex-direction: column; gap: var(--sp-2); }
+.recent-players { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.guest-note { font-size: var(--fs-ui-sm); }
+/* Laptop: every add button in one row that scrolls sideways, so adding players never pushes the throwing order down. */
+@media (min-width: 1100px) {
+  .match-setup .add-players { flex-direction: row; align-items: center; overflow-x: auto; overflow-y: hidden; padding-bottom: var(--sp-1); scrollbar-width: thin; }
+  .match-setup .add-players:has(form) { flex-wrap: wrap; }
+  .match-setup .add-players > .recent-players, .match-setup .add-players > .chip-row { display: contents; }
+  .match-setup .add-players .btn, .match-setup .add-players .chip { flex: none; height: 40px; padding: 0 var(--sp-4); white-space: nowrap; }
+  .match-setup .add-players > form { flex: 0 0 100%; }
+  .match-setup .add-players .chip-row > .muted { display: none; }
+  /* + Guest stays in sight at the row's right end while the names scroll under it. */
+  .match-setup .add-players .chip.guest { position: sticky; right: 0; background: var(--bg); box-shadow: calc(-1 * var(--sp-3)) 0 var(--sp-3) var(--bg); }
+}
 .roster-empty { min-height: 56px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--line); border-radius: var(--r-key); color: var(--muted); font-size: var(--fs-ui-sm); }
 /* Phone and small laptop (D4, D5): compact game tiles without the line, three in a row; the game's line moves to the
    options, and the players come before the options. */

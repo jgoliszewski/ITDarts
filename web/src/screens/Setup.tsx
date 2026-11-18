@@ -12,7 +12,7 @@ import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
 import { startLabel } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
-import { store } from '../util.ts';
+import { store, useMedia } from '../util.ts';
 
 const GAP = 8; // between roster rows
 const LAST_GAME_KEY = 'itdarts.lastGame';
@@ -237,6 +237,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
   const [howTo, setHowTo] = useState(false);
 
   const g = GAMES[game];
+  const wide = useMedia('(min-width: 1100px)');
   // The chosen game is in sight on entry, also deep in the list or in the laptop's scrolling column (B#4).
   useEffect(() => { document.querySelector('.game-tile.on')?.scrollIntoView({ block: 'nearest' }); }, []);
   const options = allOptions[game] ?? loadOptions(game);
@@ -295,6 +296,50 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     : g.maxPlayers !== undefined && roster.length > g.maxPlayers ? `${g.name} is for ${plural(g.maxPlayers, 'player')}`
     : null;
 
+  const playersSection = (
+    <section className="section setup-players">
+      <div className="option-row">
+        <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
+        <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
+      </div>
+      {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <div className="add-players">
+      {recent.length > 0 && (
+        <div className="recent-players">
+          {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
+        </div>
+      )}
+      {adding ? (
+        <form className="option-row" onSubmit={e => { e.preventDefault(); submitGuest(); }}>
+          <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)} placeholder="Guest name" aria-label="Guest name" />
+          <button className="btn primary" type="submit">Add</button>
+          <button className="btn" type="button" onClick={() => setAdding(false)}>Cancel</button>
+        </form>
+      ) : (
+        <div className="chip-row">
+          {others.length > 0 && <span className="muted" style={{ fontSize: 13 }}>{recent.length ? 'Others' : 'Players'}</span>}
+          {others.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
+          <button className="chip guest" onClick={startGuest}>+ Guest</button>
+        </div>
+      )}
+      {adding && <div className="muted guest-note">Guests play this match only. No stats or records are kept for them.</div>}
+      </div>}
+      <RosterList roster={roster} setRoster={setRoster} />
+    </section>
+  );
+  const optionsSection = (
+    <section className="section setup-options">
+      <div className="option-row">
+        <h2 className="setup-game-name">{g.name}</h2>
+        <HowToButton onClick={() => setHowTo(true)} />
+      </div>
+      {/* Under 1100 px the game tiles are compact, so the game's line moves here (D4). */}
+      <p className="setup-blurb">{g.blurb}</p>
+      {game === 'x01'
+        ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
+        : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
+    </section>
+  );
+
   return (
     <div className="phone match-setup">
       <header className="phone-header">
@@ -324,46 +369,9 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           ))}
         </section>
 
-        <section className="section setup-players">
-          <div className="option-row">
-            <div className="caps" style={{ fontSize: 13 }}>Players · throwing order</div>
-            <button className="chip" onClick={shuffle} disabled={roster.length < 2}>Shuffle</button>
-          </div>
-          {roster.length >= MAX_PLAYERS ? <div className="muted roster-full">{MAX_PLAYERS} players, the most a match takes</div> : <>
-          {recent.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {recent.map(p => <button key={p.id} className="btn ghost" onClick={() => add({ playerId: p.id, name: p.name })}>{Icon.plus(18)}{p.name}</button>)}
-            </div>
-          )}
-          {adding ? (
-            <form className="option-row" onSubmit={e => { e.preventDefault(); submitGuest(); }}>
-              <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)} placeholder="Guest name" aria-label="Guest name" />
-              <button className="btn primary" type="submit">Add</button>
-              <button className="btn" type="button" onClick={() => setAdding(false)}>Cancel</button>
-            </form>
-          ) : (
-            <div className="chip-row">
-              {others.length > 0 && <span className="muted" style={{ fontSize: 13 }}>{recent.length ? 'Others' : 'Players'}</span>}
-              {others.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
-              <button className="chip" onClick={startGuest}>+ Guest</button>
-            </div>
-          )}
-          {adding && <div className="muted" style={{ fontSize: 13 }}>Guests play this match only. No stats or records are kept for them.</div>}
-          </>}
-          <RosterList roster={roster} setRoster={setRoster} />
-        </section>
-
-        <section className="section setup-options">
-          <div className="option-row">
-            <h2 className="setup-game-name">{g.name}</h2>
-            <HowToButton onClick={() => setHowTo(true)} />
-          </div>
-          {/* Under 1100 px the game tiles are compact, so the game's line moves here (D4). */}
-          <p className="setup-blurb">{g.blurb}</p>
-          {game === 'x01'
-            ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
-            : <MiniSection game={game} options={options} players={roster.length} setOptions={setOptions} />}
-        </section>
+        {/* Reading and Tab order follow the layout: on the phone the players come before the options (D5), on the laptop
+            the three columns read left to right. */}
+        {wide ? <>{optionsSection}{playersSection}</> : <>{playersSection}{optionsSection}</>}
 
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
