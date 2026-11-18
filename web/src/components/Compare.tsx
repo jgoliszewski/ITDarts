@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
+import { plural } from '../../../games/turns.ts';
 import type { GameStatsResponse } from '../../../server/protocol.ts';
 import { BAND_BETTER, METRICS, X01_BANDS, X01_METRICS, fmtPct, sharedBestLeg, visitShare } from '../stats.ts';
 
@@ -16,7 +17,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
     case 'atc':
     case 'fullboard': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Darts', String(t.darts ?? 0)]];
     case 'gotcha': return [['Gotchas', String(t.gotchas ?? 0), 'rivals sent back to 0']];
-    case 'knockout': return [['Average visit', t.visits ? (t.points / t.visits).toFixed(1) : '–', `${t.visits ?? 0} visits`]];
+    case 'knockout': return [['Average visit', t.visits ? (t.points / t.visits).toFixed(1) : '–', plural(t.visits ?? 0, 'visit')]];
     case 'football': return [['Goals', String(t.goals ?? 0)]];
     case 'freethrow': return [
       ['Average', t.darts ? ((t.points / t.darts) * 3).toFixed(1) : '–', 'per 3 darts'],

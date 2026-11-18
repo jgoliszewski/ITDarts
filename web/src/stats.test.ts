@@ -253,3 +253,12 @@ describe('Average chart', () => {
     expect(chartScale([10, 80])).toEqual({ lo: 10, hi: 80, step: 10 });
   });
 });
+
+// A#24 (scoreboard audit): the Knockout card said "1 visits".
+describe('Knockout visits on the live card', () => {
+  it('says one visit in the singular', () => {
+    expect(gameStats('knockout', { points: 60, visits: 1 })[0][2]).toBe('1 visit');
+    expect(gameStats('knockout', { points: 120, visits: 2 })[0][2]).toBe('2 visits');
+    expect(gameStats('knockout', {})[0][2]).toBe('0 visits');
+  });
+});

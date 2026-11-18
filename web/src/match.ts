@@ -104,3 +104,35 @@ export function winnersOf(m: MiniMatch): string {
   const names = m.view.winners.map(i => m.roster[i].name);
   return names.length ? names.join(' & ') : m.roster.length > 1 ? 'Team' : m.roster[0].name;
 }
+
+/**
+ * The X01 hero's corner pill (variant D, DECISIONS.md): green once checked out, amber while a double is needed to start.
+ * A bust has no pill: the big BUST next to the score says it.
+ */
+export function heroCorner(m: X01Match): { text: string; tone: 'good' | 'warn' } | null {
+  const v = m.view;
+  if (v.visit.bust) return null;
+  if (v.visit.checkout) return { text: 'Checked out', tone: 'good' };
+  return v.checkedIn[v.current] ? null : { text: 'Needs a double to start', tone: 'warn' };
+}
+
+/** What the visit scored, for the hero's This turn and the turn card; null in games counted in hits or marks. */
+export function visitScored(m: LiveMatch): number | null {
+  if (isX01(m)) return m.view.visit.bust ? 0 : m.view.visit.total;
+  switch (m.game) {
+    case 'hol': return m.view.sum ?? 0;
+    case 'shanghai': return m.view.visitPoints;
+    case 'knockout': return m.view.visitScore;
+    case 'freethrow': return m.view.visitTotal;
+    case '121': case 'randomco': case 'gotcha':
+      return m.view.visit.darts.reduce((a, d, i) => a + (m.view.visit.good[i] ? value(d.dart) : 0), 0);
+    default: return null;
+  }
+}
+
+/** Games whose hero has the right half with This turn and the route or the score to beat (variant D); the rest keep their own. */
+export const turnPanel = (m: LiveMatch): boolean =>
+  m.game === 'x01' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout';
+
+/** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
+export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());
