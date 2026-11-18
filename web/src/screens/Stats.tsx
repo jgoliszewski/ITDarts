@@ -340,7 +340,7 @@ function RecordBox({ t }: { t: RecordTable }) {
         {rows.map((r, i) => (
           <div key={i} className="row">
             <span className="muted">{i + 1}</span>
-            <b className="who">{r.who}</b>
+            <b className="who" title={r.who}>{r.who}</b>
             <span className="muted when">{shortDate(r.at)}</span>
             <span className="num">{r.value}</span>
           </div>

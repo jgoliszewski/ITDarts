@@ -115,8 +115,8 @@ export function Heatmap({ players }: { players: HeatPlayer[] }) {
         {b && (
           <div className="heat-line" style={{ left: pct }}>
             {/* Whose half is whose: a name tag on each side of the line. */}
-            <b className="l" style={{ background: a.color }}>{a.name}</b>
-            <b className="r" style={{ background: b.color }}>{b.name}</b>
+            <b className="l" style={{ background: a.color }} title={a.name}>{a.name}</b>
+            <b className="r" style={{ background: b.color }} title={b.name}>{b.name}</b>
             <span>↔</span>
           </div>
         )}

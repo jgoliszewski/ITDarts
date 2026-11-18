@@ -33,7 +33,7 @@ export function Records({ lastId, onPick }: { lastId: number | undefined; onPick
               <GameIcon game={r.game} className="record-icon" />
               <span className="what">{r.label}</span>
               <span className="num">{r.value}</span>
-              <span className="who">{r.who} · {shortDate(r.at)}</span>
+              <span className="who" title={r.who}>{r.who} · {shortDate(r.at)}</span>
             </button>
           ))}
         </div>

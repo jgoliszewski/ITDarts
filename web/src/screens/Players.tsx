@@ -62,7 +62,7 @@ export function Players({ s, onClose }: { s: ClientState; onClose: () => void })
     <div className="phone" style={{ maxWidth: 640 }}>
       <header className="phone-header">
         <button className="icon-btn" style={{ background: 'transparent' }} aria-label="Back" onClick={() => (p ? setOpen(null) : onClose())}>{Icon.back(22)}</button>
-        <h1>{p ? p.name : 'Players'}</h1>
+        <h1 title={p?.name}>{p ? p.name : 'Players'}</h1>
       </header>
       <div className="phone-body">
         {detail || <>
