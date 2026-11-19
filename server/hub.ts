@@ -423,7 +423,7 @@ export class Hub {
       this.db.appendLive(e);
     }
     // Random draws come from a logged seed, so undo and fixes replay the same numbers; a rematch draws a new one.
-    if (gameId === 'randomco' || (gameId === 'atc' && opts.order === 'random') || (gameId === 'football' && opts.goalsOn === 'singles')) {
+    if (gameId === 'randomco' || (gameId === 'atc' && opts.order === 'random') || (gameId === 'cricket' && opts.sectors === 'random') || (gameId === 'football' && opts.goalsOn === 'singles')) {
       const e = { t: 'seed', seed: newSeed() };
       rec.events.push(e);
       this.db.appendLive(e);

@@ -257,6 +257,21 @@ describe('saving a Gotcha match', () => {
   });
 });
 
+describe('Cricket Random', () => {
+  const events = () => db.loadLive()!.events;
+  const o = { mode: 'standard', bullOff: 'off' };
+
+  it('logs a seed at the start with Random sectors, and not with classic', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'cricket', options: { ...o, sectors: 'random' }, roster: roster(2) });
+    expect(events().filter(e => e.t === 'seed')).toHaveLength(1);
+    await pilot({ type: 'endMatch', save: false });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    await pilot({ type: 'startMatch', game: 'cricket', options: { ...o, sectors: 'classic' }, roster: roster(2) });
+    expect(events().filter(e => e.t === 'seed')).toHaveLength(0);
+  });
+});
+
 describe('Football', () => {
   const events = () => db.loadLive()!.events;
   const o = { kickOff: 'any', goals: 5, bullOff: 'off' };

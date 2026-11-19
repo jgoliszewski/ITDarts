@@ -2,7 +2,6 @@
 import type { ReactNode } from 'react';
 import { useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
-import { CRICKET_SECTORS } from '../../../games/cricket.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
@@ -317,7 +316,7 @@ export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cric
           {v.removed[i] && <span className="left">Left</span>}
         </div>
       ))}
-      {CRICKET_SECTORS.map((s, k) => (
+      {v.sectors.map((s, k) => (
         <div key={s} className={`crow ${v.dead[k] ? 'dead' : ''}`} style={{ display: 'contents' }}>
           <span className="sector num">{s === 25 ? 'Bull' : s}</span>
           {playOrder(m).map(i => <span key={i} className={`mk num ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`}>{MARK[v.marks[i][k]]}</span>)}
