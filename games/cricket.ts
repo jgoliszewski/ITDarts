@@ -2,14 +2,20 @@
 import type { Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { drawNumbers } from './killer.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, seeded, turnHappenings, walk } from './turns.ts';
 
 export interface CricketOptions {
   mode: 'standard' | 'cutthroat';
   bullOff: BullOff;
+  sectors: 'classic' | 'random';
 }
 
 export const CRICKET_SECTORS = [20, 19, 18, 17, 16, 15, 25];
+
+/** The sectors in grid order: 15–20, or six numbers drawn from the match's logged seed, descending; the bull is always last. */
+export const cricketSectors = (o: CricketOptions, seed = 0) =>
+  o.sectors === 'random' ? [...drawNumbers(6, seeded(seed)).sort((a, b) => b - a), 25] : CRICKET_SECTORS;
 
 interface State extends Turn {
   marks: number[][];
@@ -23,7 +29,8 @@ interface State extends Turn {
 }
 
 function play(t: Turns, players: number, o: CricketOptions): State {
-  const marks = Array.from({ length: players }, () => CRICKET_SECTORS.map(() => 0));
+  const sectors = cricketSectors(o, t.seed);
+  const marks = Array.from({ length: players }, () => sectors.map(() => 0));
   const points = Array(players).fill(0), darts = Array(players).fill(0), scoredMarks = Array(players).fill(0);
   const goods: boolean[][] = [], visitMarksAll: number[] = [];
   const closedAll = (p: number) => marks[p].every(m => m >= 3);
@@ -42,7 +49,7 @@ function play(t: Turns, players: number, o: CricketOptions): State {
     const freshTrebles = new Set<number>();
     const w = walk(v, (d, di) => {
       if (winner !== null) return { good: false, end: true };
-      const k = CRICKET_SECTORS.indexOf(d.n);
+      const k = sectors.indexOf(d.n);
       if (k < 0) return { good: false };
       const add = Math.min(3 - marks[p][k], d.m);
       marks[p][k] += add;
@@ -79,6 +86,8 @@ function play(t: Turns, players: number, o: CricketOptions): State {
 }
 
 export interface CricketView extends MiniView {
+  /** The sectors in grid order, bull last. */
+  sectors: number[];
   marks: number[][];
   points: number[];
   /** Per sector: closed by every player. */
@@ -107,9 +116,10 @@ function view(events: TurnEvent[], players: number, o: CricketOptions): CricketV
     result: w === undefined ? '' : solo ? `Closed in ${plural(s.darts[w], 'dart')}` : `${plural(s.points[w], 'point')} · MPR ${mpr(s.scoredMarks[w], s.darts[w]).toFixed(2)}`,
     scores: s.darts.map(d => (solo && s.winners.length ? d : null)),
     stats: s.darts.map((d, i) => ({ darts: d, marks: s.scoredMarks[i] })),
+    sectors: cricketSectors(o, t.seed),
     marks: s.marks,
     points: s.points,
-    dead: CRICKET_SECTORS.map((_, k) => s.marks.every((m, i) => m[k] >= 3 || f.removed[i])),
+    dead: s.marks[0].map((_, k) => s.marks.every((m, i) => m[k] >= 3 || f.removed[i])),
     solo,
     visitMarks: f.visit.darts.length ? s.visitMarks.at(-1) ?? 0 : 0,
   };
@@ -123,32 +133,38 @@ const OPTIONS: OptionDef<CricketOptions>[] = [
     choices: [['standard', 'Standard'], ['cutthroat', 'Cut-throat']],
     when: (_o, players) => players >= 2,
   },
+  {
+    key: 'sectors',
+    label: 'Sectors',
+    info: '15–20 is classic cricket. Random draws six numbers from 1 to 20 each game; the bull stays.',
+    choices: [['classic', '15–20'], ['random', 'Random']],
+  },
   BULL_OFF as OptionDef<CricketOptions>,
 ];
 
-const DEFAULTS: CricketOptions = { mode: 'standard', bullOff: 'off' };
+const DEFAULTS: CricketOptions = { mode: 'standard', bullOff: 'off', sectors: 'classic' };
 
 export const cricket: GameModule<CricketOptions, CricketView> = {
   id: 'cricket',
   name: 'Cricket',
-  blurb: 'Close 15 to 20 and the bull, score on open ones.',
+  blurb: 'Close 15 to 20 (or six random numbers) and the bull, score on open ones.',
   group: 'versus',
   minPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,
   howTo: {
-    goal: 'Close 15, 16, 17, 18, 19, 20 and the bull before your rivals, and stay ahead on points.',
+    goal: 'Close 15, 16, 17, 18, 19, 20 and the bull before your rivals, and stay ahead on points. In Random, the six numbers are drawn for each game and shown on the grid.',
     turn: 'Three darts per visit, at any of the cricket numbers. Other numbers do nothing.',
     counts: 'A single is 1 mark, a double 2, a treble 3; 25 is 1 mark and the bullseye 2. Three marks close a number. Extra marks on a number you closed score its value while a rival still has it open.',
     win: 'Standard: close everything with at least as many points as each rival. Cut-throat: your points go to rivals who have the number open, and you win by closing everything with the fewest points. Alone, close everything in as few darts as you can.',
   },
   record: {
-    variant: (_o, players) => (players === 1 ? { key: 'cricket:solo', label: 'Cricket · Solo' } : null),
+    variant: (o, players) => (players === 1 ? (o.sectors === 'random' ? { key: 'cricket:solo:random', label: 'Cricket · Solo · Random' } : { key: 'cricket:solo', label: 'Cricket · Solo' }) : null),
     better: 'lower',
     format: v => plural(v, 'dart'),
   },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
-  describe: (o, players) => (players === 1 ? 'Cricket · Solo' : `Cricket · ${choiceLabel(OPTIONS, o, 'mode')}`),
+  describe: (o, players) => `Cricket · ${players === 1 ? 'Solo' : choiceLabel(OPTIONS, o, 'mode')}${o.sectors === 'random' ? ' · Random' : ''}`,
   view,
   compact: (events, players, o) => {
     const t = replayTurns(events, players, o.bullOff, x => play(x, players, o));

@@ -17,7 +17,7 @@ export type TurnEvent =
   | { t: 'next'; at?: number }
   /** Killer numbers, drawn by the server before the first dart. */
   | { t: 'numbers'; numbers: number[] }
-  /** Seed for the game's random draws (ATC Order: Random, Random Checkouts), logged by the server at the start. */
+  /** Seed for the game's random draws (ATC Order: Random, Cricket Sectors: Random, Random Checkouts), logged by the server at the start. */
   | { t: 'seed'; seed: number }
   /** End match with Save in a game with no natural end (Random Checkouts): the game ends as won. */
   | { t: 'end' }

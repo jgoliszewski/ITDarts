@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { callerLines121, oneTwentyOne } from './121.ts';
 import { changes } from './effects.ts';
-import { cricket } from './cricket.ts';
+import { cricket, cricketSectors } from './cricket.ts';
 import { parseDart } from './darts.ts';
 import { hol } from './hol.ts';
 import { killer } from './killer.ts';
@@ -216,6 +216,69 @@ describe('cricket', () => {
     const v = cricket.view([...visit('T20', 'T19', 'T18'), ...visit('T17', 'T16', 'T15'), d('Bull'), d('25')], 1, o);
     expect(v.phase).toBe('matchWon');
     expect(v.scores).toEqual([8]);
+  });
+});
+
+describe('cricket with random sectors', () => {
+  const o = { ...cricket.defaults, sectors: 'random' as const };
+  const seed = (n: number): TurnEvent => ({ t: 'seed', seed: n });
+  const sectorsOf = (n: number) => cricket.view([seed(n)], 2, o).sectors;
+
+  it('draws six different numbers from 1–20, descending, with the bull last', () => {
+    for (const n of [1, 2, 3, 42, 777, 123456]) {
+      const s = sectorsOf(n);
+      expect(s).toHaveLength(7);
+      expect(s.at(-1)).toBe(25);
+      const nums = s.slice(0, 6);
+      expect(new Set(nums).size).toBe(6);
+      expect(nums.every(x => x >= 1 && x <= 20)).toBe(true);
+      expect(nums).toEqual([...nums].sort((a, b) => b - a));
+    }
+  });
+
+  it('draws the same sectors for the same seed, and others for other seeds', () => {
+    expect(sectorsOf(5)).toEqual(sectorsOf(5));
+    expect(new Set([1, 2, 3, 4, 5, 6, 7, 8].map(n => sectorsOf(n).join())).size).toBeGreaterThan(1);
+  });
+
+  it('keeps the sectors through a visit, undo and a fix', () => {
+    const s = sectorsOf(9);
+    const log = [seed(9), ...visit(`S${s[0]}`), d(`S${s[1]}`), { t: 'undo' } as TurnEvent];
+    expect(cricket.view(log, 2, o).sectors).toEqual(s);
+    expect(cricket.view([...log, { t: 'fix', index: 0, dart: parseDart(`T${s[2]}`)! }], 2, o).sectors).toEqual(s);
+  });
+
+  it('marks a drawn number and ignores one that was not drawn', () => {
+    const s = sectorsOf(9);
+    const out = [...Array(20).keys()].map(i => i + 1).find(n => !s.includes(n))!;
+    const v = cricket.view([seed(9), d(`T${s[1]}`), d(`T${out}`), d(`S${out}`)], 2, o);
+    expect(v.marks[0]).toEqual(s.map((_, k) => (k === 1 ? 3 : 0)));
+    expect(v.points).toEqual([0, 0]);
+    expect(v.visit.good).toEqual([true, false, false]);
+  });
+
+  it('scores on a drawn number and wins by closing all seven', () => {
+    const s = sectorsOf(9);
+    expect(cricket.view([seed(9), d(`T${s[0]}`), d(`S${s[0]}`)], 2, o).points).toEqual([s[0], 0]);
+    const close = [...visit(`T${s[0]}`, `T${s[1]}`, `T${s[2]}`), ...visit('S1'), ...visit(`T${s[3]}`, `T${s[4]}`, `T${s[5]}`), ...visit('S1')];
+    const v = cricket.view([seed(9), ...close, d('Bull'), d('25')], 2, o);
+    expect(v.phase).toBe('matchWon');
+    expect(v.winners).toEqual([0]);
+  });
+
+  it('leaves classic cricket as it was, also for a log from before the option', () => {
+    expect(cricketSectors(cricket.defaults, 99)).toEqual([20, 19, 18, 17, 16, 15, 25]);
+    expect(cricket.view([seed(9), d('T20')], 2, cricket.defaults).marks[0][0]).toBe(3);
+    expect(cricket.normalizeOptions({ mode: 'cutthroat', bullOff: 'off' })).toMatchObject({ sectors: 'classic' });
+  });
+
+  it('has its own solo record and names Random', () => {
+    expect(cricket.record!.variant(cricket.defaults, 1)).toEqual({ key: 'cricket:solo', label: 'Cricket · Solo' });
+    expect(cricket.record!.variant(o, 1)).toEqual({ key: 'cricket:solo:random', label: 'Cricket · Solo · Random' });
+    expect(cricket.record!.variant(o, 2)).toBeNull();
+    expect(cricket.describe(o, 2)).toBe('Cricket · Standard · Random');
+    expect(cricket.describe(o, 1)).toBe('Cricket · Solo · Random');
+    expect(cricket.describe(cricket.defaults, 2)).toBe('Cricket · Standard');
   });
 });
 

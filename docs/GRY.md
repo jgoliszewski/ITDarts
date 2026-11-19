@@ -118,11 +118,12 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - **Opcja „Mode”:**
   - „Standard” (domyślnie): punktujesz w sektorze zamkniętym u siebie i otwartym u któregoś rywala. Wygrywa ten, kto zamknął wszystko i ma co najmniej tyle punktów co każdy rywal;
   - „Cut-throat”: punkty dopisują się rywalom, którzy mają sektor otwarty. Wygrywa ten, kto zamknął wszystko i ma najmniej punktów.
+- **Opcja „Sectors”** (od 2026-11-19, widoczna zawsze, także solo): „15–20” (domyślnie) albo „Random”. Random losuje przy starcie 6 różnych numerów z 1–20 (mogą wypaść też 15–20), bull zostaje. Numery z ziarna zalogowanego na start (jak ATC Order: Random), więc Undo i Poprawka odtwarzają te same, a Rematch losuje nowe. Siatka: malejąco, bull na końcu. Stare mecze bez opcji grają jak klasyczny.
 - **Solo:** trening, czyli zamknąć wszystko w jak najmniejszej liczbie lotek, bez punktów.
 - **Bez Co-op**, bez „No score” i bez Tactics.
-- **Ekran wyników:** siatka z wierszami 20 … 15 i Bull oraz kolumną na gracza ze znacznikami /, X, Ⓧ. Punkty są nad kolumną, aktywny gracz ma pomarańczową kolumnę. Sektor zamknięty u wszystkich jest wyszarzony. Siatka jest szersza niż lista w innych grach i wypełnia całą wysokość, a punkty nad kolumnami są duże i zwężają się przy wielu graczach (od 2026-10-28, ze zgłoszenia o za małych wynikach). Hero obok siatki pokazuje imię i kafelki lotek ze znacznikami.
+- **Ekran wyników:** siatka z wierszami 20 … 15 (w Random wylosowane numery malejąco) i Bull oraz kolumną na gracza ze znacznikami /, X, Ⓧ. Punkty są nad kolumną, aktywny gracz ma pomarańczową kolumnę. Sektor zamknięty u wszystkich jest wyszarzony. Siatka jest szersza niż lista w innych grach i wypełnia całą wysokość, a punkty nad kolumnami są duże i zwężają się przy wielu graczach (od 2026-10-28, ze zgłoszenia o za małych wynikach). Hero obok siatki pokazuje imię i kafelki lotek ze znacznikami.
 - **Wyzwalacze:** „Marks in visit” 5–9 (9 przy trzech różnych trebles to White Horse), „Sector closed”, „Game won”.
-- **Statystyki:** MPR (znaczniki na rundę). Rekordem jest solo: najmniej lotek.
+- **Statystyki:** MPR (znaczniki na rundę). Rekordem jest solo: najmniej lotek; Random ma własny rekord (`cricket:solo:random`, „Cricket · Solo · Random”), klasyczny zostaje `cricket:solo`.
 
 ## Killer
 
