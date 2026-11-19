@@ -119,7 +119,7 @@ function view(events: TurnEvent[], players: number, o: CricketOptions): CricketV
     sectors: cricketSectors(o, t.seed),
     marks: s.marks,
     points: s.points,
-    dead: cricketSectors(o, t.seed).map((_, k) => s.marks.every((m, i) => m[k] >= 3 || f.removed[i])),
+    dead: s.marks[0].map((_, k) => s.marks.every((m, i) => m[k] >= 3 || f.removed[i])),
     solo,
     visitMarks: f.visit.darts.length ? s.visitMarks.at(-1) ?? 0 : 0,
   };
