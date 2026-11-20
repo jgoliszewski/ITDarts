@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, dartSlot, frame, isGone, isGoneAtDart, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -49,8 +49,8 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
       totals[p] = sum;
       won = sum === o.target;
       // Checked after every dart: a rival on the new score goes back to zero at once, and a later bust does not bring them back.
-      // Players removed before this visit are left alone.
-      const hit = value(d) === 0 ? [] : totals.flatMap((x, q) => (q !== p && x === sum && !isGone(t, q, vi) ? [q] : []));
+      // Players removed before this dart, also in the middle of this visit, are left alone.
+      const hit = value(d) === 0 ? [] : totals.flatMap((x, q) => (q !== p && x === sum && !isGoneAtDart(t, q, vi, i) ? [q] : []));
       if (hit.length) {
         for (const q of hit) totals[q] = 0;
         sent.push(...hit);

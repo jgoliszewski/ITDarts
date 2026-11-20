@@ -95,11 +95,11 @@ type KindChoice = TriggerKind | `game:${GameEvent}`;
 /** Grouped by `groupOfTrigger` of the trigger each one adds, like the rule list. */
 const PICKER: [KindChoice, string, string][] = [
   ['dart', 'Dart', 'One dart: T20, bull, any double, a miss'],
-  ['total', 'Visit total', 'An exact total, e.g. 180 or 26 (X01, Gotcha)'],
-  ['range', 'Visit range', 'A total in a range, e.g. 100+ (X01, Gotcha)'],
-  ['combo', 'Combination', 'Three darts, e.g. 1 · 5 · 20 (X01, Gotcha)'],
+  ['total', 'Visit total', 'An exact total, e.g. 180 or 26 (X01, Free throw, Gotcha)'],
+  ['range', 'Visit range', 'A total in a range, e.g. 100+ (X01, Free throw, Gotcha)'],
+  ['combo', 'Combination', 'Three darts, e.g. 1 · 5 · 20 (X01, Free throw, Gotcha)'],
   ['left', 'Left on', 'A dart leaves you on a score, e.g. 2 for D1 (X01, Gotcha)'],
-  ['bust', 'Bust', 'The visit goes bust (X01, 121)'],
+  ['bust', 'Bust', 'The visit goes bust (X01, 121, Random Checkouts, Gotcha)'],
   ['checkout', SIMPLE_LABELS.checkout, 'Checkout or a won leg; a won game in Higher or Lower'],
   ['setWon', 'Set won', 'X01 with sets'],
   ['matchWon', 'Match won', 'The end of every game'],

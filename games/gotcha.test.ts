@@ -368,6 +368,9 @@ describe('gotcha effects', () => {
   it('the visit and the checkout also fire for the game that ends the match', () => {
     const kinds = fired([d('Bull'), d('T17')], o101).map(c => c.fact.kind);
     expect(kinds).toEqual(expect.arrayContaining(['visit', 'checkout', 'matchWon']));
+    // One rule plays: Match won before Checkout, as in X01.
+    const cs = fired([d('Bull'), d('T17')], o101);
+    expect(pick(cs, rule(20, { kind: 'checkout' } as Trigger), rule(21, { kind: 'matchWon' } as Trigger))).toBe(21);
   });
 
   it('reports the score left after a dart that scored, not for a miss or the winning dart', () => {
@@ -384,6 +387,17 @@ describe('gotcha effects', () => {
     const cs = fired([...visit('T20', 'T20', 'T20'), d('T20'), d('T20'), d('T20')]);
     expect(cs.map(c => c.fact.kind)).toContain('game');
     expect(pick(cs, t180, rule(8, { kind: 'game', event: 'gotcha' }))).toBe(8);
+  });
+
+  it('a 180 whose first dart zeroes plays Gotcha then, and the 180 alone with the third dart', () => {
+    // p0 on 60, p1 throws T20 (zeroes p0), T20, T20 (180).
+    const base = [...visit('T20'), d('T20')];
+    const first = fired(base);
+    expect(pick(first, t180, rule(8, { kind: 'game', event: 'gotcha' }))).toBe(8);
+    const third = fired([...base, d('T20'), d('T20')]);
+    expect(third.some(c => c.fact.kind === 'game')).toBe(false);
+    expect(third.some(c => c.fact.kind === 'visit' && c.fact.total === 180)).toBe(true);
+    expect(pick(third, t180, rule(8, { kind: 'game', event: 'gotcha' }))).toBe(1);
   });
 
   it('Undo and a fix do not fire again', () => {

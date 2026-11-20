@@ -15,7 +15,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 | Próg lub przedział tury | 100+, 140+, 100–170 | X01, Free throw, Gotcha |
 | Kombinacja | 1-5-20, T20 · T20 · Bull | X01, Free throw, Gotcha |
 | Zostajesz na („Left on”) | 2, czyli D1 | X01, Gotcha |
-| Bust | | X01, Gotcha |
+| Bust | | X01, 121, Random Checkouts, Gotcha |
 | Checkout / wygrany leg | | wszystkie |
 | Wygrany set, wygrany mecz | | wszystkie |
 | Start meczu, start legu | | wszystkie |
