@@ -109,3 +109,21 @@ describe('the Big singles outline on the hero board', () => {
     expect(d).toContain(`A${SHOWN[3]} ${SHOWN[3]}`);
   });
 });
+
+describe('dimmed sectors out of play (Cricket Random)', () => {
+  const svgOf = (live?: number[]) => renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: null, ring: null, live, darts: [], label: 'x' }));
+  const fills = (live?: number[]) => [...svgOf(live).matchAll(/<path d="[^"]+" fill="([^"]+)"/g)].map(m => m[1]);
+  it('keeps the live sector in board colours and dims the rest', () => {
+    const f = fills([20]);
+    expect(f).toHaveLength(80);
+    expect(f.filter(c => c !== '#161618')).toHaveLength(4); // the four fields of sector 20
+  });
+  it('dims the bull when it is not live; no outline either way', () => {
+    expect(svgOf([20]).match(/<circle cx="0" cy="0" r="(16|36)" fill="#161618"/g)).toHaveLength(2);
+    expect(svgOf([20, 25]).match(/<circle cx="0" cy="0" r="(16|36)" fill="#161618"/g)).toBeNull();
+    expect(svgOf([20])).not.toContain('tb-outline');
+  });
+  it('without live nothing is dimmed', () => {
+    expect(svgOf()).not.toContain('#161618');
+  });
+});

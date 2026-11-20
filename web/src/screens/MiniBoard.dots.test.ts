@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../net.ts', () => ({ onFx: () => () => {}, send: async () => ({ ok: true }), useSnapshot: () => ({}) }));
 import { bullseye } from '../../../games/bullseye.ts';
 import { football } from '../../../games/football.ts';
-import { MiniHero } from './MiniBoard.tsx';
+import { MiniHero, hasBoard } from './MiniBoard.tsx';
 import { DOT, SHOWN, TargetBoard, coordsSpot, dartSpot } from '../components/Dartboard.tsx';
 
 const o = { kickOff: 'any', goals: 5, bullOff: 'off' } as const;
@@ -67,5 +67,13 @@ describe('dart dots on the hero board', () => {
   it('puts a dart without coords in the middle of its field, as before', () => {
     const darts = [{ dart: { n: 20, m: 1 as const }, good: true }, { dart: { n: 5, m: 3 as const }, good: false }];
     expect(dots(darts)).toEqual(darts.map((d, i) => [...dartSpot(d.dart, i, SHOWN)]));
+  });
+});
+
+describe('hasBoard for Cricket', () => {
+  const cricket = (sectors: string) => ({ game: 'cricket', options: { sectors } }) as never;
+  it('shows the board only with random sectors', () => {
+    expect(hasBoard(cricket('random'))).toBe(true);
+    expect(hasBoard(cricket('classic'))).toBe(false);
   });
 });

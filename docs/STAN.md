@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-19. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-20. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -9,6 +9,7 @@ Stan na 2026-11-19. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Cricket Random: tarcza w hero** (2026-11-20, [GRY.md](GRY.md#cricket), gałąź `feat/cricket-board`, raport w `.scratch/cricket-random/IMPL-board.md`): `TargetBoard` ma prop `live` (sektory w grze, 25 = bull), reszta tarczy jest płasko przyciemniona; `hasBoard` obejmuje Cricket z `sectors: 'random'`, `RaceBoard` podaje `live` bez sektorów zamkniętych u wszystkich. Od 5 graczy legenda pod wynikiem (CSS `with-board with-legend`). Niesprawdzone: prawdziwa tarcza.
 - **Cricket: losowe sektory** (2026-11-19, [GRY.md](GRY.md#cricket), gałąź `feat/cricket-random`, raport w `.scratch/cricket-random/IMPL.md`): opcja „Sectors” („15–20” albo „Random”): 6 numerów z 1–20 z ziarna `t.seed` (`cricketSectors` w `games/cricket.ts`), malejąco, bull na końcu; hub loguje seed przy starcie. Siatka bierze sektory z `v.sectors`. Osobny rekord solo `cricket:solo:random`. Testy z mutacjami w `games/minigames.test.ts` i `server/hub.test.ts`. Niesprawdzone: prawdziwa tarcza, gra na żywo z kioskiem.
 - **Przeróbka UI/UX** (2026-11-18, gałąź `feat/ui-overhaul`, [UI.md](UI.md), [STATYSTYKI.md](STATYSTYKI.md), [EFEKTY.md](EFEKTY.md), tokeny w [DESIGN.md](../DESIGN.md), plan, audyty, decyzje i raporty ticketów w `.scratch/ui-overhaul/`): wszystkie ekrany poza `/effects` i Momentami, według decyzji D1–D8 z `.scratch/ui-overhaul/DECISIONS.md`.
   - **System:** `DESIGN.md` jako źródło tokenów (kolory, typografia, odstępy, promienie, ruch), press zamiast hover, cele co najmniej 44 px i tekst co najmniej 16 px na kiosku, kolory „wyłączone” z kontrastem 3:1, pomarańcz tylko dla „teraz i głównego”.

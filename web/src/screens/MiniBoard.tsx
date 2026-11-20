@@ -119,15 +119,21 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow';
+type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket';
 
-/** ATC and Full Board put the board next to the hero (bug report 2026-10-27). */
+/** ATC and Full Board put the board next to the hero (bug report 2026-10-27); Cricket only with random sectors, to show which are in play. */
 export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
-  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow';
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
+  || (m.game === 'cricket' && m.options.sectors === 'random');
 
 function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
+  // Cricket Random: the drawn sectors and the bull keep their colours, closed ones go dark with the rest; no target, nothing outlined.
+  if (m.game === 'cricket') {
+    const live = m.view.sectors.filter((_, k) => !m.view.dead[k]);
+    return <TargetBoard cleared={[]} target={null} ring={null} live={live} darts={darts} label={`Sectors in play: ${m.view.sectors.map(s => s === 25 ? 'Bull' : s).join(' · ')}`} />;
+  }
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
   // Free throw has no target: the board only shows where the darts stuck.
