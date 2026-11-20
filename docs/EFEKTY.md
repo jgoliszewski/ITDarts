@@ -11,11 +11,11 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
 | Wyzwalacz | Przykład | Gry |
 |---|---|---|
 | Lotka | T20, Bull, 25, dowolna podwójna, Miss | wszystkie |
-| Suma tury | 180, 26, 0 („no score”) | X01, Free throw |
-| Próg lub przedział tury | 100+, 140+, 100–170 | X01, Free throw |
-| Kombinacja | 1-5-20, T20 · T20 · Bull | X01, Free throw |
-| Zostajesz na („Left on”) | 2, czyli D1 | X01 |
-| Bust | | X01 |
+| Suma tury | 180, 26, 0 („no score”) | X01, Free throw, Gotcha |
+| Próg lub przedział tury | 100+, 140+, 100–170 | X01, Free throw, Gotcha |
+| Kombinacja | 1-5-20, T20 · T20 · Bull | X01, Free throw, Gotcha |
+| Zostajesz na („Left on”) | 2, czyli D1 | X01, Gotcha |
+| Bust | | X01, Gotcha |
 | Checkout / wygrany leg | | wszystkie |
 | Wygrany set, wygrany mecz | | wszystkie |
 | Start meczu, start legu | | wszystkie |
@@ -33,6 +33,7 @@ Listę wyzwalaczy definiuje kod: moduł gry zgłasza zdarzenia. W UI tylko przyp
   - Poprawka odpala „Left on”, jak wynik tury: S19 → T19 na 59 daje „Left on 2”.
   - N od 1 do 901, bez warunku checkoutu.
 - **Free throw** (2026-11-13) zgłasza skończoną Turę tym samym faktem co X01 bez bustu (`visit`, bez checkoutu, ten sam slot `L1V<n>`, w tym samym momencie), więc grają z niego wszystkie reguły Tur: 180, Ton 40, Ton, No score, kombinacje (Bed and breakfast, Clean 20s) i każda własna reguła sumy, przedziału i kombinacji. Lotki jak wszędzie (Treble 15–20, Bull). Nie ma bustu, checkoutu ani „Left on”, a „Match won” nie pada, bo nikt nie wygrywa. Bez nowego Momentu, `ORDER` bez zmian.
+- **Gotcha** (2026-11-20) zgłasza te same fakty co X01: skończoną Turę jako `visit` (suma, lotki, które weszły, bez lotki bustu i bez dopełnionych pudeł, `checkout` gdy Tura trafiła cel), po lotce, która dodała punkty, `left` (cel − wynik, bez wygrywającej lotki, więc 0 nie pada), a bust jako `bust` bez `visit`. Grają więc sumy, przedziały, kombinacje, „Left on” i reguły tylko-checkout (Big Fish, Ton+ finish, Madhouse). Wygrana gra zgłasza `checkout` także jako ostatnia gra meczu, przed `matchWon`, jak leg kończący mecz w X01. Moment „Gotcha” wygrywa z sumą Tury (`ORDER` bez zmian): Tura 180, która kogoś zeruje, gra Gotcha. Knockout, 121 i Random Checkouts zostają przy `calledTotal`.
 - **Minigierki** mają własne wyzwalacze, np. trafiony cel w Around the Clock albo „New record”. Lista jest w [GRY.md](GRY.md). Reguła działa w każdej grze, w której jej wyzwalacz ma sens.
 
 ## Reguły
@@ -236,7 +237,7 @@ Animacje są na sztywno w kodzie i nie da się ich konfigurować w UI. Nie bloku
 
 **Reduced motion** (od 2026-11-18, `prefers-reduced-motion: reduce`, jeden blok na końcu `web/src/styles.css`) obejmuje też Momenty. Zostaje przezroczystość i kolor, znika przesunięcie, skalowanie i ruch ciągły: „180” bez skalowania (tło nadal gaśnie), plakietka 140+ bez przesunięcia, konfetti ukryte, serca i karty bez „pop”, drabinka i odometr 121 od razu w stanie końcowym, spinner takeoutu stoi. Bez ustawienia wszystko działa jak dotąd. Jedna zmiana poza tym blokiem (zaakceptowana po review brancha, 2026-11-18): utracone serce Momentu „Life lost” gaśnie do koloru `--off` zamiast `#3A3A40`, bo z daleka jest wtedy lepiej widoczne (Off Floor Rule z [DESIGN.md](../DESIGN.md)). Sprawdzone na emulacji CDP dla „180” i spinnera, pozostałe reguły tylko w kodzie ([DESIGN.md](../DESIGN.md#ruch)).
 
-W Free throw grają te same animacje z tych samych faktów (180, 140+ z sumą Tury w plakietce, błysk kafelka).
+W Free throw i Gotcha grają te same animacje z tych samych faktów (180, 140+ z sumą Tury w plakietce, błysk kafelka).
 
 Z implementacji (2026-10-26):
 
@@ -249,7 +250,7 @@ Z implementacji (2026-10-26):
 
 Głos sędziego, zaszyty w kodzie. Ustalony w grillingu [#5](https://github.com/jgoliszewski/ITDarts/issues/5) (2026-10-26). Wszystko poza tym, co mówi sędzia (pojedyncze lotki, okrzyki, dźwięki pod konkretne wyniki), to Reguły.
 
-- **X01, 121, Random Checkouts, Free throw, Gotcha i Knockout.** W pozostałych minigierkach caller milczy. W Free throw (od 2026-11-13) mówi „game on” na starcie i sumę każdej Tury tym samym kluczem co X01 (0 to „busted” jak w X01), bez „you require” i bez „game shot”. W Knockout (od 2026-10-30) mówi jak w Gotcha: tylko wynik Tury. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł zostaje tylko w X01.
+- **X01, 121, Random Checkouts, Free throw, Gotcha i Knockout.** W pozostałych minigierkach caller milczy. W Free throw (od 2026-11-13) mówi „game on” na starcie i sumę każdej Tury tym samym kluczem co X01 (0 to „busted” jak w X01), bez „you require” i bez „game shot”. W Knockout (od 2026-10-30) mówi jak w Gotcha: tylko wynik Tury. W Random Checkouts mówi jak w 121, z „you require” przy możliwym checkoucie. W Gotcha (od 2026-10-29) podaje tylko wynik Tury (przez `visit`; Knockout dalej przez `calledTotal`) i „busted”, bez „you require” i bez „game shot” ([GRY.md](GRY.md#gotcha)). W 121 (od 2026-10-27, ze zgłoszenia) mówi to samo co w X01, tylko checkout celu wywołuje jako wynik tury, bez „game shot”, bo numer legu nie ma tam sensu. „You require” pada na początku tury, gdy jest trasa checkoutu, także po nowym celu. Wynik tury idzie przez osobny fakt `calledTotal`, bo suma tury jako wyzwalacz reguł jest tylko w X01, Free throw i Gotcha.
 - **Co mówi** (stały zestaw, bez kategorii do wyłączania):
   - „game on” na starcie każdego legu, a przy pierwszym legu po bull-offie;
   - wynik tury, 1–180;

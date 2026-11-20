@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { changes } from './effects.ts';
+import type { Change, Trigger } from './effects.ts';
+import { changes, pickRule } from './effects.ts';
 import { parseDart } from './darts.ts';
 import { callerLinesGotcha, gotcha } from './gotcha.ts';
 import type { TurnEvent } from './turns.ts';
@@ -214,7 +215,7 @@ describe('gotcha first to', () => {
     const v = gotcha.view(p0wins, 2, o101);
     expect(v.phase).toBe('matchWon');
     expect(v.rows[0].meta).toBe('Left 0');
-    expect(gotcha.happenings(p0wins, 2, o101).map(h => h.slot)).not.toContain('G1:won');
+    expect(gotcha.happenings(p0wins, 2, o101).map(h => h.slot).filter(s => s.endsWith(':start'))).toEqual(['L1:start']);
     expect(gotcha.describe(o101, 2)).toBe('Gotcha · 101');
     expect(gotcha.describe(o2, 2)).toBe('Gotcha · 101 · First to 2');
   });
@@ -259,7 +260,8 @@ describe('gotcha first to', () => {
     const slots = gotcha.happenings(g2, 2, o2).map(h => h.slot);
     expect(slots.indexOf('G1:won')).toBeLessThan(slots.indexOf('G2:start'));
     expect(slots.indexOf('G2:start')).toBeLessThan(slots.indexOf('match:won'));
-    expect(slots.filter(s => s === 'G2:won')).toEqual([]);
+    // As in X01, the game that ends the match also reports its checkout, before the match.
+    expect(slots.indexOf('G2:won')).toBeLessThan(slots.indexOf('match:won'));
   });
 
   it('gotcha and bust still work in game 2, and an undo takes the game win back', () => {
@@ -272,5 +274,83 @@ describe('gotcha first to', () => {
     expect(bust.visit.verdict).toEqual({ text: 'Bust', tone: 'bad' });
     expect(win1([...game1, { t: 'undo' }]).totals).toEqual([101, 0]);
     expect(win1([...p0wins, { t: 'undo' }]).points).toEqual([0, 0]);
+  });
+});
+
+/** Same Wyzwalacze as X01: visit totals, checkout-only, left, never the old calledTotal. */
+describe('gotcha effects', () => {
+  const rule = (id: number, ...triggers: Trigger[]) => ({ id, enabled: true, triggers });
+  const fired = (log: TurnEvent[], o = o201, players = 2): Change[] =>
+    changes(gotcha.happenings(log.slice(0, -1), players, o), gotcha.happenings(log, players, o), 'other');
+  const pick = (cs: Change[], ...rules: ReturnType<typeof rule>[]) => pickRule(rules, cs)?.id ?? null;
+  const t180 = rule(1, { kind: 'total', total: 180, checkout: 'any' });
+
+  it('reports the visit as a visit fact with the darts that went in', () => {
+    const cs = fired([d('T20'), d('T20'), d('T20')]);
+    expect(cs.map(c => c.fact.kind)).toEqual(['dart', 'left', 'visit']);
+    expect(cs[2].fact).toMatchObject({ kind: 'visit', total: 180, checkout: false });
+    expect(pick(cs, t180)).toBe(1);
+    expect(gotcha.happenings([d('T20'), d('T20'), d('T20')], 2, o201).some(h => h.fact.kind === 'calledTotal')).toBe(false);
+    // Next player: the misses filled in are not darts of the visit.
+    const short = fired([d('T20'), next]);
+    expect(short.map(c => c.fact.kind)).toEqual(['visit']);
+    expect(short[0].fact).toMatchObject({ total: 60, darts: [{ n: 20, m: 3 }] });
+  });
+
+  it('fires a combination and a plain zero visit as No score', () => {
+    const t20x3 = rule(2, { kind: 'combo', darts: [{ n: 20, m: 3 }, { n: 20, m: 3 }, { n: 20, m: 3 }], ordered: false, checkout: 'any' });
+    expect(pick(fired([d('T20'), d('T20'), d('T20')]), t20x3)).toBe(2);
+    const noScore = rule(3, { kind: 'total', total: 0, checkout: 'any' });
+    const cs = fired([d('Miss'), d('Miss'), d('Miss')]);
+    expect(cs.at(-1)!.fact).toMatchObject({ kind: 'visit', total: 0 });
+    expect(pick(cs, noScore)).toBe(3);
+  });
+
+  it('a bust is a bust fact, with no visit', () => {
+    const log = [...visit('T20', 'T20', 'T20'), ...visit('Miss'), d('T20')];
+    const facts = fired(log).map(c => c.fact.kind);
+    expect(facts).toContain('bust');
+    expect(facts).not.toContain('visit');
+    expect(pick(fired(log), t180, rule(4, { kind: 'bust' } as Trigger))).toBe(4);
+  });
+
+  it('a visit that hits the target is a checkout: Big Fish at 170, and no plain 170', () => {
+    const log = [...visit('S1', 'S10', 'S20'), ...visit('S1'), d('T20'), d('T20'), d('Bull')];
+    const cs = fired(log);
+    expect(cs.find(c => c.fact.kind === 'visit')!.fact).toMatchObject({ total: 170, checkout: true });
+    expect(pick(cs, rule(5, { kind: 'total', total: 170, checkout: 'only' }))).toBe(5);
+    expect(pick(cs, rule(6, { kind: 'total', total: 170, checkout: 'no' }))).toBeNull();
+  });
+
+  it('the visit and the checkout also fire for the game that ends the match', () => {
+    const kinds = fired([d('Bull'), d('T17')], o101).map(c => c.fact.kind);
+    expect(kinds).toEqual(expect.arrayContaining(['visit', 'checkout', 'matchWon']));
+  });
+
+  it('reports the score left after a dart that scored, not for a miss or the winning dart', () => {
+    expect(fired([d('T20')]).map(c => c.fact)).toContainEqual({ kind: 'left', score: 141 });
+    expect(pick(fired([d('T20')]), rule(7, { kind: 'left', score: 141 }))).toBe(7);
+    expect(fired([d('Miss')]).some(c => c.fact.kind === 'left')).toBe(false);
+    expect(fired([d('Bull'), d('T17')], o101).some(c => c.fact.kind === 'left' && c.fact.score === 0)).toBe(false);
+    // The bust dart leaves nothing.
+    const busted = [...visit('T20', 'T20', 'T20'), ...visit('Miss'), d('T20')];
+    expect(fired(busted).some(c => c.fact.kind === 'left')).toBe(false);
+  });
+
+  it('Gotcha beats the visit total when a 180 sends a rival to zero', () => {
+    const cs = fired([...visit('T20', 'T20', 'T20'), d('T20'), d('T20'), d('T20')]);
+    expect(cs.map(c => c.fact.kind)).toContain('game');
+    expect(pick(cs, t180, rule(8, { kind: 'game', event: 'gotcha' }))).toBe(8);
+  });
+
+  it('Undo and a fix do not fire again', () => {
+    const log = [d('T20'), d('T20'), d('T20')];
+    expect(changes(gotcha.happenings(log, 2, o201), gotcha.happenings([...log, { t: 'undo' } as TurnEvent], 2, o201), 'undo')).toEqual([]);
+    // A fix that keeps the total the same fires nothing new; one that changes it fires the new total.
+    const before = gotcha.happenings([d('S20'), d('T20'), d('T20')], 2, o201);
+    const after = gotcha.happenings([d('S20'), d('T20'), d('T20'), { t: 'fix', index: 0, dart: parseDart('T20')! } as TurnEvent], 2, o201);
+    const cs = changes(before, after, 'fix');
+    expect(cs.map(c => c.fact.kind)).not.toContain('dart');
+    expect(pick(cs, t180)).toBe(1);
   });
 });
