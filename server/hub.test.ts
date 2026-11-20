@@ -76,6 +76,48 @@ describe('closing the hub', () => {
   });
 });
 
+describe('the throwing order with a bull-off (docs/UI.md#bull-off-z-tarczy)', () => {
+  const order = () => db.loadLive()!.roster.map(r => r.name);
+  afterEach(() => vi.restoreAllMocks());
+
+  it('is drawn when a bull-off is on', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // the draw turns Ann, Bob, Cy into Bob, Cy, Ann
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'closest' }, roster: roster(3) });
+    expect(order()).toEqual(['Bob', 'Cy', 'Ann']);
+  });
+
+  it('is drawn for the PDC bull-off too', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    await client(true)({ type: 'startMatch', game: 'atc', options: { bullOff: 'pdc' }, roster: roster(3) });
+    expect(order()).toEqual(['Bob', 'Cy', 'Ann']);
+  });
+
+  it('stays as in the lobby without a bull-off', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    await client(true)({ type: 'startMatch', game: 'atc', options: { bullOff: 'off' }, roster: roster(3) });
+    expect(order()).toEqual(['Ann', 'Bob', 'Cy']);
+  });
+
+  it('is a plain permutation of the lobby players', async () => {
+    await client(true)({ type: 'startMatch', game: 'atc', options: { bullOff: 'closest' }, roster: roster(4) });
+    expect(order().sort()).toEqual(['Ann', 'Bob', 'Cy', 'Dee']);
+  });
+
+  it('is drawn again for a rematch', async () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0);
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { bullOff: 'closest' }, roster: roster(3) });
+    expect(order()).toEqual(['Bob', 'Cy', 'Ann']);
+    random.mockReturnValue(0.99); // the next draw leaves the order as it is
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    expect(order()).toEqual(['Bob', 'Cy', 'Ann']);
+    random.mockReturnValue(0);
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    expect(order()).toEqual(['Cy', 'Ann', 'Bob']);
+  });
+});
+
 describe('the remove command', () => {
   it('is refused from a device that is not the Pilot', async () => {
     const pilot = client(true), phone = client(false);

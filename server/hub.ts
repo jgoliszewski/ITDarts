@@ -415,6 +415,8 @@ export class Hub {
     this.summary = null;
     // Alone there is nobody to bull off against, whatever the setup says.
     const opts = { ...game.normalizeOptions(options), ...(roster.length === 1 && { bullOff: 'off' }) };
+    // With a bull-off the throwing order of the bull-off itself is drawn (docs/UI.md#bull-off-z-tarczy); the saved roster is already shuffled, so replay stays deterministic.
+    if (opts.bullOff === 'closest' || opts.bullOff === 'pdc') shuffle(roster);
     const rec: LiveRecord = { key: randomUUID(), game: gameId, options: opts, roster, startedAt: Date.now(), events: [] };
     this.db.startLive(rec);
     if (gameId === 'killer') {
@@ -687,6 +689,14 @@ export class Hub {
         setTimeout(() => this.closeApp(), 300);
         return {};
     }
+  }
+}
+
+/** Fisher–Yates, in place. */
+function shuffle<T>(a: T[]) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
 }
 
