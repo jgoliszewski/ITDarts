@@ -109,3 +109,16 @@ describe('the Big singles outline on the hero board', () => {
     expect(d).toContain(`A${SHOWN[3]} ${SHOWN[3]}`);
   });
 });
+
+describe('still outline and the bull in a target list', () => {
+  const svgOf = (target: number[], still?: boolean) => renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target, ring: null, still, darts: [], label: 'x' }));
+  it('outlines the bull in a list with the outer bull circle', () => {
+    const svg = svgOf([20, 25]);
+    expect(svg.match(/class="tb-outline"/g)).toHaveLength(2);
+    expect(svg).toContain(`<circle class="tb-outline" cx="0" cy="0" r="${SHOWN[1]}"`);
+  });
+  it('is still only when asked; other games keep the marching outline', () => {
+    expect(svgOf([20], true)).toContain('class="tb-outline still"');
+    expect(svgOf([20])).not.toContain('still');
+  });
+});

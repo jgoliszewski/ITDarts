@@ -109,10 +109,10 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
 const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 'url(#tb-hatch)', HIT_DOT = '#3CCB7F', MISS_DOT = '#FF5A5F';
 
 /**
- * Read-only board for ATC and Full Board (docs/GRY.md, mockup O): cleared targets hatched, the target outlined
- * (only its ring with Doubles or Trebles) and this visit's darts as dots, green for a hit, red otherwise.
+ * Read-only board for the games with a board in the hero (docs/UI.md, mockup O): cleared targets hatched, the target outlined
+ * (only its ring with Doubles or Trebles; standing still with `still`, as in Cricket Random) and this visit's darts as dots, green for a hit, red otherwise.
  */
-export function TargetBoard({ cleared, target, ring, darts, label, children }: {
+export function TargetBoard({ cleared, target, ring, darts, label, still, children }: {
   cleared: number[];
   /** A sector or the bull (25), 'ring': the whole of `ring` all round (Football with the ball), or sectors (the big singles of Football's Big singles). */
   target: number | number[] | 'ring' | null;
@@ -121,20 +121,25 @@ export function TargetBoard({ cleared, target, ring, darts, label, children }: {
   /** With coords a dot sits where the dart stuck; without (fixed or added by hand) in the middle of its field. */
   darts: { dart: Dart; good: boolean; coords?: { x: number; y: number } }[];
   label: string;
+  /** Outline that does not march (Cricket Random: it marks the sectors in play, not a target to hit next). */
+  still?: boolean;
   /** Drawn over the board (Test board). */
   children?: ReactNode;
 }) {
   const S = SHOWN;
   const done = new Set(cleared);
   const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
+  const cls = still ? 'tb-outline still' : 'tb-outline';
   const tk = typeof target === 'number' && target !== 25 ? BOARD_ORDER.indexOf(target) : -1;
   const [o1, o2] = ring === 1 ? [S[3], S[4]] : ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
   // Only the bullseye counts for the bull with Doubles or Trebles.
   const outline = target === null ? null
-    : Array.isArray(target) ? target.map(n => <path key={n} className="tb-outline" d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
-    : target === 'ring' ? <><circle className="tb-outline" cx="0" cy="0" r={o1} /><circle className="tb-outline" cx="0" cy="0" r={o2} /></>
-    : target === 25 ? <circle className="tb-outline" cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
-    : <path className="tb-outline" d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
+    : Array.isArray(target) ? target.map(n => n === 25
+      ? <circle key={n} className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
+      : <path key={n} className={cls} d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
+    : target === 'ring' ? <><circle className={cls} cx="0" cy="0" r={o1} /><circle className={cls} cx="0" cy="0" r={o2} /></>
+    : target === 25 ? <circle className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
+    : <path className={cls} d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
   return (
     <svg className="target-board" viewBox="-380 -380 760 760" role="img" aria-label={label}>
       <defs>

@@ -708,6 +708,8 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; min-height: 0; }
 .tb-outline { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linejoin: round; stroke-dasharray: 18 6; animation: tb-march 1.2s linear infinite; }
 @keyframes tb-march { to { stroke-dashoffset: -48; } }
+/* Marks without pointing: Cricket Random's sectors in play. */
+.tb-outline.still { animation: none; }
 .hol-scale { position: relative; height: calc(430 * var(--u)); margin: calc(8 * var(--u)) 0; }
 .hol-scale .pin-num { position: absolute; bottom: calc(240 * var(--u)); font-size: calc(220 * var(--u)); line-height: 0.85; white-space: nowrap; color: var(--text); }
 .hol-scale .stem { position: absolute; bottom: calc(176 * var(--u)); width: calc(10 * var(--u)); height: calc(56 * var(--u)); border-radius: var(--r-pill); background: var(--text); }
@@ -1250,6 +1252,19 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .with-legend > .hero-darts { grid-area: darts; }
 .with-legend > .legend { grid-area: legend; align-self: center; display: grid; grid-template-columns: auto auto; gap: calc(10 * var(--u)) calc(18 * var(--u)); align-items: center; font-size: calc(34 * var(--u)); font-weight: 700; }
 .with-legend > .legend > div { display: contents; }
+/* Cricket Random: the grid column is 860u, so the hero is narrower than in Shanghai; a smaller score keeps the board at 540u or more. */
+.board-main:has(.cricket) .hero.with-board { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); }
+.board-main:has(.cricket) .hero.with-board > .hero-top { grid-column: 1 / -1; }
+.board-main:has(.cricket) .hero.with-board:not(.with-legend) > .target-board { grid-row: 2 / 4; }
+.board-main:has(.cricket) .hero.with-board .mini-big .num { font-size: calc(170 * var(--u)); }
+/* Cricket Random from 5 players: the board takes the right, the legend sits under the score. */
+.hero.with-board.with-legend { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: 'top top' 'score board' 'legend board' 'note board' 'darts darts'; }
+.hero.with-board.with-legend > .target-board { grid-area: board; grid-row: 2 / 5; align-self: center; min-height: 0; }
+.hero.with-board.with-legend > .hero-top { grid-column: 1 / -1; }
+.hero.with-board.with-legend .hero-darts { grid-row: 5; }
+.with-board.with-legend > .legend { grid-template-columns: auto minmax(0, 1fr); min-width: 0; align-self: start; font-size: calc(28 * var(--u)); gap: calc(4 * var(--u)) calc(14 * var(--u)); }
+.with-board.with-legend > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.with-board.with-legend > .legend .n { font-size: calc(32 * var(--u)); }
 .legend .n { font-size: calc(40 * var(--u)); color: var(--muted); text-align: right; min-width: calc(40 * var(--u)); }
 .legend .who { white-space: nowrap; color: var(--soft); }
 .legend .on .n, .legend .on .who { color: var(--accent); }
