@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, cutShort, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, dartSlot, frame, isGone, isGoneAtDart, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -38,7 +38,8 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
   for (const [vi, v] of t.visits.entries()) {
     const p = v.player, start = totals[p];
     let bust = false, won = false;
-    const w = walk(v, d => {
+    const sent: number[] = [];
+    const w = walk(v, (d, i) => {
       if (over) return { good: false, end: true };
       const sum = totals[p] + value(d);
       if (sum > o.target) {
@@ -47,41 +48,48 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
       }
       totals[p] = sum;
       won = sum === o.target;
+      // Checked after every dart: a rival on the new score goes back to zero at once, and a later bust does not bring them back.
+      // Players removed before this dart, also in the middle of this visit, are left alone.
+      const hit = value(d) === 0 ? [] : totals.flatMap((x, q) => (q !== p && x === sum && !isGoneAtDart(t, q, vi, i) ? [q] : []));
+      if (hit.length) {
+        for (const q of hit) totals[q] = 0;
+        sent.push(...hit);
+        gotchas[p] += hit.length;
+        fx.push({ slot: dartSlot(vi, i, 'gotcha'), fact: { kind: 'game', event: 'gotcha' } });
+      }
+      // As in X01: the score left after a dart that scored, not the one that wins.
+      if (value(d) > 0 && !won) fx.push({ slot: dartSlot(vi, i, 'left'), fact: { kind: 'left', score: o.target - sum } });
       return { good: true, end: won };
     });
     if (bust) totals[p] = start;
     goods.push(w.good);
     left = w.dartsLeft;
-    zeroed = [];
+    zeroed = sent;
     visitScore = bust ? 0 : totals[p] - start;
     if (!w.complete || over) continue;
 
     const V = `V${vi + 1}`;
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
-    else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: totals[p] - start } });
+    else {
+      // The same fact as an X01 visit without a bust; the darts that went in, not the bust dart or the misses filled in by Next player.
+      const darts = v.darts.slice(0, Math.min(w.used, v.darts.length - v.filled)).map(r => r.dart);
+      fx.push({ slot: `${V}:total`, fact: { kind: 'visit', total: totals[p] - start, darts, checkout: won } });
+    }
     if (won) {
       points[p]++;
+      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
       if (points[p] >= o.firstTo) {
         over = true;
         winner = p;
         continue;
       }
       // Next game: everyone back to zero, the starter moves on one place in the playing order.
-      fx.push({ slot: `G${game + 1}:won`, fact: { kind: 'checkout' } });
       held = [...totals];
       totals.fill(0);
       game++;
       gameEnd = vi;
       fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
       continue;
-    }
-    // At the end of the visit, a changed score sends every rival on the same score back to zero. A visit cut short by
-    // the thrower's removal keeps its points but sends no one back (docs/UI.md#wycofanie-gracza).
-    if (!bust && totals[p] !== start && !cutShort(t, vi)) {
-      zeroed = totals.map((x, q) => (q !== p && x === totals[p] && !isGone(t, q, vi) ? q : -1)).filter(q => q >= 0);
-      for (const q of zeroed) totals[q] = 0;
-      gotchas[p] += zeroed.length;
-      if (zeroed.length) fx.push({ slot: `${V}:gotcha`, fact: { kind: 'game', event: 'gotcha' } });
     }
   }
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });
@@ -132,11 +140,11 @@ function view(events: TurnEvent[], players: number, o: GotchaOptions): GotchaVie
   };
 }
 
-/** The caller in Gotcha and Knockout: the visit's score as in X01, busted, and nothing else (no “you require”, no game shot). */
+/** The caller in Gotcha and Knockout: the visit's score as in X01, busted, and nothing else (no “you require”, no game shot). Gotcha reports `visit`, Knockout `calledTotal`. */
 export const callerLinesGotcha = (cs: Change[]): string[] =>
   cs.flatMap(({ fact, before }) => {
     if (fact.kind === 'legStart' && !before) return ['gameon'];
-    if (fact.kind === 'calledTotal') return [fact.total > 0 ? String(fact.total) : 'busted'];
+    if (fact.kind === 'calledTotal' || fact.kind === 'visit') return [fact.total > 0 ? String(fact.total) : 'busted'];
     return fact.kind === 'bust' ? ['busted'] : [];
   });
 

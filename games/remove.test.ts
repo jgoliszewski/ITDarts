@@ -162,13 +162,23 @@ describe('gotcha', () => {
     expect(play('gotcha', log).totals).toEqual([20, 20, 0]);
   });
 
-  it('does not let a visit cut short by removal send a rival back to zero', () => {
-    // Ola is on 15, Kuba on 20; Ola's S5 makes 20 and she is removed before the visit ends.
-    const before = [...visit('S20'), ...visit('S15'), ...visit('S1'), ...visit(), d('S5')];
-    expect(play('gotcha', [...before, next]).totals).toEqual([0, 20, 1]);
-    const v = play('gotcha', [...before, remove(1)]);
+  it('does not zero a rival removed in the middle of a visit of another player with a later dart of it', () => {
+    // Ola (0) on 20, Kuba (1) throws S5 (10 in all), Ola is removed, then Kuba's S10 makes 20.
+    const log = [...visit('S20'), ...visit('S5'), ...visit('S1'), ...visit(), d('S5'), remove(0), d('S10')];
+    const v = play('gotcha', log);
     expect(v.totals).toEqual([20, 20, 1]);
     expect(v.zeroed).toEqual([]);
+    expect(v.stats[1]).toEqual({ gotchas: 0 });
+    // Removed before the dart that lands: the dart before the removal still counts.
+    expect(play('gotcha', [...visit('S20'), ...visit('S5'), ...visit('S1'), ...visit(), d('S15'), remove(0)]).totals).toEqual([0, 20, 1]);
+  });
+
+  it('keeps a zeroing from a dart thrown before the thrower was removed', () => {
+    // Ola is on 15, Kuba on 20; Ola's S5 makes 20 and sends Kuba to 0 at once, then she is removed.
+    const before = [...visit('S20'), ...visit('S15'), ...visit('S1'), ...visit(), d('S5')];
+    const v = play('gotcha', [...before, remove(1)]);
+    expect(v.totals).toEqual([0, 20, 1]);
+    expect(v.zeroed).toEqual([0]);
   });
 
   describe('first to 2', () => {

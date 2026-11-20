@@ -342,8 +342,8 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} /> : <MiniEnd m={m} isPilot={isPilot} />)}
       <HowToOverlay s={s} />
-      {/* The 140+ badge shows the visit total in X01 and in Free throw (docs/EFEKTY.md). */}
-      <FxLayer total={isX01(m) ? m.view.visit.total : m.game === 'freethrow' ? m.view.visitTotal : null} />
+      {/* The 140+ badge shows the visit total in X01, Free throw and Gotcha (docs/EFEKTY.md). */}
+      <FxLayer total={isX01(m) ? m.view.visit.total : m.game === 'freethrow' ? m.view.visitTotal : m.game === 'gotcha' ? m.view.visitScore : null} />
       {overlay}
     </div>
   );
