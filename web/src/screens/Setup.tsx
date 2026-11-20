@@ -318,7 +318,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
         <div className="chip-row">
           {others.length > 0 && <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>{recent.length ? 'Others' : 'Players'}</span>}
           {others.map(p => <button key={p.id} className="chip" onClick={() => add({ playerId: p.id, name: p.name })}>+ {p.name}</button>)}
-          <button className="chip guest" onClick={startGuest}>+ Guest</button>
+          <button className="chip" onClick={startGuest}>+ Guest</button>
         </div>
       )}
       {adding && <div className="muted guest-note">Guests play this match only. No stats or records are kept for them.</div>}

@@ -9,7 +9,6 @@ try {
   $s.WorkingDirectory = $root
   $s.IconLocation = (Join-Path $root 'assets\itdarts.ico') + ',0'
   $s.Description = 'ITDarts'
-  $s.WindowStyle = 7
   $s.Save()
 } catch {
   Write-Host "Desktop shortcut not updated: $($_.Exception.Message)"
