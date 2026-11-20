@@ -9,6 +9,8 @@ rem One block: cmd parses it whole, so a pull that rewrites this file cannot bre
   git pull --ff-only || echo Could not pull the latest changes, starting the current version.
   if defined OLD_HEAD git diff --quiet %OLD_HEAD% HEAD -- package-lock.json 2>NUL || call npm install
   if not exist node_modules call npm install
+  rem Desktop shortcut with the ITDarts icon, created or fixed on every start; a failure must not block the start.
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0assets\desktop-shortcut.ps1"
   call npm run kiosk
   exit /b
 )

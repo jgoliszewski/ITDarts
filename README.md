@@ -7,7 +7,7 @@ Biurowy system do gry w darta na tarczy Autodarts: zasady gier, stan meczu, wyni
 Wymaga Node 24 LTS.
 
 1. Skopiuj `config.example.json` do `config.json` i wpisz adres Board Managera (`board`).
-2. Uruchom `start.bat`. Najpierw próbuje pobrać najnowsze zmiany (`git pull --ff-only`), a gdy się nie uda, startuje obecną wersję. Przy pierwszym starcie zainstaluje zależności, potem zbuduje front, uruchomi serwer na porcie 3000 i otworzy Edge w trybie kiosku.
+2. Uruchom `start.bat`. Najpierw próbuje pobrać najnowsze zmiany (`git pull --ff-only`), a gdy się nie uda, startuje obecną wersję. Przy pierwszym starcie zainstaluje zależności, potem zbuduje front, uruchomi serwer na porcie 3000 i otworzy Edge w trybie kiosku. Przy każdym starcie tworzy też albo poprawia skrót „ITDarts” na pulpicie z ikoną `assets/itdarts.ico` (`assets/desktop-shortcut.ps1`, pulpit z systemu, więc także w OneDrive); błąd skrótu nie blokuje startu. Ikona i favicon kiosku pochodzą z `assets/itdarts.svg` (ciemny kwadrat z tarczą i pomarańczowym bullem).
 3. Telefon w tej samej sieci może przejąć Pilota po wpisaniu adresu laptopa (Ekran wyników nie pokazuje już QR).
 
 „Close app” w menu Pilota zamyka kiosk i serwer. Dane (SQLite, backupy) lądują w `data/`.
