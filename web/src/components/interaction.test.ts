@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { EXIT_MS, createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf, tabKey, wheelSideways } from './interaction.ts';
+import { EXIT_MS, createModalStack, createPresence, listboxKey, sidewaysDrag, stepOf, tabKey } from './interaction.ts';
 
 describe('createPresence', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -239,26 +239,6 @@ describe('tabKey', () => {
     expect(tabKey('End', 0, 3)).toBe(2);
     expect(tabKey('Enter', 1, 3)).toBeNull();
     expect(tabKey('ArrowDown', 1, 3)).toBeNull();
-  });
-});
-
-describe('wheelSideways', () => {
-  it('turns a vertical wheel into a sideways scroll of the row', () => {
-    expect(wheelSideways(0, 100, 0, 1000, 400)).toBe(100);
-    expect(wheelSideways(0, -100, 300, 1000, 400)).toBe(200);
-  });
-
-  it('stops at the ends of the row', () => {
-    expect(wheelSideways(0, 500, 300, 1000, 400)).toBe(600);
-    expect(wheelSideways(0, -500, 100, 1000, 400)).toBe(0);
-  });
-
-  it('leaves the wheel to the page at the end in that direction, with nothing to scroll, or for a sideways wheel', () => {
-    expect(wheelSideways(0, 100, 600, 1000, 400)).toBeNull();
-    expect(wheelSideways(0, -100, 0, 1000, 400)).toBeNull();
-    expect(wheelSideways(0, 100, 0, 400, 400)).toBeNull();
-    expect(wheelSideways(120, 100, 0, 1000, 400)).toBeNull();
-    expect(wheelSideways(0, 0, 0, 1000, 400)).toBeNull();
   });
 });
 
