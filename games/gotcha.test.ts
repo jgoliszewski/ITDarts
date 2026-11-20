@@ -54,12 +54,19 @@ describe('gotcha bust', () => {
     expect(gotcha.view([...on180, d('S5'), d('T20'), d('S1')], 2, o201).totals[0]).toBe(180);
   });
 
-  it('does not zero anybody, even if the score passed a rival on the way', () => {
-    // Player 1 is on 60. Player 0 throws T20 (60, the same) and T20 again: 120 is over 101, bust.
+  it('does not bring a zeroed rival back: the thrower returns, the rival stays on 0', () => {
+    // Player 1 is on 60. Player 0 throws T20 (60, the same: gotcha) and T20 again: 120 is over 101, bust.
     const log = [...visit('Miss'), ...visit('T20'), d('T20'), d('T20')];
     const v = gotcha.view(log, 2, o101);
-    expect(v.totals).toEqual([0, 60]);
-    expect(v.stats).toEqual([{ gotchas: 0 }, { gotchas: 0 }]);
+    expect(v.totals).toEqual([0, 0]);
+    expect(v.stats).toEqual([{ gotchas: 1 }, { gotchas: 0 }]);
+    expect(v.zeroed).toEqual([1]);
+    expect(v.visit.verdict).toEqual({ text: 'Bust', tone: 'bad' });
+  });
+
+  it('a bust that zeroes nobody leaves rivals alone', () => {
+    const v = gotcha.view([...visit('S20'), d('T20'), d('T20'), d('T20')], 2, o101);
+    expect(v.totals).toEqual([20, 0]);
     expect(v.zeroed).toEqual([]);
   });
 
@@ -105,19 +112,45 @@ describe('gotcha reset', () => {
   // Player 0 on 60; player 1 lands on 60 with the second dart of a visit.
   const landing = [...visit('T20'), d('D20'), d('S20'), d('Miss')];
 
-  it('sends a rival on the same score back to zero at the end of the visit', () => {
+  it('sends a rival on the same score back to zero with the dart that lands on it, before the visit ends', () => {
+    // After the first dart of 60 already.
+    const one = gotcha.view([...visit('T20'), d('T20')], 2, o201);
+    expect(one.totals).toEqual([0, 60]);
+    expect(one.visit.dartsLeft).toBe(2);
+    expect(one.zeroed).toEqual([0]);
+  });
+
+  it('sends a rival on the same score back to zero when the visit is complete', () => {
     const v = gotcha.view(landing, 2, o201);
     expect(v.totals).toEqual([0, 60]);
     expect(v.zeroed).toEqual([0]);
     expect(v.stats).toEqual([{ gotchas: 0 }, { gotchas: 1 }]);
   });
 
-  it('waits for the end of the visit: passing a rival on the way does nothing', () => {
+  it('zeroes on the way: passing a rival and moving on still sends them back', () => {
     const v = gotcha.view([...visit('T20'), d('D20'), d('S20'), d('S1')], 2, o201);
-    expect(v.totals).toEqual([60, 61]);
-    expect(v.zeroed).toEqual([]);
-    // After two darts the visit is still open: both show 60 and nobody is zeroed yet.
-    expect(totals([...visit('T20'), d('D20'), d('S20')], 2)).toEqual([60, 60]);
+    expect(v.totals).toEqual([0, 61]);
+    expect(v.zeroed).toEqual([0]);
+    expect(v.stats[1]).toEqual({ gotchas: 1 });
+  });
+
+  it('zeroes two rivals in one visit with consecutive darts', () => {
+    // p0 20, p1 60, p2 on 0: p2 throws S20 (hits p0), then S20 S20 (40, 60 hits p1).
+    const log = [...visit('S20'), ...visit('T20'), d('S20'), d('S20'), d('S20')];
+    const v = gotcha.view(log, 3, o201);
+    expect(v.totals).toEqual([0, 0, 60]);
+    expect(v.zeroed).toEqual([0, 1]);
+    expect(v.stats[2]).toEqual({ gotchas: 2 });
+  });
+
+  it('a dart that scores nothing zeroes nobody', () => {
+    expect(totals([...visit('S20'), d('Miss')], 2)).toEqual([20, 0]);
+    expect(totals([...visit('Miss'), d('Miss')], 2)).toEqual([0, 0]);
+  });
+
+  it('does not zero a removed player', () => {
+    const log: TurnEvent[] = [...visit('S20'), { t: 'remove', player: 0, scope: 'match' } as unknown as TurnEvent, d('S20')];
+    expect(totals(log, 3)).toEqual([20, 20, 0]);
   });
 
   it('keeps showing who was zeroed until the next visit starts', () => {
@@ -146,10 +179,18 @@ describe('gotcha reset', () => {
     expect(totals([...landing, next, ...visit('Miss')], 2)).toEqual([0, 60]);
   });
 
-  it('fires the Gotcha Moment once, when the visit is complete', () => {
+  it('fires the Gotcha Moment with the dart that zeroes, once per dart, and not on a fix', () => {
     const gotchas = (l: TurnEvent[]) => gotcha.happenings(l, 2, o201).filter(h => h.fact.kind === 'game' && h.fact.event === 'gotcha');
-    expect(gotchas([...visit('T20'), d('D20'), d('S20')])).toHaveLength(0);
-    expect(gotchas(landing)).toHaveLength(1);
+    expect(gotchas([...visit('T20'), d('D20')])).toHaveLength(0);
+    expect(gotchas([...visit('T20'), d('T20')]).map(h => h.slot)).toEqual(['V2D1:gotcha']);
+    expect(gotchas(landing).map(h => h.slot)).toEqual(['V2D2:gotcha']);
+    // Fresh when the dart is thrown ...
+    const thrown = changes(gotcha.happenings([...visit('T20')], 2, o201), gotcha.happenings([...visit('T20'), d('T20')], 2, o201), 'other');
+    expect(thrown.some(c => c.fact.kind === 'game')).toBe(true);
+    // ... but a fix that makes the dart land on a rival does not fire it.
+    const base = [...visit('T20'), d('S5')];
+    const fixed = changes(gotcha.happenings(base, 2, o201), gotcha.happenings([...base, { t: 'fix', index: 0, dart: parseDart('T20')! } as TurnEvent], 2, o201), 'fix');
+    expect(fixed.some(c => c.fact.kind === 'game')).toBe(false);
   });
 });
 
@@ -168,7 +209,9 @@ describe('gotcha undo and fix', () => {
   });
 
   it('an undo gives the rival their score back', () => {
-    expect(totals([...landing, { t: 'undo' }], 2)).toEqual([60, 60]);
+    // Undo takes the landing dart back, and with it the zeroing; an undo of a later dart keeps it.
+    expect(totals([...visit('T20'), d('D20'), d('S20'), { t: 'undo' }], 2)).toEqual([60, 40]);
+    expect(totals([...landing, { t: 'undo' }], 2)).toEqual([0, 60]);
   });
 });
 
@@ -269,7 +312,7 @@ describe('gotcha first to', () => {
     const g2 = [...game1, ...visit('T20'), d('T20'), d('Miss'), d('Miss')];
     expect(gotcha.view(g2, 2, o2).totals).toEqual([60, 0]);
     expect(gotcha.view(g2, 2, o2).stats[0]).toEqual({ gotchas: 1 });
-    const bust = gotcha.view([...g2, next, d('T20'), d('T20')], 2, o2); // p1 on 0: 120 > 101
+    const bust = gotcha.view([...g2, next, d('T19'), d('T19')], 2, o2); // p1 on 0: 114 > 101
     expect(bust.totals).toEqual([60, 0]);
     expect(bust.visit.verdict).toEqual({ text: 'Bust', tone: 'bad' });
     expect(win1([...game1, { t: 'undo' }]).totals).toEqual([101, 0]);

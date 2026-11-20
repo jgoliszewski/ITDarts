@@ -3,7 +3,7 @@ import type { Change, Happening } from './effects.ts';
 import { value } from './darts.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, compactTurns, cutShort, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, rotate, turnHappenings, walk } from './turns.ts';
 
 export interface GotchaOptions {
   target: 101 | 201 | 301;
@@ -38,6 +38,7 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
   for (const [vi, v] of t.visits.entries()) {
     const p = v.player, start = totals[p];
     let bust = false, won = false;
+    const sent: number[] = [];
     const w = walk(v, (d, i) => {
       if (over) return { good: false, end: true };
       const sum = totals[p] + value(d);
@@ -47,6 +48,15 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
       }
       totals[p] = sum;
       won = sum === o.target;
+      // Checked after every dart: a rival on the new score goes back to zero at once, and a later bust does not bring them back.
+      // Players removed before this visit are left alone.
+      const hit = value(d) === 0 ? [] : totals.flatMap((x, q) => (q !== p && x === sum && !isGone(t, q, vi) ? [q] : []));
+      if (hit.length) {
+        for (const q of hit) totals[q] = 0;
+        sent.push(...hit);
+        gotchas[p] += hit.length;
+        fx.push({ slot: dartSlot(vi, i, 'gotcha'), fact: { kind: 'game', event: 'gotcha' } });
+      }
       // As in X01: the score left after a dart that scored, not the one that wins.
       if (value(d) > 0 && !won) fx.push({ slot: dartSlot(vi, i, 'left'), fact: { kind: 'left', score: o.target - sum } });
       return { good: true, end: won };
@@ -54,7 +64,7 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
     if (bust) totals[p] = start;
     goods.push(w.good);
     left = w.dartsLeft;
-    zeroed = [];
+    zeroed = sent;
     visitScore = bust ? 0 : totals[p] - start;
     if (!w.complete || over) continue;
 
@@ -80,14 +90,6 @@ function play(t: Turns, players: number, o: GotchaOptions): State {
       gameEnd = vi;
       fx.push({ slot: `G${game + 1}:start`, fact: { kind: 'legStart' } });
       continue;
-    }
-    // At the end of the visit, a changed score sends every rival on the same score back to zero. A visit cut short by
-    // the thrower's removal keeps its points but sends no one back (docs/UI.md#wycofanie-gracza).
-    if (!bust && totals[p] !== start && !cutShort(t, vi)) {
-      zeroed = totals.map((x, q) => (q !== p && x === totals[p] && !isGone(t, q, vi) ? q : -1)).filter(q => q >= 0);
-      for (const q of zeroed) totals[q] = 0;
-      gotchas[p] += zeroed.length;
-      if (zeroed.length) fx.push({ slot: `${V}:gotcha`, fact: { kind: 'game', event: 'gotcha' } });
     }
   }
   if (over) fx.push({ slot: 'match:won', fact: { kind: 'matchWon' } });

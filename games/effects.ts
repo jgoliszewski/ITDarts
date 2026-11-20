@@ -42,7 +42,7 @@ export interface Happening {
 }
 
 /** Game events tied to a single dart: like the dart itself, a fix does not fire them. */
-const DART_LEVEL = new Set<GameEvent>(['targetHit', 'sectorCleared', 'sectorClosed', 'becameKiller', 'lifeLost']);
+const DART_LEVEL = new Set<GameEvent>(['targetHit', 'sectorCleared', 'sectorClosed', 'becameKiller', 'lifeLost', 'gotcha']);
 
 export interface Change {
   fact: Fact;
