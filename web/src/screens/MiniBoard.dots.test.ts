@@ -70,6 +70,25 @@ describe('dart dots on the hero board', () => {
   });
 });
 
+describe('Cricket Random hero board', () => {
+  const cricketRandom = (dead: boolean[]) => {
+    const sectors = [20, 19, 18, 17, 16, 15, 25];
+    return { game: 'cricket', options: { sectors: 'random' }, roster: [{ name: 'A' }, { name: 'B' }], record: null,
+      view: { current: 0, sectors, dead, hero: { caption: 'Points', big: '0', note: '' }, visit: { darts: [], good: [], dartsLeft: 3 }, phase: 'throwing', removed: [false, false] } } as never;
+  };
+  const hero = (dead: boolean[]) => renderToStaticMarkup(createElement(MiniHero, { m: cricketRandom(dead), flash: null, onDart: () => {}, canEdit: false }));
+  it('outlines every sector in play, still, and the bull', () => {
+    const svg = hero([false, false, false, false, false, false, false]);
+    expect(svg.match(/class="tb-outline still"/g)).toHaveLength(7);
+    expect(svg).toContain('aria-label="Sectors in play: 20 · 19 · 18 · 17 · 16 · 15 · Bull"');
+  });
+  it('drops the outline of a sector closed by everyone, and from the label', () => {
+    const svg = hero([true, false, false, false, false, false, true]);
+    expect(svg.match(/class="tb-outline still"/g)).toHaveLength(5);
+    expect(svg).toContain('aria-label="Sectors in play: 19 · 18 · 17 · 16 · 15"');
+  });
+});
+
 describe('hasBoard for Cricket', () => {
   const cricket = (sectors: string) => ({ game: 'cricket', options: { sectors } }) as never;
   it('shows the board only with random sectors', () => {

@@ -129,10 +129,10 @@ export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGam
 function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
-  // Cricket Random: the drawn sectors and the bull keep their colours, closed ones go dark with the rest; no target, nothing outlined.
+  // Cricket Random: the whole board in its colours; the sectors still in play (and the bull) are outlined, closed ones lose it.
   if (m.game === 'cricket') {
     const live = m.view.sectors.filter((_, k) => !m.view.dead[k]);
-    return <TargetBoard cleared={[]} target={null} ring={null} live={live} darts={darts} label={`Sectors in play: ${m.view.sectors.map(s => s === 25 ? 'Bull' : s).join(' · ')}`} />;
+    return <TargetBoard cleared={[]} target={live} ring={null} still darts={darts} label={`Sectors in play: ${live.map(s => s === 25 ? 'Bull' : s).join(' · ')}`} />;
   }
   // Shanghai lights the round's sector; nothing is crossed off.
   if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;

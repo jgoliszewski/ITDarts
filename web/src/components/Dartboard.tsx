@@ -107,17 +107,13 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
 // The input board's colours (Dartboard above). Cleared targets are hatched grey; the target keeps its colours
 // and gets a dashed orange outline that runs around it.
 const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 'url(#tb-hatch)', HIT_DOT = '#3CCB7F', MISS_DOT = '#FF5A5F';
-// Sectors out of play (Cricket with random sectors): flat and darker than the hatching, so they never read as "cleared".
-const OFF = '#161618', OFF_NUM = '#3A3A3F';
 
 /**
  * Read-only board for ATC and Full Board (docs/GRY.md, mockup O): cleared targets hatched, the target outlined
  * (only its ring with Doubles or Trebles) and this visit's darts as dots, green for a hit, red otherwise.
  */
-export function TargetBoard({ cleared, target, ring, darts, label, live, children }: {
+export function TargetBoard({ cleared, target, ring, darts, label, still, children }: {
   cleared: number[];
-  /** Sectors in play (25 = bull); the rest of the board is dimmed. Without it the whole board is live. */
-  live?: number[];
   /** A sector or the bull (25), 'ring': the whole of `ring` all round (Football with the ball), or sectors (the big singles of Football's Big singles). */
   target: number | number[] | 'ring' | null;
   /** The ring that counts on the target: null for any segment, 1 the big single, 2 doubles, 3 trebles. */
@@ -125,21 +121,25 @@ export function TargetBoard({ cleared, target, ring, darts, label, live, childre
   /** With coords a dot sits where the dart stuck; without (fixed or added by hand) in the middle of its field. */
   darts: { dart: Dart; good: boolean; coords?: { x: number; y: number } }[];
   label: string;
+  /** Outline that does not march (Cricket Random: it marks the sectors in play, not a target to hit next). */
+  still?: boolean;
   /** Drawn over the board (Test board). */
   children?: ReactNode;
 }) {
   const S = SHOWN;
   const done = new Set(cleared);
-  const out = (n: number) => !!live && !live.includes(n);
-  const paint = (n: number, normal: string) => out(n) ? OFF : done.has(n) ? CLEARED : normal;
+  const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
+  const cls = still ? 'tb-outline still' : 'tb-outline';
   const tk = typeof target === 'number' && target !== 25 ? BOARD_ORDER.indexOf(target) : -1;
   const [o1, o2] = ring === 1 ? [S[3], S[4]] : ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
   // Only the bullseye counts for the bull with Doubles or Trebles.
   const outline = target === null ? null
-    : Array.isArray(target) ? target.map(n => <path key={n} className="tb-outline" d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
-    : target === 'ring' ? <><circle className="tb-outline" cx="0" cy="0" r={o1} /><circle className="tb-outline" cx="0" cy="0" r={o2} /></>
-    : target === 25 ? <circle className="tb-outline" cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
-    : <path className="tb-outline" d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
+    : Array.isArray(target) ? target.map(n => n === 25
+      ? <circle key={n} className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
+      : <path key={n} className={cls} d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
+    : target === 'ring' ? <><circle className={cls} cx="0" cy="0" r={o1} /><circle className={cls} cx="0" cy="0" r={o2} /></>
+    : target === 25 ? <circle className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
+    : <path className={cls} d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
   return (
     <svg className="target-board" viewBox="-380 -380 760 760" role="img" aria-label={label}>
       <defs>
@@ -168,7 +168,7 @@ export function TargetBoard({ cleared, target, ring, darts, label, live, childre
       {/* The numbers go over the darts: a miss is drawn on their ring and must not hide one. */}
       {BOARD_ORDER.map((n, k) => {
         const [x, y] = pt(360, k * 18);
-        return <text key={`t${n}`} x={x} y={y} fill={out(n) ? OFF_NUM : done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
+        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
       })}
       {children}
     </svg>
