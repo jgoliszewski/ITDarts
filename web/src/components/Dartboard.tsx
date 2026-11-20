@@ -109,8 +109,8 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
 const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 'url(#tb-hatch)', HIT_DOT = '#3CCB7F', MISS_DOT = '#FF5A5F';
 
 /**
- * Read-only board for ATC and Full Board (docs/GRY.md, mockup O): cleared targets hatched, the target outlined
- * (only its ring with Doubles or Trebles) and this visit's darts as dots, green for a hit, red otherwise.
+ * Read-only board for the games with a board in the hero (docs/UI.md, mockup O): cleared targets hatched, the target outlined
+ * (only its ring with Doubles or Trebles; standing still with `still`, as in Cricket Random) and this visit's darts as dots, green for a hit, red otherwise.
  */
 export function TargetBoard({ cleared, target, ring, darts, label, still, children }: {
   cleared: number[];
