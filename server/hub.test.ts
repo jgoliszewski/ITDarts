@@ -6,13 +6,14 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import { GAMES } from '../games/index.ts';
+import { atc } from '../games/race.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import { Db } from './db.ts';
 import type { Effects } from './effects/index.ts';
 import { EffectsStore } from './effects/store.ts';
 import { Hub } from './hub.ts';
-import type { Command, ServerMessage } from './protocol.ts';
+import type { Command, LiveMatch, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
 
 let dir: string;
 let db: Db;
@@ -456,5 +457,114 @@ describe('master volume and mute', () => {
     expect(await pilot({ type: 'effects', master: 140 })).toMatchObject({ ok: false });
     expect(await phone({ type: 'effects', master: 10 })).toMatchObject({ ok: false, error: 'Take control first' });
     expect(store.settings().master).toBe(100);
+  });
+});
+
+describe('records during the game (docs/GRY.md#rekordy-i-ekran-rekordu)', () => {
+  type L = { record: RecordInfo | null; newRecord: LiveMatch['newRecord'] };
+  const live = () => (hub as unknown as { live: L }).live;
+  const next: Command = { type: 'next' };
+  const ATC = atc.normalizeOptions({});
+  /** A saved ATC match (Any, Skips) with these scores; `coop` saves it as a co-op lineup. */
+  const saved = (roster: RosterEntry[], scores: (number | null)[], coop = false, endedAt = 2) => db.saveMatch({
+    game: 'atc', options: ATC, roster, startedAt: 1, endedAt, status: 'finished', winners: [], sets: [], legs: [],
+    variant: coop ? 'atc:any:skips:coop' : 'atc:any:skips', scores,
+  });
+  const players = (...names: string[]) => names.map(name => ({ playerId: db.createPlayer(name), name }));
+  // 1 → 4 → … → 19 → bull with trebles and skips: 8 darts.
+  const fast = ['T1', 'T4', 'T7', 'T10', 'T13', 'T16', 'T19', 'Bull'];
+
+  it('gives the office record, every player’s PB with its place, and none for a guest', async () => {
+    const [ann, bob, cy] = players('Ann', 'Bob', 'Cy');
+    saved([ann], [8]);
+    saved([bob], [9]);
+    saved([ann], [12]);
+    await client(true)({ type: 'startMatch', game: 'atc', options: ATC, roster: [ann, bob, cy, { playerId: null, name: 'Guest' }] });
+    const r = live().record!;
+    expect(r).toMatchObject({ value: '8 darts', raw: 8, by: 'Ann', better: 'lower', coop: false, team: null });
+    expect(r.personal.map(p => p && [p.raw, p.place])).toEqual([[8, 1], [9, 2], null, null]);
+    // One result per player: Ann's 12 is not in the top.
+    expect(r.top.map(t => [t.place, t.by, t.raw])).toEqual([[1, 'Ann', 8], [2, 'Bob', 9]]);
+  });
+
+  it('keeps the top at 5 and gives the place of a player below it', async () => {
+    const ps = players('A', 'B', 'C', 'D', 'E', 'F', 'G');
+    ps.forEach((p, i) => saved([p], [10 + i]));
+    await client(true)({ type: 'startMatch', game: 'atc', options: ATC, roster: [ps[6]] });
+    const r = live().record!;
+    expect(r.top.map(t => t.by)).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(r.personal[0]).toMatchObject({ raw: 16, place: 7, by: 'G' });
+  });
+
+  it('gives the Team best of exactly this lineup in co-op, and no PB', async () => {
+    const [ann, bob, cy] = players('Ann', 'Bob', 'Cy');
+    saved([ann, bob], [20, 20], true);
+    saved([bob, ann], [18, 18], true);
+    saved([ann, bob, cy], [12, 12, 12], true);
+    await client(true)({ type: 'startMatch', game: 'atc', options: { ...ATC, coop: true }, roster: [ann, bob] });
+    const r = live().record!;
+    expect(r).toMatchObject({ raw: 12, coop: true, personal: [null, null] });
+    expect(r.team).toMatchObject({ raw: 18, place: 2, by: 'Bob & Ann' });
+    expect(r.top.map(t => t.raw)).toEqual([12, 18]);
+  });
+
+  it('gives no Team best to a lineup with a guest, and follows the lineup when a player leaves', async () => {
+    const [ann, bob, cy] = players('Ann', 'Bob', 'Cy');
+    saved([ann, cy], [15, 15], true);
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { ...ATC, coop: true }, roster: [ann, { playerId: null, name: 'Guest' }] });
+    expect(live().record!.team).toBeNull();
+    await pilot({ type: 'endMatch', save: false });
+    expect(await pilot({ type: 'startMatch', game: 'atc', options: { ...ATC, coop: true }, roster: [ann, bob, cy] })).toMatchObject({ ok: true });
+    expect(live().record!.team).toBeNull();
+    await pilot({ type: 'skipIntro' });
+    expect(await pilot(remove(1))).toMatchObject({ ok: true });
+    expect(live().record!.team).toMatchObject({ raw: 15 });
+    await pilot({ type: 'undo' });
+    expect(live().record!.team).toBeNull();
+  });
+
+  it('marks a new Team best at the end of a co-op game, without the New record Wyzwalacz', async () => {
+    const [ann, bob] = players('Ann', 'Bob');
+    const [cy, dee] = players('Cy', 'Dee');
+    saved([cy, dee], [5, 5], true);
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { ...ATC, coop: true }, roster: [ann, bob] });
+    fire.mockClear();
+    for (const [i, x] of fast.entries()) {
+      await pilot(dart(x));
+      if (i % 3 === 2) await pilot(next);
+    }
+    expect(live().newRecord).toEqual({ office: false, personal: [], team: true });
+    expect(fire.mock.calls.flatMap(c => c[0]).map((c: { fact: { event?: string } }) => c.fact.event)).not.toContain('newRecord');
+  });
+
+  it('marks no Team best when the lineup did better before, in any order', async () => {
+    const [ann, bob] = players('Ann', 'Bob');
+    saved([bob, ann], [8, 8], true);
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: { ...ATC, coop: true }, roster: [ann, bob] });
+    for (const [i, x] of fast.entries()) {
+      await pilot(dart(x));
+      if (i % 3 === 2) await pilot(next);
+    }
+    // 8 ties the lineup's 8: a tie beats nothing.
+    expect(live().newRecord).toBeNull();
+  });
+
+  it('marks a new personal best as before, with the Wyzwalacz', async () => {
+    const [ann] = players('Ann');
+    const [bob] = players('Bob');
+    saved([bob], [5]);
+    saved([ann], [9]);
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'atc', options: ATC, roster: [ann] });
+    fire.mockClear();
+    for (const [i, x] of fast.entries()) {
+      await pilot(dart(x));
+      if (i % 3 === 2) await pilot(next);
+    }
+    expect(live().newRecord).toEqual({ office: false, personal: ['Ann'], team: false });
+    expect(fire.mock.calls.flatMap(c => c[0]).map((c: { fact: { event?: string } }) => c.fact.event)).toContain('newRecord');
   });
 });

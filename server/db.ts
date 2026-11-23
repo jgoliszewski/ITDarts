@@ -163,6 +163,8 @@ export interface RecordRow {
   at: number;
   /** The record match's options (JSON), to set the same game up again. */
   options: string;
+  /** Who played it: the player's id, or in co-op the lineup's ids ascending, comma-separated. */
+  lineup: string;
 }
 
 export class UserError extends Error {}
@@ -411,23 +413,29 @@ export class Db {
 
   /**
    * Best results of a record variant, best first. Co-op variants give one row per match with the whole lineup,
-   * the others one row per player and match. `playerId` narrows it to the results of one player.
+   * the others one row per player and match. A player id narrows it to the results of one player, a list of ids
+   * (co-op) to the matches of exactly that lineup, in any order; a player removed from a match is not in its lineup.
+   * A negative `limit` returns every row.
    */
-  records(variant: string, better: 'lower' | 'higher', limit = 10, playerId?: number): RecordRow[] {
+  records(variant: string, better: 'lower' | 'higher', limit = 10, who?: number | number[]): RecordRow[] {
     const dir = better === 'lower' ? 'ASC' : 'DESC';
-    const mine = playerId === undefined ? '' : 'AND mp.player_id = ?';
-    const args = playerId === undefined ? [variant, limit] : [variant, playerId, limit];
+    const one = typeof who === 'number';
+    const team = Array.isArray(who) ? [...who].sort((a, b) => a - b).join(',') : null;
+    const mine = one ? 'AND mp.player_id = ?' : '';
+    const args = [variant, ...(one ? [who] : []), ...(team !== null ? [team] : []), limit];
     if (variant.endsWith(':coop')) {
       return this.sql.prepare(`
         SELECT MAX(mp.score) AS value, m.ended_at AS at, m.options AS options,
           (SELECT GROUP_CONCAT(name, ' & ') FROM (SELECT p2.name FROM match_players o JOIN players p2 ON p2.id = o.player_id
-            WHERE o.match_id = m.id AND o.removed = 0 ORDER BY o.position)) AS who
+            WHERE o.match_id = m.id AND o.removed = 0 ORDER BY o.position)) AS who,
+          (SELECT GROUP_CONCAT(player_id) FROM (SELECT o.player_id FROM match_players o
+            WHERE o.match_id = m.id AND o.removed = 0 ORDER BY o.player_id)) AS lineup
         FROM matches m JOIN match_players mp ON mp.match_id = m.id
         WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
-        GROUP BY m.id ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
+        GROUP BY m.id ${team !== null ? 'HAVING lineup = ?' : ''} ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
     }
     return this.sql.prepare(`
-      SELECT mp.score AS value, m.ended_at AS at, p.name AS who, m.options AS options
+      SELECT mp.score AS value, m.ended_at AS at, p.name AS who, m.options AS options, CAST(mp.player_id AS TEXT) AS lineup
       FROM matches m JOIN match_players mp ON mp.match_id = m.id JOIN players p ON p.id = mp.player_id
       WHERE m.variant = ? AND mp.score IS NOT NULL ${mine}
       ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
