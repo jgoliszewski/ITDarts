@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
+import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
@@ -12,6 +13,8 @@ import { TargetBoard } from '../components/Dartboard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
 import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
+import type { IntroPill } from '../records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue } from '../records.ts';
 import { shortDate } from '../util.ts';
 
 const TICKS = [0, 30, 60, 90, 120, 150, 180];
@@ -177,7 +180,24 @@ function heroNote(m: MiniMatch): string {
   return gotchaNote(m) ?? m.view.hero.note;
 }
 
-export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
+/** The best result the player throwing can still reach, when the game tells (docs/GRY.md#rekordy-i-ekran-rekordu). */
+const recordBound = (m: MiniMatch): number | null => GAMES[m.game].record?.bound?.(m.view, m.view.current, m.options) ?? null;
+
+/**
+ * Top right of the hero: the office record over the player's PB (co-op: Team best), or one merged pill, greyed and struck
+ * through once out of reach. One button for the records modal. 121 shows them as ladder flags instead.
+ */
+function RecordPills({ m, onOpen }: { m: MiniMatch; onOpen?: () => void }) {
+  const pills = recordPills(m.record!, m.roster, m.view.current, recordBound(m));
+  const text = pills.map(p => `${p.label} ${p.value ?? 'none'}${p.out ? ' out of reach' : ''}`).join(', ');
+  return (
+    <button className="rpills" aria-label={`Records: ${text}`} onClick={onOpen}>
+      {pills.map(p => <span key={p.kind} className={`rp ${p.kind} ${p.out ? 'out' : ''}`}>{p.label} <b className="num">{p.value ?? '–'}</b></span>)}
+    </button>
+  );
+}
+
+export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
   const v = m.view;
   const visit = v.visit;
   const board = hasBoard(m);
@@ -195,6 +215,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
         {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
       </div>
+      {m.record && m.game !== '121' && <RecordPills m={m} onOpen={onRecords} />}
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
         {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
           <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
@@ -216,7 +237,7 @@ export function MiniHero({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: n
         </div>
       )}
       {board && <RaceBoard m={m} />}
-      {m.game === '121' && <Ladder target={m.view.target} record={m.record?.raw ?? null} />}
+      {m.game === '121' && <Ladder target={m.view.target} marks={ladderMarks(m.record, m.roster)} onOpen={onRecords} />}
       {m.game !== 'hol' && heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
       <div className="hero-darts">
         {[0, 1, 2].map(i => {
@@ -332,8 +353,20 @@ export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cric
   );
 }
 
+/** The record screen's pill: PB or Team, the number, who and when. */
+function BigPill({ p }: { p: IntroPill }) {
+  return (
+    <div className={`rp ${p.kind}`}>
+      {p.label}{p.value !== null || p.kind !== 'both' ? <b className="num">{p.value ?? '–'}</b> : null}
+      <span className="nm">{p.who}</span>
+      {p.when !== null && <i>{p.when === 'first' ? 'First game' : shortDate(p.when)}</i>}
+    </div>
+  );
+}
+
 export function RecordIntro({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) {
   const r = m.record!;
+  const own = introPills(r, m.roster);
   return (
     <div className="overlay">
       <div className="result-card">
@@ -344,6 +377,7 @@ export function RecordIntro({ m, isPilot }: { m: MiniMatch; isPilot: boolean }) 
             <div className="so-far">{r.by}{r.at ? ` · ${shortDate(r.at)}` : ''}</div>
           </>
         ) : <div className="winner">No record yet</div>}
+        {own.pills.length > 0 && <div className={`big-pills ${own.two ? 'two' : ''}`}>{own.pills.map(p => <BigPill key={p.who} p={p} />)}</div>}
         {isPilot && <div className="actions"><button className="btn" onClick={() => act({ type: 'skipIntro' })}>Skip</button></div>}
       </div>
     </div>
@@ -355,8 +389,73 @@ export function NewRecord({ m }: { m: MiniMatch }) {
   if (!n) return null;
   return (
     <div className="new-record">
-      {n.office ? 'NEW OFFICE RECORD' : 'NEW PERSONAL BEST'}
+      {n.office ? 'NEW OFFICE RECORD' : n.team ? 'NEW TEAM BEST' : 'NEW PERSONAL BEST'}
       {n.personal.length > 0 && <span>{n.office ? 'Personal best: ' : ''}{n.personal.join(', ')}</span>}
+    </div>
+  );
+}
+
+/** A row of the records modal: what it is, who, the number with its unit, and when. */
+function ModalRow({ cls = '', label, who, value, when, now = false }: { cls?: string; label: string; who: string; value: string | null; when: string; now?: boolean }) {
+  const [n, unit] = value ? splitValue(value) : ['–', ''];
+  return (
+    <div className={`mrow ${cls}`}>
+      <div className="lab"><div className="caps">{label}</div><div className="who">{who}{now && <span className="tagnow">Throwing</span>}</div></div>
+      <div className="v"><span className="num">{n}</span>{unit && <span className="u">{unit}</span>}</div>
+      <div className="when">{when}</div>
+    </div>
+  );
+}
+
+/**
+ * The records of the variant on demand, from the record pills or a 121 ladder flag (docs/UI.md#rekordy-w-trakcie-gry): the office
+ * record, the PB of the player (of every player, the one throwing marked) or the co-op Team best, and the office top 5 with
+ * the player's or lineup's row marked, its place under a gap when it is lower. X or a tap outside the card closes it.
+ */
+export function RecordModal({ m, onClose }: { m: MiniMatch; onClose: () => void }) {
+  const r = m.record!;
+  const p = m.view.current;
+  const own = ownRecord(r, m.roster, p);
+  const merged = own?.res?.place === 1;
+  const date = (at: number | null | undefined) => (at ? shortDate(at) : 'First game');
+  const many = !r.coop && m.roster.length > 1;
+  const rows = modalRows(r, m.roster, p);
+  return (
+    <div className="overlay records" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" aria-label={`Records · ${r.label}`}>
+        <button className="x" aria-label="Close" onClick={onClose}>{Icon.close()}</button>
+        <div><div className="caps kick">Records</div><h2>{r.label}</h2></div>
+        <div className="cols">
+          <div className="col">
+            <ModalRow cls={`best ${merged ? 'me' : ''}`} label={merged ? `Office best · ${own!.label}` : 'Office best'} who={r.by ?? 'No record yet'} value={r.value} when={r.at ? shortDate(r.at) : ''} />
+            {!many && own && !merged && (
+              <ModalRow label={own.label === 'Team' ? 'Team best' : 'PB'} who={own.res?.by ?? (r.coop ? m.roster.map(x => x.name).join(' & ') : m.roster[p].name)} value={own.res?.value ?? null} when={date(own.res?.at)} />
+            )}
+            {!own && <div className="foot left">{r.coop ? 'Co-op with a guest keeps no Team best.' : 'Guests have no PB.'}</div>}
+            {many && (
+              <>
+                <div className="caps sec">PB · this match</div>
+                {playOrder(m).map(i => {
+                  const guest = m.roster[i].playerId === null, res = r.personal[i];
+                  return <ModalRow key={i} cls={`small ${i === p ? 'me' : ''}`} label="PB" who={m.roster[i].name} value={res?.value ?? null} when={guest ? 'Guest' : date(res?.at)} now={i === p} />;
+                })}
+              </>
+            )}
+          </div>
+          <div className="col">
+            <div className="caps sec">{r.coop ? 'Office top 5 · teams' : 'Office top 5'}</div>
+            <div className="top5">
+              {rows.length === 0 && <div className="trow gap">No results yet</div>}
+              {rows.map(t => (t === 'gap' ? <div key="gap" className="trow gap">⋯</div> : (
+                <div key={t.place} className={`trow ${t.me ? 'me' : ''} ${t.place === 1 ? 'first' : ''}`}>
+                  <span className="rk">{t.place}</span><span className="nm">{t.by}</span><span className="num">{splitValue(t.value)[0]}</span><span className="when">{shortDate(t.at)}</span>
+                </div>
+              )))}
+            </div>
+          </div>
+        </div>
+        <div className="foot">Tap outside to close</div>
+      </div>
     </div>
   );
 }

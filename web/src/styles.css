@@ -1355,3 +1355,67 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   .manage > summary::after, .fx-group svg, .pick-btn svg { transition: none; }
 }
 @keyframes heart-fade { 0%, 60% { color: var(--red); } 100% { color: var(--off); } }
+
+/* ---------- records during the game (docs/UI.md#rekordy-w-trakcie-gry) ---------- */
+/* Top right of the hero, Best over PB (Team), right-aligned, level with the name. Out of the grid: in the board games they sit in the
+   empty corner of the board's square (its ring of numbers is round), so the board keeps its 620 u. One button for the records modal. */
+.hero:has(> .rpills) { position: relative; }
+.hero > .rpills { position: absolute; right: calc(56 * var(--u)); top: calc(48 * var(--u)); z-index: 3; grid-column: auto; grid-row: auto;
+  display: flex; flex-direction: column; align-items: flex-end; gap: calc(8 * var(--u)); min-height: 44px; padding: 0; border: 0; background: none; border-radius: calc(20 * var(--u)); cursor: pointer; }
+.hero:not(.with-board):has(> .rpills) > .hero-top { margin-right: calc(260 * var(--u)); }
+.rp { display: flex; align-items: center; gap: calc(8 * var(--u)); height: calc(40 * var(--u)); padding: 0 calc(16 * var(--u)); border-radius: var(--r-pill); background: var(--raised);
+  font-size: max(14px, calc(17 * var(--u))); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.rp b { font-family: var(--num); font-size: calc(28 * var(--u)); font-weight: 800; line-height: 1; letter-spacing: 0; color: var(--text); }
+.rp:is(.best, .both), .rp:is(.best, .both) b { color: var(--accent); }
+/* Out of reach: the game can no longer beat it (a tie does not). */
+.rp.out, .rp.out b { color: var(--off); }
+.rp.out b { text-decoration: line-through; text-decoration-thickness: calc(3 * var(--u)); }
+/* 121: the PB (Team) flag is neutral, a record beaten in this game green with a tick; two flags on one rung stack. The text is
+   small, so an invisible margin makes the tap target 44 px tall. */
+.ladder .rung .flag.pb { color: var(--text); background: var(--raised); }
+.ladder .rung .flag.beaten { color: var(--green); background: var(--green-bg); }
+.ladder .rung .flag.second { top: calc(50% + calc(68 * var(--u))); }
+.ladder .rung.current .flag.second { top: calc(50% + calc(84 * var(--u))); }
+.ladder .rung .flag[role='button'] { cursor: pointer; z-index: 2; }
+.ladder .rung .flag[role='button']::after { content: ''; position: absolute; left: -8px; right: -8px; top: 50%; height: 44px; transform: translateY(-50%); }
+/* The record screen: the same pills, bigger, one under the other; two columns from 5 players. */
+.big-pills { display: flex; flex-direction: column; align-items: center; gap: calc(12 * var(--u)); }
+.big-pills.two { display: grid; grid-template-columns: repeat(2, max-content); justify-content: center; gap: calc(12 * var(--u)) calc(16 * var(--u)); }
+.big-pills .rp { height: calc(72 * var(--u)); padding: 0 calc(30 * var(--u)); gap: calc(14 * var(--u)); font-size: calc(24 * var(--u)); }
+.big-pills.two .rp { height: calc(64 * var(--u)); justify-self: stretch; }
+.big-pills .rp b { font-size: calc(52 * var(--u)); }
+.big-pills .rp .nm { font-size: calc(26 * var(--u)); letter-spacing: 0; text-transform: none; color: var(--text); }
+.big-pills .rp.both .nm { color: var(--accent); }
+.big-pills .rp i { font-style: normal; font-size: calc(22 * var(--u)); font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+/* The records modal. */
+.modal { position: relative; width: calc(1560 * var(--u)); border-radius: var(--r-card); background: var(--sheet); padding: calc(48 * var(--u)) calc(56 * var(--u)) calc(40 * var(--u)); display: flex; flex-direction: column; gap: calc(28 * var(--u)); }
+.modal .x { position: absolute; right: calc(28 * var(--u)); top: calc(28 * var(--u)); width: calc(72 * var(--u)); height: calc(72 * var(--u)); border: 0; border-radius: 50%; background: var(--raised); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.modal .x svg { width: calc(30 * var(--u)); height: calc(30 * var(--u)); }
+.modal .kick { font-size: calc(24 * var(--u)); color: var(--accent); }
+.modal h2 { margin: calc(6 * var(--u)) 0 0; font-size: calc(52 * var(--u)); font-weight: 800; letter-spacing: -0.02em; }
+.modal .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: calc(40 * var(--u)); }
+.modal .col { display: flex; flex-direction: column; gap: calc(12 * var(--u)); min-width: 0; }
+.modal .sec { font-size: calc(20 * var(--u)); }
+.modal .foot { font-size: calc(22 * var(--u)); color: var(--muted2); text-align: center; }
+.modal .foot.left { text-align: left; }
+.mrow { display: grid; grid-template-columns: minmax(0, 1fr) auto calc(120 * var(--u)); align-items: center; gap: calc(20 * var(--u)); padding: calc(20 * var(--u)) calc(28 * var(--u)); border-radius: var(--r-tile); background: var(--tile); }
+.mrow .lab .caps { font-size: calc(20 * var(--u)); }
+.mrow .lab .who { margin-top: calc(4 * var(--u)); font-size: calc(32 * var(--u)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .v { display: flex; align-items: baseline; gap: calc(8 * var(--u)); }
+.mrow .v .num { font-size: calc(80 * var(--u)); line-height: 0.9; }
+.mrow .v .u, .mrow .when { font-size: calc(22 * var(--u)); color: var(--muted); font-weight: 600; }
+.mrow .when { text-align: right; font-weight: 400; }
+.mrow.best .caps, .mrow.best .v .num { color: var(--accent); }
+.mrow.me, .trow.me { box-shadow: inset 0 0 0 calc(3 * var(--u)) var(--accent); }
+.mrow .tagnow { margin-left: calc(10 * var(--u)); padding: calc(2 * var(--u)) calc(10 * var(--u)); border-radius: var(--r-pill); background: var(--accent); color: var(--on-accent); font-size: calc(16 * var(--u)); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle; }
+.mrow.small { grid-template-columns: minmax(0, 1fr) auto calc(110 * var(--u)); padding: calc(12 * var(--u)) calc(24 * var(--u)); }
+.mrow.small .lab .who { margin: 0; font-size: calc(28 * var(--u)); }
+.mrow.small .v .num { font-size: calc(56 * var(--u)); }
+.top5 { display: flex; flex-direction: column; gap: calc(8 * var(--u)); }
+.trow { display: grid; grid-template-columns: calc(48 * var(--u)) minmax(0, 1fr) auto calc(110 * var(--u)); align-items: center; gap: calc(16 * var(--u)); padding: calc(14 * var(--u)) calc(24 * var(--u)); border-radius: calc(20 * var(--u)); background: var(--tile); font-size: calc(28 * var(--u)); font-weight: 600; }
+.trow .rk { font-family: var(--num); font-size: calc(34 * var(--u)); font-weight: 800; color: var(--muted2); }
+.trow .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trow .num { font-size: calc(52 * var(--u)); line-height: 1; }
+.trow .when { font-size: calc(22 * var(--u)); color: var(--muted); text-align: right; }
+.trow.first .num { color: var(--accent); }
+.trow.gap { grid-template-columns: 1fr; padding: 0 calc(24 * var(--u)); background: none; color: var(--muted2); line-height: 1; }
