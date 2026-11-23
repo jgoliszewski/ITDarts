@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-20. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-23. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -9,6 +9,9 @@ Stan na 2026-11-20. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Rekordy w trakcie gry** (2026-11-23, gałąź `feat/records-live`, [GRY.md](GRY.md#rekordy-w-trakcie-gry), [UI.md](UI.md#rekordy-w-trakcie-gry), plan, makieta i raport w `.scratch/records-live/`): plakietki „Best” i „PB” (Co-op: „Team”, rekord składu) w prawym górnym rogu hero ATC, Full Board, solo Cricket i solo Shanghai, szarzejące poza zasięgiem (`RecordDef.bound`); w 121 chorągiewka PB/Team na drabince i zielony szczebel z ✓ po pobiciu; wspólny modal rekordów z top 5 biura; PB i Team na Ekranie rekordu; suma punktów w notce Shanghai; „NEW TEAM BEST” w Co-op bez Wyzwalacza. Serwer: `Db.records` z filtrem składu i `lineup`, rozszerzony `RecordInfo`, `newRecord.team`.
+  - **Sprawdzone:** `npm test` i `npm run typecheck`; testy z mutacjami (`server/db.test.ts`, `server/hub.test.ts`, `games/bound.test.ts`, `web/src/records.test.ts`, `web/src/components/Ladder.test.ts`); zrzuty `dev:shot` w `.scratch/records-live/shots/` porównane z makietą.
+  - **Niesprawdzone:** stuknięcie w plakietki na prawdziwym dotyku kiosku (tylko klik przez CDP), Full Board na żywo (tylko testy `bound`), wycofanie gracza w Co-op na żywo (tylko test huba), prawdziwa tarcza.
 - **Gotcha: te same Wyzwalacze co X01** (2026-11-20, gałąź `feat/gotcha-fx`, [EFEKTY.md](EFEKTY.md), raport w `.scratch/gotcha-fx/IMPL.md`): Gotcha zgłasza `visit` (zamiast `calledTotal`), `left` i `checkout` jak X01, więc grają sumy, przedziały, kombinacje, „Left on”, reguły tylko-checkout i animacje 180 i 140+; caller bez zmian (czyta `visit`); Moment „Gotcha” wygrywa z sumą. Testy z mutacjami w `games/gotcha.test.ts`. Knockout bez zmian. Część 2 (2026-11-20): zerowanie po każdej lotce, bust nie cofa zerowania rywala, Moment „Gotcha” jest zdarzeniem jednej lotki (`DART_LEVEL`); mecz Gotcha w toku w chwili aktualizacji odtworzy się według nowej reguły.
   - **Sprawdzone:** `npm test` i `npm run typecheck`; testy z mutacjami w `games/gotcha.test.ts` i `games/remove.test.ts`; zrzuty `dev:shot` (pełny ekran „180” z logiem fake WLED, Alice na 0 po 1. lotce Boba); review `.scratch/gotcha-fx/REVIEW.md` i poprawki po nim (wycofany w środku cudzej Tury nie jest zerowany późniejszą lotką).
   - **Niesprawdzone:** plakietka 140+ i błysk kafelka (tylko z kodu), dźwięk 180, prawdziwa tarcza.

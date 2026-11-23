@@ -92,9 +92,21 @@ _Avoid_: team, drużyna (zostaje na przyszły tryb drużynowy)
 Najlepszy wynik wariantu minigierki w biurze. Pokazuje go Ekran rekordu przed grą, kafelki „Office records” w lobby (stuknięcie otwiera „New match” z tym wariantem) i tabele na `/stats`.
 _Avoid_: high score, top score
 
+**Rekord osobisty**:
+Najlepszy wynik gracza w wariancie minigierki. W UI: „PB” (plakietka w hero, modal rekordów, Ekran rekordu) i „NEW PERSONAL BEST”. Goście go nie mają.
+_Avoid_: personal record, high score
+
+**Rekord składu**:
+Najlepszy wynik dokładnie tego składu gry wspólnej w wariancie: zbiór zarejestrowanych graczy, kolejność bez znaczenia, gracz wycofany z meczu nie należy do składu. W UI: „Team” i „Team best” (plakietka, modal, Ekran rekordu) oraz „NEW TEAM BEST”. To jedyne miejsce, gdzie gra wspólna mówi w UI „team” (grilling 2026-11-23).
+_Avoid_: rekord drużyny, team record
+
 **Ekran rekordu**:
-Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry.
+Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry, a pod nim rekordami osobistymi graczy albo rekordem składu.
 _Avoid_: intro, splash
+
+**Poza zasięgiem**:
+Stan plakietki rekordu w trakcie gry: gra nie może już tego rekordu pobić (remis nie bije), więc plakietka szarzeje z przekreśloną liczbą.
+_Avoid_: przegrany rekord, out
 
 ## Gracze i statystyki
 
