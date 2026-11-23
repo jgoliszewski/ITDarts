@@ -65,14 +65,36 @@ interface Games {
   freethrow: { options: FreethrowOptions; view: FreethrowView };
 }
 
-/** The office record of the variant being played, for the record screen. */
+/** One result in the records of a variant: the number, as shown, who and when, and its place in the office ranking. */
+export interface RecordResult {
+  raw: number;
+  value: string;
+  by: string;
+  at: number;
+  /** 1-based, counting one result per player (co-op: per lineup). */
+  place: number;
+}
+
+/**
+ * The records of the variant being played, for the record screen, the record pills, the 121 ladder flags and the records
+ * modal (docs/GRY.md#rekordy-i-ekran-rekordu). Worked out at the start, and again when a player leaves the match.
+ */
 export interface RecordInfo {
   label: string;
+  /** The office record. */
   value: string | null;
   /** The record as a number, for the 121 ladder. */
   raw: number | null;
   by: string | null;
   at: number | null;
+  better: 'lower' | 'higher';
+  coop: boolean;
+  /** Per roster player: the personal best (PB); null for a guest, a player without one, and in co-op. */
+  personal: (RecordResult | null)[];
+  /** Co-op: the best result of exactly this lineup, players who left the match not counted; null when there is none or a guest plays. */
+  team: RecordResult | null;
+  /** The office top 5, one result per player (co-op: per lineup). */
+  top: RecordResult[];
 }
 
 interface LiveBase {
@@ -86,8 +108,8 @@ interface LiveBase {
   record: RecordInfo | null;
   /** The record screen is up. */
   intro: boolean;
-  /** Set once the game is over: an office record, and names with a new personal record. */
-  newRecord: { office: boolean; personal: string[] } | null;
+  /** Set once the game is over: an office record, names with a new personal record, and in co-op a new Team best. */
+  newRecord: { office: boolean; personal: string[]; team: boolean } | null;
   /** A bull-off dart waits for its takeout; the bull-off screen stays up until then. */
   bullTakeout: boolean;
   /** Counts visits handed to the next player since the server started; the kiosk plays the turn sound when it goes up. */

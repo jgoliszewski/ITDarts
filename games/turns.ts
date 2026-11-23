@@ -377,13 +377,18 @@ export interface HowTo {
   win: string;
 }
 
-export interface RecordDef<O> {
+export interface RecordDef<O, V = any> {
   /** The variant a match counts for, or null when it keeps no record. */
   variant: (o: O, players: number) => { key: string; label: string } | null;
   better: 'lower' | 'higher';
   format: (v: number) => string;
   /** Options of the record's own match that its variant leaves out (ATC's order), added to the lobby tile's label. */
   extra?: (o: O) => string;
+  /**
+   * The best result `player` can still reach from here (the result itself once the game is over), for the record pills
+   * that go out of reach (docs/GRY.md#rekordy-i-ekran-rekordu). Without it the pills never do.
+   */
+  bound?: (view: V, player: number, o: O) => number;
 }
 
 export interface GameModule<O = any, V = any> {
@@ -397,7 +402,7 @@ export interface GameModule<O = any, V = any> {
   defaults: O;
   options: OptionDef<O>[];
   howTo: HowTo;
-  record?: RecordDef<O>;
+  record?: RecordDef<O, V>;
   /** Games won per player, saved as legs_won; `show` says whether lists display it as the score. */
   points?: { of: (view: V) => number[]; show: (o: O) => boolean };
   normalizeOptions: (input: unknown) => O;

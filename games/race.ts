@@ -221,6 +221,11 @@ export const atc: GameModule<AtcOptions, AtcView> = {
     better: 'lower',
     format: v => plural(v, 'dart'),
     extra: o => choiceLabel(ATC_OPTIONS, o, 'order'),
+    // One dart per target left; skips can jump targets, so with them only the darts used count.
+    bound: (v, p, o) => {
+      const used = v.teamDarts ?? v.stats[p].darts;
+      return o.target === 'any' && o.skips ? used : used + v.targets.length - v.progress[p];
+    },
   },
   normalizeOptions: input => normalizeByDefs(ATC_OPTIONS, ATC_DEFAULTS, input),
   describe: (o, players) => ['ATC', choiceLabel(ATC_OPTIONS, o, 'target'), choiceLabel(ATC_OPTIONS, o, 'order'),
@@ -309,6 +314,7 @@ export const fullBoard: GameModule<FullBoardOptions, FullBoardView> = {
     }),
     better: 'lower',
     format: v => plural(v, 'dart'),
+    bound: (v, p) => (v.teamDarts ?? v.stats[p].darts) + SECTORS.length - v.cleared[p].length,
   },
   normalizeOptions: input => normalizeByDefs(BOARD_OPTIONS, BOARD_DEFAULTS, input),
   describe: (o, players) => ['Full Board', choiceLabel(BOARD_OPTIONS, o, 'target'), ...(o.coop && players > 1 ? ['Co-op'] : [])].join(' · '),

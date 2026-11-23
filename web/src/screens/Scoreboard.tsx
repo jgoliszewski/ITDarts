@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { label } from '../../../games/darts.ts';
 import type { GameId } from '../../../games/index.ts';
 import type { Verdict } from '../../../games/turns.ts';
@@ -13,7 +14,7 @@ import type { X01Match } from '../match.ts';
 import { controls, dartTone, heroCorner, isX01, legTarget, pickProps, playOrder, removedNote, visitScored, x01Dead } from '../match.ts';
 import { FxLayer, useAnim } from '../components/FxLayer.tsx';
 import { fmtAvg, useNow } from '../util.ts';
-import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RouteHint, TurnPanel, hasBoard } from './MiniBoard.tsx';
+import { CricketGrid, MiniEnd, MiniHero, MiniList, MiniSide, RecordIntro, RecordModal, RouteHint, TurnPanel, hasBoard } from './MiniBoard.tsx';
 
 const STUCK_AFTER_MS = 15_000;
 
@@ -297,6 +298,8 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
   const isPilot = s.you.isPilot;
   const c = controls(s);
   const anim = useAnim();
+  // The records modal, open for the match whose key it holds, so a new match starts without it.
+  const [records, setRecords] = useState<string | null>(null);
   // A fixed dart flashes; so does a fresh T20 or bull (docs/EFEKTY.md).
   const flash = m.lastFix && Date.now() - m.lastFix.at < 3000 ? m.lastFix.index : anim?.anim === 'tile' ? v.visit.darts.length - 1 : null;
   const takeout = s.board.takeout.active;
@@ -331,7 +334,7 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
           </>
         ) : (
           <>
-            <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} />
+            <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} onRecords={() => setRecords(m.key)} />
             <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}{actions}</aside>
           </>
         )}
@@ -341,6 +344,7 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
       {v.phase === 'throwing' && (takeout || finished) && !m.bullTakeout && <TurnCard s={s} m={m} onDart={onFix} canEdit={isPilot} />}
       {isX01(m) && m.view.phase === 'legWon' && <LegEnd m={m} />}
       {v.phase === 'matchWon' && (isX01(m) ? <MatchEnd m={m} isPilot={isPilot} /> : <MiniEnd m={m} isPilot={isPilot} />)}
+      {records === m.key && !isX01(m) && m.record && <RecordModal m={m} onClose={() => setRecords(null)} />}
       <HowToOverlay s={s} />
       {/* The 140+ badge shows the visit total in X01, Free throw and Gotcha (docs/EFEKTY.md). */}
       <FxLayer total={isX01(m) ? m.view.visit.total : m.game === 'freethrow' ? m.view.visitTotal : m.game === 'gotcha' ? m.view.visitScore : null} />

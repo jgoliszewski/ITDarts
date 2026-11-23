@@ -162,6 +162,8 @@ export const cricket: GameModule<CricketOptions, CricketView> = {
     variant: (o, players) => (players === 1 ? (o.sectors === 'random' ? { key: 'cricket:solo:random', label: 'Cricket · Solo · Random' } : { key: 'cricket:solo', label: 'Cricket · Solo' }) : null),
     better: 'lower',
     format: v => plural(v, 'dart'),
+    // A treble closes a number in one dart, the bull takes at most 2 marks a dart.
+    bound: (v, p) => v.stats[p].darts + v.marks[p].reduce((a, m, k) => a + Math.ceil((3 - m) / (v.sectors[k] === 25 ? 2 : 3)), 0),
   },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
   describe: (o, players) => `Cricket · ${players === 1 ? 'Solo' : choiceLabel(OPTIONS, o, 'mode')}${o.sectors === 'random' ? ' · Random' : ''}`,

@@ -32,7 +32,7 @@ import { UserError, cleanName } from './db.ts';
 import { builtinId } from './effects/builtin.ts';
 import type { Effects, Fx } from './effects/index.ts';
 import { rotateBoardDue } from './rotate.ts';
-import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RosterEntry, ServerMessage } from './protocol.ts';
+import type { ClientMessage, ClientState, Command, LiveMatch, PlayerCommand, RecordInfo, RecordResult, RosterEntry, ServerMessage } from './protocol.ts';
 
 interface Client {
   clientId: string;
@@ -87,6 +87,8 @@ export function lanUrls(port: number): string[] {
 }
 
 const beats = (better: 'lower' | 'higher', v: number, best: number) => (better === 'lower' ? v < best : v > best);
+/** The New record Wyzwalacz goes with an office record or a PB; a Team best only shows on the end screen. */
+const firesRecord = (n: Live['newRecord']) => !!n && (n.office || n.personal.length > 0);
 
 export class Hub {
   private clients = new Map<WebSocket, Client>();
@@ -116,8 +118,9 @@ export class Hub {
     this.urls = lanUrls(cfg.port);
     const rec = db.loadLive();
     if (rec) {
+      const view = this.compute(rec);
       this.live = {
-        rec, view: this.compute(rec), resumed: true, lastFix: null, record: this.recordInfo(rec), intro: false, newRecord: null, turnPass: 0,
+        rec, view, resumed: true, lastFix: null, record: this.recordInfo(rec, view.removed), intro: false, newRecord: null, turnPass: 0,
         happenings: GAMES[rec.game].happenings(rec.events, rec.roster.length, rec.options),
       };
       this.live.newRecord = this.newRecords(this.live);
@@ -304,10 +307,12 @@ export class Hub {
       throw err;
     }
     this.db.appendLive(e);
+    // A player leaving (or coming back on undo) changes the co-op lineup, so its Team best.
+    if (e.t === 'remove' || e.t === 'undo') l.record = this.recordInfo(l.rec, l.view.removed);
     // The visit went to the next player, or the next leg started: not the end of the match.
     const passed = (e.t === 'next' || e.t === 'nextLeg') && (before === 'throwing' || before === 'legWon') && l.view.phase === 'throwing';
     if (passed) l.turnPass++;
-    const hadRecord = !!l.newRecord;
+    const hadRecord = firesRecord(l.newRecord);
     l.newRecord = newRecord;
     if (e.t !== 'fix') l.lastFix = null;
     // The first dart closes the record screen and “How to play”.
@@ -318,7 +323,7 @@ export class Hub {
     // A removal is silent: no Moment, sound or LEDs, even when it ends a round (docs/UI.md#wycofanie-gracza).
     const cs = changes(l.happenings, happenings, e.t === 'fix' ? 'fix' : e.t === 'undo' || e.t === 'remove' ? 'undo' : 'other');
     l.happenings = happenings;
-    if (l.newRecord && !hadRecord && e.t !== 'undo' && e.t !== 'remove') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
+    if (firesRecord(l.newRecord) && !hadRecord && e.t !== 'undo' && e.t !== 'remove') cs.push({ fact: { kind: 'game', event: 'newRecord' }, before: null });
     // Hit and Miss come from a fresh dart only, like the dart triggers.
     const cue = e.t === 'dart' ? dartCue(l.rec.game, l.view as MiniView, dartsBefore) : null;
     if (cue) cs.push({ fact: { kind: cue }, before: null });
@@ -356,12 +361,31 @@ export class Hub {
     return v && game.record ? { ...v, ...game.record } : null;
   }
 
-  /** The office record of the variant, for the record screen. */
-  private recordInfo(rec: LiveRecord): RecordInfo | null {
+  /** The records of the variant for this roster (docs/GRY.md#rekordy-i-ekran-rekordu); `removed` leaves players out of the co-op lineup. */
+  private recordInfo(rec: LiveRecord, removed: Removed[] = []): RecordInfo | null {
     const v = this.variant(rec);
     if (!v) return null;
-    const best = this.db.records(v.key, v.better, 1)[0];
-    return { label: v.label, value: best ? v.format(best.value) : null, raw: best?.value ?? null, by: best?.who ?? null, at: best?.at ?? null };
+    const coop = v.key.endsWith(':coop');
+    // One result per player (co-op: per lineup), the best of each, so a place counts people, not matches.
+    // Reads every result of the variant once per start; an office has hundreds of them, not millions.
+    const lineups: string[] = [];
+    const ranked: RecordResult[] = [];
+    for (const r of this.db.records(v.key, v.better, -1)) {
+      if (lineups.includes(r.lineup)) continue;
+      lineups.push(r.lineup);
+      ranked.push({ raw: r.value, value: v.format(r.value), by: r.who, at: r.at, place: ranked.length + 1 });
+    }
+    const find = (lineup: string) => ranked[lineups.indexOf(lineup)] ?? null;
+    const best = ranked[0];
+    const ids = rec.roster.filter((_, i) => removed[i] !== 'match').map(r => r.playerId);
+    return {
+      label: v.label, value: best?.value ?? null, raw: best?.raw ?? null, by: best?.by ?? null, at: best?.at ?? null,
+      better: v.better,
+      coop,
+      personal: rec.roster.map(r => (coop || r.playerId === null ? null : find(String(r.playerId)))),
+      team: coop && !ids.includes(null) ? find((ids as number[]).sort((a, b) => a - b).join(',')) : null,
+      top: ranked.slice(0, 5),
+    };
   }
 
   /** Scores that count for records: finished games only, registered players only, and no co-op with guests. */
@@ -381,14 +405,19 @@ export class Hub {
     if (mine.length === 0) return null;
     const top = mine.reduce((a, b) => (beats(v.better, b, a) ? b : a));
     const office = this.db.records(v.key, v.better, 1)[0];
-    const personal = v.key.endsWith(':coop') ? [] : l.rec.roster.flatMap((r, i) => {
+    const coop = v.key.endsWith(':coop');
+    const personal = coop ? [] : l.rec.roster.flatMap((r, i) => {
       const s = scores[i];
       if (s === null || r.playerId === null) return [];
       const best = this.db.records(v.key, v.better, 1, r.playerId)[0];
       return !best || beats(v.better, s, best.value) ? [r.name] : [];
     });
+    // Co-op scores come only without guests; a player who left has none and is not in the lineup.
+    const lineup = l.rec.roster.flatMap((r, i) => (scores[i] === null ? [] : [r.playerId!]));
+    const teamBest = coop ? this.db.records(v.key, v.better, 1, lineup)[0] : undefined;
+    const team = coop && (!teamBest || beats(v.better, top, teamBest.value));
     const isOffice = !office || beats(v.better, top, office.value);
-    return isOffice || personal.length ? { office: isOffice, personal } : null;
+    return isOffice || personal.length || team ? { office: isOffice, personal, team } : null;
   }
 
   private checkRoster(input: unknown): RosterEntry[] {

@@ -164,7 +164,8 @@ function view(events: TurnEvent[], players: number, o: ShanghaiOptions): Shangha
     hero: {
       big: String(s.sector),
       caption: tiebreak ? 'Tiebreak' : `Round ${s.round} / ${o.rounds}`,
-      note: `${plural(s.visitPoints, 'point')} this visit`,
+      // The total too, so the record pills have something to compare with (“61 points · 12 this visit”).
+      note: `${plural(s.points[s.current], 'point')} · ${s.visitPoints} this visit`,
     },
     rows: s.points.map((p, i) => ({
       value: String(p),
@@ -213,6 +214,12 @@ export const shanghai: GameModule<ShanghaiOptions, ShanghaiView> = {
     variant: (o, players) => (players === 1 ? { key: `shanghai:solo:${o.rounds}`, label: `Shanghai · Solo · ${o.rounds} rounds` } : null),
     better: 'higher',
     format: v => plural(v, 'point'),
+    // Trebles with every dart left: the rest of this round, then the rounds after it.
+    bound: (v, p) => {
+      let max = v.points[p] + v.visit.dartsLeft * 3 * v.sector;
+      for (let r = v.round + 1; r <= v.rounds; r++) max += 9 * r;
+      return max;
+    },
   },
   normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
   describe: o => `Shanghai · ${o.rounds} rounds`,

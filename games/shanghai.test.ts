@@ -23,6 +23,9 @@ describe('shanghai scoring', () => {
     expect(v.points).toEqual([4, 0]);
     expect(v.visitPoints).toBe(4);
     expect(v.visit.good).toEqual([true, true, false]);
+    expect(v.hero.note).toBe('4 points · 4 this visit');
+    // Solo, round 2: 6 points from round 1 and S2 so far.
+    expect(shanghai.view([...visit('S1', 'D1', 'T1'), d('S2')], 1, o7).hero.note).toBe('8 points · 2 this visit');
     // Round 5: S5 = 5, D5 = 10, T5 = 15.
     const r5 = shanghai.view([...blanks(4, 2), ...visit('S5', 'D5'), d('T5')], 2, o7);
     expect(r5.round).toBe(5);

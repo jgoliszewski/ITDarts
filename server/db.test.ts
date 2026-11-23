@@ -239,6 +239,46 @@ describe('minigames', () => {
     expect(db.lastMatch()!.players.map(p => [p.name, p.left])).toEqual([['Anna', false], ['Bob', true], ['Cy', false]]);
   });
 
+  describe('Team best (co-op lineup)', () => {
+    const coop = (roster: RosterEntry[], score: number, removed: boolean[] = [], endedAt = 2) => db.saveMatch({
+      game: 'atc', options: {}, roster, startedAt: 1, endedAt, status: 'finished', winners: [], sets: [], legs: [],
+      variant: 'atc:any:skips:coop', scores: roster.map((_, i) => (removed[i] ? null : score)), removed,
+    });
+    const p = (id: number, name: string) => ({ playerId: id, name });
+
+    it('narrows the records to exactly that set of players, in any order', () => {
+      const a = db.createPlayer('Anna'), b = db.createPlayer('Bob'), c = db.createPlayer('Cy');
+      coop([p(a, 'Anna'), p(b, 'Bob')], 30);
+      coop([p(b, 'Bob'), p(a, 'Anna')], 25);
+      coop([p(a, 'Anna'), p(b, 'Bob'), p(c, 'Cy')], 20);
+      coop([p(a, 'Anna'), p(c, 'Cy')], 18);
+      expect(db.records('atc:any:skips:coop', 'lower', 10, [b, a]).map(r => r.value)).toEqual([25, 30]);
+      expect(db.records('atc:any:skips:coop', 'lower', 10, [a, b, c]).map(r => r.value)).toEqual([20]);
+      expect(db.records('atc:any:skips:coop', 'lower', 10, [c]).map(r => r.value)).toEqual([]);
+    });
+
+    it('counts a removed player out of the lineup', () => {
+      const a = db.createPlayer('Anna'), b = db.createPlayer('Bob'), c = db.createPlayer('Cy');
+      coop([p(a, 'Anna'), p(b, 'Bob'), p(c, 'Cy')], 22, [false, true, false]);
+      expect(db.records('atc:any:skips:coop', 'lower', 10, [a, c]).map(r => r.value)).toEqual([22]);
+      expect(db.records('atc:any:skips:coop', 'lower', 10, [a, b, c])).toEqual([]);
+    });
+
+    it('gives every row its lineup, so results of one player or team can be told apart', () => {
+      const a = db.createPlayer('Anna'), b = db.createPlayer('Bob');
+      coop([p(b, 'Bob'), p(a, 'Anna')], 25);
+      expect(db.records('atc:any:skips:coop', 'lower')[0].lineup).toBe([a, b].sort((x, y) => x - y).join(','));
+      saveAtc([p(a, 'Anna')], atcEvents(...fast));
+      expect(db.records('atc:any:skips', 'lower')[0].lineup).toBe(String(a));
+    });
+
+    it('returns every row with a negative limit', () => {
+      const a = db.createPlayer('Anna');
+      for (let i = 0; i < 12; i++) coop([p(a, 'Anna')], 30 + i);
+      expect(db.records('atc:any:skips:coop', 'lower', -1)).toHaveLength(12);
+    });
+  });
+
   it('does not count a minigame as played for a removed player, but keeps his totals', () => {
     const a = db.createPlayer('Anna'), b = db.createPlayer('Bob');
     const o = atc.normalizeOptions({});

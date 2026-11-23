@@ -54,12 +54,32 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - Moduł gry może zdefiniować **statystykę rekordową**: co jest rekordem, czy lepiej mniej, czy więcej, i które opcje tworzą osobny wariant. Rekord zawsze dotyczy dokładnie jednego wariantu.
 - Rekordy (z Ekranem rekordu) mają ATC, Full Board, 121, solo Cricket i solo Shanghai. X01 ma od 2026-11-16 tabele rekordów biura na `/stats` (Highest visit, Highest checkout, Best leg na wynik startowy), ale **bez Ekranu rekordu** i bez Momentu „New record”: nie ma definicji rekordu w module gry ([STATYSTYKI.md](STATYSTYKI.md#rekordy-biura-x01)).
 - **Ekran rekordu:** po „Start” Ekran wyników pokazuje przez około 4 s nazwę wariantu i rekord biura, czyli wartość, kto go ustanowił i kiedy.
-  - Rekordów osobistych na tym ekranie nie pokazujemy.
-  - W Co-op pokazuje rekord co-op wariantu z imionami składu.
-  - Bez rekordu pokazuje „No record yet”.
+  - Pod rekordem biura (od 2026-11-23) stoją plakietki rekordów osobistych: solo „PB 31 Alice 3 Nov” (pierwsza gra w wariancie: „PB – Alice First game”), przy kilku graczach po jednej na gracza bez daty, od 5 graczy w dwóch kolumnach. Gracz, który trzyma rekord biura, ma pomarańczową „Best · PB” (solo bez liczby, bo stoi nad nią). Goście nie mają plakietki.
+  - W Co-op pokazuje rekord co-op wariantu z imionami składu, a pod nim „Team 29 Alice & Bob 5 Nov”, czyli [rekord składu](#rekordy-w-trakcie-gry) (pierwsza gra składu: „Team –”). Skład z gościem nie ma plakietki.
+  - Bez rekordu pokazuje „No record yet”, bez plakietek.
   - Pilot ma „Skip”. Ekran wraca przy każdym Rematch. Bull-off, jeśli jest włączony, idzie po nim, także w Rematch (nowy bull-off ustala kolejność gry).
-- **Nowy rekord** (biura albo osobisty) sprawdzamy na końcu gry, a nie w trakcie. Odpala Wyzwalacz „New record” i animację na ekranie wygranej.
+- **Nowy rekord** (biura albo osobisty) sprawdzamy na końcu gry, a nie w trakcie. Odpala Wyzwalacz „New record” i animację na ekranie wygranej. Remis nie bije rekordu.
+  - W Co-op dochodzi „NEW TEAM BEST”, gdy skład pobił swój rekord składu, a nie rekord biura (od 2026-11-23). Wyzwalacz „New record” tego nie odpala, zostaje tylko dla rekordu biura i osobistego.
 - Goście nie mają rekordów.
+
+### Rekordy w trakcie gry
+
+Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/`). Dotyczą wszystkich gier z rekordem: ATC, Full Board, solo Cricket, solo Shanghai i 121. X01 i Pilot (telefon) bez zmian.
+
+- **Plakietki w hero** (prawy górny róg, górą równo z imieniem, jedna pod drugą, 40 u wysokości): „Best 23” (rekord biura, pomarańcz) nad „PB 31” (rekord osobisty gracza, który rzuca, neutralny). Same liczby, bez kto i kiedy. W grach z tarczą leżą w pustym narożniku kwadratu tarczy, więc tarcza zostaje 620 u.
+  - Gracz trzyma rekord biura (jego PB jest pierwszym miejscem): jedna plakietka „Best · PB”. Remis z rekordem ustanowionym wcześniej przez kogoś innego nie scala.
+  - Gość: tylko „Best”. Brak PB: „PB –”. Brak rekordu biura: „Best –”.
+  - Kilku graczy bez Co-op: PB gracza, który rzuca, zmienia się z Turą.
+  - Co-op: „Team 29” zamiast PB, czyli **rekord składu**: najlepszy wynik dokładnie tego zbioru graczy, kolejność bez znaczenia, a gracz wycofany z meczu nie należy do składu (po wycofaniu plakietka pokazuje rekord nowego składu). Scalone „Best · Team”, brak „Team –”, skład z gościem tylko „Best”.
+- **Poza zasięgiem:** plakietka szarzeje (`--off`) z przekreśloną liczbą, gdy gra nie może już pobić rekordu (remis nie bije). Moduł gry podaje najlepszy wynik jeszcze osiągalny (`RecordDef.bound`):
+  - ATC bez Skips oraz z Doubles i Trebles: zużyte lotki plus pozostałe cele. ATC ze Skips: same zużyte lotki (treble przeskakuje cele, więc minimum nie wiadomo); szarzeje dopiero po przekroczeniu.
+  - Full Board: zużyte lotki plus niezamknięte sektory.
+  - solo Cricket: zużyte lotki plus najmniej lotek na brakujące znaczniki (treble zamyka numer jedną lotką, bull bierze najwyżej 2 znaczniki na lotkę).
+  - solo Shanghai: punkty plus trzy treble na każdą lotkę, która została w rundzie i w następnych rundach.
+  - 121 nie szarzeje (gra nie ma końca). W Co-op liczą się lotki drużyny.
+- **121:** zamiast plakietek druga chorągiewka na drabince, „PB 122” (Co-op: „Team”) obok „Best 135”; równe i należące do gracza: jedna „Best · PB”. Dwie chorągiewki na jednym szczeblu albo obie poza oknem (ze strzałką ↓) stoją jedna pod drugą. Rekord pobity w tej grze zostaje na zielonym szczeblu z ✓, póki jest w oknie. Pierwsza gra składu w Co-op nie ma chorągiewki „Team”.
+- **Modal rekordów:** stuknięcie w plakietki albo w chorągiewkę 121 otwiera ten sam modal ([UI.md](UI.md#rekordy-w-trakcie-gry)): rekord biura, PB gracza (przy kilku graczach PB wszystkich, rzucający z obrysem i „THROWING”) albo rekord składu, a po prawej top 5 biura wariantu, jeden wynik na gracza (Co-op: na skład), z wyróżnionym wierszem gracza albo składu. Gdy jest poza top 5, dochodzi pod „⋯” z miejscem.
+- **Skąd dane:** serwer liczy rekord biura, PB każdego gracza z miejscem, rekord składu i top 5 raz przy starcie meczu (`RecordInfo` w `server/protocol.ts`), a w Co-op od nowa po wycofaniu gracza i jego cofnięciu.
 
 ## Around the Clock (ATC)
 
@@ -105,7 +125,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - „Visits per target”: 3 (domyślnie) albo 4;
   - „Refill lives on checkout”, domyślnie włączone: sukces przywraca 3 życia. Wyłączone oznacza 3 życia na całą grę.
 - **Ekran wyników:** hero pokazuje cel, ile zostało do zamknięcia, życia i podpowiedź checkoutu z X01. Lotki do końca podejścia to duża liczba i kropka na każdą lotkę, po trzy na Turę, zużyte puste (od 2026-10-27, ze zgłoszenia). Od 2026-11-01 są w karcie „Darts left” pod listą graczy, bo tam było puste miejsce, a nie obok lotek Tury. Caller mówi jak w X01, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
-  - **Drabinka celów** (od 2026-10-30, po grillingu): pionowy łańcuch kółek z numerami przy prawej krawędzi hero, jak pasek etapów procesu w Dynamics 365, połączony linią: ostatni zaliczony cel na górze (zielone kółko, na starcie puste miejsce), bieżący większy i pomarańczowy, trzy następne obrysowane w dół. Etykieta „Best N” pod kółkiem rekordu biurowego wariantu; gdy rekord jest dalej niż okno, pod ostatnim kółkiem ze strzałką w dół, a po pobiciu zostaje pod zaliczonym kółkiem, póki jest w oknie. Etykieta jest też w grze z gośćmi, choć taki wynik nie wchodzi do rekordów. Kółko celu nie powtarza serc ani liczby podejść. Pierwsza wersja, pozioma taśma dużych liczb pod wynikiem, odrzucona tego samego dnia jako za duża.
+  - **Drabinka celów** (od 2026-10-30, po grillingu): pionowy łańcuch kółek z numerami przy prawej krawędzi hero, jak pasek etapów procesu w Dynamics 365, połączony linią: ostatni zaliczony cel na górze (zielone kółko, na starcie puste miejsce), bieżący większy i pomarańczowy, trzy następne obrysowane w dół. Etykieta „Best N” pod kółkiem rekordu biurowego wariantu; gdy rekord jest dalej niż okno, pod ostatnim kółkiem ze strzałką w dół, a po pobiciu zostaje pod zaliczonym kółkiem, póki jest w oknie. Od 2026-11-23 obok niej chorągiewka PB (Co-op: Team), pobity rekord zielony z ✓, a stuknięcie otwiera modal rekordów ([Rekordy w trakcie gry](#rekordy-w-trakcie-gry)). Etykieta jest też w grze z gośćmi, choć taki wynik nie wchodzi do rekordów. Kółko celu nie powtarza serc ani liczby podejść. Pierwsza wersja, pozioma taśma dużych liczb pod wynikiem, odrzucona tego samego dnia jako za duża.
   - **Ruch po checkoucie:** gdy po takeoucie hero przełącza cel, łańcuch przesuwa się o jedno kółko w górę, a liczba celu w podpisie przewija się jak licznik (tylko cyfry, które się zmieniają). Oba ruchy startują razem i trwają 0,5 s. Undo i Poprawka cofają bez animacji.
   - **Hero bez tekstu „N darts left”** (od 2026-10-30, z przeglądu ekranu: kafelki lotek pokazują, ile rzucono).
   - **Kropki i serca:** przy checkoucie kropki podejścia zielenieją razem z kartą tury. Nieudane podejście błyska kropkami na czerwono i trzęsie traconym sercem w chwili końca Tury, razem z kartą „ATTEMPT FAILED”; po takeoucie kropki zapalają się od nowa po cichu, a przy „Refill lives” odzyskane serca wyskakują. Drabinka i odometr są tylko w hero, nie na karcie tury ani na telefonie.
@@ -200,7 +220,7 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 - **Shanghai:** S, D i T sektora rundy w jednej Turze, w dowolnej kolejności. Przy 2+ graczach to natychmiastowa wygrana, bez dogrywania rundy. Solo Shanghai daje swoje punkty i Moment, a gra trwa do ostatniej rundy.
 - **Koniec:** po ostatniej rundzie wygrywa najwięcej punktów. Przy remisie na pierwszym miejscu dogrywkę grają tylko remisujący: każdy jedną Turę na sektor 20, liczoną jak zwykła runda. Wygrywa najwięcej w tej rundzie, kolejny remis daje kolejną rundę na 20, do skutku. Shanghai na 20 w dogrywce też wygrywa. Punkty z dogrywki doliczają się do sumy.
 - **Gracze:** 1–8, bez Co-op.
-- **Ekran wyników:** jak w ATC. Hero pokazuje imię, duży sektor rundy z „Round 5 / 7” (w dogrywce „Tiebreak”), punkty bieżącej Tury i kafelki lotek: zielone, gdy lotka trafi sektor rundy, czerwone przy pudle. Prawą połowę hero zajmuje tarcza z ATC z podświetlonym sektorem rundy. Lista graczy pokazuje sumę punktów, a w dogrywce wyszarza tych, którzy jej nie grają. Karta Tury pokazuje dużą liczbę punktów Tury. Nagłówek np. „Shanghai · 7 rounds”.
+- **Ekran wyników:** jak w ATC. Hero pokazuje imię, duży sektor rundy z „Round 5 / 7” (w dogrywce „Tiebreak”), pod nim sumę punktów i punkty bieżącej Tury („61 points · 12 this visit”, suma od 2026-11-23, żeby plakietka „Best” miała się z czym porównać) i kafelki lotek: zielone, gdy lotka trafi sektor rundy, czerwone przy pudle. Prawą połowę hero zajmuje tarcza z ATC z podświetlonym sektorem rundy. Lista graczy pokazuje sumę punktów, a w dogrywce wyszarza tych, którzy jej nie grają. Karta Tury pokazuje dużą liczbę punktów Tury. Nagłówek np. „Shanghai · 7 rounds”.
 - **Wyzwalacze:** „Hit” i „Miss” na każdą lotkę, nowy „Shanghai” (XL, dobry, na start dźwięk i ledy z White Horse), „Game won”.
 - **Statystyki:** wygrane, liczba Shanghai i hit rate (% lotek w sektor rundy). Rekordem jest najwyższa suma punktów w grze solo, osobno dla 7 i 20 rund.
 
