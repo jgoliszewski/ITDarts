@@ -12,7 +12,8 @@ const IMPOSSIBLE_TOTALS = [163, 166, 169, 172, 173, 175, 176, 178, 179];
 /** Every key the caller can say, for the check that the recordings are all there. */
 export const CALLER_KEYS = [
   ...Array.from({ length: 180 }, (_, i) => i + 1).filter(n => !IMPOSSIBLE_TOTALS.includes(n)).map(String),
-  ...Array.from({ length: 180 }, (_, i) => `require_${i + 1}`),
+  // “You require” needs a checkout route, so it never goes past 170.
+  ...Array.from({ length: 170 }, (_, i) => `require_${i + 1}`),
   'busted', 'gameon', 'matchshot',
   ...Array.from({ length: GAMESHOT_LEGS }, (_, i) => `gameshot_l${i + 1}_n`),
 ];
