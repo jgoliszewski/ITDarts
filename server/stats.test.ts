@@ -415,6 +415,98 @@ describe('lobby records', () => {
   });
 });
 
+// Lobby top 8 (.scratch/lobby-records/PLAN.md): by matches of the last 30 days, filled up with the most played of all time.
+describe('lobby records: top 8, chase, players', () => {
+  const save = (game: string, options: object, variant: string, roster: RosterEntry[], scores: (number | null)[], daysAgo: number) =>
+    db.saveMatch({
+      game: game as SaveMatch['game'], options, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
+      winners: [], sets: [], legs: [], variant, scores, stats: roster.map(() => ({})),
+    } as SaveMatch);
+  const C = () => ({ playerId: cy, name: 'Cy' });
+  /** Ten ATC and Shanghai variants: the shanghai ones differ by rounds (3..10), so each gets its own key. */
+  const shanghai = (rounds: number, times: number, daysAgo: number) => {
+    for (let i = 0; i < times; i++) save('shanghai', { rounds }, `shanghai:solo:${rounds}`, [A()], [50 + i], daysAgo);
+  };
+
+  it('sorts by matches in the last 30 days, most first', () => {
+    shanghai(3, 1, 2); shanghai(4, 3, 10); shanghai(5, 2, 29);
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:4', 'shanghai:solo:5', 'shanghai:solo:3']);
+  });
+
+  it('fills up with the most played of all time when fewer than 8 were played lately', () => {
+    shanghai(3, 1, 5); shanghai(4, 4, 90); shanghai(5, 2, 40); shanghai(6, 2, 200);
+    // Recent first (3), then by all-time count (4: 4, then 5 and 6: 2 each, by label).
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:3', 'shanghai:solo:4', 'shanghai:solo:5', 'shanghai:solo:6']);
+  });
+
+  it('puts the busier of two variants without recent matches first, whatever their labels', () => {
+    shanghai(4, 2, 90); shanghai(6, 3, 100);
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:6', 'shanghai:solo:4']);
+  });
+
+  it('ranks a recent variant above a busier old one, and breaks ties by label', () => {
+    shanghai(7, 1, 1); shanghai(8, 1, 1); shanghai(9, 5, 100);
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:7', 'shanghai:solo:8', 'shanghai:solo:9']);
+  });
+
+  it('keeps 8 variants at most', () => {
+    for (let r = 3; r <= 12; r++) shanghai(r, 1, 3);
+    expect(stats.lobbyTop()).toHaveLength(8);
+    expect(stats.lobbyRecords()).toHaveLength(10);
+  });
+
+  it('counts only the last 30 days as recent, the 30th day included', () => {
+    shanghai(3, 3, 31); shanghai(4, 1, 30); shanghai(5, 1, 29);
+    // 4 and 5 are recent (one match each, label breaks the tie); 3 has more matches overall but none lately.
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:4', 'shanghai:solo:5', 'shanghai:solo:3']);
+  });
+
+  it('chases with the 2nd and 3rd place, fewer when there are fewer results', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [90], 5);
+    expect(stats.lobbyRecords()[0].chase).toEqual([]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [80], 4);
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Bob', value: '80 points' }]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [C()], [70], 3);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [60], 2);
+    expect(stats.lobbyRecords()[0]).toMatchObject({ who: 'Anna', value: '90 points' });
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Bob', value: '80 points' }, { who: 'Cy', value: '70 points' }]);
+  });
+
+  it('chases people, not results: a player with the 1st, 2nd and 3rd result is one place', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [90], 5);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [85], 4);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [80], 3);
+    expect(stats.lobbyRecords()[0].chase).toEqual([]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [70], 2);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [60], 1);
+    expect(stats.lobbyRecords()[0]).toMatchObject({ who: 'Anna', value: '90 points' });
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Bob', value: '70 points' }]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [C()], [65], 1);
+    expect(stats.lobbyTop()[0].chase).toEqual([{ who: 'Bob', value: '70 points' }, { who: 'Cy', value: '65 points' }]);
+  });
+
+  it('chases lineups in co-op: the same lineup twice is one place', () => {
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 4);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [B(), A()], [135, 135], 3);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), C()], [130, 130], 2);
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Anna & Cy', value: 'Target 130' }]);
+  });
+
+  it('chases a co-op record with the lineups', () => {
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 4);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), C()], [130, 130], 3);
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Anna & Cy', value: 'Target 130' }]);
+  });
+
+  it('says how many players a record takes: one for solo, two to the game limit for co-op', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [90], 3);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 2);
+    const [coop, solo] = [stats.lobbyRecords().find(r => r.key.endsWith(':coop'))!, stats.lobbyRecords().find(r => r.key.startsWith('shanghai'))!];
+    expect(solo).toMatchObject({ coop: false, minPlayers: 1, maxPlayers: 1 });
+    expect(coop).toMatchObject({ coop: true, minPlayers: 2, maxPlayers: 8 });
+  });
+});
+
 // C#19 (stats audit): minigame profiles list their own recent matches, per Okno, with the result as the lobby shows it.
 describe('recent minigame matches', () => {
   const atc = (roster: RosterEntry[], daysAgo: number, scores: (number | null)[], winners: number[] = []) =>

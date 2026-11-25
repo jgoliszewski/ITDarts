@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue } from './records.ts';
+import type { LobbyRecord, MatchSummary, RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -148,5 +148,100 @@ describe('value and unit', () => {
     expect(splitValue('23 darts')).toEqual(['23', 'darts']);
     expect(splitValue('1 point')).toEqual(['1', 'point']);
     expect(splitValue('Target 128')).toEqual(['128', '']);
+  });
+});
+
+describe('record attempt players', () => {
+  const solo = { coop: false, minPlayers: 1, maxPlayers: 1 };
+  const coop = { coop: true, minPlayers: 2, maxPlayers: 4 };
+
+  it('hints the count', () => {
+    expect(attemptHint(solo)).toBe('Pick 1 player');
+    expect(attemptHint(coop)).toBe('Pick 2 or more players');
+  });
+
+  it('starts solo with exactly one player', () => {
+    expect([0, 1, 2].map(n => attemptReady(solo, n))).toEqual([false, true, false]);
+  });
+
+  it('starts co-op with two up to the limit', () => {
+    expect([0, 1, 2, 4, 5].map(n => attemptReady(coop, n))).toEqual([false, false, true, true, false]);
+  });
+
+  it('swaps the one solo player instead of adding', () => {
+    expect(togglePick(solo, [], 3)).toEqual([3]);
+    expect(togglePick(solo, [3], 5)).toEqual([5]);
+    expect(togglePick(solo, [3], 3)).toEqual([]);
+  });
+
+  it('toggles co-op players in the order picked and stops at the limit', () => {
+    expect(togglePick(coop, [2], 1)).toEqual([2, 1]);
+    expect(togglePick(coop, [2, 1], 2)).toEqual([1]);
+    expect(togglePick(coop, [1, 2, 3, 4], 5)).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe('record attempt command', () => {
+  const players = [{ id: 1, name: 'Ann' }, { id: 2, name: 'Bob' }, { id: 3, name: 'Cy' }];
+  const rec = (o: Partial<LobbyRecord>): LobbyRecord => ({
+    game: 'atc', key: 'atc:any:skips', label: 'ATC', value: '23 darts', who: 'Ewa', at: 0, options: { order: 'clockwise', target: 'any', skips: true, coop: false }, chase: [],
+    coop: false, minPlayers: 1, maxPlayers: 1, ...o,
+  });
+
+  it('starts a solo ATC with the record match order and the picked player', () => {
+    expect(attemptCommand(rec({}), [2], players)).toEqual({
+      type: 'startMatch', game: 'atc', options: { order: 'clockwise', target: 'any', skips: true, coop: false }, roster: [{ playerId: 2, name: 'Bob' }],
+    });
+  });
+
+  it('plays a co-op record as co-op, in the order picked', () => {
+    const r = rec({ key: 'atc:any:skips:coop', options: { order: 'random', skips: true, coop: false }, coop: true, minPlayers: 2, maxPlayers: 8 });
+    const cmd = attemptCommand(r, [3, 1], players)!;
+    expect(cmd.options).toEqual({ order: 'random', skips: true, coop: true });
+    expect(cmd.roster).toEqual([{ playerId: 3, name: 'Cy' }, { playerId: 1, name: 'Ann' }]);
+  });
+
+  it('leaves the options alone where a game has no co-op flag', () => {
+    const r = rec({ game: '121', options: { visits: 3 }, coop: true, minPlayers: 2, maxPlayers: 8 });
+    expect(attemptCommand(r, [1, 2], players)!.options).toEqual({ visits: 3 });
+  });
+
+  it('drops a picked player who left the list, and refuses when the count no longer fits', () => {
+    const r = rec({ coop: true, minPlayers: 2, maxPlayers: 8 });
+    expect(attemptCommand(r, [1, 2, 9], players)!.roster.map(p => p.playerId)).toEqual([1, 2]);
+    expect(attemptCommand(r, [1, 9], players)).toBeNull();
+    expect(attemptCommand(rec({}), [], players)).toBeNull();
+    expect(attemptCommand(rec({}), [1, 2], players)).toBeNull();
+  });
+});
+
+describe('last match line', () => {
+  const p = (name: string, value: string, o: { winner?: boolean; left?: boolean } = {}) => ({ name, value, avg: null, winner: !!o.winner, left: !!o.left });
+  const m = (game: MatchSummary['game'], description: string, players: MatchSummary['players']): MatchSummary =>
+    ({ id: 1, game, description, endedAt: 0, status: 'finished', players, checkout: null });
+
+  it('names a solo player and the result', () => {
+    expect(lastLine(m('121', '121', [p('Anna', 'Target 140')]))).toBe('Last: 121 · Anna · Target 140');
+  });
+
+  it('names everyone on a tie', () => {
+    expect(lastLine(m('shanghai', 'Shanghai', [p('Anna', '90 points'), p('Bob', '90 points')]))).toBe('Last: Shanghai · Anna & Bob · 90 points');
+  });
+
+  it('names a co-op team that won', () => {
+    expect(lastLine(m('atc', 'ATC · Co-op', [p('Anna', '58 darts', { winner: true }), p('Bob', '58 darts', { winner: true })]))).toBe('Last: ATC · Co-op · Anna & Bob · 58 darts');
+  });
+
+  it('gives both sides of a two-player X01', () => {
+    expect(lastLine(m('x01', 'X01 · 501 · Double out', [p('Anna', '3', { winner: true }), p('Bob', '1')]))).toBe('Last: 501 · Double out · Anna 3–1 Bob');
+  });
+
+  it('gives only the winner of an X01 with more players', () => {
+    expect(lastLine(m('x01', 'X01 · 501', [p('Anna', '1'), p('Bob', '2', { winner: true }), p('Cy', '0')]))).toBe('Last: 501 · Bob');
+  });
+
+  it('leaves out a player who left unless nobody won', () => {
+    expect(lastLine(m('shanghai', 'Shanghai', [p('Anna', '90 points', { winner: true }), p('Bob', '', { left: true })]))).toBe('Last: Shanghai · Anna · 90 points');
+    expect(lastLine(m('shanghai', 'Shanghai', [p('Anna', '', { left: true }), p('Bob', '80 points')]))).toBe('Last: Shanghai · Bob · 80 points');
   });
 });

@@ -272,7 +272,7 @@ function Main({ s }: { s: ClientState }) {
     );
     return m
       ? <Scoreboard s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onFix={openFix} onEnd={() => askEnd('end')} onPlayer={s.you.isPilot ? setRemoveOf : undefined} overlay={overlay} />
-      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onRecord={openRecord} onPlayers={() => setScreen('players')} overlay={overlay} />;
+      : <Lobby s={s} onMenu={() => setMenu(true)} onBoard={s.you.isPilot ? () => setScreen('board') : undefined} onNew={() => setScreen('setup')} onPlayers={() => setScreen('players')} overlay={overlay} />;
   }
 
   if (!s.you.isPilot) return <><PhoneWatch s={s} onMenu={() => setMenu(true)} />{dialogs}</>;

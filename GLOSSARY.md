@@ -89,7 +89,7 @@ Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co
 _Avoid_: team, drużyna (zostaje na przyszły tryb drużynowy)
 
 **Rekord biura**:
-Najlepszy wynik wariantu minigierki w biurze. Pokazuje go Ekran rekordu przed grą, kafelki „Office records” w lobby (stuknięcie otwiera „New match” z tym wariantem) i tabele na `/stats`.
+Najlepszy wynik wariantu minigierki w biurze. Pokazuje go Ekran rekordu przed grą, kafelki rekordów w lobby (na kiosku stuknięcie otwiera „Record attempt”, na telefonie „New match” z tym wariantem) i tabele na `/stats`.
 _Avoid_: high score, top score
 
 **Rekord osobisty**:
@@ -99,6 +99,13 @@ _Avoid_: personal record, high score
 **Rekord składu**:
 Najlepszy wynik dokładnie tego składu gry wspólnej w wariancie: zbiór zarejestrowanych graczy, kolejność bez znaczenia, gracz wycofany z meczu nie należy do składu. W UI: „Team” i „Team best” (plakietka, modal, Ekran rekordu) oraz „NEW TEAM BEST”. To jedyne miejsce, gdzie gra wspólna mówi w UI „team” (grilling 2026-11-23).
 _Avoid_: rekord drużyny, team record
+
+**Record attempt**:
+Okno w lobby kiosku po stuknięciu kafelka rekordu: pokazuje rekord do pobicia i pozwala wybrać graczy (solo 1, gra wspólna 2 lub więcej, bez Gościa), a „Start” uruchamia mecz z opcjami meczu rekordu, bez Setupu.
+_Avoid_: challenge, quick start
+
+**Pościg**:
+Dwie szare linie na kafelku rekordu z 2. i 3. miejscem („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
 
 **Ekran rekordu**:
 Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry, a pod nim rekordami osobistymi graczy albo rekordem składu.

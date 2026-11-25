@@ -367,14 +367,9 @@ export class Hub {
     if (!v) return null;
     const coop = v.key.endsWith(':coop');
     // One result per player (co-op: per lineup), the best of each, so a place counts people, not matches.
-    // Reads every result of the variant once per start; an office has hundreds of them, not millions.
-    const lineups: string[] = [];
-    const ranked: RecordResult[] = [];
-    for (const r of this.db.records(v.key, v.better, -1)) {
-      if (lineups.includes(r.lineup)) continue;
-      lineups.push(r.lineup);
-      ranked.push({ raw: r.value, value: v.format(r.value), by: r.who, at: r.at, place: ranked.length + 1 });
-    }
+    const rows = this.db.rankedRecords(v.key, v.better);
+    const lineups = rows.map(r => r.lineup);
+    const ranked: RecordResult[] = rows.map((r, i) => ({ raw: r.value, value: v.format(r.value), by: r.who, at: r.at, place: i + 1 }));
     const find = (lineup: string) => ranked[lineups.indexOf(lineup)] ?? null;
     const best = ranked[0];
     const ids = rec.roster.filter((_, i) => removed[i] !== 'match').map(r => r.playerId);

@@ -136,7 +136,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .btn, .icon-btn, .chip, .tile, .game-tile, .key, .seg button, .mult-row button, .player-card, button.list-row, button.dart-tile,
 .fx-tile, .fx-pick-main, .fx-chip button, .fx-preset, .howto-btn, .record-tile, .pick-btn, .pick-list button, .stepper button, .manage > summary { transition: transform var(--dur-press) var(--ease-out); }
 :is(.btn, .icon-btn, .chip, .tile, .key, .seg button, .mult-row button, button.dart-tile, .fx-tile, .fx-pick-main, .fx-chip button, .fx-preset, .howto-btn, .pick-btn, .pick-list button, .stepper button):active:not(:disabled) { transform: scale(0.97); }
-:is(.game-tile, .player-card, button.list-row, .record-tile, .manage > summary):active:not(:disabled) { transform: scale(0.98); }
+:is(.game-tile, .player-card, button.list-row, .record-tile, .rec-tile, .manage > summary):active:not(:disabled) { transform: scale(0.98); }
 [role='button']:is(.prow, .p-player, .ch) { transition: opacity var(--dur-press) var(--ease-out); }
 [role='button']:is(.prow, .p-player, .ch):active { opacity: 0.8; }
 .num { font-family: var(--num); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -396,10 +396,54 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .qr-overlay { position: absolute; inset: 0; background: var(--scrim-solid); z-index: var(--z-qr); display: flex; align-items: center; justify-content: center; gap: calc(72 * var(--u)); }
 
 /* lobby */
-.lobby-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) calc(640 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(40 * var(--u)); min-height: 0; }
-.lobby-start { border-radius: var(--r-card); background: var(--card); padding: calc(64 * var(--u)); display: flex; flex-direction: column; justify-content: center; gap: calc(40 * var(--u)); min-width: 0; }
-.lobby-start .btn.primary { height: calc(180 * var(--u)); font-size: calc(56 * var(--u)); border-radius: calc(48 * var(--u)); }
-.lobby-start .btn.secondary { height: calc(110 * var(--u)); font-size: calc(32 * var(--u)); border-radius: calc(36 * var(--u)); }
+.lobby-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) calc(500 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)); min-height: 0; }
+/* Records on the left (docs/UI.md, Lobby i QR): the grid takes the room, "All records" sits under it. */
+.lobby-records-col { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-height: 0; min-width: 0; }
+.rec-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(16 * var(--u)); }
+.rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(24 * var(--u)) calc(26 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
+.rec-tile > :not(.rec-icon) { position: relative; max-width: 100%; }
+.rec-tile .what { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
+.rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(10 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
+.rec-tile .val .num { font-size: calc(120 * var(--u)); }
+.rec-tile .val .unit { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; }
+.rec-tile .who { font-size: max(16px, calc(32 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+/* The chase: 2nd and 3rd place, a row each, lighter than the muted grey of the rest. */
+.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); min-height: calc(2 * 1.2 * max(16px, calc(23 * var(--u)))); font-size: max(16px, calc(23 * var(--u))); color: var(--soft); }
+.rec-tile .chase .row { display: flex; gap: 0.5em; min-width: 0; line-height: 1.2; }
+.rec-tile .chase .pl { color: var(--muted); }
+.rec-tile .chase .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-tile .chase .v { font-weight: 700; white-space: nowrap; }
+.rec-tile .rec-icon { position: absolute; right: calc(-18 * var(--u)); bottom: calc(-18 * var(--u)); width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--faint); pointer-events: none; opacity: 0.45; }
+.rec-tile.empty { grid-column: 1 / -1; grid-row: 1 / -1; align-items: center; justify-content: center; background: transparent; border: 2px dashed var(--line); cursor: default; }
+.rec-tile.empty b { font-size: max(16px, calc(40 * var(--u))); font-weight: 800; }
+.rec-tile.empty span { font-size: max(16px, calc(26 * var(--u))); color: var(--muted); }
+.all-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
+.all-link .arrow { color: var(--accent); }
+.lobby-col { padding: calc(36 * var(--u)); display: flex; flex-direction: column; gap: calc(22 * var(--u)); min-width: 0; min-height: 0; }
+.lobby-col .lobby-text { gap: calc(12 * var(--u)); }
+.lobby-col .lobby-text h1 { font-size: calc(80 * var(--u)); }
+.lobby-col .btn { white-space: nowrap; }
+.lobby-col .btn.primary { height: max(var(--tap), calc(150 * var(--u))); font-size: max(18px, calc(44 * var(--u))); border-radius: calc(44 * var(--u)); }
+.lobby-col .btn.secondary { height: max(var(--tap), calc(84 * var(--u))); font-size: max(16px, calc(26 * var(--u))); border-radius: calc(30 * var(--u)); }
+.last-line { font-size: max(16px, calc(24 * var(--u))); font-weight: 600; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lobby-nav { margin-top: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(10 * var(--u)); }
+.lobby-nav .btn { padding: 0; height: max(var(--tap), calc(72 * var(--u))); font-size: max(16px, calc(22 * var(--u))); text-decoration: none; }
+/* Record attempt popup: sized in u like the rest of the kiosk, never narrower than a touch target. */
+.dialog.attempt { width: min(calc(920 * var(--u)), calc(100vw - 32px)); gap: calc(22 * var(--u)); padding: calc(40 * var(--u)); border-radius: calc(36 * var(--u)); }
+.dialog.attempt h2 { font-size: max(16px, calc(22 * var(--u))); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.attempt-what { font-size: max(20px, calc(44 * var(--u))); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-top: calc(-14 * var(--u)); }
+.attempt-beat { display: flex; align-items: center; gap: calc(24 * var(--u)); background: var(--raised); border-radius: calc(24 * var(--u)); padding: calc(18 * var(--u)) calc(28 * var(--u)); }
+.attempt-beat .t { flex: none; font-size: max(16px, calc(22 * var(--u))); color: var(--muted); font-weight: 600; }
+.attempt-beat .num { font-size: calc(80 * var(--u)); color: var(--accent); line-height: 0.9; white-space: nowrap; }
+.attempt-beat .w { margin-left: auto; min-width: 0; font-size: max(16px, calc(30 * var(--u))); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.attempt-hint { display: flex; justify-content: space-between; gap: 12px; font-size: max(16px, calc(26 * var(--u))); font-weight: 700; color: var(--soft); }
+.attempt-hint.ok { color: var(--green); }
+.attempt-chips { gap: calc(12 * var(--u)); }
+.attempt-chips .chip { min-height: max(var(--tap), calc(64 * var(--u))); height: auto; max-width: 100%; padding: 0 calc(28 * var(--u)); font-size: max(16px, calc(26 * var(--u))); }
+.attempt-chips .chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attempt-chips .chip:disabled { color: var(--off); border-style: dashed; }
+.dialog.attempt .actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: calc(14 * var(--u)); }
+.dialog.attempt .actions .btn { height: max(var(--tap), calc(80 * var(--u))); font-size: max(16px, calc(28 * var(--u))); }
 .qr-box { flex-shrink: 0; width: calc(520 * var(--u)); height: calc(520 * var(--u)); border-radius: calc(32 * var(--u)); background: var(--text); padding: calc(36 * var(--u)); }
 .qr-box svg { width: 100%; height: 100%; display: block; }
 .lobby-text { display: flex; flex-direction: column; gap: calc(28 * var(--u)); min-width: 0; }
@@ -407,15 +451,6 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .lobby-text h1 { margin: 0; font-size: var(--fs-tv-l); font-weight: 800; letter-spacing: -0.03em; line-height: 0.95; }
 .lobby-text p { margin: 0; font-size: calc(28 * var(--u)); color: var(--muted); line-height: 1.4; }
 .lobby-text .url { font-size: var(--fs-tv-meta); color: var(--soft); }
-.lobby-side { display: flex; flex-direction: column; gap: calc(24 * var(--u)); min-height: 0; }
-.lobby-side .card { padding: calc(36 * var(--u)); gap: calc(20 * var(--u)); }
-.last-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.last-row .n { font-size: calc(36 * var(--u)); font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.last-row.win .n { font-weight: 800; color: var(--text); }
-.last-row .num { font-size: calc(80 * var(--u)); color: var(--muted); line-height: 1; }
-.last-row.win .num { color: var(--text); }
-.lobby-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(12 * var(--u)); }
-.lobby-nav .btn { height: max(var(--tap), calc(72 * var(--u))); font-size: max(16px, calc(22 * var(--u))); text-decoration: none; }
 
 /* ---------- phone ---------- */
 /* Safe area: the top and sides here, the bottom in the action bar, which sits on it. 100dvh follows the browser's bars. */
@@ -601,7 +636,6 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .match-row .res.lost { color: var(--red-soft); }
 .match-row .res.saved { color: var(--muted2); }
 .match-row .res.left { color: var(--muted2); font-style: italic; }
-.last-row.left .n, .last-row.left .num { color: var(--off); }
 .match-row .grow { flex: 1; min-width: 0; }
 .match-row .num { font-size: var(--fs-ui-xl); }
 .match-row .grow small { display: block; color: var(--muted2); font-size: var(--fs-ui-xs); }
@@ -1152,8 +1186,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .master-controls input:disabled { accent-color: var(--off); cursor: default; }
 
 /* ---------- lobby records (D6) ---------- */
-/* Under the last match: one tile per minigame variant with a record; the list scrolls inside the card when long. */
-.lobby-side > .lobby-records { flex: 1; min-height: calc(240 * var(--u)); overflow: hidden; }
+/* The phone home: one tile per minigame variant with a record; the kiosk has its own grid (.rec-grid). */
 .lobby-records .record-list { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
 .record-tile { position: relative; overflow: hidden; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(4 * var(--u)); min-height: max(var(--tap), calc(132 * var(--u))); padding: calc(16 * var(--u)) calc(20 * var(--u)); border-radius: var(--r-tile); background: var(--card2); text-align: left; }
 .record-tile > :not(.record-icon) { position: relative; max-width: 100%; }
@@ -1164,12 +1197,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .record-tile.empty { justify-content: center; background: transparent; border: 2px dashed var(--line); }
 .record-tile.empty b { font-size: max(16px, calc(24 * var(--u))); }
 .record-tile.empty span { font-size: max(16px, calc(20 * var(--u))); color: var(--muted); }
-.last-note { font-size: max(16px, calc(20 * var(--u))); }
-/* 5–8 players: compact rows, so the records still get room under the card at 1280. */
-.lobby-side > .last-match { flex-shrink: 0; }
-.last-match.many { gap: calc(8 * var(--u)); }
-.last-match.many .last-row .n { font-size: max(16px, calc(26 * var(--u))); }
-.last-match.many .last-row .num { font-size: calc(44 * var(--u)); }
 /* The same records on the phone pilot's home, in px: the list runs with the page, no scroll inside. */
 .phone .lobby-records { border-radius: var(--r-box); padding: var(--sp-5) 20px; gap: var(--sp-3); }
 .phone .lobby-records .caps { font-size: var(--fs-ui-sm); }

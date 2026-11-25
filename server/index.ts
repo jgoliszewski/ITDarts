@@ -71,7 +71,8 @@ app.get('/ws', { websocket: true }, (socket, req) => {
 
 app.get('/api/stats/players', async () => stats.list());
 
-app.get('/api/lobby/records', async () => stats.lobbyRecords());
+// The kiosk asks for the top 8 (?top=1); the phone keeps the full list.
+app.get<{ Querystring: { top?: string } }>('/api/lobby/records', async req => (req.query.top ? stats.lobbyTop() : stats.lobbyRecords()));
 
 app.get<{ Params: { id: string }; Querystring: { window?: string; game?: string } }>('/api/stats/players/:id', async (req, reply) => {
   const { game } = req.query;
