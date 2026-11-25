@@ -105,7 +105,7 @@ Okno w lobby kiosku po stuknięciu kafelka rekordu: pokazuje rekord do pobicia i
 _Avoid_: challenge, quick start
 
 **Pościg**:
-Dwie szare linie na kafelku rekordu z 2. i 3. miejscem („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. W UI bez nazwy.
+Dwie szare linie na kafelku rekordu z 2. i 3. miejscem („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
 
 **Ekran rekordu**:
 Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry, a pod nim rekordami osobistymi graczy albo rekordem składu.
