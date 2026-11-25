@@ -439,6 +439,11 @@ describe('lobby records: top 8, chase, players', () => {
     expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:3', 'shanghai:solo:4', 'shanghai:solo:5', 'shanghai:solo:6']);
   });
 
+  it('puts the busier of two variants without recent matches first, whatever their labels', () => {
+    shanghai(4, 2, 90); shanghai(6, 3, 100);
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:6', 'shanghai:solo:4']);
+  });
+
   it('ranks a recent variant above a busier old one, and breaks ties by label', () => {
     shanghai(7, 1, 1); shanghai(8, 1, 1); shanghai(9, 5, 100);
     expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:7', 'shanghai:solo:8', 'shanghai:solo:9']);
@@ -450,9 +455,10 @@ describe('lobby records: top 8, chase, players', () => {
     expect(stats.lobbyRecords()).toHaveLength(10);
   });
 
-  it('has no 30-day window edge: a match 31 days ago does not count as recent', () => {
-    shanghai(3, 1, 31); shanghai(4, 1, 20);
-    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:4', 'shanghai:solo:3']);
+  it('counts only the last 30 days as recent, the 30th day included', () => {
+    shanghai(3, 3, 31); shanghai(4, 1, 30); shanghai(5, 1, 29);
+    // 4 and 5 are recent (one match each, label breaks the tie); 3 has more matches overall but none lately.
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:4', 'shanghai:solo:5', 'shanghai:solo:3']);
   });
 
   it('chases with the 2nd and 3rd place, fewer when there are fewer results', () => {
@@ -464,6 +470,26 @@ describe('lobby records: top 8, chase, players', () => {
     save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [60], 2);
     expect(stats.lobbyRecords()[0]).toMatchObject({ who: 'Anna', value: '90 points' });
     expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Bob', value: '80 points' }, { who: 'Cy', value: '70 points' }]);
+  });
+
+  it('chases people, not results: a player with the 1st, 2nd and 3rd result is one place', () => {
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [90], 5);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [85], 4);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [80], 3);
+    expect(stats.lobbyRecords()[0].chase).toEqual([]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [70], 2);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [B()], [60], 1);
+    expect(stats.lobbyRecords()[0]).toMatchObject({ who: 'Anna', value: '90 points' });
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Bob', value: '70 points' }]);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [C()], [65], 1);
+    expect(stats.lobbyTop()[0].chase).toEqual([{ who: 'Bob', value: '70 points' }, { who: 'Cy', value: '65 points' }]);
+  });
+
+  it('chases lineups in co-op: the same lineup twice is one place', () => {
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 4);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [B(), A()], [135, 135], 3);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), C()], [130, 130], 2);
+    expect(stats.lobbyRecords()[0].chase).toEqual([{ who: 'Anna & Cy', value: 'Target 130' }]);
   });
 
   it('chases a co-op record with the lineups', () => {

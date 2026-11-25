@@ -237,7 +237,7 @@ Postanowienia z grillingu z 2026-10-28 (zgłoszenia: heatmapa, porównanie gracz
 
 ## Menu Pilota
 
-Menu jest oknem dialogowym (`role="dialog"`, od 2026-11-18): fokus startuje na „How to play”, Esc je zamyka i oddaje fokus przyciskowi „Menu”, a Tab krąży po jego pozycjach. Ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku (na telefonie: status tarczy w nagłówku). New match to przycisk na ekranie głównym, a Players, Stats i Effects są w rzędzie na górze ekranu głównego (kiosk: nad ostatnim meczem po prawej, telefon Pilota: pod nagłówkiem).
+Menu jest oknem dialogowym (`role="dialog"`, od 2026-11-18): fokus startuje na „How to play”, Esc je zamyka i oddaje fokus przyciskowi „Menu”, a Tab krąży po jego pozycjach. Ma tylko to, czego nie ma pod osobnym przyciskiem. Board panel otwiera ikona tarczy w nagłówku (na telefonie: status tarczy w nagłówku). New match to przycisk na ekranie głównym, a Players, Stats i Effects są w rzędzie na górze ekranu głównego (kiosk: na dole prawej kolumny, pod linią ostatniego meczu, telefon Pilota: pod nagłówkiem).
 
 - **W trakcie meczu:** How to play i End match, z potwierdzeniem. W trakcie legu End match pyta też, czy zapisać mecz do statystyk („Save” albo „Discard”).
 - **Bez meczu:** Close app, czyli wyjście z kiosku, z potwierdzeniem. Tylko na laptopie przy tarczy.

@@ -136,7 +136,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .btn, .icon-btn, .chip, .tile, .game-tile, .key, .seg button, .mult-row button, .player-card, button.list-row, button.dart-tile,
 .fx-tile, .fx-pick-main, .fx-chip button, .fx-preset, .howto-btn, .record-tile, .pick-btn, .pick-list button, .stepper button, .manage > summary { transition: transform var(--dur-press) var(--ease-out); }
 :is(.btn, .icon-btn, .chip, .tile, .key, .seg button, .mult-row button, button.dart-tile, .fx-tile, .fx-pick-main, .fx-chip button, .fx-preset, .howto-btn, .pick-btn, .pick-list button, .stepper button):active:not(:disabled) { transform: scale(0.97); }
-:is(.game-tile, .player-card, button.list-row, .record-tile, .manage > summary):active:not(:disabled) { transform: scale(0.98); }
+:is(.game-tile, .player-card, button.list-row, .record-tile, .rec-tile, .manage > summary):active:not(:disabled) { transform: scale(0.98); }
 [role='button']:is(.prow, .p-player, .ch) { transition: opacity var(--dur-press) var(--ease-out); }
 [role='button']:is(.prow, .p-player, .ch):active { opacity: 0.8; }
 .num { font-family: var(--num); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -401,7 +401,6 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .lobby-records-col { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-height: 0; min-width: 0; }
 .rec-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(16 * var(--u)); }
 .rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(24 * var(--u)) calc(26 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
-.rec-tile:active { transform: scale(0.98); }
 .rec-tile > :not(.rec-icon) { position: relative; max-width: 100%; }
 .rec-tile .what { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
 .rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(10 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
@@ -414,7 +413,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .rec-tile .chase .pl { color: var(--muted); }
 .rec-tile .chase .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-tile .chase .v { font-weight: 700; white-space: nowrap; }
-.rec-tile .rec-icon { position: absolute; right: calc(-18 * var(--u)); top: calc(-18 * var(--u)); width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--faint); pointer-events: none; opacity: 0.7; }
+.rec-tile .rec-icon { position: absolute; right: calc(-18 * var(--u)); bottom: calc(-18 * var(--u)); width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--faint); pointer-events: none; opacity: 0.45; }
 .rec-tile.empty { grid-column: 1 / -1; grid-row: 1 / -1; align-items: center; justify-content: center; background: transparent; border: 2px dashed var(--line); cursor: default; }
 .rec-tile.empty b { font-size: max(16px, calc(40 * var(--u))); font-weight: 800; }
 .rec-tile.empty span { font-size: max(16px, calc(26 * var(--u))); color: var(--muted); }

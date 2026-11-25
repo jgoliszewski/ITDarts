@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import type { ClientState, LobbyRecord, MatchSummary, PlayerInfo } from '../../../server/protocol.ts';
+import type { ClientState, LobbyRecord, PlayerInfo } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
 import { Dialog, Presence, act } from '../components/ui.tsx';
 import { rematchLabel } from '../match.ts';
-import { attemptHint, attemptReady, splitValue, togglePick } from '../records.ts';
+import { attemptCommand, attemptHint, attemptReady, lastLine, splitValue, togglePick } from '../records.ts';
 import { shortDate } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
@@ -41,13 +41,6 @@ export function Records({ lastId, onPick }: { lastId: number | undefined; onPick
       )}
     </div>
   );
-}
-
-/** “Last: 121 · Anna · Target 140”: the game, who won (everyone in a solo or a tie) and the first result. */
-export function lastLine(last: MatchSummary): string {
-  const winners = last.players.filter(p => p.winner);
-  const who = winners.length ? winners : last.players.filter(p => !p.left);
-  return `Last: ${[last.description.replace(/^X01 · /, ''), who.map(p => p.name).join(' & '), who[0]?.value].filter(Boolean).join(' · ')}`;
 }
 
 /** The kiosk's records: the 8 most played variants as big tiles (docs/UI.md, Lobby i QR). A tap opens the attempt popup. */
@@ -90,19 +83,21 @@ function RecordGrid({ lastId, onPick }: { lastId: number | undefined; onPick: (r
  * “Record attempt”: the record's game and options are fixed, only the players are chosen. Solo takes exactly one, co-op
  * two or more; nobody is picked at first, and there is no Guest (a guest keeps no record).
  */
-function AttemptDialog({ record: r, players, onClose }: { record: LobbyRecord; players: PlayerInfo[]; onClose: () => void }) {
+function AttemptDialog({ record: r, players, onStart, onClose }: { record: LobbyRecord; players: PlayerInfo[]; onStart: (cmd: NonNullable<ReturnType<typeof attemptCommand>>) => Promise<boolean>; onClose: () => void }) {
   const [picked, setPicked] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
-  const ready = attemptReady(r, picked.length);
+  // Someone archived meanwhile (from a phone) leaves the choice.
+  const shown = picked.filter(id => players.some(p => p.id === id));
+  const ready = attemptReady(r, shown.length);
   const start = async () => {
-    if (!ready || busy) return;
+    const cmd = attemptCommand(r, shown, players);
+    if (!cmd || busy) return;
     setBusy(true);
-    // A co-op record is played as co-op: its match's options say so already, the flag is set for the games that keep one.
-    const options = r.coop && r.options && typeof r.options === 'object' && 'coop' in r.options ? { ...r.options, coop: true } : r.options;
-    const roster = picked.map(id => ({ playerId: id, name: players.find(p => p.id === id)!.name }));
-    const res = await act({ type: 'startMatch', game: r.game, options, roster });
-    setBusy(false);
-    if (res.ok) onClose();
+    try {
+      if (await onStart(cmd)) onClose();
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <Dialog title="Record attempt" className="attempt" onClose={onClose} actions={<>
@@ -117,14 +112,14 @@ function AttemptDialog({ record: r, players, onClose }: { record: LobbyRecord; p
       </div>
       <div className={`attempt-hint ${ready ? 'ok' : ''}`}>
         <span>{attemptHint(r)}</span>
-        <span className="muted">{r.coop ? `${picked.length} of max ${r.maxPlayers}` : `${picked.length} of 1`}</span>
+        <span className="muted">{r.coop ? `${shown.length} of max ${r.maxPlayers}` : `${shown.length} of 1`}</span>
       </div>
       <div className="chip-row attempt-chips">
         {players.map(p => {
-          const on = picked.includes(p.id);
+          const on = shown.includes(p.id);
           return (
-            <button key={p.id} className={`chip ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && r.maxPlayers > 1 && picked.length >= r.maxPlayers}
-              onClick={() => setPicked(cur => togglePick(r, cur, p.id))} title={p.name}>
+            <button key={p.id} className={`chip ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && r.maxPlayers > 1 && shown.length >= r.maxPlayers}
+              onClick={() => setPicked(cur => togglePick(r, cur.filter(id => players.some(x => x.id === id)), p.id))} title={p.name}>
               <span>{p.name}</span>
             </button>
           );
@@ -179,7 +174,7 @@ export function Lobby({ s, onMenu, onBoard, onNew, onPlayers, overlay }: {
         </section>
       </main>
       <HowToOverlay s={s} />
-      <Presence>{attempt && <AttemptDialog record={attempt} players={players} onClose={() => setAttempt(null)} />}</Presence>
+      <Presence>{attempt && <AttemptDialog record={attempt} players={players} onClose={() => setAttempt(null)} onStart={async cmd => { let ok = false; await takeThen(async () => { ok = (await act(cmd)).ok; }); return ok; }} />}</Presence>
       {overlay}
     </div>
   );

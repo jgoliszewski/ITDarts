@@ -441,6 +441,22 @@ export class Db {
       ORDER BY value ${dir}, at ASC LIMIT ?`).all(...args) as unknown as RecordRow[];
   }
 
+  /**
+   * `records`, one row per player (co-op: per lineup): the best of each, so a place counts people, not matches.
+   * The Ekran rekordu and the lobby's chase share it. Reads every result of the variant (an office has hundreds, not millions).
+   */
+  rankedRecords(variant: string, better: 'lower' | 'higher', limit = -1): RecordRow[] {
+    const seen = new Set<string>();
+    const ranked: RecordRow[] = [];
+    for (const r of this.records(variant, better, -1)) {
+      if (seen.has(r.lineup)) continue;
+      seen.add(r.lineup);
+      ranked.push(r);
+      if (ranked.length === limit) break;
+    }
+    return ranked;
+  }
+
   // ---------- backup ----------
 
   /** Copies the database with VACUUM INTO and keeps the newest `keep` copies in each folder. */

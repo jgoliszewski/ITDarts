@@ -330,7 +330,9 @@ export class Stats {
    * The phone lists all of them.
    */
   lobbyRecords(): LobbyRecord[] {
-    return this.lobbyEntries().sort((a, b) => a.order - b.order || a.rec.label.localeCompare(b.rec.label)).map(e => e.rec);
+    const order = GAME_GROUPS.flatMap(g => g.ids);
+    return this.playedVariants().flatMap(p => { const r = this.lobbyRecord(p.game, p.variant); return r ? [{ r, order: order.indexOf(p.game) }] : []; })
+      .sort((a, b) => a.order - b.order || a.r.label.localeCompare(b.r.label)).map(e => e.r);
   }
 
   /**
@@ -338,33 +340,40 @@ export class Stats {
    * rest are the most played of all time. Ties go by label, so the order is stable.
    */
   lobbyTop(limit = 8): LobbyRecord[] {
-    return this.lobbyEntries()
-      .sort((a, b) => b.recent - a.recent || b.all - a.all || a.rec.label.localeCompare(b.rec.label))
-      .slice(0, limit).map(e => e.rec);
+    const played = this.playedVariants().sort((a, b) =>
+      b.recent - a.recent || b.n - a.n || this.variantLabel(a.game, a.variant).localeCompare(this.variantLabel(b.game, b.variant)));
+    // Sorted and cut first, so only the tiles shown cost a records query.
+    const top: LobbyRecord[] = [];
+    for (const p of played) {
+      const r = this.lobbyRecord(p.game, p.variant);
+      if (r) top.push(r);
+      if (top.length === limit) break;
+    }
+    return top;
   }
 
-  private lobbyEntries(): { rec: LobbyRecord; order: number; recent: number; all: number }[] {
+  /** The variants played that have a record, with their matches in the last 30 days and in all. */
+  private playedVariants(): { game: GameId; variant: string; n: number; recent: number }[] {
     const since = this.now() - 30 * DAY;
-    const played = this.db.sql.prepare(`
-      SELECT game, variant, COUNT(*) AS n, SUM(ended_at >= ?) AS recent FROM matches WHERE variant IS NOT NULL GROUP BY game, variant`)
-      .all(since) as { game: GameId; variant: string; n: number; recent: number }[];
-    const order = GAME_GROUPS.flatMap(g => g.ids);
-    return played.flatMap(({ game, variant, n, recent }) => {
-      const g = GAMES[game];
-      const rec = g.record;
-      if (!rec) return [];
-      const [best, ...chase] = this.db.records(variant, rec.better, 3);
-      if (!best) return [];
-      const options = g.normalizeOptions(JSON.parse(best.options));
-      const label = [this.variantLabel(game, variant), rec.extra?.(options)].filter(Boolean).join(' · ');
-      const coop = variant.endsWith(':coop');
-      const record: LobbyRecord = {
-        game, key: variant, label, value: rec.format(best.value), who: best.who, at: best.at, options,
-        chase: chase.map(c => ({ who: c.who, value: rec.format(c.value) })),
-        coop, minPlayers: coop ? 2 : 1, maxPlayers: coop ? g.maxPlayers ?? MAX_PLAYERS : 1,
-      };
-      return [{ rec: record, order: order.indexOf(game), recent: recent ?? 0, all: n }];
-    });
+    return (this.db.sql.prepare(`
+      SELECT game, variant, COUNT(*) AS n, COALESCE(SUM(ended_at >= ?), 0) AS recent FROM matches WHERE variant IS NOT NULL GROUP BY game, variant`)
+      .all(since) as { game: GameId; variant: string; n: number; recent: number }[]).filter(p => GAMES[p.game]?.record);
+  }
+
+  /** One lobby tile; the chase is the 2nd and 3rd person (co-op: lineup), not result. */
+  private lobbyRecord(game: GameId, variant: string): LobbyRecord | null {
+    const g = GAMES[game];
+    const rec = g.record!;
+    const [best, ...chase] = this.db.rankedRecords(variant, rec.better, 3);
+    if (!best) return null;
+    const options = g.normalizeOptions(JSON.parse(best.options));
+    const label = [this.variantLabel(game, variant), rec.extra?.(options)].filter(Boolean).join(' · ');
+    const coop = variant.endsWith(':coop');
+    return {
+      game, key: variant, label, value: rec.format(best.value), who: best.who, at: best.at, options,
+      chase: chase.map(c => ({ who: c.who, value: rec.format(c.value) })),
+      coop, minPlayers: coop ? 2 : 1, maxPlayers: coop ? g.maxPlayers ?? MAX_PLAYERS : 1,
+    };
   }
 
   /** Top 10 of every record variant played so far. */
