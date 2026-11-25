@@ -1,7 +1,7 @@
 // Read-only statistics over stored history (docs/STATYSTYKI.md). Computed on demand, no cache.
 import type { Dart } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
-import { GAMES, GAME_GROUPS } from '../games/index.ts';
+import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../games/index.ts';
 import type { X01Options, X01Stats } from '../games/x01/index.ts';
 import { x01Stats } from '../games/x01/index.ts';
 import type { Db } from './db.ts';
@@ -327,21 +327,43 @@ export class Stats {
   /**
    * The lobby's records (D6): the best result of every minigame variant played, in the order of the game groups and
    * by label within a game, with the options of the record's match so the lobby can set the same game up again.
+   * The phone lists all of them.
    */
   lobbyRecords(): LobbyRecord[] {
-    const played = this.db.sql.prepare('SELECT DISTINCT game, variant FROM matches WHERE variant IS NOT NULL').all() as { game: GameId; variant: string }[];
+    return this.lobbyEntries().sort((a, b) => a.order - b.order || a.rec.label.localeCompare(b.rec.label)).map(e => e.rec);
+  }
+
+  /**
+   * The kiosk's records: the 8 variants played most in the last 30 days, most first. When fewer were played lately, the
+   * rest are the most played of all time. Ties go by label, so the order is stable.
+   */
+  lobbyTop(limit = 8): LobbyRecord[] {
+    return this.lobbyEntries()
+      .sort((a, b) => b.recent - a.recent || b.all - a.all || a.rec.label.localeCompare(b.rec.label))
+      .slice(0, limit).map(e => e.rec);
+  }
+
+  private lobbyEntries(): { rec: LobbyRecord; order: number; recent: number; all: number }[] {
+    const since = this.now() - 30 * DAY;
+    const played = this.db.sql.prepare(`
+      SELECT game, variant, COUNT(*) AS n, SUM(ended_at >= ?) AS recent FROM matches WHERE variant IS NOT NULL GROUP BY game, variant`)
+      .all(since) as { game: GameId; variant: string; n: number; recent: number }[];
     const order = GAME_GROUPS.flatMap(g => g.ids);
-    return order.flatMap(game => {
+    return played.flatMap(({ game, variant, n, recent }) => {
       const g = GAMES[game];
       const rec = g.record;
       if (!rec) return [];
-      return played.filter(p => p.game === game).flatMap(({ variant }) => {
-        const best = this.db.records(variant, rec.better, 1)[0];
-        if (!best) return [];
-        const options = g.normalizeOptions(JSON.parse(best.options));
-        const label = [this.variantLabel(game, variant), rec.extra?.(options)].filter(Boolean).join(' · ');
-        return [{ game, key: variant, label, value: rec.format(best.value), who: best.who, at: best.at, options }];
-      }).sort((a, b) => a.label.localeCompare(b.label));
+      const [best, ...chase] = this.db.records(variant, rec.better, 3);
+      if (!best) return [];
+      const options = g.normalizeOptions(JSON.parse(best.options));
+      const label = [this.variantLabel(game, variant), rec.extra?.(options)].filter(Boolean).join(' · ');
+      const coop = variant.endsWith(':coop');
+      const record: LobbyRecord = {
+        game, key: variant, label, value: rec.format(best.value), who: best.who, at: best.at, options,
+        chase: chase.map(c => ({ who: c.who, value: rec.format(c.value) })),
+        coop, minPlayers: coop ? 2 : 1, maxPlayers: coop ? g.maxPlayers ?? MAX_PLAYERS : 1,
+      };
+      return [{ rec: record, order: order.indexOf(game), recent: recent ?? 0, all: n }];
     });
   }
 

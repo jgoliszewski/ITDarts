@@ -1,17 +1,18 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import type { ClientState, LobbyRecord } from '../../../server/protocol.ts';
+import type { ClientState, LobbyRecord, MatchSummary, PlayerInfo } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
-import { act } from '../components/ui.tsx';
+import { Dialog, Presence, act } from '../components/ui.tsx';
 import { rematchLabel } from '../match.ts';
-import { fmtAvg, shortDate } from '../util.ts';
+import { attemptHint, attemptReady, splitValue, togglePick } from '../records.ts';
+import { shortDate } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
 /**
- * Office records of the minigames under the last match (D6): one tile per variant with a record, in the order of the
- * game groups. A tap opens New match with that game set up like the record's match. The list scrolls inside its card
- * when there are more than fit; reloaded whenever a new match is saved.
+ * Office records of the minigames on the phone pilot's home (D6): one tile per variant with a record, in the order of
+ * the game groups. A tap opens New match with that game set up like the record's match; reloaded whenever a new match
+ * is saved. The kiosk has its own, bigger grid of the top 8 (`RecordGrid`).
  */
 export function Records({ lastId, onPick }: { lastId: number | undefined; onPick: (r: LobbyRecord) => void }) {
   const [records, setRecords] = useState<LobbyRecord[] | null>(null);
@@ -42,13 +43,106 @@ export function Records({ lastId, onPick }: { lastId: number | undefined; onPick
   );
 }
 
-export function Lobby({ s, onMenu, onBoard, onNew, onRecord, onPlayers, overlay }: {
-  s: ClientState; onMenu: () => void; onBoard?: () => void; onNew: () => void; onRecord: (r: LobbyRecord) => void; onPlayers: () => void; overlay?: ReactNode }) {
+/** “Last: 121 · Anna · Target 140”: the game, who won (everyone in a solo or a tie) and the first result. */
+export function lastLine(last: MatchSummary): string {
+  const winners = last.players.filter(p => p.winner);
+  const who = winners.length ? winners : last.players.filter(p => !p.left);
+  return `Last: ${[last.description.replace(/^X01 · /, ''), who.map(p => p.name).join(' & '), who[0]?.value].filter(Boolean).join(' · ')}`;
+}
+
+/** The kiosk's records: the 8 most played variants as big tiles (docs/UI.md, Lobby i QR). A tap opens the attempt popup. */
+function RecordGrid({ lastId, onPick }: { lastId: number | undefined; onPick: (r: LobbyRecord) => void }) {
+  const [records, setRecords] = useState<LobbyRecord[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/lobby/records?top=1').then(r => r.json()).then((r: LobbyRecord[]) => live && setRecords(r)).catch(() => live && setRecords([]));
+    return () => { live = false; };
+  }, [lastId]);
+  if (records === null) return <div className="rec-grid" />;
+  if (records.length === 0) {
+    return <div className="rec-grid"><div className="rec-tile empty"><b>No records yet</b><span>Play a minigame to set one</span></div></div>;
+  }
+  return (
+    <div className="rec-grid">
+      {records.map(r => {
+        const [num, unit] = splitValue(r.value);
+        return (
+          <button key={r.key} className="rec-tile" onClick={() => onPick(r)} aria-label={`Record attempt: ${r.label}, record ${r.value} by ${r.who}`}>
+            <GameIcon game={r.game} className="rec-icon" />
+            <span className="what">{r.label}</span>
+            <span className="val"><span className="num">{num}</span>{unit && <span className="unit">{unit}</span>}</span>
+            <span className="who" title={r.who}>{r.who}</span>
+            <span className="chase">
+              {r.chase.map((c, i) => (
+                <span key={i} className="row" title={`${i + 2}. ${c.who} ${c.value}`}>
+                  <span className="pl">{i + 2}</span><span className="nm">{c.who}</span><span className="v">{splitValue(c.value)[0]}</span>
+                </span>
+              ))}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * “Record attempt”: the record's game and options are fixed, only the players are chosen. Solo takes exactly one, co-op
+ * two or more; nobody is picked at first, and there is no Guest (a guest keeps no record).
+ */
+function AttemptDialog({ record: r, players, onClose }: { record: LobbyRecord; players: PlayerInfo[]; onClose: () => void }) {
+  const [picked, setPicked] = useState<number[]>([]);
+  const [busy, setBusy] = useState(false);
+  const ready = attemptReady(r, picked.length);
+  const start = async () => {
+    if (!ready || busy) return;
+    setBusy(true);
+    // A co-op record is played as co-op: its match's options say so already, the flag is set for the games that keep one.
+    const options = r.coop && r.options && typeof r.options === 'object' && 'coop' in r.options ? { ...r.options, coop: true } : r.options;
+    const roster = picked.map(id => ({ playerId: id, name: players.find(p => p.id === id)!.name }));
+    const res = await act({ type: 'startMatch', game: r.game, options, roster });
+    setBusy(false);
+    if (res.ok) onClose();
+  };
+  return (
+    <Dialog title="Record attempt" className="attempt" onClose={onClose} actions={<>
+      <button className="btn" onClick={onClose}>Cancel</button>
+      <button className="btn primary" disabled={!ready || busy} onClick={() => void start()}>Start</button>
+    </>}>
+      <div className="attempt-what">{r.label}</div>
+      <div className="attempt-beat">
+        <span className="t">Record to beat</span>
+        <span className="num">{r.value}</span>
+        <span className="w" title={r.who}>{r.who}</span>
+      </div>
+      <div className={`attempt-hint ${ready ? 'ok' : ''}`}>
+        <span>{attemptHint(r)}</span>
+        <span className="muted">{r.coop ? `${picked.length} of max ${r.maxPlayers}` : `${picked.length} of 1`}</span>
+      </div>
+      <div className="chip-row attempt-chips">
+        {players.map(p => {
+          const on = picked.includes(p.id);
+          return (
+            <button key={p.id} className={`chip ${on ? 'on' : ''}`} aria-pressed={on} disabled={!on && r.maxPlayers > 1 && picked.length >= r.maxPlayers}
+              onClick={() => setPicked(cur => togglePick(r, cur, p.id))} title={p.name}>
+              <span>{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Dialog>
+  );
+}
+
+export function Lobby({ s, onMenu, onBoard, onNew, onPlayers, overlay }: {
+  s: ClientState; onMenu: () => void; onBoard?: () => void; onNew: () => void; onPlayers: () => void; overlay?: ReactNode }) {
   const last = s.lastMatch;
+  const [attempt, setAttempt] = useState<LobbyRecord | null>(null);
   const takeThen = async (fn: () => void | Promise<unknown>) => {
     if (!s.you.isPilot && !(await act({ type: 'takeControl' })).ok) return;
     await fn();
   };
+  const players = s.players.filter(p => !p.archived);
 
   return (
     <div className="big">
@@ -61,7 +155,11 @@ export function Lobby({ s, onMenu, onBoard, onNew, onRecord, onPlayers, overlay 
         </div>
       )}
       <main className="lobby-main">
-        <section className="lobby-start">
+        <div className="lobby-records-col">
+          <RecordGrid lastId={last?.id} onPick={r => takeThen(() => setAttempt(r))} />
+          <a className="all-link" href="/stats">All records <span className="arrow" aria-hidden="true">→</span></a>
+        </div>
+        <section className="card lobby-col">
           <div className="lobby-text">
             <div className="kicker">{last ? 'READY FOR THE NEXT ONE' : 'NO MATCH YET'}</div>
             <h1>Game on?</h1>
@@ -72,33 +170,16 @@ export function Lobby({ s, onMenu, onBoard, onNew, onRecord, onPlayers, overlay 
               {rematchLabel(last.players.filter(p => !p.left).map(p => p.name))}
             </button>
           )}
-        </section>
-        <aside className="lobby-side">
+          {last && <div className="last-line" title={lastLine(last)}>{lastLine(last)}{last.status === 'ended' ? ' · ended early' : ''}</div>}
           <nav className="lobby-nav">
             <button className="btn" onClick={() => takeThen(onPlayers)}>Players</button>
             <a className="btn" href="/stats">Stats</a>
             <a className="btn" href="/effects">Effects</a>
           </nav>
-          {last && (
-            <div className={`card last-match ${last.players.length > 4 ? 'many' : ''}`}>
-              <div className="caps">Last match · {last.description.replace(/^X01 · /, '')}</div>
-              {last.players.map((p, i) => (
-                // Alone, the one player's result reads like a win, not a loss (B#12).
-                <div key={i} className={`last-row ${p.winner || last.players.length === 1 ? 'win' : ''} ${p.left ? 'left' : ''}`}>
-                  <span className="n">{p.name}{p.left && <small> · Left</small>}</span>
-                  <span className="num">{p.value}</span>
-                </div>
-              ))}
-              <div className="muted last-note">
-                {last.game === 'x01' && <>Avg {last.players.map(p => fmtAvg(p.avg)).join(' vs ')}{last.checkout ? ` · checkout ${last.checkout}` : ''}</>}
-                {last.status === 'ended' ? ' · ended early' : ''}
-              </div>
-            </div>
-          )}
-          <Records lastId={last?.id} onPick={r => takeThen(() => onRecord(r))} />
-        </aside>
+        </section>
       </main>
       <HowToOverlay s={s} />
+      <Presence>{attempt && <AttemptDialog record={attempt} players={players} onClose={() => setAttempt(null)} />}</Presence>
       {overlay}
     </div>
   );

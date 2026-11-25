@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue } from './records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -148,5 +148,35 @@ describe('value and unit', () => {
     expect(splitValue('23 darts')).toEqual(['23', 'darts']);
     expect(splitValue('1 point')).toEqual(['1', 'point']);
     expect(splitValue('Target 128')).toEqual(['128', '']);
+  });
+});
+
+describe('record attempt players', () => {
+  const solo = { coop: false, minPlayers: 1, maxPlayers: 1 };
+  const coop = { coop: true, minPlayers: 2, maxPlayers: 4 };
+
+  it('hints the count', () => {
+    expect(attemptHint(solo)).toBe('Pick 1 player');
+    expect(attemptHint(coop)).toBe('Pick 2 or more players');
+  });
+
+  it('starts solo with exactly one player', () => {
+    expect([0, 1, 2].map(n => attemptReady(solo, n))).toEqual([false, true, false]);
+  });
+
+  it('starts co-op with two up to the limit', () => {
+    expect([0, 1, 2, 4, 5].map(n => attemptReady(coop, n))).toEqual([false, false, true, true, false]);
+  });
+
+  it('swaps the one solo player instead of adding', () => {
+    expect(togglePick(solo, [], 3)).toEqual([3]);
+    expect(togglePick(solo, [3], 5)).toEqual([5]);
+    expect(togglePick(solo, [3], 3)).toEqual([]);
+  });
+
+  it('toggles co-op players in the order picked and stops at the limit', () => {
+    expect(togglePick(coop, [2], 1)).toEqual([2, 1]);
+    expect(togglePick(coop, [2, 1], 2)).toEqual([1]);
+    expect(togglePick(coop, [1, 2, 3, 4], 5)).toEqual([1, 2, 3, 4]);
   });
 });

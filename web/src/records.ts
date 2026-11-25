@@ -92,3 +92,18 @@ export function splitValue(value: string): [string, string] {
   const m = /^(\d+)\s*(.*)$/.exec(value);
   return m ? [m[1], m[2]] : [value.replace(/^\D+/, ''), ''];
 }
+
+/** What a record attempt takes (the lobby's “Record attempt” popup): a solo record exactly one player, a co-op one two or more up to the game's limit. */
+export interface AttemptRule { coop: boolean; minPlayers: number; maxPlayers: number }
+
+export const attemptHint = (r: AttemptRule) => (r.minPlayers === r.maxPlayers ? `Pick ${r.minPlayers} player${r.minPlayers === 1 ? '' : 's'}` : `Pick ${r.minPlayers} or more players`);
+
+/** Start is enabled only for a count the record allows. */
+export const attemptReady = (r: AttemptRule, picked: number) => picked >= r.minPlayers && picked <= r.maxPlayers;
+
+/** A tap on a player: solo swaps the choice; co-op toggles, and a full lineup ignores one more. Order of picking is the order of play. */
+export function togglePick(r: AttemptRule, picked: number[], id: number): number[] {
+  if (picked.includes(id)) return picked.filter(p => p !== id);
+  if (r.maxPlayers === 1) return [id];
+  return picked.length >= r.maxPlayers ? picked : [...picked, id];
+}

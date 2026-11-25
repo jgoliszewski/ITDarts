@@ -257,6 +257,12 @@ export interface LobbyRecord {
   at: number;
   /** The record match's options, normalized; the variant key alone can't give them back (ATC's order is not in it). */
   options: unknown;
+  /** The 2nd and 3rd best results, formatted like `value`; fewer when there are fewer. */
+  chase: { who: string; value: string }[];
+  /** A co-op record takes `minPlayers`..`maxPlayers` players (2 up to the game's limit), any other exactly one. */
+  coop: boolean;
+  minPlayers: number;
+  maxPlayers: number;
 }
 
 /** A row of Recent matches: `opponents` null for a solo match, `score` from the player's side (X01 legs, minigame result). */
