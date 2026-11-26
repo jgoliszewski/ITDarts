@@ -93,6 +93,11 @@ export function splitValue(value: string): [string, string] {
   return m ? [m[1], m[2]] : [value.replace(/^\D+/, ''), ''];
 }
 
+/** The kiosk's record grid shape for n tiles: few records get bigger tiles instead of an empty row (1, 2×1, 2×2, 3×2, 4×2). */
+export function gridShape(n: number): { cols: number; rows: number } {
+  return { cols: n <= 1 ? 1 : n <= 4 ? 2 : n <= 6 ? 3 : 4, rows: n <= 2 ? 1 : 2 };
+}
+
 /** What a record attempt takes (the lobby's “Record attempt” popup): a solo record exactly one player, a co-op one two or more up to the game's limit. */
 export interface AttemptRule { coop: boolean; minPlayers: number; maxPlayers: number }
 

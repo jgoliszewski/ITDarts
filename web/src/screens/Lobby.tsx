@@ -5,7 +5,7 @@ import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
 import { Dialog, Presence, act } from '../components/ui.tsx';
 import { rematchLabel } from '../match.ts';
-import { attemptCommand, attemptHint, attemptReady, lastLine, splitValue, togglePick } from '../records.ts';
+import { attemptCommand, attemptHint, attemptReady, gridShape, lastLine, splitValue, togglePick } from '../records.ts';
 import { shortDate } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
@@ -55,8 +55,9 @@ function RecordGrid({ lastId, onPick }: { lastId: number | undefined; onPick: (r
   if (records.length === 0) {
     return <div className="rec-grid"><div className="rec-tile empty"><b>No records yet</b><span>Play a minigame to set one</span></div></div>;
   }
+  const { cols, rows } = gridShape(records.length);
   return (
-    <div className="rec-grid">
+    <div className="rec-grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}>
       {records.map(r => {
         const [num, unit] = splitValue(r.value);
         return (
@@ -66,6 +67,7 @@ function RecordGrid({ lastId, onPick }: { lastId: number | undefined; onPick: (r
             <span className="val"><span className="num">{num}</span>{unit && <span className="unit">{unit}</span>}</span>
             <span className="who" title={r.who}>{r.who}</span>
             <span className="chase">
+              {r.chase.length === 0 && <span className="row none">Nobody close yet</span>}
               {r.chase.map((c, i) => (
                 <span key={i} className="row" title={`${i + 2}. ${c.who} ${c.value}`}>
                   <span className="pl">{i + 2}</span><span className="nm">{c.who}</span><span className="v">{splitValue(c.value)[0]}</span>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LobbyRecord, MatchSummary, RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine } from './records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, gridShape } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -243,5 +243,12 @@ describe('last match line', () => {
   it('leaves out a player who left unless nobody won', () => {
     expect(lastLine(m('shanghai', 'Shanghai', [p('Anna', '90 points', { winner: true }), p('Bob', '', { left: true })]))).toBe('Last: Shanghai · Anna · 90 points');
     expect(lastLine(m('shanghai', 'Shanghai', [p('Anna', '', { left: true }), p('Bob', '80 points')]))).toBe('Last: Shanghai · Bob · 80 points');
+  });
+});
+
+describe('record grid shape', () => {
+  it('fills the space with fewer, bigger tiles', () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8].map(n => { const g = gridShape(n); return `${g.cols}x${g.rows}`; }))
+      .toEqual(['1x1', '2x1', '2x2', '2x2', '3x2', '3x2', '4x2', '4x2']);
   });
 });
