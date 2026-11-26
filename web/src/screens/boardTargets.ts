@@ -5,7 +5,7 @@ import type { BoardTargets, Segment, TargetRing } from '../components/targets.ts
 import { BULL, boardOf, ticks } from '../components/targets.ts';
 import type { MiniMatch } from '../match.ts';
 
-export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket';
+export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket' | 'killer';
 export type BoardMatch = Extract<MiniMatch, { game: BoardGame }>;
 
 const OFF: Segment = { state: 'off' };
@@ -50,6 +50,19 @@ export function boardTargets(m: BoardMatch): { board: BoardTargets; label: strin
       return { board: boardOf(OFF, [[BULL, { state: 'target', ring: 'any' }]]), label: 'Aim for the bull' };
     case 'freethrow':
       return { board: boardOf({ state: 'none' }), label: 'No target' };
+    case 'killer': {
+      // Before killer status only the own double counts. A killer aims at the doubles of living rivals (ticks: their lives);
+      // the own double turns red, since hitting it costs a life. The eliminated and numbers nobody has are out of play.
+      const { numbers, lives, killer: isKiller, rows } = m.view;
+      const max = m.options.lives;
+      const over = numbers.flatMap((n, i): [number, Segment][] => {
+        if (rows[i].out) return [];
+        if (i === cur) return [[n, { state: isKiller[cur] ? 'danger' : 'target', ring: 2, ticks: ticks(lives[i], max) }]];
+        return isKiller[cur] ? [[n, { state: 'target', ring: 2, ticks: ticks(lives[i], max) }]] : [];
+      });
+      const label = isKiller[cur] ? `Rival doubles: ${over.filter(([, s]) => s.state === 'target').map(([n]) => `D${n}`).join(' · ')}` : `Your double: D${numbers[cur]}`;
+      return { board: boardOf(OFF, over), label };
+    }
     case 'cricket': {
       // Ticks are the marks of the player throwing; closed by them green (still scores), closed by everyone hatched.
       const { sectors, dead, marks } = m.view;

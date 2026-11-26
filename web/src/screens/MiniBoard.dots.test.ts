@@ -72,10 +72,14 @@ describe('dart dots on the hero board', () => {
   });
 });
 
-describe('hasBoard for Cricket', () => {
+describe('hasBoard for Cricket and Killer', () => {
   const cricket = (sectors: string) => ({ game: 'cricket', options: { sectors } }) as never;
-  it('shows the board only with random sectors', () => {
+  it('shows the board in Cricket with either sectors, and in Killer', () => {
     expect(hasBoard(cricket('random'))).toBe(true);
-    expect(hasBoard(cricket('classic'))).toBe(false);
+    expect(hasBoard(cricket('classic'))).toBe(true);
+    expect(hasBoard({ game: 'killer', options: {} } as never)).toBe(true);
+  });
+  it('shows no board in a game without one', () => {
+    expect(hasBoard({ game: 'knockout', options: {} } as never)).toBe(false);
   });
 });

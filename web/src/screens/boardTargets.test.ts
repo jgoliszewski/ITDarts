@@ -4,6 +4,7 @@ import { cricket } from '../../../games/cricket.ts';
 import { parseDart } from '../../../games/darts.ts';
 import { football } from '../../../games/football.ts';
 import { freethrow } from '../../../games/freethrow.ts';
+import { killer } from '../../../games/killer.ts';
 import { atc, fullBoard } from '../../../games/race.ts';
 import { shanghai } from '../../../games/shanghai.ts';
 import type { TurnEvent } from '../../../games/turns.ts';
@@ -149,5 +150,75 @@ describe('Cricket Random on the board', () => {
     const m = match('cricket', o, view([...visit('T20'), d('S19')]));
     expect(board(m).segments[20]).toEqual({ state: 'target', ring: 'any', ticks: [false, false, false] });
     expect(board(m).segments[19].ticks).toEqual([true, false, false]);
+  });
+});
+
+describe('Cricket on the board', () => {
+  const o = { ...cricket.defaults, sectors: 'classic' as const };
+  const m = (events: TurnEvent[], players = 2) => match('cricket', o, cricket.view(events, players, o));
+
+  it('puts 15–20 and the bull in play, everything else out of play', () => {
+    expect(inState(m([]), 'target')).toEqual([15, 16, 17, 18, 19, 20, 25]);
+    expect(inState(m([]), 'off')).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+  });
+
+  it('keeps neighbours in different states apart: 20 closed by all, 1 out of play, 18 a target', () => {
+    // 20, 1 and 18 sit next to each other on the board.
+    const b = board(m([...visit('T20'), d('T20'), d('S18')]));
+    expect([b.segments[20].state, b.segments[1].state]).toEqual(['closedAll', 'off']);
+    expect(b.segments[5].state).toBe('off');
+  });
+
+  it('greens a sector closed by the player throwing only, next to a target with marks', () => {
+    // 19 and 7: 19 closed by player 1, 3 (out of play) and 17 still open.
+    const b = board(m([...visit('T19', 'S17'), ...visit('S20')]));
+    expect(b.segments[19]).toEqual({ state: 'done', ring: 'any', ticks: [true, true, true] });
+    expect(b.segments[17]).toEqual({ state: 'target', ring: 'any', ticks: [true, false, false] });
+  });
+
+  it('works with five players, ticks of the one throwing', () => {
+    const b = board(m([...visit('T20'), ...visit('S20'), d('D20')], 5));
+    expect(b.segments[20].ticks).toEqual([true, true, false]);
+  });
+});
+
+describe('Killer on the board', () => {
+  // Players 0–4 get numbers 14, 5, 17, 9, 11 (5 and 20 neighbour, 17 and 3 too).
+  const numbers = [14, 5, 17, 9, 11];
+  const o = { ...killer.defaults, lives: 5 };
+  const start = (players = 5): TurnEvent[] => [{ t: 'numbers', numbers: numbers.slice(0, players) }];
+  const m = (events: TurnEvent[], players = 5, opts = o) => match('killer', opts, killer.view([...start(players), ...events], players, opts));
+
+  it('before killer status: only the own double is a target, ticks are the own lives', () => {
+    const b = board(m([]));
+    expect(b.segments[14]).toEqual({ state: 'target', ring: 2, ticks: [true, true, true, true, true] });
+    expect(inState(m([]), 'target')).toEqual([14]);
+    expect(b.segments[5].state).toBe('off');
+  });
+
+  it('as a killer: the doubles of living rivals are targets with their lives, the own double is danger', () => {
+    // Player 0 becomes a killer and takes a life from 5.
+    const b = board(m([d('D14'), d('D5')]));
+    expect(b.segments[14]).toEqual({ state: 'danger', ring: 2, ticks: [true, true, true, true, true] });
+    expect(b.segments[5]).toEqual({ state: 'target', ring: 2, ticks: [true, true, true, true, false] });
+    expect(inState(m([d('D14'), d('D5')]), 'target')).toEqual([5, 9, 11, 17]);
+    expect(b.segments[20].state).toBe('off');
+  });
+
+  it('puts an eliminated rival out of play', () => {
+    const o1 = { ...o, lives: 1 };
+    const mm = m([d('D14'), d('D5')], 5, o1);
+    expect(board(mm).segments[5]).toEqual({ state: 'off' });
+    expect(inState(mm, 'target')).toEqual([9, 11, 17]);
+  });
+
+  it('shows the board of the player throwing', () => {
+    const b = board(m([...visit('D14', 'S1', 'S1'), d('S2')]));
+    expect(b.segments[5]).toEqual({ state: 'target', ring: 2, ticks: [true, true, true, true, true] });
+    expect(b.segments[14].state).toBe('off');
+  });
+
+  it('draws as many ticks as the lives option', () => {
+    expect(board(m([], 2, { ...o, lives: 3 })).segments[14].ticks).toEqual([true, true, true]);
   });
 });

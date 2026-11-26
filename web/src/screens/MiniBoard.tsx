@@ -124,10 +124,10 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-/** ATC and Full Board put the board next to the hero (bug report 2026-10-27); Cricket only with random sectors, to show which are in play. */
+/** The games with targets on the board put it next to the hero (bug report 2026-10-27); Cricket and Killer since 2026-11-26. */
 export const hasBoard = (m: MiniMatch): m is BoardMatch =>
   m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
-  || (m.game === 'cricket' && m.options.sectors === 'random');
+  || m.game === 'cricket' || m.game === 'killer';
 
 function RaceBoard({ m }: { m: BoardMatch }) {
   const v = m.view;
