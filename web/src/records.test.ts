@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LobbyRecord, MatchSummary, RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, gridShape } from './records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, recordPages, groupTitle, lockAxis, rubberBand, holdPosition, swipeSpeed, projectPage, springStep, dotWeight, nextPage } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -184,7 +184,7 @@ describe('record attempt players', () => {
 describe('record attempt command', () => {
   const players = [{ id: 1, name: 'Ann' }, { id: 2, name: 'Bob' }, { id: 3, name: 'Cy' }];
   const rec = (o: Partial<LobbyRecord>): LobbyRecord => ({
-    game: 'atc', key: 'atc:any:skips', label: 'ATC', value: '23 darts', who: 'Ewa', at: 0, options: { order: 'clockwise', target: 'any', skips: true, coop: false }, chase: [],
+    game: 'atc', key: 'atc:any:skips', label: 'ATC', title: 'ATC', sub: '', value: '23 darts', who: 'Ewa', at: 0, options: { order: 'clockwise', target: 'any', skips: true, coop: false }, chase: [],
     coop: false, minPlayers: 1, maxPlayers: 1, ...o,
   });
 
@@ -246,9 +246,209 @@ describe('last match line', () => {
   });
 });
 
-describe('record grid shape', () => {
-  it('fills the space with fewer, bigger tiles', () => {
-    expect([1, 2, 3, 4, 5, 6, 7, 8].map(n => { const g = gridShape(n); return `${g.cols}x${g.rows}`; }))
-      .toEqual(['1x1', '2x1', '2x2', '2x2', '3x2', '3x2', '4x2', '4x2']);
+const rec = (game: string, i: number): LobbyRecord => ({
+  game: game as LobbyRecord['game'], key: `${game}:${i}`, label: `${game} · v${i}`, title: game.toUpperCase(), sub: `v${i}`, value: '1 darts', who: 'X', at: 0,
+  options: {}, chase: [], coop: false, minPlayers: 1, maxPlayers: 1,
+});
+/** Records of the games in order: `recs(['atc', 3], ['cricket', 2])` is three ATC and two Cricket variants. */
+const recs = (...games: [string, number][]) => games.flatMap(([g, n]) => Array.from({ length: n }, (_, i) => rec(g, i)));
+/** A page as text: its size, then `TITLE items@row.col` for each group. */
+const show = (p: ReturnType<typeof recordPages>[number]) => `${p.cols}x${p.rows} ` + p.groups.map(g => `${groupTitle(g).toUpperCase()} ${g.items.length}@${g.row}.${g.col}`).join(' | ');
+const tiles = (pages: ReturnType<typeof recordPages>) => pages.flatMap(p => p.groups).reduce((n, g) => n + g.items.length, 0);
+
+describe('record pages', () => {
+  it('has no page without records', () => {
+    expect(recordPages([])).toEqual([]);
+  });
+
+  it('puts one record on one page, as wide as the record', () => {
+    expect(recordPages(recs(['atc', 1])).map(show)).toEqual(['1x1 ATC 1@0.0']);
+  });
+
+  it('keeps a group of up to 4 in one row', () => {
+    expect(recordPages(recs(['atc', 4])).map(show)).toEqual(['4x1 ATC 4@0.0']);
+  });
+
+  it('gives a group of 5 to 8 a page of its own', () => {
+    expect(recordPages(recs(['atc', 5])).map(show)).toEqual(['4x1 ATC 5@0.0']);
+    expect(recordPages(recs(['atc', 8], ['cricket', 1])).map(show)).toEqual(['4x1 ATC 8@0.0', '1x1 CRICKET 1@0.0']);
+  });
+
+  it('packs small groups first-fit into rows, two rows to a page, without holes', () => {
+    // 3 + 3 does not fit one row, so Cricket opens row 2; Shanghai's 1 fills row 1 and Hol's 1 row 2.
+    const pages = recordPages(recs(['atc', 3], ['cricket', 3], ['shanghai', 1], ['hol', 1]));
+    expect(pages.map(show)).toEqual(['4x2 ATC 3@0.0 | SHANGHAI 1@0.3 | CRICKET 3@1.0 | HOL 1@1.3']);
+  });
+
+  it('starts a second page when two rows are full', () => {
+    const pages = recordPages(recs(['atc', 4], ['cricket', 4], ['shanghai', 2], ['hol', 2]));
+    expect(pages.map(show)).toEqual(['4x2 ATC 4@0.0 | CRICKET 4@1.0', '4x1 SHANGHAI 2@0.0 | HOL 2@0.2']);
+  });
+
+  it('puts the pages of big groups first and keeps the order of games otherwise', () => {
+    const pages = recordPages(recs(['atc', 2], ['cricket', 6], ['shanghai', 2]));
+    expect(pages.map(show)).toEqual(['4x1 CRICKET 6@0.0', '4x1 ATC 2@0.0 | SHANGHAI 2@0.2']);
+  });
+
+  it('treats a group of exactly 4 as a small one: it shares pages in the order of the games', () => {
+    expect(recordPages(recs(['atc', 2], ['cricket', 4])).map(show)).toEqual(['4x2 ATC 2@0.0 | CRICKET 4@1.0']);
+  });
+
+  it('pages 10 variants of one game as the game and “(cont.)”, nothing cut', () => {
+    const pages = recordPages(recs(['atc', 10]));
+    expect(pages.map(show)).toEqual(['4x1 ATC 8@0.0', '2x1 ATC (CONT.) 2@0.0']);
+    expect(pages.flatMap(p => p.groups.flatMap(g => g.items)).map(r => r.key)).toEqual(recs(['atc', 10]).map(r => r.key));
+  });
+
+  it('continues a game of 13 as a second big page', () => {
+    expect(recordPages(recs(['atc', 13])).map(show)).toEqual(['4x1 ATC 8@0.0', '4x1 ATC (CONT.) 5@0.0']);
+  });
+
+  it('lets the rest of a big game share rows with small games', () => {
+    expect(recordPages(recs(['atc', 12], ['cricket', 3], ['hol', 1])).map(show))
+      .toEqual(['4x1 ATC 8@0.0', '4x2 ATC (CONT.) 4@0.0 | CRICKET 3@1.0 | HOL 1@1.3']);
+  });
+
+  it('keeps every tile of 18 and of 30 variants, at most 8 to a page', () => {
+    const eighteen = recordPages(recs(['atc', 6], ['cricket', 3], ['shanghai', 3], ['hol', 2], ['gotcha', 2], ['killer', 2]));
+    expect(tiles(eighteen)).toBe(18);
+    expect(eighteen).toHaveLength(3);
+    const thirty = recordPages(recs(['atc', 9], ['fullboard', 6], ['121', 4], ['cricket', 3], ['shanghai', 3], ['hol', 2], ['killer', 2], ['gotcha', 1]));
+    expect(tiles(thirty)).toBe(30);
+    expect(thirty.every(p => tiles([p]) <= 8)).toBe(true);
+    expect(thirty).toHaveLength(4);
+  });
+
+  it('never packs more than 4 tiles into a row', () => {
+    const pages = recordPages(recs(['a', 2], ['b', 3], ['c', 2], ['d', 1], ['e', 3], ['f', 4], ['g', 1]));
+    expect(tiles(pages)).toBe(16);
+    for (const p of pages) for (let r = 0; r < p.rows; r++) {
+      expect(p.groups.filter(g => g.row === r).reduce((n, g) => n + g.items.length, 0)).toBeLessThanOrEqual(4);
+    }
+  });
+});
+
+describe('record swipe', () => {
+  it('stays a tap until 10 px, then locks the axis it went furthest in', () => {
+    expect(lockAxis(9, 0)).toBeNull();
+    expect(lockAxis(0, -9)).toBeNull();
+    expect(lockAxis(10, 0)).toBe('x');
+    expect(lockAxis(-12, 3)).toBe('x');
+    expect(lockAxis(2, 10)).toBe('y');
+    expect(lockAxis(11, 11)).toBe('y');
+  });
+
+  it('pulls the page past an end with a rubber band: slows down and stays under the page width', () => {
+    expect(rubberBand(0, 1000)).toBe(0);
+    expect(rubberBand(100, 1000)).toBeCloseTo((100 * 1000 * 0.55) / (1000 + 55), 5);
+    expect(rubberBand(100, 1000)).toBeLessThan(100);
+    expect(rubberBand(-100, 1000)).toBeCloseTo(-rubberBand(100, 1000), 5);
+    expect(rubberBand(1e6, 1000)).toBeLessThan(1000);
+    expect(rubberBand(300, 1000)).toBeGreaterThan(rubberBand(100, 1000));
+  });
+
+  it('follows the finger 1:1 inside the strip and with the rubber band outside it', () => {
+    // 3 pages of 1000: the strip runs 0..2000.
+    expect(holdPosition(1000, -300, 2000, 1000)).toBe(1300);
+    expect(holdPosition(1000, 300, 2000, 1000)).toBe(700);
+    expect(holdPosition(0, 100, 2000, 1000)).toBeCloseTo(-rubberBand(100, 1000), 5);
+    expect(holdPosition(2000, -100, 2000, 1000)).toBeCloseTo(2000 + rubberBand(100, 1000), 5);
+    expect(holdPosition(0, -100, 2000, 1000)).toBe(100);
+  });
+
+  it('measures the speed in px/s over the last 120 ms only', () => {
+    expect(swipeSpeed([[0, 0], [30, 50], [100, 100]], 110)).toBeCloseTo(1000);
+    // Held still before the release: the old fast moves are out of the window.
+    expect(swipeSpeed([[0, 0], [200, 50], [200, 400]], 450)).toBe(0);
+    expect(swipeSpeed([], 0)).toBe(0);
+  });
+
+  it('rests on the page nearest to where the momentum carries it', () => {
+    // From page 1 of 4 (width 1000); a slow release at 400 stays, at 600 goes on (position alone).
+    expect(projectPage(400, 0, 1000, 0, 3)).toBe(0);
+    expect(projectPage(600, 0, 1000, 0, 3)).toBe(1);
+    // A flick: 1000 px/s projects 499 px further, so 1300 -> page 2 (max one from the start, which was 1).
+    expect(projectPage(1100, 1000, 1000, 1, 3)).toBe(2);
+    expect(projectPage(900, -1000, 1000, 1, 3)).toBe(0);
+    // The speed counts, not only the place: 300 px/s back from 1100 projects to 950, still page 1; the same speed forward from 600 reaches page 1.
+    expect(projectPage(1100, -300, 1000, 1, 3)).toBe(1);
+    expect(projectPage(400, 300, 1000, 0, 3)).toBe(1);
+    expect(projectPage(400, 100, 1000, 0, 3)).toBe(0);
+    // Not even a gentle drag carries a short way too far back.
+    expect(projectPage(1050, -50, 1000, 1, 3)).toBe(1);
+  });
+
+  it('never goes more than one page from where it started, nor past the ends', () => {
+    expect(projectPage(1500, 20000, 1000, 1, 3)).toBe(2);
+    expect(projectPage(1500, -20000, 1000, 1, 3)).toBe(0);
+    expect(projectPage(2900, 5000, 1000, 3, 3)).toBe(3);
+    expect(projectPage(-50, -5000, 1000, 0, 3)).toBe(0);
+  });
+});
+
+describe('record page spring', () => {
+  const run = (x: number, v: number, target: number, response: number, seconds: number) => {
+    let s = { x, v };
+    const xs = [x];
+    for (let t = 0; t < seconds; t += 1 / 60) { s = springStep(s.x, s.v, target, 1 / 60, response); xs.push(s.x); }
+    return { ...s, xs };
+  };
+
+  it('converges on the target and is done in about its response time', () => {
+    const r = run(0, 0, 1000, 0.35, 0.8);
+    expect(r.x).toBeGreaterThan(999);
+    expect(Math.abs(r.v)).toBeLessThan(5);
+    // Not there yet after a seventh of the time.
+    expect(run(0, 0, 1000, 0.35, 0.05).x).toBeLessThan(500);
+  });
+
+  it('never overshoots, from rest or from a fast release', () => {
+    expect(Math.max(...run(0, 0, 1000, 0.35, 2).xs)).toBeLessThanOrEqual(1000.0001);
+    // Released towards the target at 5000 px/s: it may arrive quickly, never past.
+    expect(Math.max(...run(500, 5000, 1000, 0.35, 2).xs)).toBeLessThanOrEqual(1000.0001);
+    expect(Math.min(...run(900, -3000, 0, 0.45, 2).xs)).toBeGreaterThanOrEqual(-0.0001);
+  });
+
+  it('carries the finger’s speed on: the first step moves with it, no seam', () => {
+    const still = springStep(0, 0, 1000, 1 / 60, 0.35);
+    const flung = springStep(0, 3000, 1000, 1 / 60, 0.35);
+    expect(flung.x).toBeGreaterThan(still.x);
+    // Released away from the target it first goes on that way and turns round.
+    expect(springStep(500, -2000, 1000, 1 / 60, 0.35).x).toBeLessThan(500);
+  });
+
+  it('is slower with a longer response', () => {
+    expect(run(0, 0, 1000, 0.45, 0.2).x).toBeLessThan(run(0, 0, 1000, 0.35, 0.2).x);
+  });
+
+  it('stays put at its target', () => {
+    expect(springStep(1000, 0, 1000, 1 / 60, 0.35)).toEqual({ x: 1000, v: 0 });
+  });
+});
+
+describe('record dots', () => {
+  it('is full on the page and falls to nothing a page away', () => {
+    expect([0, 1, 2].map(i => dotWeight(1, i, 3))).toEqual([0, 1, 0]);
+  });
+
+  it('moves over continuously with the strip', () => {
+    expect(dotWeight(1.25, 1, 3)).toBeCloseTo(0.75);
+    expect(dotWeight(1.25, 2, 3)).toBeCloseTo(0.25);
+    expect(dotWeight(1.25, 0, 3)).toBe(0);
+  });
+
+  it('hands the last dot over to the first while the strip runs on to the copy of the first page', () => {
+    expect(dotWeight(2.5, 2, 3)).toBeCloseTo(0.5);
+    expect(dotWeight(2.5, 0, 3)).toBeCloseTo(0.5);
+    expect(dotWeight(3, 0, 3)).toBe(1);
+    expect(dotWeight(3, 2, 3)).toBe(0);
+  });
+});
+
+describe('record rotation', () => {
+  it('goes to the next page and wraps from the last to the first as one slide on', () => {
+    expect(nextPage(0, 3)).toEqual({ page: 1, wrap: false });
+    expect(nextPage(1, 3)).toEqual({ page: 2, wrap: false });
+    expect(nextPage(2, 3)).toEqual({ page: 0, wrap: true });
   });
 });

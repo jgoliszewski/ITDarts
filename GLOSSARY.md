@@ -129,7 +129,11 @@ Okno w lobby kiosku po stuknięciu kafelka rekordu: pokazuje rekord do pobicia i
 _Avoid_: challenge, quick start
 
 **Pościg**:
-Dwie szare linie na kafelku rekordu z 2. i 3. miejscem („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
+Dwie szare linie na kafelku rekordu z 2. i 3. miejscem w okrągłej plakietce („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
+
+**Strona rekordów**:
+Jeden ekran siatki 4×2 kafelków rekordów w lobby kiosku, z grupami po grach pod nagłówkiem (ikona i nazwa gry). Strony przesuwają się swipe'em, kropkami i same co 10 s; gra z ponad 8 wariantami ciągnie się jako „<Gra> (cont.)”.
+_Avoid_: slajd, karuzela (w UI bez nazwy)
 
 **Ekran rekordu**:
 Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry, a pod nim rekordami osobistymi graczy albo rekordem składu.

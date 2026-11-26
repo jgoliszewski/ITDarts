@@ -11,6 +11,8 @@
   --muted: #A1A1A6;
   --muted2: #8E8E94;
   --accent: #F58224;
+  --silver: #C9CDD4;
+  --bronze: #B98A5E;
   --on-accent: var(--ink);
   --accent-ink: #3A2410;
   --green: #3CCB7F;
@@ -401,26 +403,42 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .lobby-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) calc(500 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)); min-height: 0; }
 /* Records on the left (docs/UI.md, Lobby i QR): the grid takes the room, "All records" sits under it. */
 .lobby-records-col { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-height: 0; min-width: 0; }
-.rec-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(16 * var(--u)); }
-.rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(24 * var(--u)) calc(26 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
-.rec-tile > :not(.rec-icon) { position: relative; max-width: 100%; }
-.rec-tile .what { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
-.rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(10 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
-.rec-tile .val .num { font-size: calc(120 * var(--u)); }
-.rec-tile .val .unit { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; }
-.rec-tile .who { font-size: max(16px, calc(32 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-/* The chase: 2nd and 3rd place, a row each, lighter than the muted grey of the rest. */
-.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); min-height: calc(2 * 1.2 * max(16px, calc(23 * var(--u)))); font-size: max(16px, calc(23 * var(--u))); color: var(--soft); }
-.rec-tile .chase .row { display: flex; gap: 0.5em; min-width: 0; line-height: 1.2; }
-.rec-tile .chase .pl { color: var(--muted); }
+/* Pages of records (docs/UI.md, Lobby i QR): a strip of pages slides under the pointer; each page is a 4-column grid of game groups. */
+.rec-pager { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.rec-track { position: absolute; inset: 0; display: flex; will-change: transform; }
+/* A finger on the strip: the tile under it neither presses nor takes the click. */
+.rec-pager.dragging .rec-tile { transform: none !important; pointer-events: none; }
+.rec-page { flex: none; width: 100%; height: 100%; display: grid; gap: calc(16 * var(--u)); }
+.rec-group { display: flex; flex-direction: column; gap: calc(10 * var(--u)); min-height: 0; min-width: 0; }
+.rec-ghead { margin: 0; display: flex; align-items: center; gap: calc(12 * var(--u)); flex: none; min-width: 0; height: max(28px, calc(40 * var(--u))); font-size: max(16px, calc(28 * var(--u))); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.rec-ghead .rec-gico { width: calc(34 * var(--u)); height: calc(34 * var(--u)); min-width: 22px; flex: none; color: var(--soft); }
+.rec-ghead .gline { flex: 1; height: 2px; border-radius: 2px; background: var(--line); min-width: 8px; }
+.rec-tiles { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: calc(12 * var(--u)); }
+.rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(20 * var(--u)) calc(22 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
+.rec-tile > * { max-width: 100%; min-width: 0; }
+.rec-tile .what { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
+.rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(8 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
+.rec-tile .val .num { font-size: calc(104 * var(--u)); }
+.rec-tile .val .unit { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; }
+.rec-tile .who { font-size: max(16px, calc(28 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+/* The chase: 2nd and 3rd place, a row each; the place is a round badge (silver, bronze) so it does not blend into the name. */
+.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); font-size: max(16px, calc(20 * var(--u))); color: var(--soft); }
+.rec-tile .chase .row { display: flex; align-items: center; gap: 0.5em; min-width: 0; line-height: 1.2; }
+.rec-tile .chase .pl { flex: none; width: 1.5em; height: 1.5em; border-radius: 50%; display: grid; place-items: center; background: var(--silver); color: var(--ink); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.rec-tile .chase .pl.bronze { background: var(--bronze); }
 .rec-tile .chase .none { color: var(--muted); }
 .rec-tile .chase .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-tile .chase .v { font-weight: 700; white-space: nowrap; }
-.rec-tile .rec-icon { position: absolute; right: calc(-18 * var(--u)); bottom: calc(-18 * var(--u)); width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--faint); pointer-events: none; opacity: 0.45; }
 .rec-tile.empty { grid-column: 1 / -1; grid-row: 1 / -1; align-items: center; justify-content: center; background: transparent; border: 2px dashed var(--line); cursor: default; }
 .rec-tile.empty b { font-size: max(16px, calc(40 * var(--u))); font-weight: 800; }
 .rec-tile.empty span { font-size: max(16px, calc(26 * var(--u))); color: var(--muted); }
-.all-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
+.rec-foot { flex: none; display: flex; align-items: center; gap: calc(12 * var(--u)); min-height: max(var(--tap), calc(56 * var(--u))); }
+.rec-dots { display: flex; flex: none; }
+.rec-dot { width: max(var(--tap), calc(48 * var(--u))); height: max(var(--tap), calc(48 * var(--u))); display: flex; align-items: center; justify-content: center; }
+/* --k (0..1) is set every frame from the strip's position, so the dot widens and lights up as the page comes. */
+.rec-dot i { display: block; --dot: max(10px, calc(14 * var(--u))); width: calc(var(--dot) + (max(24px, calc(34 * var(--u))) - var(--dot)) * var(--k, 0)); height: var(--dot); border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) calc(var(--k, 0) * 100%), var(--faint)); }
+.rec-names { flex: 1; min-width: 0; font-size: max(16px, calc(22 * var(--u))); font-weight: 700; color: var(--soft); white-space: nowrap; overflow: hidden; }
+.all-link { margin-left: auto; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
 .all-link .arrow { color: var(--accent); }
 .lobby-col { padding: calc(36 * var(--u)); display: flex; flex-direction: column; gap: calc(22 * var(--u)); min-width: 0; min-height: 0; }
 .lobby-col .lobby-text { gap: calc(12 * var(--u)); }
@@ -1254,25 +1272,29 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 
 /* ---------- lobby records (D6) ---------- */
 /* The phone home: one tile per minigame variant with a record; the kiosk has its own grid (.rec-grid). */
-.lobby-records .record-list { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
+.lobby-records .record-groups { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: flex; flex-direction: column; gap: calc(12 * var(--u)); }
+.lobby-records .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
+.record-ghead { margin: 0; display: flex; align-items: center; gap: 10px; height: 32px; font-size: 18px; font-weight: 800; white-space: nowrap; }
+.record-ghead .record-gico { width: 22px; height: 22px; flex: none; color: var(--soft); }
+.record-ghead .gline { flex: 1; height: 2px; border-radius: 2px; background: var(--line); min-width: 8px; }
+.record-group { display: flex; flex-direction: column; gap: var(--sp-2); }
 .record-tile { position: relative; overflow: hidden; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(4 * var(--u)); min-height: max(var(--tap), calc(132 * var(--u))); padding: calc(16 * var(--u)) calc(20 * var(--u)); border-radius: var(--r-tile); background: var(--card2); text-align: left; }
-.record-tile > :not(.record-icon) { position: relative; max-width: 100%; }
+.record-tile > * { max-width: 100%; }
 .record-tile .what { font-size: max(16px, calc(20 * var(--u))); font-weight: 600; line-height: 1.2; color: var(--soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .record-tile .num { font-size: calc(48 * var(--u)); line-height: 1; color: var(--text); }
 .record-tile .who { font-size: max(16px, calc(18 * var(--u))); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.record-tile .record-icon { position: absolute; right: calc(-14 * var(--u)); bottom: calc(-14 * var(--u)); width: calc(84 * var(--u)); height: calc(84 * var(--u)); color: var(--faint); pointer-events: none; }
 .record-tile.empty { justify-content: center; background: transparent; border: 2px dashed var(--line); }
 .record-tile.empty b { font-size: max(16px, calc(24 * var(--u))); }
 .record-tile.empty span { font-size: max(16px, calc(20 * var(--u))); color: var(--muted); }
 /* The same records on the phone pilot's home, in px: the list runs with the page, no scroll inside. */
 .phone .lobby-records { border-radius: var(--r-box); padding: var(--sp-5) 20px; gap: var(--sp-3); }
 .phone .lobby-records .caps { font-size: var(--fs-ui-sm); }
-.phone .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.phone .record-list { gap: var(--sp-2); }
+.phone .record-groups { gap: var(--sp-3); }
 .phone .record-tile { min-height: 96px; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-key); gap: var(--sp-1); }
 .phone .record-tile .what { font-size: var(--fs-ui-sm); }
 .phone .record-tile .num { font-size: var(--fs-ui-2xl); }
 .phone .record-tile .who { font-size: var(--fs-ui-sm); }
-.phone .record-tile .record-icon { right: -8px; bottom: -8px; width: 56px; height: 56px; }
 .phone .record-tile.empty b { font-size: var(--fs-ui-md); }
 .phone .record-tile.empty span { font-size: var(--fs-ui-sm); }
 /* Phone home: the same words as the lobby, just above the buttons (B#21). */
