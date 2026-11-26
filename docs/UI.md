@@ -79,11 +79,11 @@ Od 2026-11-18, z przeróbki UI ([DESIGN.md](../DESIGN.md#ruch) ma tokeny, czasy 
 
 - **Układ:** hero aktywnego gracza po lewej, lista wszystkich graczy po prawej. Działa dla 2–8 graczy bez zmiany układu.
 - **Jeden układ dla wszystkich gier** (od 2026-11-01, z przeglądu zrzutów wszystkich gier w tych samych chwilach):
-  - Duża liczba w hero ma ten sam rozmiar w X01 i minigierkach. Mniejsza jest tylko w grach z tarczą, bo dzieli hero z tarczą.
-  - Kafelek lotki wszędzie pokazuje duże pole i małą wartość (T20 / 60), także w X01, i ma tę samą szerokość. W grach z tarczą kafelki leżą pod tarczą przez całą szerokość hero. Kolory kafelków: [Styl](#styl) (D1).
-  - Prawa kolumna ma jedną szerokość (620), bez względu na grę i liczbę graczy. Wyjątkiem jest siatka Cricketa. Wiersze listy są pełnowymiarowe do 4 graczy, a kompaktowe od 5, też w minigierkach.
-  - Pod listą minigierki mają kartę „IMIĘ · THIS MATCH” z liczbami aktywnego gracza, tymi samymi co w podsumowaniu (np. ATC: hit rate i lotki), do 4 graczy. Higher or Lower nie ma liczb na karcie („Visits survived” jest tylko na `/stats`). W 121 pierwszym kafelkiem jest „Darts left” z lotkami do końca podejścia. Tekst w kafelkach statystyk jest wyśrodkowany, też w X01.
-  - Zaliczone sektory na tarczy (ATC, Full Board) są zakreskowane o ok. 15% ciemniej niż żywe pola, żeby od razu odróżniały się od reszty tarczy.
+  - Duża liczba w hero ma ten sam rozmiar w X01 i minigierkach. Mniejsza jest tylko w grach z tarczą, bo stoi w wąskiej lewej kolumnie ([Ekran wyników dla gier z tarczą](#ekran-wyników-dla-gier-z-tarczą)).
+  - Kafelek lotki wszędzie pokazuje duże pole i małą wartość (T20 / 60), także w X01, i ma tę samą szerokość. W grach z tarczą leżą w karcie tarczy, pod tarczą, w jednym rzędzie trzech. Kolory kafelków: [Styl](#styl) (D1).
+  - Prawa kolumna ma jedną szerokość (620), bez względu na grę i liczbę graczy. Wyjątkiem są gry z tarczą: mają trzy kolumny, a prawa (lista graczy albo siatka Cricketa) ma 460 u. Wiersze listy są pełnowymiarowe do 4 graczy, a kompaktowe od 5, też w minigierkach (gry z tarczą: [niżej](#ekran-wyników-dla-gier-z-tarczą)).
+  - Pod listą minigierki bez tarczy mają kartę „IMIĘ · THIS MATCH” z liczbami aktywnego gracza, tymi samymi co w podsumowaniu, do 4 graczy (`MiniSide`). Gry z tarczą jej nie mają: te liczby stoją na dole lewej kolumny. Higher or Lower nie ma liczb na karcie („Visits survived” jest tylko na `/stats`). W 121 pierwszym kafelkiem jest „Darts left” z lotkami do końca podejścia. Tekst w kafelkach statystyk jest wyśrodkowany, też w X01.
+  - Stan sektorów na tarczy w hero (cel, zaliczony, zamknięty, poza grą) opisuje [Tarcza w hero](#tarcza-w-hero).
 - **Hero:** imię, wygrane legi, ogromny wynik i 3 kafelki lotek. Bez licznika „N darts left” (od 2026-10-30, kafelki to pokazują). Puste miejsca są obrysowane.
 - **Hero X01, wariant D** (od 2026-11-18, po prototypie; hybryda wariantów A i C):
   - imię ma 64 u, kropki legów 26 u;
@@ -93,9 +93,9 @@ Od 2026-11-18, z przeróbki UI ([DESIGN.md](../DESIGN.md#ruch) ma tokeny, czasy 
   - „+ Add” (dopisanie lotki) jest nieaktywne po Buście.
 - **Minigierki z panelem Tury:** ten sam wzór prawej połowy hero (duża suma „THIS TURN”, pod nią główna informacja tury) mają 121, Random Checkouts, Gotcha i Knockout (`turnPanel` w `web/src/match.ts`). W 121 panel jest węższy, bo po prawej stoi drabinka celów.
   - **Knockout:** duża liczba w hero po lewej to „To beat” (zielona, gdy ktoś jest już pobity), a „THIS TURN” stoi w panelu po prawej, jak w X01 i Gotcha. Na starcie rundy po lewej jest „First to throw” bez liczby, a w panelu szare „THIS TURN 0”.
-  - **Bez panelu:** Higher or Lower (skala 0–180 z pinezką już pokazuje sumę Tury, a pod nią jest legenda zakresu, w którym traci się życie, np. „Lose a life inside 26–81”), Killer (własny hero: numer i kicker „KILLER” na czerwono, serca w hero i na liście, a lotki są tam trafieniami, więc suma Tury nic nie znaczy), Shanghai i Free throw (hero z tarczą zajmuje prawą połowę; w Free throw suma Tury jest główną liczbą hero, „This visit”) i pozostałe gry z tarczą.
-- **Cricket:** do 4 graczy kolumny siatki mają pełne imiona (zwykle gramy maksymalnie w czterech). Od 5 graczy (od 2026-11-18, przy 8 graczach imiona się nie mieściły) kolumna ma numer miejsca, dwie litery imienia (gość: pierwsza litera i numer, np. „G2”) i wynik, a w hero stoi legenda „numer → imię” z aktywnym graczem w pomarańczu. Inicjały mogą się powtórzyć (Anna i Andrzej to „AN”), więc rozstrzyga numer (`initials` w `web/src/match.ts`).
-- **Tarcza w hero** (ATC, Full Board, Free throw, Football, Bullseye, Shanghai i od 2026-11-20 Cricket z Sectors: Random) mieści się w kolumnie do 620 u i jest zawsze kwadratem w granicach hero. W Cricket Random cała tarcza ma normalne kolory, a sektory w grze i bull mają nieruchomy obrys (bez `tb-march`); sektor zamknięty u wszystkich traci obrys.
+  - **Bez panelu:** Higher or Lower (skala 0–180 z pinezką już pokazuje sumę Tury, a pod nią jest legenda zakresu, w którym traci się życie, np. „Lose a life inside 26–81”), Killer (kicker „Killer” na czerwono albo „Your double”, serca pod imieniem i na liście, a lotki są tam trafieniami, więc suma Tury nic nie znaczy), Shanghai i Free throw (w Free throw suma Tury jest główną liczbą hero, „This visit”) i pozostałe gry z tarczą: ich hero to lewa kolumna [układu z tarczą](#ekran-wyników-dla-gier-z-tarczą), bez panelu Tury.
+- **Cricket:** do 4 graczy kolumny siatki mają pełne imiona (zwykle gramy maksymalnie w czterech). Od 5 graczy (od 2026-11-18, przy 8 graczach imiona się nie mieściły) kolumna ma numer miejsca, dwie litery imienia (gość: pierwsza litera i numer, np. „G2”) i wynik, a w lewej kolumnie, pod wynikiem, stoi legenda „numer → imię” z aktywnym graczem w pomarańczu. Inicjały mogą się powtórzyć (Anna i Andrzej to „AN”), więc rozstrzyga numer (`initials` w `web/src/match.ts`).
+- **Tarcza w hero** (ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket w obu wariantach i Killer, od 2026-11-26) i układ w trzech kolumnach: [Tarcza w hero](#tarcza-w-hero) i [Ekran wyników dla gier z tarczą](#ekran-wyników-dla-gier-z-tarczą).
 - **Checkout** (w prawej połowie hero, pod sumą Tury): gdy da się skończyć leg lotkami, które zostały w turze, obok wyniku jest ścieżka (np. „T19 · D12”). Gdy się nie da (bogey, za mało lotek, pudło w trakcie), jest „Setup”: lotki, które najlepiej ustawiają checkout pod następną turę (np. „T20 · S14”). Samo punktowanie w T20 daleko od końca nie ma podpowiedzi.
   - Przy double out trasy są z tabeli checkoutów PDC (41–170). Dopóki lotki trafiają w zaplanowaną trasę, podpowiedź ją kontynuuje (130: T20, dalej „T20 · D5”, a nie trasa z tabeli dla 70). Po zejściu z planu bierze trasę z tabeli dla nowego wyniku, jeśli mieści się w lotkach, które zostały.
   - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
@@ -112,11 +112,59 @@ Od 2026-11-18, z przeróbki UI ([DESIGN.md](../DESIGN.md#ruch) ma tokeny, czasy 
 - **Bust:** duże czerwone „BUST” w prawej połowie hero, bez pigułki w rogu. Wynik wraca do stanu sprzed tury.
 - **Efekty:** Ekran wyników ma warstwę na nakładki z animacjami. Animacje, dźwięki, ledy i caller są opisane w [EFEKTY.md](EFEKTY.md).
 
+### Tarcza w hero
+
+Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratch/cricket-board-vis/`). Model segmentów jest w `web/src/components/targets.ts`, rysunek w `HeroBoard.tsx`, a mapowanie gier na segmenty w `web/src/screens/boardTargets.ts`. Tarcza do wklikiwania lotek (telefon, laptop), Heatmap i Test board używają osobnego `TargetBoard` w pełnych kolorach i tej zmiany nie dotyczą.
+
+- **Pierścień numerów:** wokół tarczy biegnie pas z numerami 1–20, jeden **segment** na sektor. Cele i ich stan widać w pasie, a sama tarcza pokazuje tylko, w którą jej część trzeba trafić.
+- **Anatomia segmentu:** numer pośrodku pasa i do 3 kresek stanu na jego wewnętrznej krawędzi (w Killer do 5, krótszych). Kreska pełna znaczy „jest”, pusta „jeszcze nie”: znacznik Cricketa, życie w Killer, S, D albo T sektora rundy w Shanghai trafione w tej Turze. Kreski idą łukiem wzdłuż pasa i obracają się razem z numerem.
+- **Kolory segmentu** (jeden stan na segment):
+  - **pomarańczowy:** cel, w który trzeba trafić teraz (numer i kreski ciemne);
+  - **zielony** (ciemnozielony pas, zielony numer i kreski): zamknięty albo zaliczony przez gracza, który rzuca;
+  - **czerwony:** własny double killera, bo trafienie go kosztuje życie (numer i kreski ciemne);
+  - **szary:** poza grą;
+  - **szary z ciemniejszym numerem:** zamknięty u wszystkich graczy (Cricket), a na tarczy jego klin jest zakreskowany;
+  - **szary z jasnym numerem:** gra bez celu w sektorze (Free throw, Football z piłką w Doubles, gdzie celem jest cały pierścień).
+- **Ring celu tylko na tarczy:** gdy liczy się tylko część sektora (treble, double, duży single albo bullseye), ta część jest w pełnych kolorach tarczy i ma pomarańczowy obrys (czerwony dla własnego double killera), a reszta klina jest przygaszona. Gdy liczy się cały sektor, klin jest w pełnych kolorach bez obrysu. Pas z numerami ringu nie powtarza.
+- **Wygaszenie:** przygaszony klin jest ciemny, ale na tyle jasny, że tarcza dalej wygląda jak tarcza. Klin zamknięty u wszystkich jest zakreskowany, a jego segment szary, więc „zamknięte u wszystkich” różni się od „poza grą”.
+- **Bull:** pierścień wokół zewnętrznego bulla w kolorze stanu i z kreskami jak segment. Obrys stoi na bullseye, gdy liczy się tylko on (ATC w Doubles i Trebles, Football z Bull only), a w pozostałych przypadkach na zewnętrznym bullu.
+- **Ciągi:** sąsiednie segmenty (kolejność jak na tarczy, 5 sąsiaduje z 20) w tym samym kolorze łączą się w jeden pas z cienkimi przegrodami, zaokrąglony tylko na końcach ciągu. Sąsiednie cele z tym samym ringiem i kolorem mają jeden ciągły obrys. W różnych kolorach się nie łączą: pas ma wtedy szerszą przerwę, a obrysy kończą się przed granicą (np. czerwony 10 obok pomarańczowego 9 w Killer). Cały pierścień w jednym stanie to jeden okrąg pasa, a obrys całego ringu to dwa okręgi (Football z piłką w Doubles).
+- **Orientacja numerów:** każdy numer jest obrócony promieniście, górą cyfr na zewnątrz, jak na prawdziwej tarczy. Numery w dolnej części (od 11 i 6 w dół: 8, 16, 7, 19, 3, 17, 2, 15, 10) są obrócone o 180°, żeby dało się je czytać od dołu.
+- **Kropki lotek** z bieżącej Tury: zielone przy trafieniu, czerwone przy pudle, w białej obwódce, w miejscu wbicia (bez coords na środku swojego pola). Numery leżą nad kropkami, żeby pudło na pierścieniu numerów żadnego nie zasłoniło. Tarcza nie ma animacji.
+- **Stan na tarczy to stan gracza, który rzuca**, więc zmienia się z Turą: w Cricket zamknięte sektory i kreski, w Killer cele i życia, w ATC i Full Board zaliczone cele.
+
+| Stan | Segment | Tarcza | Gry |
+|---|---|---|---|
+| Cel, dowolny ring | pomarańczowy | klin w pełnych kolorach, reszta przygaszona | ATC i Full Board w Any, Shanghai (sektor rundy), Bullseye i Football bez piłki (bull), Cricket (sektory w grze) |
+| Cel, jeden ring | pomarańczowy | tylko ten ring w pełnych kolorach z pomarańczowym obrysem, reszta klina przygaszona | ATC i Full Board w Doubles lub Trebles, Football Big singles, Killer (double) |
+| Cel z kreskami | pomarańczowy z kreskami | jak wyżej | Cricket (znaczniki 0–2), Shanghai (S, D, T w tej Turze), Killer (życia rywala) |
+| Zaliczony albo zamknięty przez ciebie | zielony | ATC i Full Board: klin przygaszony. Cricket: klin w pełnych kolorach, bo sektor dalej punktuje | ATC, Full Board, Cricket (3 znaczniki) |
+| Własny double killera | czerwony, z kreskami własnych żyć | double w pełnych kolorach z czerwonym obrysem | Killer, po statusie killera |
+| Poza grą | szary | klin przygaszony | każda gra: sektory bez celu, wyeliminowani w Killer |
+| Zamknięty u wszystkich | szary z ciemniejszym numerem | klin zakreskowany | Cricket |
+| Bez celu w sektorze | szary z jasnym numerem | Free throw: cała tarcza w pełnych kolorach. Football z piłką w Doubles: pierścień double w pełnych kolorach, obrysowany dwoma okręgami | Free throw, Football |
+
+### Ekran wyników dla gier z tarczą
+
+Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket i Killer (`hasBoard` w `web/src/screens/MiniBoard.tsx`). Rozmiary ustala `styles.css` (sekcja „games with a board”), a to, co stoi w lewej kolumnie i na liście, czysta logika w `web/src/screens/boardHero.ts`.
+
+- **Trzy kolumny** (340 u, reszta, 460 u): gracz, karta tarczy, lista graczy z przyciskami Pilota pod spodem.
+- **Lewa kolumna** (hero): imię, w Killer pod nim serca (pięć serc nie wypchnie imienia), kicker z dużą liczbą (200 u, od 5 znaków 120 u), notka, w Cricket od 5 graczy legenda „numer → imię”, a **na dole 1–3 kafelki statystyk gracza z tego meczu**: te same liczby co w podsumowaniu, tylko takie, jakie widok gry już ma. Statystyki dotyczą gracza, który rzuca:
+  - ATC: Darts, Hit rate, Per target. Full Board: Darts, Hit rate, Per sector. W Co-op „per” liczy lotki drużyny;
+  - Shanghai: Darts, Hit rate, Shanghais. Free throw: Average, Darts, Highest visit;
+  - Cricket: Marks i Darts (solo tylko Marks, bo lotki są dużą liczbą). Killer: Lives taken i Rivals left. Football: To win (ile goli brakuje);
+  - Bullseye bez kafelków: widok gry nie ma nic poza punktami.
+- **Kicker i notka** zostają tylko tam, gdzie tarcza ich nie powie: „Target” (ATC), „Sectors” (Full Board), „Round N / M” i punkty („61 points · 12 this visit”, Shanghai), „Goals” i kto ma piłkę (Football), „Points” i zasady punktacji (Bullseye), „This visit” i „Visit N of M” (Free throw), „Killer” albo „Your double” (Killer). Cricket nie ma kickera „Points” (liczba to zawsze punkty, a nagłówek siatki je powtarza), a jego MPR jest notką; solo Cricket ma kicker „Darts”.
+- **Usunięte teksty** (tarcza pokazuje to samo): postęp i lotki w ATC („3 / 21 · 5 darts”) i Full Board („N darts”), „Hit a rival double” i „Hit your double to become a killer” w Killer, „· doubles score” i „· hit the bull” w Football, kicker „Points” w Cricket. „⚽ Your ball”, „Ball in the centre” i „Bob has the ball” zostają, bo tarcza nie mówi, kto ma piłkę.
+- **Karta tarczy** (środek): tarcza tak duża, jak pozwala karta, a pod nią rząd trzech kafelków lotek, dalej do poprawki dotykiem („Fix dart”, „+ Add”). W prawym górnym rogu karty stoją pigułki rekordów, poza pierścieniem numerów ([Rekordy w trakcie gry](#rekordy-w-trakcie-gry)).
+- **Lista graczy** (prawa kolumna): wiersze wypełniają kolumnę i są wyższe niż w grach bez tarczy, a do 3 graczy jeszcze większe (imię 52 u, wynik 120 u; od 4 graczy imię 38 u, wynik 96 u). W ATC, Full Board i Football każdy wiersz ma **pasek postępu**: zaliczone cele z 21 (ATC), zaliczone sektory z 21 (Full Board), gole z celu gry (Football). Pozostałe gry go nie mają. W Killer serca stoją pod imieniem, a killera oznacza czerwona plakietka „Killer”. Cricket ma zamiast listy siatkę znaczników.
+- **Pod listą tylko przyciski:** karty „THIS MATCH” nie ma, bo liczby są po lewej.
+
 ### Rekordy w trakcie gry
 
 Od 2026-11-23, zasady w [GRY.md](GRY.md#rekordy-w-trakcie-gry), makieta w `.scratch/records-live/mockup.html`.
 
-- **Plakietki** (`RecordPills` w `web/src/screens/MiniBoard.tsx`, logika w `web/src/records.ts`): pigułki 40 u, etykieta wersalikami 17 u, liczba Barlow 28 u, prawy górny róg hero (56 u od prawej, 48 u od góry), wyrównane do prawej. „Best” i „Best · PB / Team” pomarańczowe, „PB” i „Team” neutralne na `--raised`, poza zasięgiem wszystko w `--off` z przekreśloną liczbą. Cała grupa jest jednym przyciskiem (co najmniej 44 px), bez dodatkowej ikony. Hero bez tarczy (solo Cricket) odsuwa imię od plakietek.
+- **Plakietki** (`RecordPills` w `web/src/screens/MiniBoard.tsx`, logika w `web/src/records.ts`): pigułki 40 u, etykieta wersalikami 17 u, liczba Barlow 28 u (w karcie tarczy 44 u i 18 u, z minimum 30 px i 16 px), w prawym górnym rogu karty tarczy (20 u od prawej i od góry), wyrównane do prawej. „Best” i „Best · PB / Team” pomarańczowe, „PB” i „Team” neutralne na `--raised`, poza zasięgiem wszystko w `--off` z przekreśloną liczbą. Cała grupa jest jednym przyciskiem (co najmniej 44 px), bez dodatkowej ikony. Wszystkie gry z rekordem poza 121 mają tarczę, więc pigułki stoją w karcie tarczy; 121 ma chorągiewki.
 - **Chorągiewki 121:** PB (Team) na `--raised` w kolorze tekstu, pobity rekord na `--green-bg` w zielonym z ✓, druga chorągiewka na tym samym szczeblu niżej. Chorągiewka jest przyciskiem, a niewidoczny margines daje jej 44 px wysokości.
 - **Modal rekordów** (`RecordModal`): karta 1560 u na przyciemnionym tle, kicker „RECORDS” i nazwa wariantu, dwie kolumny. Lewa: wiersz „Office best” (pomarańczowy; scalony „Office best · PB” z obrysem), pod nim „PB” albo „Team best” z datą lub „First game”, przy kilku graczach sekcja „PB · this match” z mniejszymi wierszami (rzucający z obrysem i „THROWING”, gość „Guest”), dla gościa notka „Guests have no PB.”. Prawa: „Office top 5” (Co-op: „· teams”), #1 pomarańczowy, wiersz gracza lub składu z obrysem, poniżej top 5 pod „⋯” z miejscem. Zamyka X (72 u) i stuknięcie poza kartą; nowy mecz startuje bez modalu. Modal widzi tylko ekran, na którym go otwarto (kiosk albo laptop).
 - **Ekran rekordu:** te same pigułki w większej wersji (72 u, liczba 52 u, imię i data obok), od 5 graczy w dwóch kolumnach po 64 u.

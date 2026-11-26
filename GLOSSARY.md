@@ -38,6 +38,30 @@ _Avoid_: ekran startowy, home
 Część Pilota ze statusem połączenia i akcjami na Board Managerze: reset, detekcja, kalibracja, restart.
 _Avoid_: ustawienia, settings
 
+**Tarcza w hero**:
+Narysowana tarcza w grach z tarczą na Ekranie wyników: pokazuje, w co trafić, i stan celów gracza, który rzuca. To obraz, nie fizyczna Tarcza. Komponent `HeroBoard`; do wklikiwania lotek służy osobny `TargetBoard`.
+_Avoid_: minitarcza, plansza, tarcza celów
+
+**Pierścień numerów**:
+Pas z numerami 1–20 wokół tarczy w hero. Składa się z Segmentów, po jednym na sektor, a numery są obrócone promieniście.
+_Avoid_: obwódka, ramka z numerami
+
+**Segment** (w hero):
+Jedno pole Pierścienia numerów: sektor 1–20 albo bull (pierścień wokół zewnętrznego bulla). Ma stan (cel, zaliczony, własny double killera, poza grą, zamknięty u wszystkich, bez celu), kolor tego stanu i Kreski stanu. Nie mylić z segmentem Rzutu z Board Managera.
+_Avoid_: kafelek (kafelek to lotka), pole, klocek
+
+**Ciąg**:
+Sąsiednie Segmenty (5 sąsiaduje z 20) w tym samym kolorze albo, dla obrysu, z tym samym Ringiem celu i kolorem: rysują się jako jeden pas albo jeden obrys. Segmenty w różnych kolorach nie tworzą Ciągu, nawet gdy sąsiadują.
+_Avoid_: grupa, blok, seria
+
+**Kreski stanu**:
+Do trzech (w Killer pięciu) łuków na wewnętrznej krawędzi Segmentu: znaczniki Cricketa, życia w Killer, S, D i T w Shanghai. Pełna kreska to „jest”, pusta to „jeszcze nie”. Nie mylić ze znacznikami w siatce Cricketa ani z kropkami lotek.
+_Avoid_: pipsy, kropki (kropki to lotki Tury na tarczy), znaczniki (w tym znaczeniu)
+
+**Ring celu**:
+Ta część sektora, w którą trzeba trafić: cały sektor, duży single, double albo treble (dla bulla bullseye). Widać go tylko na tarczy jako obrys i pełne kolory, a Pierścień numerów go nie powtarza. Nie mylić z ringami ledów ([MAPA.md](docs/MAPA.md)).
+_Avoid_: pierścień (samo słowo), obwód, obrys celu
+
 ## Mecz
 
 **Tura**:
