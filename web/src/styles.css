@@ -237,6 +237,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .prow .meta.list-hearts { gap: calc(6 * var(--u)); font-size: calc(60 * var(--u)); line-height: 1; color: var(--off); }
 .prow.compact .meta.list-hearts { font-size: calc(52 * var(--u)); }
 .prow .meta.list-hearts .on { color: var(--red); }
+/* The hearts wrap as one group, so the Killer tag goes to the next line on its own. */
+.list-hearts .lh { gap: calc(6 * var(--u)); }
 .prow.active .meta.list-hearts { color: var(--off-on-accent); }
 .prow.active .meta.list-hearts .on { color: var(--ink); }
 .hero-bust { font-size: var(--fs-tv-xl); color: var(--red); line-height: 0.9; }
@@ -732,14 +734,69 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .attempt-pips span { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%; background: var(--text); }
 .attempt-pips span.used { background: transparent; box-shadow: inset 0 0 0 2px var(--muted2); }
 .hero-note { font-size: var(--fs-tv-name); color: var(--soft); font-weight: 600; }
-/* Games with a board: the board takes the right half of the hero, the target on the left and the darts across the bottom as in every game. */
-.hero.with-board { display: grid; grid-template-columns: minmax(calc(380 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); grid-template-rows: auto 1fr auto auto; column-gap: calc(40 * var(--u)); row-gap: calc(24 * var(--u)); min-height: 0; }
-.hero.with-board > :not(.target-board) { grid-column: 1; }
-.hero.with-board .hero-score-row { align-self: center; }
-.hero.with-board .mini-big .num { font-size: calc(280 * var(--u)); }
-.hero.with-board .mini-big .num.long { font-size: calc(200 * var(--u)); }
+/* ---------- games with a board (docs/UI.md, Ekran wyników): the player | the board card with the darts | the list or the Cricket grid ---------- */
+.board-main.with-board, .board-main.with-board:has(.cricket) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(460 * var(--u)); }
+/* Left: name, (Killer: hearts), big number, its line, and this match's numbers at the bottom. */
+.hero.board-hero { justify-content: flex-start; gap: calc(20 * var(--u)); padding: calc(40 * var(--u)) calc(36 * var(--u)); min-height: 0; overflow: hidden; }
+.board-hero .hero-name { font-size: calc(54 * var(--u)); }
+.board-hero .hearts { position: static; transform: none; flex-wrap: wrap; gap: calc(6 * var(--u)); font-size: calc(46 * var(--u)); }
+.board-hero .mini-big .num { font-size: calc(200 * var(--u)); }
+.board-hero .mini-big .num.long { font-size: calc(120 * var(--u)); }
+.board-hero .mini-big .num .of { font-size: 0.4em; }
+.board-hero .hero-note { font-size: max(16px, calc(30 * var(--u))); line-height: 1.2; }
+/* Cricket from 5 players: the grid columns show a place number, the names stand here (A#3). */
+.board-hero > .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(4 * var(--u)) calc(14 * var(--u)); font-size: calc(28 * var(--u)); min-width: 0; }
+.board-hero > .legend > div { display: contents; }
+.board-hero > .legend .n { font-size: calc(32 * var(--u)); min-width: 0; }
+.board-hero > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hero-stats { margin-top: auto; display: grid; gap: calc(10 * var(--u)); }
+.hero-stats > div { display: flex; align-items: center; justify-content: space-between; gap: calc(12 * var(--u)); min-width: 0; padding: calc(10 * var(--u)) calc(20 * var(--u)); border-radius: calc(20 * var(--u)); background: var(--card2); }
+/* A long label (Highest visit) wraps next to a long number (120.6) instead of being cut. */
+.hero-stats .l { font-size: max(16px, calc(22 * var(--u))); line-height: 1.15; font-weight: 600; color: var(--muted); min-width: 0; }
+.hero-stats .num { font-size: calc(56 * var(--u)); line-height: 1; white-space: nowrap; }
+/* Middle: the board as large as the card allows, the three darts in a row under it. */
+.board-card { position: relative; min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; row-gap: calc(12 * var(--u)); padding: calc(14 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u)); border-radius: var(--r-card); background: var(--card); }
+.board-card > .target-board { grid-column: 1; grid-row: 1; width: 100%; height: 100%; aspect-ratio: auto; max-height: none; }
+.board-card .hero-darts { grid-row: 2; }
+.board-card .dart-tile { flex: 1 1 0; width: auto; min-width: 0; height: max(56px, calc(116 * var(--u))); }
+.board-card .dart-tile .num { font-size: calc(72 * var(--u)); }
+/* Records (B): Best over PB in the card's top right corner, clear of the ring of numbers; one button for the records modal. */
+.board-card > .rpills { right: calc(20 * var(--u)); top: calc(20 * var(--u)); }
+.board-card .rp { height: max(30px, calc(44 * var(--u))); font-size: max(16px, calc(18 * var(--u))); }
+/* Right: the rows fill the column; larger up to 3 players. */
+.board-main.with-board .side { gap: calc(20 * var(--u)); min-width: 0; }
+.board-main.with-board .plist { flex: 1; }
+.board-main.with-board .prow { flex: 1 1 0; min-height: 0; }
+.board-main.with-board .prow .info { gap: calc(8 * var(--u)); }
+.board-main.with-board .prow .name { font-size: calc(38 * var(--u)); }
+.board-main.with-board .prow .meta { font-size: calc(30 * var(--u)); flex-wrap: wrap; row-gap: calc(6 * var(--u)); min-width: 0; }
+.board-main.with-board .prow .meta.list-hearts { font-size: calc(40 * var(--u)); }
+.board-main.with-board .list-hearts .tag { margin-left: 0; font-size: max(16px, calc(24 * var(--u))); padding: calc(4 * var(--u)) calc(12 * var(--u)); border-radius: var(--r-pill); background: var(--red); color: var(--ink); }
+.board-main.with-board .prow .score { font-size: calc(96 * var(--u)); }
+.board-main.with-board .plist.few .prow { padding: calc(24 * var(--u)) calc(32 * var(--u)); }
+.board-main.with-board .plist.few .info { gap: calc(14 * var(--u)); }
+.board-main.with-board .plist.few .name { font-size: calc(52 * var(--u)); }
+.board-main.with-board .plist.few .meta { font-size: calc(36 * var(--u)); }
+.board-main.with-board .plist.few .meta.list-hearts { font-size: calc(44 * var(--u)); }
+.board-main.with-board .plist.few .score { font-size: calc(120 * var(--u)); }
+/* Free throw's average (120.6) leaves the name room. */
+.board-main.with-board .prow .score.long { font-size: calc(72 * var(--u)); }
+/* How far the player is (ATC, Full Board, Football). */
+.pbar { display: block; height: calc(14 * var(--u)); min-height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.pbar i { display: block; height: 100%; border-radius: var(--r-pill); background: var(--green); }
+.plist.few .pbar { height: calc(20 * var(--u)); }
+.prow.active .pbar { background: rgba(17, 17, 17, 0.18); }
+.prow.active .pbar i { background: var(--ink); }
+.prow.out .pbar i { background: var(--off); }
+/* Cricket grid in the narrower column: a slimmer sector column, the marks as large as v9. */
+.board-main.with-board .cricket { flex: 1; height: auto; padding: calc(12 * var(--u)); }
+/* 5 players at 1280×720: the points shrink with the column, but not under 16 px. */
+.board-main.with-board .cricket .ch .num { font-size: max(16px, min(calc(96 * var(--u)), 40cqi)); }
+.board-main.with-board .cricket .sector { font-size: calc(40 * var(--u)); }
+.board-main.with-board .cricket .mk { font-size: calc(60 * var(--u)); }
+.board-main.with-board .cricket .ch .n { font-size: calc(30 * var(--u)); }
+.board-main.with-board .cricket.many .ch .ini { font-size: calc(28 * var(--u)); }
 .mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
-.hero.with-board .hero-darts { grid-column: 1 / -1; grid-row: 4; }
 .target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; min-height: 0; }
 .hol-scale { position: relative; height: calc(430 * var(--u)); margin: calc(8 * var(--u)) 0; }
 .hol-scale .pin-num { position: absolute; bottom: calc(240 * var(--u)); font-size: calc(220 * var(--u)); line-height: 0.85; white-space: nowrap; color: var(--text); }
@@ -1265,27 +1322,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .list-hearts .tag { margin-left: calc(8 * var(--u)); font-size: max(16px, var(--fs-tv-label)); letter-spacing: 0.08em; text-transform: uppercase; }
 /* Higher or Lower: what the red range means (A#20). */
 .hol-scale .legend { position: absolute; left: 0; right: 0; top: calc(100% + 12 * var(--u)); text-align: center; font-size: max(16px, calc(24 * var(--u))); color: var(--muted); }
-/* Cricket from 5 players: place number → name next to the score (A#3). */
-.hero.with-legend { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: 'top top' 'score legend' 'note legend' 'darts darts'; column-gap: calc(40 * var(--u)); }
-.with-legend > .hero-top { grid-area: top; }
-.with-legend > .hero-score-row { grid-area: score; align-self: center; }
-.with-legend > .hero-note { grid-area: note; }
-.with-legend > .hero-darts { grid-area: darts; }
-.with-legend > .legend { grid-area: legend; align-self: center; display: grid; grid-template-columns: auto auto; gap: calc(10 * var(--u)) calc(18 * var(--u)); align-items: center; font-size: calc(34 * var(--u)); font-weight: 700; }
-.with-legend > .legend > div { display: contents; }
-/* Cricket Random: the grid column is 860u, so the hero is narrower than in Shanghai; a smaller score keeps the board at 540u or more. */
-.board-main:has(.cricket) .hero.with-board { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); }
-.board-main:has(.cricket) .hero.with-board > .hero-top { grid-column: 1 / -1; }
-.board-main:has(.cricket) .hero.with-board:not(.with-legend) > .target-board { grid-row: 2 / 4; }
-.board-main:has(.cricket) .hero.with-board .mini-big .num { font-size: calc(170 * var(--u)); }
-/* Cricket Random from 5 players: the board takes the right, the legend sits under the score. */
-.hero.with-board.with-legend { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: 'top top' 'score board' 'legend board' 'note board' 'darts darts'; }
-.hero.with-board.with-legend > .target-board { grid-area: board; grid-row: 2 / 5; align-self: center; min-height: 0; }
-.hero.with-board.with-legend > .hero-top { grid-column: 1 / -1; }
-.hero.with-board.with-legend .hero-darts { grid-row: 5; }
-.with-board.with-legend > .legend { grid-template-columns: auto minmax(0, 1fr); min-width: 0; align-self: start; font-size: calc(28 * var(--u)); gap: calc(4 * var(--u)) calc(14 * var(--u)); }
-.with-board.with-legend > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.with-board.with-legend > .legend .n { font-size: calc(32 * var(--u)); }
 .legend .n { font-size: calc(40 * var(--u)); color: var(--muted); text-align: right; min-width: calc(40 * var(--u)); }
 .legend .who { white-space: nowrap; color: var(--soft); }
 .legend .on .n, .legend .on .who { color: var(--accent); }
@@ -1384,7 +1420,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 /* Top right of the hero, Best over PB (Team), right-aligned, level with the name. Out of the grid: in the board games they sit in the
    empty corner of the board's square (its ring of numbers is round), so the board keeps its 620 u. One button for the records modal. */
 .hero:has(> .rpills) { position: relative; }
-.hero > .rpills { position: absolute; right: calc(56 * var(--u)); top: calc(48 * var(--u)); z-index: 3; grid-column: auto; grid-row: auto;
+.hero > .rpills, .board-card > .rpills { position: absolute; right: calc(56 * var(--u)); top: calc(48 * var(--u)); z-index: 3; grid-column: auto; grid-row: auto;
   display: flex; flex-direction: column; align-items: flex-end; gap: calc(8 * var(--u)); min-height: 44px; padding: 0; border: 0; background: none; border-radius: calc(20 * var(--u)); cursor: pointer; }
 .hero:not(.with-board):has(> .rpills) > .hero-top { margin-right: calc(260 * var(--u)); }
 .rp { display: flex; align-items: center; gap: calc(8 * var(--u)); height: calc(40 * var(--u)); padding: 0 calc(16 * var(--u)); border-radius: var(--r-pill); background: var(--raised);
