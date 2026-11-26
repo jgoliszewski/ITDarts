@@ -761,7 +761,6 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .board-card .dart-tile { flex: 1 1 0; width: auto; min-width: 0; height: max(56px, calc(116 * var(--u))); }
 .board-card .dart-tile .num { font-size: calc(72 * var(--u)); }
 /* Records (B): Best over PB in the card's top right corner, clear of the ring of numbers; one button for the records modal. */
-.board-card > .rpills { right: calc(20 * var(--u)); top: calc(20 * var(--u)); }
 .board-card .rp { height: max(30px, calc(44 * var(--u))); font-size: max(16px, calc(18 * var(--u))); }
 /* Right: the rows fill the column; larger up to 3 players. */
 .board-main.with-board .side { gap: calc(20 * var(--u)); min-width: 0; }
@@ -781,6 +780,16 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .board-main.with-board .plist.few .score { font-size: calc(120 * var(--u)); }
 /* Free throw's average (120.6) leaves the name room. */
 .board-main.with-board .prow .score.long { font-size: calc(72 * var(--u)); }
+/* 6–8 players: compact rows, so eight fit at 1280×720 with the active name whole; the Killer tag stays next to the hearts. */
+.board-main.with-board .plist.many { gap: calc(6 * var(--u)); }
+.board-main.with-board .plist.many .prow { padding: calc(8 * var(--u)) calc(20 * var(--u)); gap: calc(12 * var(--u)); }
+.board-main.with-board .plist.many .info { gap: calc(4 * var(--u)); }
+.board-main.with-board .plist.many .name { font-size: calc(28 * var(--u)); }
+.board-main.with-board .plist.many .meta { font-size: max(16px, calc(24 * var(--u))); flex-wrap: nowrap; }
+.board-main.with-board .plist.many .meta.list-hearts { font-size: calc(30 * var(--u)); }
+.board-main.with-board .plist.many .list-hearts .tag { font-size: max(16px, calc(20 * var(--u))); padding: calc(2 * var(--u)) calc(10 * var(--u)); }
+.board-main.with-board .plist.many .score { font-size: calc(64 * var(--u)); }
+.board-main.with-board .plist.many .pbar { height: calc(8 * var(--u)); min-height: 4px; }
 /* How far the player is (ATC, Full Board, Football). */
 .pbar { display: block; height: calc(14 * var(--u)); min-height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 .pbar i { display: block; height: 100%; border-radius: var(--r-pill); background: var(--green); }
@@ -790,6 +799,10 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .prow.out .pbar i { background: var(--off); }
 /* Cricket grid in the narrower column: a slimmer sector column, the marks as large as v9. */
 .board-main.with-board .cricket { flex: 1; height: auto; padding: calc(12 * var(--u)); }
+/* 6–8 players: the grid column grows (90 u + 78 u per player) so every player column stays ≥ 44 px at 1280×720; the board gives way, ≥ 600 px at 1920. */
+.board-main.with-board:has(.cricket.n6) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(558 * var(--u)); }
+.board-main.with-board:has(.cricket.n7) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(636 * var(--u)); }
+.board-main.with-board:has(.cricket.n8) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(714 * var(--u)); }
 /* 5 players at 1280×720: the points shrink with the column, but not under 16 px. */
 .board-main.with-board .cricket .ch .num { font-size: max(16px, min(calc(96 * var(--u)), 40cqi)); }
 .board-main.with-board .cricket .sector { font-size: calc(40 * var(--u)); }
@@ -1417,12 +1430,10 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 @keyframes heart-fade { 0%, 60% { color: var(--red); } 100% { color: var(--off); } }
 
 /* ---------- records during the game (docs/UI.md#rekordy-w-trakcie-gry) ---------- */
-/* Top right of the hero, Best over PB (Team), right-aligned, level with the name. Out of the grid: in the board games they sit in the
-   empty corner of the board's square (its ring of numbers is round), so the board keeps its 620 u. One button for the records modal. */
-.hero:has(> .rpills) { position: relative; }
-.hero > .rpills, .board-card > .rpills { position: absolute; right: calc(56 * var(--u)); top: calc(48 * var(--u)); z-index: 3; grid-column: auto; grid-row: auto;
+/* Every game with a record but 121 has a board: Best over PB (Team), right-aligned, in the empty top right corner of the board card,
+   clear of the round ring of numbers. One button for the records modal. */
+.board-card > .rpills { position: absolute; right: calc(20 * var(--u)); top: calc(20 * var(--u)); z-index: 3;
   display: flex; flex-direction: column; align-items: flex-end; gap: calc(8 * var(--u)); min-height: 44px; padding: 0; border: 0; background: none; border-radius: calc(20 * var(--u)); cursor: pointer; }
-.hero:not(.with-board):has(> .rpills) > .hero-top { margin-right: calc(260 * var(--u)); }
 .rp { display: flex; align-items: center; gap: calc(8 * var(--u)); height: calc(40 * var(--u)); padding: 0 calc(16 * var(--u)); border-radius: var(--r-pill); background: var(--raised);
   font-size: max(14px, calc(17 * var(--u))); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .rp b { font-family: var(--num); font-size: calc(28 * var(--u)); font-weight: 800; line-height: 1; letter-spacing: 0; color: var(--text); }

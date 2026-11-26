@@ -155,8 +155,8 @@ function heroNote(m: MiniMatch): string {
 const recordBound = (m: MiniMatch): number | null => GAMES[m.game].record?.bound?.(m.view, m.view.current, m.options) ?? null;
 
 /**
- * Top right of the hero: the office record over the player's PB (co-op: Team best), or one merged pill, greyed and struck
- * through once out of reach. One button for the records modal. 121 shows them as ladder flags instead.
+ * Top right of the board card: the office record over the player's PB (co-op: Team best), or one merged pill, greyed and struck
+ * through once out of reach. One button for the records modal. Every game with a record has a board but 121, which shows them as ladder flags.
  */
 function RecordPills({ m, onOpen }: { m: MiniMatch; onOpen?: () => void }) {
   const pills = recordPills(m.record!, m.roster, m.view.current, recordBound(m));
@@ -253,7 +253,6 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
       </div>
-      {m.record && m.game !== '121' && <RecordPills m={m} onOpen={onRecords} />}
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
         {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
           <div className="caps">{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
@@ -315,7 +314,7 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
   const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives }
     : m.game === 'killer' ? { lives: m.view.lives, max: m.options.lives } : null;
   return (
-    <div className={`plist ${board && m.roster.length <= 3 ? 'few' : ''}`}>
+    <div className={`plist ${board && m.roster.length <= 3 ? 'few' : ''} ${board && m.roster.length > 5 ? 'many' : ''}`}>
       {playOrder(m).map(i => {
         const r = m.roster[i];
         const row = v.rows[i];
@@ -353,7 +352,7 @@ export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cric
   const v = m.view;
   const many = m.roster.length > 4;
   return (
-    <div className={`cricket ${many ? 'many' : ''}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
+    <div className={`cricket ${many ? 'many' : ''} n${m.roster.length}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
       {playOrder(m).map((i, k) => (
         <div key={i} className={`ch ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`} {...pickProps(onPick, i, m.roster[i].name)}>

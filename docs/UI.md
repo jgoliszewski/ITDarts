@@ -114,7 +114,7 @@ Od 2026-11-18, z przeróbki UI ([DESIGN.md](../DESIGN.md#ruch) ma tokeny, czasy 
 
 ### Tarcza w hero
 
-Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratch/cricket-board-vis/`). Model segmentów jest w `web/src/components/targets.ts`, rysunek w `HeroBoard.tsx`, a mapowanie gier na segmenty w `web/src/screens/boardTargets.ts`. Tarcza do wklikiwania lotek (telefon, laptop), Heatmap i Test board używają osobnego `TargetBoard` w pełnych kolorach i tej zmiany nie dotyczą.
+Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratch/cricket-board-vis/`). Model segmentów jest w `web/src/components/targets.ts`, rysunek w `HeroBoard.tsx`, a mapowanie gier na segmenty w `web/src/screens/boardTargets.ts`. Tarcza do wklikiwania lotek (telefon, laptop) to osobny `Dartboard`, a Heatmap i Test board używają `TargetBoard` w pełnych kolorach; tej zmiany nie dotyczą.
 
 - **Pierścień numerów:** wokół tarczy biegnie pas z numerami 1–20, jeden **segment** na sektor. Cele i ich stan widać w pasie, a sama tarcza pokazuje tylko, w którą jej część trzeba trafić.
 - **Anatomia segmentu:** numer pośrodku pasa i do 3 kresek stanu na jego wewnętrznej krawędzi (w Killer do 5, krótszych). Kreska pełna znaczy „jest”, pusta „jeszcze nie”: znacznik Cricketa, życie w Killer, S, D albo T sektora rundy w Shanghai trafione w tej Turze. Kreski idą łukiem wzdłuż pasa i obracają się razem z numerem.
@@ -148,7 +148,7 @@ Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratc
 
 Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket i Killer (`hasBoard` w `web/src/screens/MiniBoard.tsx`). Rozmiary ustala `styles.css` (sekcja „games with a board”), a to, co stoi w lewej kolumnie i na liście, czysta logika w `web/src/screens/boardHero.ts`.
 
-- **Trzy kolumny** (340 u, reszta, 460 u): gracz, karta tarczy, lista graczy z przyciskami Pilota pod spodem.
+- **Trzy kolumny** (340 u, reszta, 460 u): gracz, karta tarczy, lista graczy z przyciskami Pilota pod spodem. Cricket od 6 graczy ma szerszą prawą kolumnę (558, 636, 714 u przy 6, 7, 8 graczach), żeby nagłówek każdego gracza w siatce miał ≥ 44 px przy 1280×720; tarcza maleje (przy 8 graczach ok. 670 px przy 1920).
 - **Lewa kolumna** (hero): imię, w Killer pod nim serca (pięć serc nie wypchnie imienia), kicker z dużą liczbą (200 u, od 5 znaków 120 u), notka, w Cricket od 5 graczy legenda „numer → imię”, a **na dole 1–3 kafelki statystyk gracza z tego meczu**: te same liczby co w podsumowaniu, tylko takie, jakie widok gry już ma. Statystyki dotyczą gracza, który rzuca:
   - ATC: Darts, Hit rate, Per target. Full Board: Darts, Hit rate, Per sector. W Co-op „per” liczy lotki drużyny;
   - Shanghai: Darts, Hit rate, Shanghais. Free throw: Average, Darts, Highest visit;
@@ -157,7 +157,7 @@ Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cr
 - **Kicker i notka** zostają tylko tam, gdzie tarcza ich nie powie: „Target” (ATC), „Sectors” (Full Board), „Round N / M” i punkty („61 points · 12 this visit”, Shanghai), „Goals” i kto ma piłkę (Football), „Points” i zasady punktacji (Bullseye), „This visit” i „Visit N of M” (Free throw), „Killer” albo „Your double” (Killer). Cricket nie ma kickera „Points” (liczba to zawsze punkty, a nagłówek siatki je powtarza), a jego MPR jest notką; solo Cricket ma kicker „Darts”.
 - **Usunięte teksty** (tarcza pokazuje to samo): postęp i lotki w ATC („3 / 21 · 5 darts”) i Full Board („N darts”), „Hit a rival double” i „Hit your double to become a killer” w Killer, „· doubles score” i „· hit the bull” w Football, kicker „Points” w Cricket. „⚽ Your ball”, „Ball in the centre” i „Bob has the ball” zostają, bo tarcza nie mówi, kto ma piłkę.
 - **Karta tarczy** (środek): tarcza tak duża, jak pozwala karta, a pod nią rząd trzech kafelków lotek, dalej do poprawki dotykiem („Fix dart”, „+ Add”). W prawym górnym rogu karty stoją pigułki rekordów, poza pierścieniem numerów ([Rekordy w trakcie gry](#rekordy-w-trakcie-gry)).
-- **Lista graczy** (prawa kolumna): wiersze wypełniają kolumnę i są wyższe niż w grach bez tarczy, a do 3 graczy jeszcze większe (imię 52 u, wynik 120 u; od 4 graczy imię 38 u, wynik 96 u). W ATC, Full Board i Football każdy wiersz ma **pasek postępu**: zaliczone cele z 21 (ATC), zaliczone sektory z 21 (Full Board), gole z celu gry (Football). Pozostałe gry go nie mają. W Killer serca stoją pod imieniem, a killera oznacza czerwona plakietka „Killer”. Cricket ma zamiast listy siatkę znaczników.
+- **Lista graczy** (prawa kolumna): wiersze wypełniają kolumnę i są wyższe niż w grach bez tarczy, a do 3 graczy jeszcze większe (imię 52 u, wynik 120 u; od 4 graczy imię 38 u, wynik 96 u; od 6 graczy kompaktowe: imię 28 u, linia 24 u, wynik 64 u, serca 30 u, cieńszy pasek, żeby 8 wierszy zmieściło się przy 1280×720). W ATC, Full Board i Football każdy wiersz ma **pasek postępu**: zaliczone cele z 21 (ATC), zaliczone sektory z 21 (Full Board), gole z celu gry (Football). Pozostałe gry go nie mają. W Killer serca stoją pod imieniem, a killera oznacza czerwona plakietka „Killer” (od 6 graczy w tej samej linii co serca). Cricket ma zamiast listy siatkę znaczników.
 - **Pod listą tylko przyciski:** karty „THIS MATCH” nie ma, bo liczby są po lewej.
 
 ### Rekordy w trakcie gry

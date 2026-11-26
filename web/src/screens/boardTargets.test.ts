@@ -9,6 +9,7 @@ import { atc, fullBoard } from '../../../games/race.ts';
 import { shanghai } from '../../../games/shanghai.ts';
 import type { TurnEvent } from '../../../games/turns.ts';
 import type { Segment } from '../components/targets.ts';
+import { isLit } from '../components/targets.ts';
 import type { BoardMatch } from './boardTargets.ts';
 import { boardTargets } from './boardTargets.ts';
 
@@ -94,6 +95,9 @@ describe('Football on the board', () => {
     const b = board(match('football', dbl, football.view([d('25')], 2, dbl)));
     expect(b.wholeRing).toBe(2);
     expect(Object.values(b.segments).every(s => s.state === 'none')).toBe(true);
+    // The ball holder scores on doubles 1–20 only: the bullseye stays dimmed like the rest of the bull.
+    expect([isLit(b, 25, 2), isLit(b, 25, 'big')]).toEqual([false, false]);
+    expect([isLit(b, 20, 2), isLit(b, 20, 3)]).toEqual([true, false]);
   });
 
   it('targets the big singles of the four drawn sectors with the ball on Big singles', () => {
@@ -176,6 +180,14 @@ describe('Cricket on the board', () => {
     expect(b.segments[17]).toEqual({ state: 'target', ring: 'any', ticks: [true, false, false] });
   });
 
+  it('counts a sector open only for a removed player as closed by all', () => {
+    // 3 players: players 1 and 2 close 20, player 3 (index 2) leaves before closing it.
+    const gone: TurnEvent = { t: 'remove', player: 2, scope: 'match', at: 0 } as unknown as TurnEvent;
+    const b = board(m([...visit('T20'), ...visit('T20'), gone, d('S19')], 3));
+    expect(b.segments[20].state).toBe('closedAll');
+    expect(b.segments[19].state).toBe('target');
+  });
+
   it('works with five players, ticks of the one throwing', () => {
     const b = board(m([...visit('T20'), ...visit('S20'), d('D20')], 5));
     expect(b.segments[20].ticks).toEqual([true, true, false]);
@@ -208,6 +220,14 @@ describe('Killer on the board', () => {
   it('puts an eliminated rival out of play', () => {
     const o1 = { ...o, lives: 1 };
     const mm = m([d('D14'), d('D5')], 5, o1);
+    expect(board(mm).segments[5]).toEqual({ state: 'off' });
+    expect(inState(mm, 'target')).toEqual([9, 11, 17]);
+  });
+
+  it('puts the double of a removed rival out of play, with lives left', () => {
+    const gone = { t: 'remove', player: 1, scope: 'match', at: 0 } as unknown as TurnEvent;
+    const mm = m([d('D14'), gone]);
+    expect((mm.view as { lives: number[] }).lives[1]).toBe(5);
     expect(board(mm).segments[5]).toEqual({ state: 'off' });
     expect(inState(mm, 'target')).toEqual([9, 11, 17]);
   });

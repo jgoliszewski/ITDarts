@@ -39,7 +39,7 @@ Część Pilota ze statusem połączenia i akcjami na Board Managerze: reset, de
 _Avoid_: ustawienia, settings
 
 **Tarcza w hero**:
-Narysowana tarcza w grach z tarczą na Ekranie wyników: pokazuje, w co trafić, i stan celów gracza, który rzuca. To obraz, nie fizyczna Tarcza. Komponent `HeroBoard`; do wklikiwania lotek służy osobny `TargetBoard`.
+Narysowana tarcza w grach z tarczą na Ekranie wyników: pokazuje, w co trafić, i stan celów gracza, który rzuca. To obraz, nie fizyczna Tarcza. Komponent `HeroBoard`; do wklikiwania lotek (telefon, laptop) służy osobny `Dartboard`, a `TargetBoard` w pełnych kolorach zostaje tylko jako tło Heatmap i Test board.
 _Avoid_: minitarcza, plansza, tarcza celów
 
 **Pierścień numerów**:

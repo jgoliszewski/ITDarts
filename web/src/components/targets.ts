@@ -82,7 +82,8 @@ export function numberTurn(n: number): { angle: number; flipped: boolean } {
 /** Is this part of the wedge drawn in full colours? `part` is 'in' or 'big' for the singles, 2 or 3 for the rings; the bull's are 'big' (25) and 2 (50). */
 export function isLit(b: BoardTargets, n: number, part: 'in' | 'big' | 2 | 3): boolean {
   const s = b.segments[n];
-  if (s.state === 'none') return !b.wholeRing || part === b.wholeRing;
+  // A whole ring (Football Doubles) is the twenty sectors' ring: the bull never scores there, so it stays dimmed.
+  if (s.state === 'none') return !b.wholeRing || (n !== BULL && part === b.wholeRing);
   if (s.state === 'closedAll' || s.ring === undefined) return false;
   if (s.ring === 'any') return true;
   return s.ring === 1 ? part === 'big' : s.ring === part;
