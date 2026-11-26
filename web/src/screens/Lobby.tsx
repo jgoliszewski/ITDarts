@@ -7,7 +7,7 @@ import { Dialog, Presence, act } from '../components/ui.tsx';
 import { rematchLabel } from '../match.ts';
 import type { RecordPage } from '../records.ts';
 import type { Gesture, GestureResult, PointerStep } from '../records.ts';
-import { ROTATE_RESPONSE, SWIPE_RESPONSE, attemptCommand, attemptHint, attemptReady, dotWeight, gestureClick, gestureDown, gestureEnd, gestureMove, groupByGame, groupTitle, idleGesture, lastLine, nextPage, recordPages, splitValue, springStep, togglePick } from '../records.ts';
+import { ROTATE_RESPONSE, SWIPE_RESPONSE, attemptCommand, attemptHint, attemptReady, dotWeight, gestureClick, gestureDown, gestureEnd, gestureMove, groupByGame, groupSpan, groupTitle, idleGesture, lastLine, nextPage, recordPages, splitValue, springStep, togglePick } from '../records.ts';
 import { shortDate } from '../util.ts';
 import { BigHeader } from './Scoreboard.tsx';
 
@@ -82,9 +82,9 @@ function RecordPageView({ page, tab, onPick }: { page: RecordPage; tab: boolean;
   return (
     <div className="rec-page" aria-hidden={!tab || undefined} style={{ gridTemplateColumns: `repeat(${page.cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${page.rows}, minmax(0, 1fr))` }}>
       {page.groups.map(g => {
-        const cols = Math.min(g.items.length, page.cols);
+        const { cols, rows } = groupSpan(g, page);
         return (
-          <section key={`${g.game}${g.cont}`} className="rec-group" style={{ gridRow: page.groups.length === 1 ? '1 / -1' : g.row + 1, gridColumn: `${g.col + 1} / span ${cols}` }}>
+          <section key={`${g.game}${g.cont}`} className="rec-group" style={{ gridRow: `${g.row + 1} / span ${rows}`, gridColumn: `${g.col + 1} / span ${cols}` }}>
             <h2 className="rec-ghead"><GameIcon game={g.game} className="rec-gico" /><span>{groupTitle(g)}</span><span className="gline" /></h2>
             <div className="rec-tiles" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
               {g.items.map(r => <RecordTile key={r.key} r={r} tab={tab} onPick={onPick} />)}
@@ -141,6 +141,11 @@ function RecordGrid({ lastId, paused, onPick }: { lastId: number | undefined; pa
   const stop = () => { cancelAnimationFrame(strip.current.raf); strip.current.raf = 0; };
   const put = (x: number) => { const s = strip.current; stop(); s.x = x; s.v = 0; paint(x); };
   const turn = (to: number) => { pageNow.current = to; setPage(to); setChanges(c => c + 1); };
+  // A tile keeps the focus (back from the attempt popup) when its page slides away; focus inside an aria-hidden page is not allowed.
+  useEffect(() => {
+    const el = document.activeElement;
+    if (el instanceof HTMLElement && track.current?.contains(el) && el.closest('[aria-hidden="true"]')) el.blur();
+  }, [cur]);
   /** The spring runs to its goal; on the copy of the first page it lands, the strip goes back to the real one unseen. */
   const frame = (t: number) => {
     const s = strip.current;

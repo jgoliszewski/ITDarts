@@ -114,6 +114,12 @@ export interface RecordPage { cols: number; rows: number; groups: RecordGroup[] 
 
 export const groupTitle = (g: Pick<RecordGroup, 'title' | 'cont'>) => (g.cont ? `${g.title} (cont.)` : g.title);
 
+/** The grid cells a group takes on its page: as many columns as tiles (up to the page's), and a second row only when its tiles wrap. */
+export function groupSpan(g: Pick<RecordGroup, 'items'>, page: Pick<RecordPage, 'cols'>): { cols: number; rows: number } {
+  const cols = Math.min(g.items.length, page.cols);
+  return { cols, rows: Math.ceil(g.items.length / cols) };
+}
+
 /** The records by game, the games in the order of their first record (the phone lists them so, under a heading each). */
 export function groupByGame(records: LobbyRecord[]): Map<GameId, LobbyRecord[]> {
   const games = new Map<GameId, LobbyRecord[]>();

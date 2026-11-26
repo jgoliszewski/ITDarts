@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LobbyRecord, MatchSummary, RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, recordPages, groupTitle, gestureDown, gestureMove, gestureEnd, gestureClick, idleGesture, lockAxis, rubberBand, holdPosition, swipeSpeed, projectPage, springStep, dotWeight, nextPage } from './records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, recordPages, groupSpan, groupTitle, gestureDown, gestureMove, gestureEnd, gestureClick, idleGesture, lockAxis, rubberBand, holdPosition, swipeSpeed, projectPage, springStep, dotWeight, nextPage } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -289,6 +289,15 @@ describe('record pages', () => {
   it('keeps the 4×2 grid when 4 records in two games do not fit 2×2 (3 and 1), and from 5 records on', () => {
     expect(recordPages(recs(['atc', 3], ['hol', 1])).map(show)).toEqual(['4x2 ATC 3@0.0 | HOL 1@0.3']);
     expect(recordPages(recs(['atc', 2], ['hol', 2], ['cricket', 1])).map(show)).toEqual(['4x2 ATC 2@0.0 | HOL 2@0.2 | CRICKET 1@1.0']);
+  });
+
+  it('spans a second row only for a group whose tiles wrap, so a small group alone on a page keeps the 4×2 tile size', () => {
+    const span = (pages: ReturnType<typeof recordPages>) => pages.map(p => p.groups.map(g => { const s = groupSpan(g, p); return `${s.cols}x${s.rows}`; }).join(' | '));
+    expect(span(recordPages(recs(['atc', 8], ['cricket', 2])))).toEqual(['4x2', '2x1']);
+    expect(span(recordPages(recs(['atc', 5])))).toEqual(['4x2']);
+    expect(span(recordPages(recs(['atc', 3])))).toEqual(['2x2']);
+    expect(span(recordPages(recs(['atc', 2], ['hol', 1])))).toEqual(['2x1 | 1x1']);
+    expect(span(recordPages(recs(['atc', 1])))).toEqual(['1x1']);
   });
 
   it('gives a group of 5 to 8 a page of its own', () => {
