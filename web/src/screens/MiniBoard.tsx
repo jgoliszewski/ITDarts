@@ -6,10 +6,12 @@ import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
+import type { BoardMatch } from './boardTargets.ts';
+import { boardTargets } from './boardTargets.ts';
 import { gameStats } from '../components/Compare.tsx';
 import { DartFace } from '../components/DartFace.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { TargetBoard } from '../components/Dartboard.tsx';
+import { HeroBoard } from '../components/HeroBoard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
 import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
@@ -122,44 +124,16 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket';
-
 /** ATC and Full Board put the board next to the hero (bug report 2026-10-27); Cricket only with random sectors, to show which are in play. */
-export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
+export const hasBoard = (m: MiniMatch): m is BoardMatch =>
   m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
   || (m.game === 'cricket' && m.options.sectors === 'random');
 
-function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
+function RaceBoard({ m }: { m: BoardMatch }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
-  // Cricket Random: the whole board in its colours; the sectors still in play (and the bull) are outlined, closed ones lose it.
-  if (m.game === 'cricket') {
-    const live = m.view.sectors.filter((_, k) => !m.view.dead[k]);
-    return <TargetBoard cleared={[]} target={live} ring={null} still darts={darts} label={`Sectors in play: ${live.map(s => s === 25 ? 'Bull' : s).join(' · ')}`} />;
-  }
-  // Shanghai lights the round's sector; nothing is crossed off.
-  if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
-  // Free throw has no target: the board only shows where the darts stuck.
-  if (m.game === 'freethrow') return <TargetBoard cleared={[]} target={null} ring={null} darts={darts} label="No target" />;
-  if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;
-  // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles or the big singles of four sectors score.
-  if (m.game === 'football') {
-    if (m.view.ball === v.current && m.view.sectors) {
-      return <TargetBoard cleared={[]} target={m.view.sectors} ring={1} darts={darts} label={`Big singles ${m.view.sectors.join(' · ')} score`} />;
-    }
-    return m.view.ball === v.current
-      ? <TargetBoard cleared={[]} target="ring" ring={2} darts={darts} label="Doubles score" />
-      : <TargetBoard cleared={[]} target={25} ring={m.options.kickOff === 'bullseye' ? 2 : null} darts={darts} label="The bull wins the ball" />;
-  }
-  const ring = m.options.target === 'doubles' ? 2 : m.options.target === 'trebles' ? 3 : null;
-  if (m.game === 'fullboard') {
-    const cleared = m.view.cleared[v.current];
-    return <TargetBoard cleared={cleared} target={null} ring={ring} darts={darts} label={`${cleared.length} of ${SECTORS.length} sectors cleared`} />;
-  }
-  const { targets, progress } = m.view;
-  const i = progress[v.current];
-  const target = i < targets.length ? targets[i] : null;
-  return <TargetBoard cleared={targets.slice(0, i)} target={target} ring={ring} darts={darts} label={target === null ? 'All targets cleared' : `Target ${v.hero.big}`} />;
+  const { board, label } = boardTargets(m);
+  return <HeroBoard board={board} darts={darts} label={label} />;
 }
 
 /** Gotcha: who the last visit sent to zero, on the hero once that visit's card is gone (docs/GRY.md). */

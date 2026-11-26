@@ -741,10 +741,6 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
 .hero.with-board .hero-darts { grid-column: 1 / -1; grid-row: 4; }
 .target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; min-height: 0; }
-.tb-outline { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linejoin: round; stroke-dasharray: 18 6; animation: tb-march 1.2s linear infinite; }
-@keyframes tb-march { to { stroke-dashoffset: -48; } }
-/* Marks without pointing: Cricket Random's sectors in play. */
-.tb-outline.still { animation: none; }
 .hol-scale { position: relative; height: calc(430 * var(--u)); margin: calc(8 * var(--u)) 0; }
 .hol-scale .pin-num { position: absolute; bottom: calc(240 * var(--u)); font-size: calc(220 * var(--u)); line-height: 0.85; white-space: nowrap; color: var(--text); }
 .hol-scale .stem { position: absolute; bottom: calc(176 * var(--u)); width: calc(10 * var(--u)); height: calc(56 * var(--u)); border-radius: var(--r-pill); background: var(--text); }
@@ -1371,8 +1367,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   /* 121: the ladder and the odometer jump to where they end. */
   .ladder .track.slide { animation: none; }
   .odometer .digit.roll .stack { animation: none; transform: translateY(-1em); }
-  /* The takeout spinner and the target outline stand still; the text and the dashes still say what they mean. */
-  .takeout-band svg, .tb-outline { animation: none; }
+  /* The takeout spinner stands still; the text still says what it means. */
+  .takeout-band svg { animation: none; }
   ::view-transition-group(*) { animation-duration: 0s; }
   /* UI: dialogs, sheets, drawer, lists and toasts only fade; switch knob and rows jump. */
   .dialog, .wide-fix, .sheet, .drawer, .pick-list, .info-bubble, .toast, .big ~ .toasts .toast { animation-name: fade-in; }

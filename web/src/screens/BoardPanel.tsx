@@ -29,7 +29,7 @@ function BoardTest({ s, now, controls }: { s: ClientState; now: number; controls
   const row = (k: string, v: string) => <><span className="muted">{k}</span><span>{v}</span></>;
   const board = (
     <div className="bt-board">
-      <TargetBoard cleared={[]} target={null} ring={null} darts={[]} label="Darts thrown in the test">
+      <TargetBoard label="Darts thrown in the test">
         {darts.map((e, i) => {
           const [x, y] = coordsSpot(e.coords!.x, e.coords!.y);
           const last = i === darts.length - 1;

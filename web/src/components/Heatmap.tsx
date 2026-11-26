@@ -109,7 +109,7 @@ export function Heatmap({ players }: { players: HeatPlayer[] }) {
           drag(e);
         } : undefined}
         onPointerUp={() => { press.current = null; }} onPointerCancel={() => { press.current = null; }}>
-        <TargetBoard cleared={[]} target={null} ring={null} darts={[]} label="Heatmap" />
+        <TargetBoard label="Heatmap" />
         <Layer darts={a.heat.darts} clip={b ? `inset(0 calc(100% - ${pct}) 0 0)` : 'none'} />
         {b && <Layer darts={b.heat.darts} clip={`inset(0 0 0 ${pct})`} />}
         {b && (
