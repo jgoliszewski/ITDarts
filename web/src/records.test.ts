@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LobbyRecord, MatchSummary, RecordInfo, RecordResult, RosterEntry } from '../../server/protocol.ts';
-import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, recordPages, groupTitle, lockAxis, rubberBand, holdPosition, swipeSpeed, projectPage, springStep, dotWeight, nextPage } from './records.ts';
+import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue, attemptHint, attemptReady, togglePick, attemptCommand, lastLine, recordPages, groupTitle, gestureDown, gestureMove, gestureEnd, gestureClick, idleGesture, lockAxis, rubberBand, holdPosition, swipeSpeed, projectPage, springStep, dotWeight, nextPage } from './records.ts';
 
 const res = (raw: number, place: number, by = 'X', at = 0): RecordResult => ({ raw, value: `${raw} darts`, by, at, place });
 const info = (o: Partial<RecordInfo> = {}): RecordInfo => ({
@@ -261,17 +261,39 @@ describe('record pages', () => {
     expect(recordPages([])).toEqual([]);
   });
 
-  it('puts one record on one page, as wide as the record', () => {
+  it('puts one record on one page, as big as the page', () => {
     expect(recordPages(recs(['atc', 1])).map(show)).toEqual(['1x1 ATC 1@0.0']);
   });
 
-  it('keeps a group of up to 4 in one row', () => {
-    expect(recordPages(recs(['atc', 4])).map(show)).toEqual(['4x1 ATC 4@0.0']);
+  it('puts 4 records of one game on one page, as 2×2', () => {
+    expect(recordPages(recs(['atc', 4])).map(show)).toEqual(['2x2 ATC 4@0.0']);
+  });
+
+  it('makes every page the same 4×2 grid, so a tile is as big on each page', () => {
+    const pages = recordPages(recs(['atc', 8], ['cricket', 3], ['shanghai', 2], ['hol', 1]));
+    expect(pages.map(p => [p.cols, p.rows])).toEqual([[4, 2], [4, 2]]);
+    // The second page has one row of small groups; its tiles stay as small as on the full page.
+    expect(recordPages(recs(['atc', 8], ['cricket', 2])).map(show)).toEqual(['4x2 ATC 8@0.0', '4x2 CRICKET 2@0.0']);
+  });
+
+  it('makes tiles bigger only for 4 records or fewer in all: 1, 2 side by side, 2×2', () => {
+    expect(recordPages(recs(['atc', 1])).map(show)).toEqual(['1x1 ATC 1@0.0']);
+    expect(recordPages(recs(['atc', 1], ['hol', 1])).map(show)).toEqual(['2x1 ATC 1@0.0 | HOL 1@0.1']);
+    expect(recordPages(recs(['atc', 2])).map(show)).toEqual(['2x1 ATC 2@0.0']);
+    expect(recordPages(recs(['atc', 3])).map(show)).toEqual(['2x2 ATC 3@0.0']);
+    expect(recordPages(recs(['atc', 2], ['hol', 1])).map(show)).toEqual(['2x2 ATC 2@0.0 | HOL 1@1.0']);
+    expect(recordPages(recs(['atc', 2], ['hol', 2])).map(show)).toEqual(['2x2 ATC 2@0.0 | HOL 2@1.0']);
+    expect(recordPages(recs(['atc', 1], ['hol', 1], ['cricket', 1], ['shanghai', 1])).map(show)).toEqual(['2x2 ATC 1@0.0 | HOL 1@0.1 | CRICKET 1@1.0 | SHANGHAI 1@1.1']);
+  });
+
+  it('keeps the 4×2 grid when 4 records in two games do not fit 2×2 (3 and 1), and from 5 records on', () => {
+    expect(recordPages(recs(['atc', 3], ['hol', 1])).map(show)).toEqual(['4x2 ATC 3@0.0 | HOL 1@0.3']);
+    expect(recordPages(recs(['atc', 2], ['hol', 2], ['cricket', 1])).map(show)).toEqual(['4x2 ATC 2@0.0 | HOL 2@0.2 | CRICKET 1@1.0']);
   });
 
   it('gives a group of 5 to 8 a page of its own', () => {
-    expect(recordPages(recs(['atc', 5])).map(show)).toEqual(['4x1 ATC 5@0.0']);
-    expect(recordPages(recs(['atc', 8], ['cricket', 1])).map(show)).toEqual(['4x1 ATC 8@0.0', '1x1 CRICKET 1@0.0']);
+    expect(recordPages(recs(['atc', 5])).map(show)).toEqual(['4x2 ATC 5@0.0']);
+    expect(recordPages(recs(['atc', 8], ['cricket', 1])).map(show)).toEqual(['4x2 ATC 8@0.0', '4x2 CRICKET 1@0.0']);
   });
 
   it('packs small groups first-fit into rows, two rows to a page, without holes', () => {
@@ -282,12 +304,12 @@ describe('record pages', () => {
 
   it('starts a second page when two rows are full', () => {
     const pages = recordPages(recs(['atc', 4], ['cricket', 4], ['shanghai', 2], ['hol', 2]));
-    expect(pages.map(show)).toEqual(['4x2 ATC 4@0.0 | CRICKET 4@1.0', '4x1 SHANGHAI 2@0.0 | HOL 2@0.2']);
+    expect(pages.map(show)).toEqual(['4x2 ATC 4@0.0 | CRICKET 4@1.0', '4x2 SHANGHAI 2@0.0 | HOL 2@0.2']);
   });
 
   it('puts the pages of big groups first and keeps the order of games otherwise', () => {
     const pages = recordPages(recs(['atc', 2], ['cricket', 6], ['shanghai', 2]));
-    expect(pages.map(show)).toEqual(['4x1 CRICKET 6@0.0', '4x1 ATC 2@0.0 | SHANGHAI 2@0.2']);
+    expect(pages.map(show)).toEqual(['4x2 CRICKET 6@0.0', '4x2 ATC 2@0.0 | SHANGHAI 2@0.2']);
   });
 
   it('treats a group of exactly 4 as a small one: it shares pages in the order of the games', () => {
@@ -296,17 +318,17 @@ describe('record pages', () => {
 
   it('pages 10 variants of one game as the game and “(cont.)”, nothing cut', () => {
     const pages = recordPages(recs(['atc', 10]));
-    expect(pages.map(show)).toEqual(['4x1 ATC 8@0.0', '2x1 ATC (CONT.) 2@0.0']);
+    expect(pages.map(show)).toEqual(['4x2 ATC 8@0.0', '4x2 ATC (CONT.) 2@0.0']);
     expect(pages.flatMap(p => p.groups.flatMap(g => g.items)).map(r => r.key)).toEqual(recs(['atc', 10]).map(r => r.key));
   });
 
   it('continues a game of 13 as a second big page', () => {
-    expect(recordPages(recs(['atc', 13])).map(show)).toEqual(['4x1 ATC 8@0.0', '4x1 ATC (CONT.) 5@0.0']);
+    expect(recordPages(recs(['atc', 13])).map(show)).toEqual(['4x2 ATC 8@0.0', '4x2 ATC (CONT.) 5@0.0']);
   });
 
   it('lets the rest of a big game share rows with small games', () => {
     expect(recordPages(recs(['atc', 12], ['cricket', 3], ['hol', 1])).map(show))
-      .toEqual(['4x1 ATC 8@0.0', '4x2 ATC (CONT.) 4@0.0 | CRICKET 3@1.0 | HOL 1@1.3']);
+      .toEqual(['4x2 ATC 8@0.0', '4x2 ATC (CONT.) 4@0.0 | CRICKET 3@1.0 | HOL 1@1.3']);
   });
 
   it('keeps every tile of 18 and of 30 variants, at most 8 to a page', () => {
@@ -450,5 +472,113 @@ describe('record rotation', () => {
     expect(nextPage(0, 3)).toEqual({ page: 1, wrap: false });
     expect(nextPage(1, 3)).toEqual({ page: 2, wrap: false });
     expect(nextPage(2, 3)).toEqual({ page: 0, wrap: true });
+  });
+});
+
+describe('record gesture', () => {
+  const W = 1000;
+  const at = (strip = { x: 0, moving: false }, n = 4) => gestureDown(idleGesture, { id: 1, x: 500, y: 300, t: 0 }, strip, W, n);
+  /** Plays the moves in order (finger x at 8 ms apart) and returns the last result and the gesture. */
+  const drag = (g: ReturnType<typeof at>, xs: number[], y = 300, id = 1) => {
+    let r = g, t = 0;
+    for (const x of xs) { t += 8; r = gestureMove(r.gesture, { id, x, y, t }, W); }
+    return { r, t };
+  };
+
+  it('holds the strip under the finger 1:1 from where the axis locked', () => {
+    const { r } = drag(at(), [495, 480, 440, 400]);
+    // Locked at 480 (20 px sideways), the strip then moves with the finger: 80 px more.
+    expect(r.move).toEqual({ kind: 'hold', x: 80 });
+    expect(r.gesture.touch.phase).toBe('dragging');
+  });
+
+  it('is only a tap until the hysteresis: no move, nothing to block', () => {
+    const { r } = drag(at(), [495, 492]);
+    expect(r.move).toBeNull();
+    expect(r.gesture.touch.phase).toBe('pressed');
+    expect(r.gesture.block).toBe(false);
+  });
+
+  it('says to capture the pointer once, when it locks sideways', () => {
+    const first = drag(at(), [480]).r;
+    expect(first.locked).toBe(true);
+    expect(gestureMove(first.gesture, { id: 1, x: 460, y: 300, t: 40 }, W).locked).toBe(false);
+  });
+
+  it('ignores a second pointer while one is down: it neither moves, ends, nor takes over the gesture', () => {
+    const down = at();
+    const second = gestureDown(down.gesture, { id: 2, x: 100, y: 100, t: 5 }, { x: 0, moving: false }, W, 4);
+    expect(second.gesture).toBe(down.gesture);
+    const moved = drag(down, [480, 440]).r;
+    expect(gestureMove(moved.gesture, { id: 2, x: 900, y: 300, t: 60 }, W).move).toBeNull();
+    expect(gestureEnd(moved.gesture, { id: 2, x: 900, y: 300, t: 60 }, W).gesture).toBe(moved.gesture);
+    // The first pointer still ends the gesture, which goes idle (so the tiles take taps again).
+    expect(gestureEnd(moved.gesture, { id: 1, x: 440, y: 300, t: 70 }, W).gesture.touch.phase).toBe('idle');
+  });
+
+  it('ends the gesture on a cancel like on a release: the strip runs on, the touch is idle', () => {
+    const { r, t } = drag(at(), [480, 400, 300]);
+    const end = gestureEnd(r.gesture, { id: 1, x: 300, y: 300, t: t + 4 }, W);
+    expect(end.gesture.touch.phase).toBe('idle');
+    expect(end.move).toMatchObject({ kind: 'spring', to: 1 });
+  });
+
+  it('lets a fast drag run on to the next page, and a slow short one back', () => {
+    const fast = drag(at(), [480, 450, 420, 390]);
+    expect(gestureEnd(fast.r.gesture, { id: 1, x: 380, y: 300, t: fast.t + 8 }, W).move).toMatchObject({ kind: 'spring', to: 1 });
+    const slow = drag(at(), [480, 470, 460]);
+    expect(gestureEnd(slow.r.gesture, { id: 1, x: 460, y: 300, t: slow.t + 400 }, W).move).toEqual({ kind: 'spring', to: 0, v: 0 });
+  });
+
+  it('catches a moving strip where it is: stop, held, and the click after it is blocked', () => {
+    const d = at({ x: 420, moving: true });
+    expect(d.move).toEqual({ kind: 'stop' });
+    expect(d.gesture.block).toBe(true);
+    // Let go without moving: on to the page it is nearest to, no tap.
+    expect(gestureEnd(d.gesture, { id: 1, x: 500, y: 300, t: 50 }, W).move).toEqual({ kind: 'spring', to: 0, v: 0 });
+    expect(gestureEnd(at({ x: 600, moving: true }).gesture, { id: 1, x: 500, y: 300, t: 50 }, W).move).toEqual({ kind: 'spring', to: 1, v: 0 });
+  });
+
+  it('does not catch a strip at rest, and a tap leaves the click free', () => {
+    const d = at();
+    expect(d.move).toBeNull();
+    expect(d.gesture.block).toBe(false);
+    const up = gestureEnd(d.gesture, { id: 1, x: 500, y: 300, t: 40 }, W);
+    expect(up.move).toBeNull();
+    expect(up.gesture.touch.phase).toBe('idle');
+    expect(gestureClick(up.gesture).blocked).toBe(false);
+  });
+
+  it('ends a vertical move with nothing to drag: idle, strip untouched, click free', () => {
+    const { r } = drag(at(), [500, 500, 500], 340);
+    expect(r.gesture.touch).toMatchObject({ phase: 'pressed', axis: 'y' });
+    const up = gestureEnd(r.gesture, { id: 1, x: 500, y: 340, t: 60 }, W);
+    expect(up.move).toBeNull();
+    expect(up.gesture.touch.phase).toBe('idle');
+    expect(gestureClick(up.gesture).blocked).toBe(false);
+  });
+
+  it('blocks the click that follows a drag once, with no timer, and the next down frees it', () => {
+    const { r, t } = drag(at(), [480, 400]);
+    const up = gestureEnd(r.gesture, { id: 1, x: 400, y: 300, t }, W);
+    expect(up.gesture.block).toBe(true);
+    const c = gestureClick(up.gesture);
+    expect(c.blocked).toBe(true);
+    expect(gestureClick(c.gesture).blocked).toBe(false);
+    // A drag that gets no click at all: the next press clears the block.
+    expect(gestureDown(up.gesture, { id: 3, x: 5, y: 5, t: 900 }, { x: 0, moving: false }, W, 4).gesture.block).toBe(false);
+  });
+
+  it('holds the strip past the ends with the rubber band and starts a caught one beyond the last page from the copy', () => {
+    expect(drag(at(), [520, 700]).r.move).toEqual({ kind: 'hold', x: -rubberBand(180, W) });
+    const copy = at({ x: 3900, moving: true });
+    expect(copy.gesture.touch).toMatchObject({ max: 4000, from: 4 });
+    expect(at({ x: 2900, moving: true }).gesture.touch).toMatchObject({ max: 3000, from: 3 });
+  });
+
+  it('ignores presses with one page only, and with a mouse button that is not the main one', () => {
+    expect(at({ x: 0, moving: false }, 1).gesture).toBe(idleGesture);
+    expect(gestureDown(idleGesture, { id: 1, x: 5, y: 5, t: 0, mouse: true, button: 2 }, { x: 0, moving: false }, W, 4).gesture).toBe(idleGesture);
+    expect(gestureDown(idleGesture, { id: 1, x: 5, y: 5, t: 0, mouse: true, button: 0 }, { x: 0, moving: false }, W, 4).gesture.touch.phase).toBe('pressed');
   });
 });

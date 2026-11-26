@@ -555,7 +555,7 @@ Mapowanie klas interakcji:
 
 **Przejścia ekranów:** krótki crossfade ~200 ms wszędzie (decyzja użytkownika): WAAPI `opacity` na `#root` przy zmianie ekranu; `@view-transition` dla przejść między dokumentami (`/stats`, `/effects`).
 
-**Reduced motion** (`@media (prefers-reduced-motion: reduce)`, jeden blok na końcu `styles.css`, **obejmuje też Momenty**, sam CSS, zachowanie bez ustawienia bez zmian): zostaje `opacity` i kolor (fade scrimów, dialogów, toastów, ekranów; press `scale(.97)`; winieta Bust, tło 180, błysk kropek, pierścień kafelka). Znika `transform` i ruch ciągły: „180” bez skali, plakietka 140+ bez przesunięcia, konfetti `display: none`, `pop` kart i serc samym opacity, drgnięcie serca (zostaje kolor), drabinka i odometr 121 w stanie końcowym, spinner takeoutu stoi, obrys celu stoi (nadal przerywany i pomarańczowy), gałka switcha i wejście wiersza bez przesunięcia, `::view-transition-group(*)` 0 s.
+**Reduced motion** (wyjątek: strony rekordów w lobby jadą sprężyną także przy `reduce`, [UI.md](docs/UI.md#lobby-i-qr); `@media (prefers-reduced-motion: reduce)`, jeden blok na końcu `styles.css`, **obejmuje też Momenty**, sam CSS, zachowanie bez ustawienia bez zmian): zostaje `opacity` i kolor (fade scrimów, dialogów, toastów, ekranów; press `scale(.97)`; winieta Bust, tło 180, błysk kropek, pierścień kafelka). Znika `transform` i ruch ciągły: „180” bez skali, plakietka 140+ bez przesunięcia, konfetti `display: none`, `pop` kart i serc samym opacity, drgnięcie serca (zostaje kolor), drabinka i odometr 121 w stanie końcowym, spinner takeoutu stoi, obrys celu stoi (nadal przerywany i pomarańczowy), gałka switcha i wejście wiersza bez przesunięcia, `::view-transition-group(*)` 0 s.
 
 ## Do's and Don'ts
 

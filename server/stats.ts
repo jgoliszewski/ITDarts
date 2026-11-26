@@ -349,7 +349,7 @@ export class Stats {
     const popular = (a: { recent: number; n: number }, b: { recent: number; n: number }) => b.recent - a.recent || b.n - a.n;
     played.sort((a, b) => popular(games.get(a.game)!, games.get(b.game)!) || GAMES[a.game].name.localeCompare(GAMES[b.game].name)
       || popular(a, b) || a.label.localeCompare(b.label));
-    return played.flatMap(p => this.lobbyRecord(p.game, p.variant) ?? []);
+    return played.flatMap(p => this.lobbyRecord(p.game, p.variant, p.label) ?? []);
   }
 
   /** The variants played that have a record, with their matches in the last 30 days and in all. */
@@ -361,13 +361,13 @@ export class Stats {
   }
 
   /** One lobby tile; the chase is the 2nd and 3rd person (co-op: lineup), not result. */
-  private lobbyRecord(game: GameId, variant: string): LobbyRecord | null {
+  private lobbyRecord(game: GameId, variant: string, variantLabel = this.variantLabel(game, variant)): LobbyRecord | null {
     const g = GAMES[game];
     const rec = g.record!;
     const [best, ...chase] = this.db.rankedRecords(variant, rec.better, 3);
     if (!best) return null;
     const options = g.normalizeOptions(JSON.parse(best.options));
-    const [title, ...rest] = [this.variantLabel(game, variant), rec.extra?.(options)].filter(Boolean).join(' · ').split(' · ');
+    const [title, ...rest] = [variantLabel, rec.extra?.(options)].filter(Boolean).join(' · ').split(' · ');
     const label = [title, ...rest].join(' · ');
     const coop = variant.endsWith(':coop');
     return {

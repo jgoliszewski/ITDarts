@@ -125,7 +125,8 @@ export function groupByGame(records: LobbyRecord[]): Map<GameId, LobbyRecord[]> 
  * The kiosk's pages (docs/UI.md, Lobby i QR). The records come game after game; a game with more than 4 records gets pages of
  * its own, 8 each (a game over 8 goes on as “<Game> (cont.)”). What is left, at most 4 per game, is packed first-fit into
  * rows of 4 tiles (a small group fills the first row that has room, so there are no holes) and two rows make a page.
- * Pages of big groups come first. Nothing is cut.
+ * Pages of big groups come first. Nothing is cut. Every page is the same 4×2 grid, so a tile is as big on each page (empty
+ * places stay empty); only when there are 4 records or fewer in all they get bigger: 1, 2 side by side, or 2×2.
  */
 export function recordPages(records: LobbyRecord[]): RecordPage[] {
   const games = groupByGame(records);
@@ -140,18 +141,32 @@ export function recordPages(records: LobbyRecord[]): RecordPage[] {
       cont = true;
     }
   }
+  const pages: RecordPage[] = big.map(g => ({ cols: PAGE_COLS, rows: 2, groups: [g] }));
+  const rows = packRows(small, PAGE_COLS);
+  for (let i = 0; i < rows.length; i += 2) pages.push({ cols: PAGE_COLS, rows: 2, groups: placeRows(rows.slice(i, i + 2)) });
+  return records.length <= PAGE_COLS && pages.length === 1 ? [compactPage(pages[0].groups, records.length) ?? pages[0]] : pages;
+}
+
+const size = (r: RecordGroup[]) => r.reduce((n, g) => n + g.items.length, 0);
+
+/** First-fit: each group goes into the first row that still has room for it, so no row has a hole a later group would fit. */
+function packRows(groups: RecordGroup[], width: number): RecordGroup[][] {
   const rows: RecordGroup[][] = [];
-  for (const g of small) {
-    const row = rows.find(r => r.reduce((n, x) => n + x.items.length, 0) + g.items.length <= PAGE_COLS);
+  for (const g of groups) {
+    const row = rows.find(r => size(r) + g.items.length <= width);
     if (row) row.push(g); else rows.push([g]);
   }
-  const pages: RecordPage[] = big.map(g => ({ cols: Math.min(PAGE_COLS, g.items.length), rows: 1, groups: [g] }));
-  for (let i = 0; i < rows.length; i += 2) {
-    const chunk = rows.slice(i, i + 2);
-    const groups = chunk.flatMap((r, row) => r.map((g, k) => ({ ...g, row, col: r.slice(0, k).reduce((n, x) => n + x.items.length, 0) })));
-    pages.push({ cols: Math.max(...chunk.map(r => r.reduce((n, g) => n + g.items.length, 0))), rows: chunk.length, groups });
-  }
-  return pages;
+  return rows;
+}
+
+const placeRows = (rows: RecordGroup[][]) => rows.flatMap((r, row) => r.map((g, k) => ({ ...g, row, col: size(r.slice(0, k)) })));
+
+/** 1 to 4 records in all: 1 tile, 2 side by side, or 2×2, when the groups fit that; null when they do not (3 and 1 of two games). */
+function compactPage(groups: RecordGroup[], total: number): RecordPage | null {
+  const cols = total <= 1 ? 1 : 2;
+  if (groups.length === 1) return { cols, rows: total <= 2 ? 1 : 2, groups };
+  const rows = packRows(groups.map(g => ({ ...g, row: 0, col: 0 })), cols);
+  return groups.every(g => g.items.length <= cols) && rows.length <= 2 ? { cols, rows: rows.length, groups: placeRows(rows) } : null;
 }
 
 /** A touch moves the page only after it went this far (hysteresis); until then it is a tap. */
@@ -215,6 +230,76 @@ export function dotWeight(at: number, i: number, n: number): number {
 
 /** The auto-rotation's next page; after the last the first, and `wrap` tells the strip to slide on instead of back. */
 export const nextPage = (page: number, pages: number) => ({ page: (page + 1) % pages, wrap: page === pages - 1 });
+
+/** A pointer event as the gesture sees it: `x`/`y` in px, `t` in ms; `mouse` and `button` tell a mouse that is not the main button. */
+export interface PointerStep { id: number; x: number; y: number; t: number; mouse?: boolean; button?: number }
+
+/** One finger (or the mouse) on the strip: `start` is the strip's place when it went down, `pos` where it is held now. */
+export type Touch =
+  | { phase: 'idle' }
+  | { phase: 'pressed' | 'dragging'; id: number; x: number; y: number; start: number; pos: number; from: number; max: number; axis: 'x' | 'y' | null; pts: [number, number][]; caught: boolean };
+
+/** `block`: the click that follows this gesture is not a tap on a tile (it ended a drag, or caught a moving strip). */
+export interface Gesture { touch: Touch; block: boolean }
+export const idleGesture: Gesture = { touch: { phase: 'idle' }, block: false };
+
+/** What the strip is to do: stop where it is, be held at `x`, or run on (spring) to page `to` with speed `v` px/s. */
+export type StripMove = { kind: 'stop' } | { kind: 'hold'; x: number } | { kind: 'spring'; to: number; v: number };
+export interface GestureResult { gesture: Gesture; move: StripMove | null; /** The touch has just become a sideways drag: capture the pointer. */ locked?: boolean }
+
+const ignore = (gesture: Gesture): GestureResult => ({ gesture, move: null });
+
+/**
+ * A pointer goes down on the strip (`x` px from the first page, `moving` when it is not at rest on a page; `n` pages). A moving
+ * strip is caught and stays where it is. A second pointer while one is down is ignored, so it cannot take over the gesture.
+ * The click block of the last gesture ends here.
+ */
+export function gestureDown(g: Gesture, e: PointerStep, strip: { x: number; moving: boolean }, width: number, n: number): GestureResult {
+  if (n < 2 || (e.mouse && e.button !== 0) || g.touch.phase !== 'idle') return ignore(g);
+  const caught = strip.moving;
+  const touch: Touch = {
+    phase: 'pressed', id: e.id, x: e.x, y: e.y, start: strip.x, pos: strip.x, from: Math.round(strip.x / width),
+    max: (strip.x > (n - 1) * width ? n : n - 1) * width, axis: null, pts: [[e.x, e.t]], caught,
+  };
+  return { gesture: { touch, block: caught }, move: caught ? { kind: 'stop' } : null };
+}
+
+/** The pointer moves: after the hysteresis a sideways move locks the axis, and the strip follows 1:1 from that point. */
+export function gestureMove(g: Gesture, e: PointerStep, width: number): GestureResult {
+  const t = g.touch;
+  if (t.phase === 'idle' || e.id !== t.id) return ignore(g);
+  let locked = false, next = t;
+  if (t.axis === null) {
+    const axis = lockAxis(e.x - t.x, e.y - t.y);
+    if (axis === null) return ignore(g);
+    // The strip follows from where the finger was when the lock came, so there is no jump at the lock.
+    next = axis === 'x' ? { ...t, phase: 'dragging', axis, x: e.x } : { ...t, axis };
+    locked = axis === 'x';
+  }
+  if (next.phase !== 'dragging') return { gesture: { ...g, touch: next }, move: null };
+  const pts: [number, number][] = [...next.pts.slice(-5), [e.x, e.t]];
+  const pos = holdPosition(next.start, e.x - next.x, next.max, width);
+  return { gesture: { touch: { ...next, pts, pos }, block: true }, move: { kind: 'hold', x: pos }, locked };
+}
+
+/**
+ * The pointer goes up, or the system cancels it (the same). A drag lets the strip run on from the finger's speed to the page its
+ * momentum reaches; a caught strip that was not dragged runs on to the page it is nearest to; a plain tap does nothing.
+ */
+export function gestureEnd(g: Gesture, e: PointerStep, width: number): GestureResult {
+  const t = g.touch;
+  if (t.phase === 'idle' || e.id !== t.id) return ignore(g);
+  const gesture: Gesture = { touch: { phase: 'idle' }, block: g.block };
+  if (t.axis === 'x') {
+    const v = 0 - swipeSpeed(t.pts, e.t);
+    return { gesture, move: { kind: 'spring', to: projectPage(t.pos, v, width, t.from, t.max / width), v } };
+  }
+  if (t.caught) return { gesture, move: { kind: 'spring', to: Math.max(0, Math.min(t.max / width, Math.round(t.pos / width))), v: 0 } };
+  return { gesture, move: null };
+}
+
+/** A click arrives: it is swallowed once when it follows a gesture that moved or caught the strip. */
+export const gestureClick = (g: Gesture): { gesture: Gesture; blocked: boolean } => ({ gesture: { ...g, block: false }, blocked: g.block });
 
 /** What a record attempt takes (the lobby's “Record attempt” popup): a solo record exactly one player, a co-op one two or more up to the game's limit. */
 export interface AttemptRule { coop: boolean; minPlayers: number; maxPlayers: number }

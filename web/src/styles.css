@@ -404,7 +404,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 /* Records on the left (docs/UI.md, Lobby i QR): the grid takes the room, "All records" sits under it. */
 .lobby-records-col { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-height: 0; min-width: 0; }
 /* Pages of records (docs/UI.md, Lobby i QR): a strip of pages slides under the pointer; each page is a 4-column grid of game groups. */
-.rec-pager { flex: 1; min-height: 0; position: relative; overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.rec-pager { flex: 1; min-height: 0; position: relative; overflow: clip; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .rec-track { position: absolute; inset: 0; display: flex; will-change: transform; }
 /* A finger on the strip: the tile under it neither presses nor takes the click. */
 .rec-pager.dragging .rec-tile { transform: none !important; pointer-events: none; }
@@ -416,13 +416,14 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .rec-tiles { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: calc(12 * var(--u)); }
 .rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(20 * var(--u)) calc(22 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
 .rec-tile > * { max-width: 100%; min-width: 0; }
+.opt { white-space: nowrap; }
 .rec-tile .what { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
 .rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(8 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
 .rec-tile .val .num { font-size: calc(104 * var(--u)); }
 .rec-tile .val .unit { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; }
 .rec-tile .who { font-size: max(16px, calc(28 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 /* The chase: 2nd and 3rd place, a row each; the place is a round badge (silver, bronze) so it does not blend into the name. */
-.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); font-size: max(16px, calc(20 * var(--u))); color: var(--soft); }
+.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); min-height: calc(3em + calc(2 * var(--u))); font-size: max(16px, calc(20 * var(--u))); color: var(--soft); }
 .rec-tile .chase .row { display: flex; align-items: center; gap: 0.5em; min-width: 0; line-height: 1.2; }
 .rec-tile .chase .pl { flex: none; width: 1.5em; height: 1.5em; border-radius: 50%; display: grid; place-items: center; background: var(--silver); color: var(--ink); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .rec-tile .chase .pl.bronze { background: var(--bronze); }
@@ -437,7 +438,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .rec-dot { width: max(var(--tap), calc(48 * var(--u))); height: max(var(--tap), calc(48 * var(--u))); display: flex; align-items: center; justify-content: center; }
 /* --k (0..1) is set every frame from the strip's position, so the dot widens and lights up as the page comes. */
 .rec-dot i { display: block; --dot: max(10px, calc(14 * var(--u))); width: calc(var(--dot) + (max(24px, calc(34 * var(--u))) - var(--dot)) * var(--k, 0)); height: var(--dot); border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) calc(var(--k, 0) * 100%), var(--faint)); }
-.rec-names { flex: 1; min-width: 0; font-size: max(16px, calc(22 * var(--u))); font-weight: 700; color: var(--soft); white-space: nowrap; overflow: hidden; }
+.rec-names { flex: 1; min-width: 0; font-size: max(16px, calc(22 * var(--u))); font-weight: 700; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .all-link { margin-left: auto; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
 .all-link .arrow { color: var(--accent); }
 .lobby-col { padding: calc(36 * var(--u)); display: flex; flex-direction: column; gap: calc(22 * var(--u)); min-width: 0; min-height: 0; }
