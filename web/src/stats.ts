@@ -186,7 +186,7 @@ export const METRICS: Partial<Record<GameId, Metric[]>> = {
     { label: 'Darts per checkout', better: 'lower', fmt: f1, value: t => (t.checkouts ? Math.round((t.checkoutDarts / t.checkouts) * 10) / 10 : null) },
   ],
   bobs27: [
-    { label: 'Score', better: 'higher', main: true, perMatch: true, fmt: f1, value: (t, m) => perMatch(t.score, m), sub: () => 'average per game, going out counts as 0' },
+    { label: 'Score', better: 'higher', main: true, perMatch: true, fmt: f1, value: (t, m) => perMatch(t.points, m), sub: () => 'average per game, going out counts as 0' },
     { label: 'Double hit rate', better: 'higher', fmt: fmtPct, value: t => percent(t.hits, t.darts), sub: t => `${t.hits ?? 0} / ${t.darts ?? 0} darts` },
     total('Games completed', 'completed'),
   ],

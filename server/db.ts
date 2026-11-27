@@ -2,6 +2,7 @@
 import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { roundName } from '../games/bobs27.ts';
 import { label } from '../games/darts.ts';
 import type { GameId } from '../games/index.ts';
 import { GAMES } from '../games/index.ts';
@@ -184,6 +185,11 @@ export function resultValue(gameId: GameId, options: unknown, p: { score: number
   }
   // Catch 40 ended early keeps no record score, but its points are still the result.
   if (gameId === 'catch40' && p.stats) return game.record!.format((JSON.parse(p.stats) as { points?: number }).points ?? 0);
+  // Bob's 27 keeps a record score only from a finished game: a player who went out shows where, the rest their final points.
+  if (gameId === 'bobs27' && p.stats) {
+    const s = JSON.parse(p.stats) as { points?: number; outAt?: number };
+    return s.outAt ? `Out at ${roundName(s.outAt)}` : game.record!.format(s.points ?? 0);
+  }
   return p.won ? 'Won' : '';
 }
 

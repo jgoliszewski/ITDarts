@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import type { X01Event, X01Options } from '../games/x01/index.ts';
 import { freethrow } from '../games/freethrow.ts';
+import { bobs27 } from '../games/bobs27.ts';
 import { catch40 } from '../games/catch40.ts';
 import { atc } from '../games/race.ts';
 import { x01 } from '../games/x01/index.ts';
@@ -168,6 +169,25 @@ describe('Catch 40 result', () => {
     expect(db.lastMatch()!.players[0].value).toBe('2 points');
     save([97]);
     expect(db.lastMatch()!.players[0].value).toBe('97 points');
+  });
+});
+
+describe("Bob's 27 result", () => {
+  it('shows where a player went out, else the final points, also for a game ended early', () => {
+    const a = db.createPlayer('Anna');
+    const save = (scores: (number | null)[], stats: Record<string, number>, winners: number[]) => db.saveMatch({
+      game: 'bobs27', options: bobs27.defaults, roster: [{ playerId: a, name: 'Anna' }], startedAt: 1, endedAt: Date.now(), status: 'finished',
+      winners, sets: [], legs: [], variant: 'bobs27', scores, stats: [stats],
+    });
+    save([null], { darts: 15, hits: 0, points: 0, outAt: 5, completed: 0 }, []);
+    expect(db.lastMatch()!.players[0].value).toBe('Out at D5');
+    save([null], { darts: 15, hits: 0, points: 0, outAt: 21, completed: 0 }, []);
+    expect(db.lastMatch()!.players[0].value).toBe('Out at Bull');
+    // Ended with End match while still in, a versus winner: the points.
+    save([null], { darts: 9, hits: 3, points: 41, outAt: 0, completed: 0 }, [0]);
+    expect(db.lastMatch()!.players[0].value).toBe('41 points');
+    save([497], { darts: 63, hits: 21, points: 497, outAt: 0, completed: 1 }, [0]);
+    expect(db.lastMatch()!.players[0].value).toBe('497 points');
   });
 });
 

@@ -48,7 +48,7 @@ function play(t: Turns, players: number): State {
 
   for (const [vi, v] of t.visits.entries()) {
     const p = v.player, round = done[p] + 1;
-    if (outAt[p] > 0 || round > ROUNDS) {
+    if (round > ROUNDS) {
       goods.push([]);
       continue;
     }
@@ -96,7 +96,9 @@ function play(t: Turns, players: number): State {
 
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = open ? open.player : over && last ? last.player : nextUp(t, settled);
+  // Over by the removal of the last thrower: the end screen shows a winner, not the one who left.
+  const lastIn = last && !isGone(t, last.player) ? last.player : (winners[0] ?? ranked[0] ?? 0);
+  const current = open ? open.player : over && last ? lastIn : nextUp(t, settled);
   const shown = !!last && (!!open || over);
   return {
     over, current, dartsLeft: over ? 0 : open ? left : 3, goods, fx,
@@ -136,19 +138,20 @@ function view(events: TurnEvent[], players: number, o: Bobs27Options): Bobs27Vie
     winners: s.winners,
     hero: {
       big: signed(s.points[c]),
-      caption: `Round ${s.round} / ${ROUNDS} · ${roundName(s.round)}`,
+      // The bull round is short so the caption stays on one line.
+      caption: s.round > 20 ? 'Round 21 · Bull' : `Round ${s.round} / ${ROUNDS} · ${roundName(s.round)}`,
       note: s.missed ? `${signed(s.delta)} · missed visit` : s.delta > 0 ? `+${s.delta} this visit` : '',
     },
     rows: s.points.map((pts, i) => ({
       value: signed(pts),
       // The player up keeps the round of the visit on screen, like the hero.
-      meta: s.outAt[i] ? `Out at ${roundName(s.outAt[i])}` : finished(i) ? 'Finished' : `Round ${i === c ? s.round : s.done[i] + 1} · ${roundName(i === c ? s.round : s.done[i] + 1)}`,
+      meta: s.outAt[i] ? `Out at ${roundName(s.outAt[i])}` : finished(i) ? 'Finished' : (i === c ? s.round : s.done[i] + 1) > 20 ? 'Bull round' : `Round ${i === c ? s.round : s.done[i] + 1} · ${roundName(i === c ? s.round : s.done[i] + 1)}`,
       out: s.outAt[i] > 0,
     })),
-    result: !s.over ? '' : s.outAt[w] ? `Out at ${roundName(s.outAt[w])}` : plural(s.points[w], 'point'),
+    result: !s.over ? '' : `${s.winners.length > 1 ? 'Shared win · ' : ''}${s.outAt[w] ? `Out at ${roundName(s.outAt[w])}` : plural(s.points[w], 'point')}`,
     // Only a game the player played through the bull round counts for the record.
     scores: s.points.map((pts, i) => (s.over && !s.ended && finished(i) ? pts : null)),
-    stats: s.points.map((pts, i) => ({ darts: s.darts[i], hits: s.hits[i], score: s.outAt[i] ? 0 : pts, completed: finished(i) ? 1 : 0 })),
+    stats: s.points.map((pts, i) => ({ darts: s.darts[i], hits: s.hits[i], points: s.outAt[i] ? 0 : pts, outAt: s.outAt[i], completed: finished(i) ? 1 : 0 })),
     round: s.round,
     sector: sectorOf(s.round),
     points: s.points,

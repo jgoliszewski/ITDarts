@@ -117,7 +117,8 @@ describe("bob's 27: the bull round", () => {
     const v = view(hits(1, 20));
     expect(v.round).toBe(21);
     expect(v.sector).toBe(25);
-    expect(v.hero.caption).toBe('Round 21 / 21 · Bull');
+    expect(v.hero.caption).toBe('Round 21 · Bull');
+    expect(v.rows[0].meta).toBe('Bull round');
     expect(v.points).toEqual([after(20)]);
     expect(view([...hits(1, 20), d('Bull'), d('Bull')]).points).toEqual([after(20) + 100]);
   });
@@ -178,7 +179,7 @@ describe("bob's 27: elimination", () => {
   it('skips an eliminated player in the turns and goes on with the rest', () => {
     // Ann (0) misses everything and goes out at D5, Bob (1) and Cy (2) hit.
     let log: TurnEvent[] = [];
-    for (let r = 1; r <= 5; r++) log = [...log, ...(r <= 5 ? blank() : []), ...hit(r), ...hit(r)];
+    for (let r = 1; r <= 5; r++) log = [...log, ...blank(), ...hit(r), ...hit(r)];
     const v = view(log, 3);
     expect(v.eliminated).toEqual([true, false, false]);
     expect(v.phase).toBe('throwing');
@@ -253,6 +254,7 @@ describe("bob's 27: the end and the ranking", () => {
   it('gives finishers on the same score a shared win', () => {
     const log = duel(hit, hit, 21);
     expect(view(log, 2).winners).toEqual([0, 1]);
+    expect(view(log, 2).result).toBe(`Shared win · ${after(21)} points`);
     expect(kinds(log, 2)).toContain('matchWon');
   });
 
@@ -291,12 +293,37 @@ describe("bob's 27: the end and the ranking", () => {
     expect(v.winners).toEqual([0, 1]);
   });
 
-  it('ranks a player out in the bull round below one who finished it', () => {
+  it('counts a missed bull round that leaves points as finished, the better score wins', () => {
     const log = duel(hit, r => (r === 21 ? blank() : hit(r)), 21);
     const v = view(log, 2);
     expect(v.eliminated).toEqual([false, false]);
-    // Bob stayed above zero: his minus 50 still counts as finished, so the better score wins.
     expect(v.winners).toEqual([0]);
+  });
+
+  /** Rounds 1 to 20 played to stay just above zero: a hit unless a miss would leave 5 or less. Returns the log and the score. */
+  const lean = () => {
+    let score = 27, log: TurnEvent[] = [];
+    for (let r = 1; r <= 20; r++) {
+      const v = doubleValue(r);
+      if (score - v <= 5) { log = [...log, ...hit(r)]; score += v; } else { log = [...log, ...blank()]; score -= v; }
+    }
+    return { log, score };
+  };
+
+  it('puts a player out in the bull round: Out at Bull, below the one who finished it', () => {
+    const { score } = lean();
+    expect(score).toBeGreaterThan(0);
+    expect(score).toBeLessThanOrEqual(50);
+    // Ann hits every round and the bull; Bob has to miss the bull and goes out.
+        const bob = lean().log;
+    const both = Array.from({ length: 20 }, (_, i) => [...hit(i + 1), ...bob.slice(i * 4, i * 4 + 4)]).flat();
+    expect(bob).toHaveLength(80);
+    const v = view([...both, ...hit(21), ...blank()], 2);
+    expect(v.phase).toBe('matchWon');
+    expect(v.outAt).toEqual([0, 21]);
+    expect(v.rows[1]).toMatchObject({ meta: 'Out at Bull', out: true });
+    expect(v.winners).toEqual([0]);
+    expect(v.scores).toEqual([v.points[0], null]);
   });
 });
 
@@ -359,6 +386,19 @@ describe("bob's 27: a removed player", () => {
     expect(v.done).toEqual([0, 0]);
   });
 
+  it('ends with the removal of the last thrower and shows a player who stayed, not the one who left', () => {
+    // Ann and Bob finish; Cy is removed in the middle of the bull round.
+    let log: TurnEvent[] = [];
+    for (let r = 1; r <= 20; r++) log = [...log, ...hit(r), ...hit(r), ...hit(r)];
+    log = [...log, ...hit(21), ...hit(21), d('M'), remove(2)];
+    const v = view(log, 3);
+    expect(v.phase).toBe('matchWon');
+    expect(v.removed[2]).toBe('match');
+    expect(v.winners).toEqual([0, 1]);
+    expect(v.current).toBe(0);
+    expect(v.hero.big).toBe(String(after(21)));
+  });
+
   it('is left out of the winners when everyone left went out', () => {
     // Ann is removed after a good first visit; Bob and Cy go out in the same round.
     let log: TurnEvent[] = [...visit('D1', 'D1', 'D1'), remove(0)];
@@ -373,11 +413,11 @@ describe("bob's 27: a removed player", () => {
 describe("bob's 27: stats, record and options", () => {
   it('counts darts, hits, the final score and whether the player finished', () => {
     const v = view([...hit(1), ...blank(), ...visit('D3', 'D3', 'M')]);
-    expect(v.stats[0]).toEqual({ darts: 9, hits: 3, score: 27 + 2 - 4 + 12, completed: 0 });
+    expect(v.stats[0]).toEqual({ darts: 9, hits: 3, points: 27 + 2 - 4 + 12, outAt: 0, completed: 0 });
     const done = view(hits(1, 21));
-    expect(done.stats[0]).toEqual({ darts: 63, hits: 21, score: after(21), completed: 1 });
+    expect(done.stats[0]).toEqual({ darts: 63, hits: 21, points: after(21), outAt: 0, completed: 1 });
     // Out: the final score is 0 whatever the visit left.
-    expect(view(blanks(5)).stats[0]).toMatchObject({ score: 0, completed: 0, darts: 15 });
+    expect(view(blanks(5)).stats[0]).toMatchObject({ points: 0, outAt: 5, completed: 0, darts: 15 });
   });
 
   it('keeps one record: highest score, solo and versus together', () => {

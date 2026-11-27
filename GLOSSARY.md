@@ -125,8 +125,8 @@ Liczba sektorów, o którą ogar startuje za zającem w Hare and Hounds. W UI �
 _Avoid_: handicap, gap (w UI „Gap” to bieżący dystans w trakcie gry)
 
 **Odpadnięcie** (w Bob's 27):
-Stan gracza, którego wynik spadł do 0 lub niżej po zakończonej Turze: kolejka go pomija, a w rankingu stoi za tymi, którzy doszli do końca rundy bull (później odpadł, wyżej). W UI „Out at D5”, a karta Tury mówi „Kuba is out”. Inne niż wycofanie z meczu: odpadnięty może wygrać versus, gdy odpadli wszyscy, wycofany nigdy.
-_Avoid_: eliminacja, bust (bust to X01, 121 i Catch 40)
+Stan gracza, którego wynik spadł do 0 lub niżej po zakończonej Turze: kolejka go pomija, a w rankingu stoi za tymi, którzy doszli do końca rundy bull (później odpadł, wyżej). W UI „Out at D5”, a karta Tury mówi „OUT”. Inne niż wycofanie z meczu: odpadnięty może wygrać versus, gdy odpadli wszyscy, wycofany nigdy. W Killerze, Knockoucie i Higher or Lower mówi się o eliminacji (życia), tu o odpadnięciu (wynik), ale to ten sam Wyzwalacz „Player eliminated”.
+_Avoid_: bust (bust to X01, 121 i Catch 40)
 
 **Gra wspólna**:
 Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co-op.

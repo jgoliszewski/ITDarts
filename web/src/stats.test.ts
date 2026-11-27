@@ -159,7 +159,7 @@ describe('the figures of each game', () => {
   });
 
   it("gives Bob's 27 the average score, the double hit rate and the games completed", () => {
-    const b = profileMetrics('bobs27', { ...tot({ score: 300, darts: 120, hits: 30, completed: 1 }), matches: 3 });
+    const b = profileMetrics('bobs27', { ...tot({ points: 300, darts: 120, hits: 30, completed: 1 }), matches: 3 });
     expect(b.map(m => [m.label, m.value])).toEqual([['Score', '100.0'], ['Double hit rate', '25%'], ['Games completed', '1']]);
     expect(b[0].main).toBe(true);
     expect(b[1].sub).toBe('30 / 120 darts');
