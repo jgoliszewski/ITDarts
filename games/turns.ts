@@ -416,8 +416,8 @@ export interface GameModule<O = any, V = any> {
 export const BULL_OFF: OptionDef<{ bullOff: BullOff }> = {
   key: 'bullOff',
   label: 'Bull-off',
-  info: 'Who throws first: one dart each at the bull, closest starts. Off means the order above.',
-  choices: [['off', 'Off'], ['closest', 'Closest'], ['pdc', 'PDC rules']],
+  info: 'Who throws first. Random: the order is drawn at the start. Closest: one dart each at the bull, closest starts. PDC rules: the PDC bull-off.',
+  choices: [['off', 'Random'], ['closest', 'Closest'], ['pdc', 'PDC rules']],
   when: (_o, players) => players >= 2,
 };
 

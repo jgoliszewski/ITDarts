@@ -11,7 +11,7 @@ import type { BullOff, X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
-import { fits, lineupBlock, shuffled, startLabel } from '../match.ts';
+import { fits, lineupBlock, startLabel, throwOrder } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
@@ -226,7 +226,8 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     if (n >= MAX_PLAYERS) return toast({ text: `At most ${MAX_PLAYERS} players`, kind: 'error' });
     setRoster([...roster, r]);
   };
-  const same = (a: RosterEntry, b: RosterEntry) => a.playerId === b.playerId && a.name === b.name;
+  // A registered player is told apart by id (a rename elsewhere keeps the tile), a guest by name.
+  const same = (a: RosterEntry, b: RosterEntry) => (a.playerId === null || b.playerId === null ? a.playerId === b.playerId && a.name === b.name : a.playerId === b.playerId);
   // Player tiles switch: a second tap takes the player out (Q6).
   const toggle = (r: RosterEntry) => {
     if (roster.some(x => same(x, r))) setRoster(roster.filter(x => !same(x, r)));
@@ -250,8 +251,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
   /** Starts the match with the lineup and the bull-off from the Players step; Random shuffles the throwing order here. */
   const startMatch = async () => {
     setBusy(true);
-    const random = n >= 2 && (!hasBullOff(game) || bullOff === 'off');
-    const r = await act({ type: 'startMatch', game, options: withBullOff(game, options, bullOff), roster: random ? shuffled(roster) : roster });
+    const r = await act({ type: 'startMatch', game, options: withBullOff(game, options, bullOff), roster: throwOrder(roster, bullOff) });
     setBusy(false);
     if (r.ok) {
       store.set(LAST_GAME_KEY, game);
@@ -333,7 +333,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           <div className="setup-pick">
             <h2 className="setup-title">Who's playing?</h2>
             <div className="ptiles">
-              {[...tiles, ...roster.filter(r => r.playerId === null)].map(r => {
+              {[...tiles, ...roster.filter(r => !tiles.some(t => same(t, r)))].map(r => {
                 const on = roster.some(x => same(x, r));
                 return (
                   <button key={`${r.playerId ?? 'g'}-${r.name}`} className={`ptile ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r)}>

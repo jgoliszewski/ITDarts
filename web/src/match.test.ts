@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { lineupBlock, shuffled, aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { lineupBlock, shuffled, throwOrder, aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -223,6 +223,14 @@ describe('New match: lineup and Random order', () => {
     expect(lineupBlock(two, 2)).toBeNull();
     expect(lineupBlock(solo, 1)).toBeNull();
     expect(lineupBlock(many, 8)).toBeNull();
+  });
+  it('draws the order for Random with 2+ players only; Closest, PDC and solo keep it', () => {
+    const a = ['a', 'b', 'c'];
+    expect(throwOrder(a, 'off', () => 0)).toEqual(['b', 'c', 'a']);
+    expect(throwOrder(a, 'closest', () => 0)).toBe(a);
+    expect(throwOrder(a, 'pdc', () => 0)).toBe(a);
+    expect(throwOrder(['a'], 'off', () => 0)).toEqual(['a']);
+    expect(throwOrder([], 'off', () => 0)).toEqual([]);
   });
   it('shuffles into a permutation without touching the input', () => {
     const a = [1, 2, 3, 4, 5];

@@ -199,13 +199,17 @@ export const startLabel = (game: string, players: number): string => `Start · $
 export const presetFor = <T>(preset: T | null, screen: string): T | null => (screen === 'setup' ? preset : null);
 
 /** On Next in New match: why the game is not for this lineup (“Solo only”, “2 players”, “2+ players”), or null when it fits. */
-export const whyNot = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>) =>
+const whyNot = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>) =>
   g.maxPlayers === 1 ? 'Solo only' : g.maxPlayers === g.minPlayers ? `${g.minPlayers} players` : `${g.minPlayers}+ players`;
 export const fits = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
 /** The reason inside the disabled Next button of the Players step. */
 export const lineupBlock = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => (n === 0 ? 'Pick players' : fits(g, n) ? null : whyNot(g));
 
-/** Fisher–Yates copy: the throwing order for Random. */
+/** The roster as sent to startMatch: Random (bull-off 'off') with 2+ players draws the throwing order here; Closest and PDC keep it, the server draws the bull-off order. */
+export const throwOrder = <T,>(roster: T[], bullOff: 'off' | 'closest' | 'pdc', rnd: () => number = Math.random): T[] =>
+  bullOff === 'off' && roster.length >= 2 ? shuffled(roster, rnd) : roster;
+
+/** Fisher–Yates copy. */
 export function shuffled<T>(a: T[], rnd: () => number = Math.random): T[] {
   const r = [...a];
   for (let i = r.length - 1; i > 0; i--) {

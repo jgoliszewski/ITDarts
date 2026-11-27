@@ -27,11 +27,11 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
   Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players”, „2 players” (Hare and Hounds) albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
-- **Gracze, kolejność, Shuffle i goście** działają tak samo jak w X01. **Bull-off** wybiera się w kroku Players, jeden dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
+- **Gracze, kolejność rzucania (Random, Closest, PDC) i goście** działają tak samo jak w X01. Kolejność wybiera się w kroku Players, jedna dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players”, „Free throw is for 1 player” albo „Hare and Hounds is for 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
-- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Add players to continue”). Wyjątek: edycja Szybkiej gry (ołówek, „+ Add quick game”) działa także przy 0 graczach, wtedy dla zestawu 2+.
+- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Pick players” w przycisku „Next”).
 
 ### Opis gry („How to play”)
 
@@ -245,7 +245,7 @@ Postanowienia z grillingu z 2026-10-29 ([#7](https://github.com/jgoliszewski/ITD
 
 Postanowienia z grillingu z 2026-10-30 ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
-- **Runda:** każdy, kto jest jeszcze w grze, rzuca jedną Turę. Zaczynający przesuwa się co rundę o jedno miejsce w kolejności (wyeliminowanych pomijamy). Kolejność pierwszej rundy ustalają Shuffle albo Bull-off.
+- **Runda:** każdy, kto jest jeszcze w grze, rzuca jedną Turę. Zaczynający przesuwa się co rundę o jedno miejsce w kolejności (wyeliminowanych pomijamy). Kolejność pierwszej rundy ustala Random (losowana przy starcie) albo Bull-off.
 - **Suma Tury** jak w X01: S/D/T × sektor, bull 25 albo 50. Pudło i odbita lotka dają 0, ale same nie przegrywają.
 - **Najniższa suma rundy traci życie**, także przy remisie: tracą je wszyscy z najniższą sumą. Życia odbieramy na koniec rundy, po Turze ostatniego gracza.
 - **Życia:** zawsze 3, bez opcji. Po stracie ostatniego gracz odpada, a kolejka go pomija.
@@ -305,7 +305,7 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 
 Postanowienia z grillingu z 2026-11-27. Pogoń po obwodzie tarczy dla dwóch graczy: zając ucieka, ogar goni. W UI „Hare”, „Hound”, „Head start”.
 
-- **Gracze:** dokładnie 2, bez Co-op. Zającem jest pierwszy w kolejności (Shuffle albo Bull-off ustalają ją jak w innych grach), więc rzuca pierwszy. „Rematch” zamienia role.
+- **Gracze:** dokładnie 2, bez Co-op. Zającem jest pierwszy w kolejności (przy Random zając jest losowy, przy Closest i PDC wyznacza go Bull-off), więc rzuca pierwszy. „Rematch” zamienia role.
 - **Trasa:** sektory w kolejności zgodnej z zegarem (`BOARD_ORDER`: 20, 1, 18, 4 … 12, 5). Zając stoi na 20, a jego pierwszym celem jest 1. Wygrywa, gdy zaliczy 20 celów, czyli wróci na 20, w chwili tego trafienia, także w środku Tury.
 - **Ogar** stoi „Head start” sektorów za zającem (przy 3 na 9, pierwszym celem jest 12). Łapie zająca, gdy zaliczy sektor, na którym zając stoi: wygrywa od razu, a reszta jego lotek przepada. Zając stoi na ostatnim zaliczonym sektorze, więc do złapania trzeba go dogonić, nie wyprzedzić.
 - **Trafienie** jak w ATC: cel to następny sektor na trasie, po trafieniu kolejna lotka tej samej Tury idzie w kolejny sektor. Bez przeskoków za double i treble. Bull nie jest na trasie.
