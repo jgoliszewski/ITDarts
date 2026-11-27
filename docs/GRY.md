@@ -4,14 +4,14 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 15 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30), Bullseye (od 2026-11-09), Free throw (od 2026-11-13), Hare and Hounds i Catch 40 (dwie od 2026-11-27).
+Gramy w X01 oraz 16 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30), Bullseye (od 2026-11-09), Free throw (od 2026-11-13), Hare and Hounds, Catch 40 (dwie od 2026-11-27) i Bob's 27 (od 2026-11-27).
 
-Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 (Count Up dalej odrzucony jako gra z wynikiem do pobicia: rzuty treningowe bez celu i bez zwycięzcy to osobny [Free throw](#free-throw), decyzja z 2026-11-13), razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
+Backlogu nie ma. Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 (Count Up dalej odrzucony jako gra z wynikiem do pobicia: rzuty treningowe bez celu i bez zwycięzcy to osobny [Free throw](#free-throw), decyzja z 2026-11-13), razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Bob's 27 był na tej liście, ale 2026-11-27 odwróciliśmy tę decyzję: gra weszła jako trening double'ów z własnym rekordem ([Bob's 27](#bobs-27)).
 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem są Higher or Lower i Gotcha z opcją „First to”.
-- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu) i Catch 40, który kończy się po 40 celach. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
+- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu), Catch 40, który kończy się po 40 celach, i Bob's 27, który ma 21 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy, Hare and Hounds dokładnie 2, a Free throw dokładnie 1 (pole `maxPlayers` modułu gry: hub odrzuca start z większym składem).
 - **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
@@ -23,7 +23,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - Kroki: **Players → Game → Options** ([UI.md](UI.md#start-i-koniec-meczu), od 2026-11-27; wcześniej jeden ekran: gra, opcje, gracze).
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
-  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40;
+  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40, Bob's 27;
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
   Kafelek ma nazwę i opis (najwyżej 2 linie). Kafle nie są wygaszane, bo gra jest wybierana przed składem; gdy skład nie pasuje, przycisk Next na kroku Players jest zablokowany z powodem („2+ players”, „2 players” przy Hare and Hounds albo „Solo only”). Te same grupy są w wyborze gry na `/stats`.
@@ -52,7 +52,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 ### Rekordy i Ekran rekordu
 
 - Moduł gry może zdefiniować **statystykę rekordową**: co jest rekordem, czy lepiej mniej, czy więcej, i które opcje tworzą osobny wariant. Rekord zawsze dotyczy dokładnie jednego wariantu.
-- Rekordy (z Ekranem rekordu) mają ATC, Full Board, 121, solo Cricket i solo Shanghai. X01 ma od 2026-11-16 tabele rekordów biura na `/stats` (Highest visit, Highest checkout, Best leg na wynik startowy), ale **bez Ekranu rekordu** i bez Momentu „New record”: nie ma definicji rekordu w module gry ([STATYSTYKI.md](STATYSTYKI.md#rekordy-biura-x01)).
+- Rekordy (z Ekranem rekordu) mają ATC, Full Board, 121, solo Cricket, solo Shanghai, Catch 40 i Bob's 27 (te dwie w jednym wariancie, solo i versus razem). X01 ma od 2026-11-16 tabele rekordów biura na `/stats` (Highest visit, Highest checkout, Best leg na wynik startowy), ale **bez Ekranu rekordu** i bez Momentu „New record”: nie ma definicji rekordu w module gry ([STATYSTYKI.md](STATYSTYKI.md#rekordy-biura-x01)).
 - **Ekran rekordu:** po „Start” Ekran wyników pokazuje przez około 4 s nazwę wariantu i rekord biura, czyli wartość, kto go ustanowił i kiedy.
   - Pod rekordem biura (od 2026-11-23) stoją plakietki rekordów osobistych: solo „PB 31 Alice 3 Nov” (pierwsza gra w wariancie: „PB – Alice First game”), przy kilku graczach po jednej na gracza bez daty, od 5 graczy w dwóch kolumnach. Gracz, który trzyma rekord biura, ma pomarańczową „Best · PB” (solo bez liczby, bo stoi nad nią). Goście nie mają plakietki.
   - W Co-op pokazuje rekord co-op wariantu z imionami składu, a pod nim „Team 29 Alice & Bob 5 Nov”, czyli [rekord składu](#rekordy-w-trakcie-gry) (pierwsza gra składu: „Team –”). Skład z gościem nie ma plakietki.
@@ -64,7 +64,7 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 
 ### Rekordy w trakcie gry
 
-Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/`). Dotyczą wszystkich gier z rekordem: ATC, Full Board, solo Cricket, solo Shanghai i 121. X01 i Pilot (telefon) bez zmian.
+Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/`). Dotyczą wszystkich gier z rekordem: ATC, Full Board, solo Cricket, solo Shanghai, 121 i (od 2026-11-27) Bob's 27. X01 i Pilot (telefon) bez zmian.
 
 - **Plakietki w hero** (prawy górny róg, górą równo z imieniem, jedna pod drugą, 40 u wysokości): „Best 23” (rekord biura, pomarańcz) nad „PB 31” (rekord osobisty gracza, który rzuca, neutralny). Same liczby, bez kto i kiedy. Wszystkie gry z rekordem poza 121 mają tarczę, więc stoją w prawym górnym rogu karty tarczy, poza pierścieniem numerów ([UI.md](UI.md#rekordy-w-trakcie-gry)).
   - Gracz trzyma rekord biura (jego PB jest pierwszym miejscem): jedna plakietka „Best · PB”. Remis z rekordem ustanowionym wcześniej przez kogoś innego nie scala.
@@ -76,6 +76,7 @@ Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/
   - Full Board: zużyte lotki plus niezamknięte sektory.
   - solo Cricket: zużyte lotki plus najmniej lotek na brakujące znaczniki (treble zamyka numer jedną lotką, bull bierze najwyżej 2 znaczniki na lotkę).
   - solo Shanghai: punkty plus trzy treble na każdą lotkę, która została w rundzie i w następnych rundach.
+  - Bob's 27: wynik plus 6N za każdą pozostałą rundę D1–D20 (trzy double'e po 2N, razem z lotkami, które zostały w bieżącej rundzie) i 150 za rundę bull; gracz, który odpadł, nie ma już szansy (bound 0).
   - 121 nie szarzeje (gra nie ma końca). W Co-op liczą się lotki drużyny.
 - **121:** zamiast plakietek druga chorągiewka na drabince, „PB 122” (Co-op: „Team”) obok „Best 135”; równe i należące do gracza: jedna „Best · PB”. Dwie chorągiewki na jednym szczeblu albo obie poza oknem (ze strzałką ↓) stoją jedna pod drugą. Rekord pobity w tej grze zostaje na zielonym szczeblu z ✓, póki jest w oknie. Pierwsza gra składu w Co-op nie ma chorągiewki „Team”.
 - **Modal rekordów:** stuknięcie w plakietki albo w chorągiewkę 121 otwiera ten sam modal ([UI.md](UI.md#rekordy-w-trakcie-gry)): rekord biura, PB gracza (przy kilku graczach PB wszystkich, rzucający z obrysem i „THROWING”) albo rekord składu, a po prawej top 5 biura wariantu, jeden wynik na gracza (Co-op: na skład), z wyróżnionym wierszem gracza albo składu. Gdy jest poza top 5, dochodzi pod „⋯” z miejscem.
@@ -346,10 +347,30 @@ Postanowienia z grillingu z 2026-11-27. Trening checkoutów 61–100 z punktami 
   - Karta Tury po checkoucie pokazuje zdobyte punkty („+2”), po nieudanym podejściu „Attempt failed”. Ekran końca: wynik „78 points”, kafelki Points, Checkout %, Darts per checkout.
   - Gra zakończona „End match” nie ma wyniku rekordowego, więc lobby i „Recent matches” pokazują przy niej punkty ze statystyk.
 
+## Bob's 27
+
+Postanowienia z grillingu z 2026-11-27 (odwracają odrzucenie z 2026-10-30, [#7](https://github.com/jgoliszewski/ITDarts/issues/7)). Trening double'ów: punkty rosną za trafienia i maleją za pustą Turę.
+
+- **Start:** 27 punktów.
+- **Rundy:** 21. Runda N (1–20) celuje w double N, runda 21 w bull 50 (double bull; outer 25 się nie liczy). W nagłówku rundy „D5”, w 21. „Bull”.
+- **Tura = runda:** 3 lotki. Każda lotka w double rundy dodaje jego wartość (2N, w rundzie bull 50). Tura bez trafienia odejmuje jedną wartość double (−2N, −50). Inne pola, outer 25 i pudła to brak trafienia. Lotki brakujące przy zamknięciu Tury (Takeout albo Next player przed 3. lotką) to pudła. Kara nalicza się, gdy Tura się kończy (3. lotka albo zamknięcie), więc poprawka lotki w jeszcze niezamkniętej Turze ją zmienia.
+- **Odpadnięcie:** wynik 0 lub mniej po zakończeniu Tury wyrzuca gracza z gry (kolejka go pomija). Z 27 można spudłować D1–D4, a D5 bez trafienia daje −3. Wynik jest zawsze nieparzysty (start 27, wartości parzyste), więc w praktyce odpada się na liczbie ujemnej.
+- **Maksimum:** 27 + 3·2·(1+…+20) + 3·50 = 1437.
+- **Gracze:** 1–8, każdy na siebie, Tury na zmianę jak w Catch 40, bez Co-op. Grupa Practice, po Catch 40. Bull-off jak w pozostałych grach.
+- **Koniec:** gdy każdy gracz skończył rundę bull albo odpadł.
+- **Ranking i wygrana:** najpierw ci, co doszli do końca (wyższy wynik wyżej, remis to współwygrana), potem odpadnięci (później odpadł, tym wyżej; ta sama runda to remis). Wycofany gracz nigdy nie wygrywa.
+  - **Solo:** doszedł do końca to wygrana („Game won”), odpadł to „Game over” bez zwycięzcy.
+  - **Versus:** wygrywa pierwsze miejsce rankingu, także gdy wszyscy odpadli (wygrywa ten, kto odpadł najpóźniej).
+- **„End match” z „Save”** kończy grę w każdej chwili: zwycięzca z bieżącego stanu wg rankingu (gracze, którzy jeszcze grają, liczą się jak ci, co doszli, z bieżącym wynikiem; odpadnięci niżej). Taka gra nie daje rekordu.
+- **Ekran wyników:** jak [Shanghai](#shanghai). Hero ma tarczę z jednym podświetlonym (pomarańczowym) pierścieniem double sektora rundy, a w rundzie bull samym bullseye; reszta wygaszona ([UI.md](UI.md#tarcza-w-hero)). Po lewej imię, „Round 5 / 21 · D5”, duży wynik i linia „+20 this visit” albo, po Turze bez trafienia, „−10 · missed visit”; statystyki Darts i Hit rate. Kafelki lotek zielone (trafienie) i czerwone. Lista graczy pokazuje wynik i rundę, a odpadniętych wyszarza z „Out at D5”. Karta Tury: „+20”, „−10” albo „Kuba is out”. Gdy ostatnia Tura kończy grę (odpadł jedyny gracz albo ostatni), zamiast niej stoi ekran końca. Nagłówek „Bob's 27”. Widok telefonu jak w Shanghai: wiersze listy z rundą i wynikiem, „This turn” z liczbą punktów Tury z plusem albo minusem.
+- **Wyzwalacze:** „Hit” i „Miss” na każdą lotkę, istniejący „Player eliminated”, „Game won” i „New record”. Bez nowego Momentu. Caller milczy.
+- **Statystyki:** hit rate double (% lotek w double rundy), średni wynik końcowy (odpadnięty liczy się jako 0; główna statystyka ze strzałką, więcej to lepiej), liczba gier dograniych do końca (przetrwane 21 rund) i wygrane (tylko versus, jak w innych grach). Rekordem jest najwyższy wynik, tylko z gry, którą gracz dograł do końca rundy bull (odpadnięcie i „End match” nie wchodzą). Jeden wariant, solo i versus razem.
+- **Opis „How to play”:** Goal, Your turn, What counts, How to win; opcji nie ma poza bull-offem.
+
 ## Statystyki na `/stats`
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą. X01 ma takie tabele bez Ekranu rekordu: Highest visit, Highest checkout i Best leg osobno na wynik startowy.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw, wygrane jako zając i ogar w Hare and Hounds, punkty, skuteczność checkoutów i lotki na checkout w Catch 40.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw, wygrane jako zając i ogar w Hare and Hounds, punkty, skuteczność checkoutów i lotki na checkout w Catch 40, średni wynik (odpadnięty to 0), hit rate double'ów i liczba gier dograniych do końca w Bob's 27.
 - **Liczniki minigierek jako średnia na mecz** (suma małym drukiem), a główna statystyka gry ze strzałką zmiany względem poprzedniego Okna. Winrate liczy się jak w X01, tylko z meczów versus; w grach solo (Free throw) jest samo „Played” ([STATYSTYKI.md](STATYSTYKI.md#progres)).
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

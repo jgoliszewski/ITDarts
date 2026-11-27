@@ -55,6 +55,7 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   | Free throw | lotka w locie |
   | Hare and Hounds | dwie kropki goniące się po okręgu |
   | Catch 40 | stoper |
+  | Bob's 27 | moneta z plusem i minusem |
 
 - **Kafelek gry w setupie:** ikona jest tłem w prawym dolnym rogu, 96 px, ucięta krawędzią o około 1/6. Mocniejsze ucięcie (1/4 i 1/2) odrzuciliśmy, bo ikony przestawały być rozpoznawalne. Ikony bez ucięcia (80 px) też, bo przy niskim kafelku wchodziła pod opis. Na zwykłym kafelku jest szara (`#3A3A40`), a na zaznaczonym przyciemnia pomarańcz. Tekst leży nad nią.
 - **Kafelek kompaktowy** (poniżej 1100 px, od 2026-11-18, patrz [Start i koniec meczu](#start-i-koniec-meczu)): bez opisu, ikona 64 px w rogu, też ucięta krawędzią i szara, a na zaznaczonym przyciemnia pomarańcz.
@@ -97,7 +98,7 @@ Od 2026-11-18, z przeróbki UI ([DESIGN.md](../DESIGN.md#ruch) ma tokeny, czasy 
   - **Knockout:** duża liczba w hero po lewej to „To beat” (zielona, gdy ktoś jest już pobity), a „THIS TURN” stoi w panelu po prawej, jak w X01 i Gotcha. Na starcie rundy po lewej jest „First to throw” bez liczby, a w panelu szare „THIS TURN 0”.
   - **Bez panelu:** Higher or Lower (skala 0–180 z pinezką już pokazuje sumę Tury, a pod nią jest legenda zakresu, w którym traci się życie, np. „Lose a life inside 26–81”), Killer (kicker „Killer” na czerwono albo „Your double”, serca pod imieniem i na liście, a lotki są tam trafieniami, więc suma Tury nic nie znaczy), Shanghai i Free throw (w Free throw suma Tury jest główną liczbą hero, „This visit”) i pozostałe gry z tarczą: ich hero to lewa kolumna [układu z tarczą](#ekran-wyników-dla-gier-z-tarczą), bez panelu Tury.
 - **Cricket:** do 4 graczy kolumny siatki mają pełne imiona (zwykle gramy maksymalnie w czterech). Od 5 graczy (od 2026-11-18, przy 8 graczach imiona się nie mieściły) kolumna ma numer miejsca, dwie litery imienia (gość: pierwsza litera i numer, np. „G2”) i wynik, a w lewej kolumnie, pod wynikiem, stoi legenda „numer → imię” z aktywnym graczem w pomarańczu. Inicjały mogą się powtórzyć (Anna i Andrzej to „AN”), więc rozstrzyga numer (`initials` w `web/src/match.ts`). Do zrobienia: awatary zamiast liter i ucinanych imion, także przy 2–4 graczach ([Awatary graczy](#awatary-graczy)).
-- **Tarcza w hero** (ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket w obu wariantach i Killer, od 2026-11-26) i układ w trzech kolumnach: [Tarcza w hero](#tarcza-w-hero) i [Ekran wyników dla gier z tarczą](#ekran-wyników-dla-gier-z-tarczą).
+- **Tarcza w hero** (ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket w obu wariantach i Killer, od 2026-11-26; Bob's 27 od 2026-11-27) i układ w trzech kolumnach: [Tarcza w hero](#tarcza-w-hero) i [Ekran wyników dla gier z tarczą](#ekran-wyników-dla-gier-z-tarczą).
 - **Checkout** (w prawej połowie hero, pod sumą Tury): gdy da się skończyć leg lotkami, które zostały w turze, obok wyniku jest ścieżka (np. „T19 · D12”). Gdy się nie da (bogey, za mało lotek, pudło w trakcie), jest „Setup”: lotki, które najlepiej ustawiają checkout pod następną turę (np. „T20 · S14”). Samo punktowanie w T20 daleko od końca nie ma podpowiedzi.
   - Przy double out trasy są z tabeli checkoutów PDC (41–170). Dopóki lotki trafiają w zaplanowaną trasę, podpowiedź ją kontynuuje (130: T20, dalej „T20 · D5”, a nie trasa z tabeli dla 70). Po zejściu z planu bierze trasę z tabeli dla nowego wyniku, jeśli mieści się w lotkach, które zostały.
   - Resztę (mniej lotek niż trasa z tabeli, wyniki do 40, Setup, single i master out) liczy optymalna strategia: każda lotka minimalizuje oczekiwaną liczbę lotek do końca legu przy modelu pudeł dobrego klubowego gracza (40% w treble i double; `games/x01/checkout.ts`, za Kohler 1982 i Haugh & Wang 2022). Bust cofa wynik do początku tury, więc strategia go unika.
@@ -139,7 +140,7 @@ Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratc
 | Stan | Segment | Tarcza | Gry |
 |---|---|---|---|
 | Cel, dowolny ring | pomarańczowy | klin w pełnych kolorach, reszta przygaszona | ATC i Full Board w Any, Shanghai (sektor rundy), Bullseye i Football bez piłki (bull), Cricket (sektory w grze) |
-| Cel, jeden ring | pomarańczowy | tylko ten ring w pełnych kolorach z pomarańczowym obrysem, reszta klina przygaszona | ATC i Full Board w Doubles lub Trebles, Football Big singles, Killer (double) |
+| Cel, jeden ring | pomarańczowy | tylko ten ring w pełnych kolorach z pomarańczowym obrysem, reszta klina przygaszona | ATC i Full Board w Doubles lub Trebles, Football Big singles, Killer (double), Bob's 27 (double sektora rundy, w rundzie bull sam bullseye) |
 | Cel z kreskami | pomarańczowy z kreskami | jak wyżej | Cricket (znaczniki 0–2), Shanghai (S, D, T w tej Turze), Killer (życia rywala) |
 | Zaliczony albo zamknięty przez ciebie | zielony | ATC i Full Board: klin przygaszony. Cricket: klin w pełnych kolorach, bo sektor dalej punktuje | ATC, Full Board, Cricket (3 znaczniki) |
 | Własny double killera | czerwony, z kreskami własnych żyć | double w pełnych kolorach z czerwonym obrysem | Killer, po statusie killera |
@@ -155,7 +156,7 @@ Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cr
 - **Trzy kolumny** (340 u, reszta, 460 u): gracz, karta tarczy, lista graczy z przyciskami Pilota pod spodem. Cricket od 6 graczy ma szerszą prawą kolumnę (558, 636, 714 u przy 6, 7, 8 graczach), żeby nagłówek każdego gracza w siatce miał ≥ 44 px przy 1280×720; tarcza maleje (przy 8 graczach ok. 670 px przy 1920).
 - **Lewa kolumna** (hero): imię, w Killer pod nim serca (pięć serc nie wypchnie imienia), kicker z dużą liczbą (200 u, od 5 znaków 120 u), notka, w Cricket od 5 graczy legenda „numer → imię”, a **na dole 1–3 kafelki statystyk gracza z tego meczu**: te same liczby co w podsumowaniu, tylko takie, jakie widok gry już ma. Statystyki dotyczą gracza, który rzuca:
   - ATC: Darts, Hit rate, Per target. Full Board: Darts, Hit rate, Per sector. W Co-op „per” liczy lotki drużyny;
-  - Shanghai: Darts, Hit rate, Shanghais. Free throw: Average, Darts, Highest visit;
+  - Shanghai: Darts, Hit rate, Shanghais. Bob's 27: Darts i Hit rate (hero z „Round 5 / 21 · D5”, wynikiem do czterech cyfr w mniejszej czcionce i notką „+20 this visit” albo „−10 · missed visit”). Free throw: Average, Darts, Highest visit;
   - Cricket: Marks i Darts (solo tylko Marks, bo lotki są dużą liczbą). Killer: Lives taken i Rivals left. Football: To win (ile goli brakuje);
   - Bullseye bez kafelków: widok gry nie ma nic poza punktami;
   - Hare and Hounds: Darts i Hit rate, a nad nimi pod imieniem rola ze znacznikiem („HARE” turkusem, „HOUND” fioletem) i kicker „Gap” nad dystansem jako dużą liczbą.
