@@ -348,7 +348,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
         <div className="setup-main">
           <div className="setup-pick">
             <h2 className="setup-title">Who's playing?</h2>
-            <div className="ptiles" style={{ '--rows': Math.ceil((all.length + 1) / 3) } as CSSProperties}>
+            <div className="ptiles" style={{ '--rows': Math.ceil((all.length + (adding ? 0 : 1)) / 3) } as CSSProperties}>
               {all.map(r => {
                 const on = roster.some(x => same(x, r));
                 return (
@@ -370,10 +370,17 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           </div>
           <div className="throw-col">
             {hasBullOff(game) && <>
-              <div className="caps">Who throws first</div>
-              <div className="tf">
+              <div className="caps" id="tf-label">Who throws first</div>
+              <div className="tf" role="radiogroup" aria-labelledby="tf-label" onKeyDown={e => {
+                const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+                if (!d || n < 2) return;
+                e.preventDefault();
+                const next = THROW_FIRST[(THROW_FIRST.findIndex(t => t[0] === bullOff) + d + THROW_FIRST.length) % THROW_FIRST.length][0];
+                setBullOff(next);
+                (e.currentTarget.querySelector(`[data-v="${next}"]`) as HTMLElement | null)?.focus();
+              }}>
                 {THROW_FIRST.map(([v, label, desc, icon]) => (
-                  <button key={v} className="tfc" aria-pressed={n >= 2 && bullOff === v} disabled={n < 2} onClick={() => setBullOff(v)}>
+                  <button key={v} data-v={v} className="tfc" role="radio" aria-checked={n >= 2 && bullOff === v} tabIndex={bullOff === v ? 0 : -1} disabled={n < 2} onClick={() => setBullOff(v)}>
                     <span className="ic">{icon}</span><span className="tx"><b>{label}</b><span>{n < 2 ? '2+ players' : desc}</span></span>
                   </button>
                 ))}
