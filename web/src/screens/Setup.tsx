@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from 'react';
 import { Fragment, useEffect, useState } from 'react';
 import type { GameId, GameModule } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../../../games/index.ts';
@@ -10,8 +11,8 @@ import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { BullOff, X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
 import { GameIcon } from '../components/GameIcon.tsx';
-import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
-import { fits, lineupBlock, startLabel, throwOrder } from '../match.ts';
+import { HowToButton, HowToScreen } from '../components/HowTo.tsx';
+import { fits, initials, lineupBlock, startLabel, throwOrder } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
@@ -44,6 +45,19 @@ const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 p
 const namesShort = (r: RosterEntry[]) => (r.length <= 3 ? r.map(p => p.name).join(', ') : `${r[0].name}, ${r[1].name} +${r.length - 2}`);
 const andList = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : l[0]);
 
+const ico = (c: ReactNode) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{c}</svg>;
+/** Who throws first: the BullOff value ('off' is Random), its name, one sentence and an icon. */
+const THROW_FIRST: [BullOff, string, string, ReactNode][] = [
+  ['off', 'Random', 'Order drawn when the match starts.', ico(<><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1" fill="currentColor" /><circle cx="15" cy="15" r="1" fill="currentColor" /><circle cx="15" cy="9" r="1" fill="currentColor" /><circle cx="9" cy="15" r="1" fill="currentColor" /></>)],
+  ['closest', 'Closest', 'Bull-off: closest to the bull throws first.', ico(<><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>)],
+  ['pdc', 'PDC', 'Bull-off by PDC rules, a bull re-throws.', ico(<><circle cx="12" cy="12" r="8" /><path d="M12 7v10M7 12h10" /></>)],
+];
+
+/** Round initials in the player's colour (--p1…--p4 by id); a guest is neutral. */
+function Avatar({ r }: { r: RosterEntry }) {
+  return <span className="av" style={{ '--tone': r.playerId === null ? 'var(--muted)' : `var(--p${(r.playerId % 4) + 1})` } as CSSProperties}>{initials(r.name)}</span>;
+}
+
 function Seg<T extends string | number | boolean>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
     <div className="seg">
@@ -63,7 +77,7 @@ function Stepper({ value, min, max, onChange, label }: { value: number; min: num
 }
 
 function Label({ def, text }: { def?: OptionDef<any>; text: string }) {
-  return <div className="opt-label"><b>{text}</b>{def && <Info text={def.info} />}</div>;
+  return <div className="opt-label"><b>{text}</b>{def && <div className="opt-desc">{def.info}</div>}</div>;
 }
 
 /** A stepper with its name, level with the switches beside it in the options grid. */
@@ -325,6 +339,8 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     // Recent players first, then everyone else in the list's order.
     const recent = s.recentPlayerIds.map(id => active.find(p => p.id === id)).filter(p => !!p).slice(0, 3);
     const tiles: RosterEntry[] = [...recent, ...active.filter(p => !recent.includes(p))].map(p => ({ playerId: p.id, name: p.name }));
+    // A selected player who lost the tile (archived on another device) keeps one, so they can be taken out.
+    const all = [...tiles, ...roster.filter(r => !tiles.some(t => same(t, r)))];
     const block = lineupBlock(g, n);
     return (
       <div className="phone match-setup step-players">
@@ -332,12 +348,12 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
         <div className="setup-main">
           <div className="setup-pick">
             <h2 className="setup-title">Who's playing?</h2>
-            <div className="ptiles">
-              {[...tiles, ...roster.filter(r => !tiles.some(t => same(t, r)))].map(r => {
+            <div className="ptiles" style={{ '--rows': Math.ceil((all.length + 1) / 3) } as CSSProperties}>
+              {all.map(r => {
                 const on = roster.some(x => same(x, r));
                 return (
                   <button key={`${r.playerId ?? 'g'}-${r.name}`} className={`ptile ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r)}>
-                    <span className="mark">{on ? '✓' : Icon.plus(18)}</span><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}
+                    <Avatar r={r} /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
                   </button>
                 );
               })}
@@ -352,15 +368,22 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
               <div className="muted guest-note">Guests play this match only. No stats or records are kept for them.</div>
             </>}
           </div>
-        </div>
-        <div className="setup-foot">
-          {n >= 2 && hasBullOff(game) && (
-            <div className="bull-pick">
-              <span className="caps">Throws first</span>
-              <Seg value={bullOff} options={[['off', 'Random'], ['closest', 'Closest'], ['pdc', 'PDC']]} onChange={setBullOff} />
+          <div className="throw-col">
+            {hasBullOff(game) && <>
+              <div className="caps">Who throws first</div>
+              <div className="tf">
+                {THROW_FIRST.map(([v, label, desc, icon]) => (
+                  <button key={v} className="tfc" aria-pressed={n >= 2 && bullOff === v} disabled={n < 2} onClick={() => setBullOff(v)}>
+                    <span className="ic">{icon}</span><span className="tx"><b>{label}</b><span>{n < 2 ? '2+ players' : desc}</span></span>
+                  </button>
+                ))}
+              </div>
+            </>}
+            <div className="tf-sum muted">{n ? <><b>{plural(n, 'player')}:</b> {roster.map(r => r.name).join(', ')}</> : 'Tap players to add them.'}</div>
+            <div className="setup-foot">
+              <button className="btn primary" disabled={!!block} onClick={() => setStep('options')}>{block ?? 'Next · Options'}</button>
             </div>
-          )}
-          <button className="btn primary" disabled={!!block} onClick={() => setStep('options')}>{block ?? 'Next · Options'}</button>
+          </div>
         </div>
       </div>
     );
@@ -373,13 +396,16 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
       {header}
       <div className="setup-main">
         <aside className="gameinfo">
-          <GameIcon game={game} size={72} stroke={1.5} className="gameinfo-icon" />
-          <h2 className="setup-game-name">{g.name}</h2>
-          <p className="setup-blurb">{g.blurb}</p>
-          <HowToButton onClick={() => setHowTo(true)} />
-          <div className="who">
+          <div className="gamecard">
+            <GameIcon game={game} className="tile-icon" stroke={1.25} />
+            <h2 className="setup-game-name">{g.name}</h2>
+            <p className="setup-blurb">{g.blurb}</p>
+            <HowToButton onClick={() => setHowTo(true)} />
+          </div>
+          <div className="who-card">
             <div className="caps">{plural(n, 'player')}</div>
-            <div className="names">{roster.map(r => r.name).join(', ')}</div>
+            <div className="pchips">{roster.map(r => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar r={r} />{r.name}</span>)}</div>
+            {n >= 2 && hasBullOff(game) && <div className="muted">Throws first: <b>{THROW_FIRST.find(t => t[0] === bullOff)![1]}</b></div>}
           </div>
         </aside>
         <div className="setup-opts">
