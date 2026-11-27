@@ -246,7 +246,8 @@ Brak otwartych. Ostatnie cztery poprawione 2026-10-30 (wyżej, w „Gotowe”).
 3. Przeróbka strony Effects i konfiguratora według [MAPA.md](MAPA.md#do-zrobienia).
 4. Otwarte issues (backlog minigierek z #7 zamknięty 2026-10-30):
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking.
-5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
+5. Awatary graczy (grilling 2026-11-27, [UI.md](UI.md#awatary-graczy)): unikalne inicjały, kolor miejsca w meczu, neutralne w Nowym meczu, Cricket z pomiarem nagłówków, Summary od 3 graczy, chipy na telefonie, Rematch od 4 graczy.
+6. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo
 
