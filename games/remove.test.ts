@@ -309,6 +309,10 @@ describe('when the Pilot may remove a player', () => {
     const killer = play('killer', [{ t: 'numbers', numbers: [1, 2, 3] }, ...visit('D1'), ...visit('S5'), ...visit('S5'), ...visit('D3', 'D3', 'D3')]);
     expect(killer.removed).toEqual([null, null, null]);
     expect(removeBlock('killer', killer, 1, 'match')).toMatch(/End match/);
+    // Bob's 27: Ann went out at D5, so removing Bob would leave Cy alone.
+    const bobs = play('bobs27', [1, 2, 3, 4, 5].flatMap(r => [...visit('M', 'M', 'M'), ...visit(`D${r}`), ...visit(`D${r}`)]));
+    expect(bobs.rows.map(r => r.out)).toEqual([true, false, false]);
+    expect(removeBlock('bobs27', bobs, 1, 'match')).toMatch(/End match/);
   });
 
   it('blocks it during the bull-off, after the game and twice for the same player', () => {

@@ -6,6 +6,7 @@ import type { Fx } from './effects/index.ts';
 import type { MatchReport, PlayerHeat } from '../games/report.ts';
 import type { FreethrowOptions, FreethrowView } from '../games/freethrow.ts';
 import type { BullseyeOptions, BullseyeView } from '../games/bullseye.ts';
+import type { Bobs27Options, Bobs27View } from '../games/bobs27.ts';
 import type { Catch40Options, Catch40View } from '../games/catch40.ts';
 import type { HareOptions, HareView } from '../games/hare.ts';
 import type { FootballOptions, FootballView } from '../games/football.ts';
@@ -68,6 +69,7 @@ interface Games {
   freethrow: { options: FreethrowOptions; view: FreethrowView };
   hare: { options: HareOptions; view: HareView };
   catch40: { options: Catch40Options; view: Catch40View };
+  bobs27: { options: Bobs27Options; view: Bobs27View };
 }
 
 /** One result in the records of a variant: the number, as shown, who and when, and its place in the office ranking. */

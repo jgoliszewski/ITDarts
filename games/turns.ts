@@ -355,7 +355,7 @@ export const rotate = (order: number[], k: number) => order.map((_, i) => order[
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye' | 'freethrow' | 'hare' | 'catch40';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye' | 'freethrow' | 'hare' | 'catch40' | 'bobs27';
 
 /** The setup and /stats tiles come in these groups, in this order (docs/GRY.md, Setup na Pilocie). */
 export type GameGroup = 'classic' | 'practice' | 'versus';
@@ -465,7 +465,7 @@ export const livesLabel = (n: number) => `${n} ${n === 1 ? 'life' : 'lives'}`;
 export function dartCue(game: GameId, view: { phase: string; visit?: MiniView['visit'] }, before: number): 'hit' | 'miss' | null {
   const v = view.visit;
   if (game === 'x01' || view.phase === 'bulloff' || !v || v.darts.length !== before + 1) return null;
-  if (game === 'atc' || game === 'fullboard' || game === 'cricket' || game === 'shanghai') return v.good.at(-1) ? 'hit' : 'miss';
+  if (game === 'atc' || game === 'fullboard' || game === 'cricket' || game === 'shanghai' || game === 'bobs27') return v.good.at(-1) ? 'hit' : 'miss';
   if (game === 'hol' && v.dartsLeft === 0) return v.verdict?.tone === 'bad' ? 'miss' : 'hit';
   return null;
 }
@@ -487,7 +487,7 @@ export function removeBlock(
   if (v.removed[p] === undefined) return 'Unknown player';
   if (v.removed[p] === 'match' || (v.removed[p] === 'leg' && scope === 'leg')) return 'This player is already out';
   const after = v.removed.map((r, i) => (i === p ? scope : r));
-  const lost = (i: number) => (game === 'killer' || game === 'knockout') && !!v.rows?.[i].out;
+  const lost = (i: number) => (game === 'killer' || game === 'knockout' || game === 'bobs27') && !!v.rows?.[i].out;
   const inMatch = after.filter((r, i) => r !== 'match' && !lost(i)).length;
   const inLeg = after.filter((r, i) => r === null && !lost(i)).length;
   return Math.min(inMatch, inLeg) < 2 ? 'Fewer than two players would be left: use End match' : null;

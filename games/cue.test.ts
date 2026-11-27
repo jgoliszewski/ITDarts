@@ -19,6 +19,11 @@ describe('dart sounds', () => {
     expect(cue('shanghai', 'D1')).toBe('hit');
     expect(cue('shanghai', 'D1', 'S2')).toBe('miss');
   });
+  it("sounds every dart in Bob's 27: a hit on the double of the round, a miss elsewhere", () => {
+    expect(cue('bobs27', 'D1')).toBe('hit');
+    expect(cue('bobs27', 'D1', 'S1')).toBe('miss');
+    expect(cue('bobs27', 'D1', 'D1', 'D2')).toBe('miss');
+  });
   it('sounds Higher or Lower once, when the visit is decided', () => {
     expect(cue('hol', 'S20', 'S20')).toBeNull();
     expect(cue('hol', 'S20', 'S20', 'S20')).toBe('hit');
