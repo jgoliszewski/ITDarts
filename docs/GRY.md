@@ -26,8 +26,8 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40;
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
-  Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players”, „2 players” (Hare and Hounds) albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
-- **Gracze, kolejność rzucania (Random, Closest, PDC) i goście** działają tak samo jak w X01. Kolejność wybiera się w kroku Players, jedna dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
+  Kafelek ma nazwę i opis (najwyżej 2 linie). Kafle nie są wygaszane, bo gra jest wybierana przed składem; gdy skład nie pasuje, przycisk Next na kroku Players jest zablokowany z powodem („2+ players”, „2 players” przy Hare and Hounds albo „Solo only”). Te same grupy są w wyborze gry na `/stats`.
+- **Gracze, kolejność rzucania (Random, Closest, PDC) i goście** działają tak samo jak w X01. Kolejność wybiera się w kroku Players, jedna dla wszystkich gier; Nowy mecz wkłada bull-off do opcji każdej gry, która go ma (wszystkie poza Free throw).
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players”, „Free throw is for 1 player” albo „Hare and Hounds is for 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
