@@ -279,7 +279,7 @@ describe('Hare and Hounds', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('is for exactly 2 players', async () => {
-    expect(await start(1)).toMatchObject({ ok: false, error: 'Hare and Hounds needs at least 2 players' });
+    expect(await start(1)).toMatchObject({ ok: false, error: 'Hare and Hounds is for 2 players' });
     expect(await start(3)).toMatchObject({ ok: false, error: 'Hare and Hounds is for 2 players' });
     expect(live()).toBeNull();
     expect(await start(2)).toMatchObject({ ok: true });
@@ -689,5 +689,70 @@ describe('records during the game (docs/GRY.md#rekordy-i-ekran-rekordu)', () => 
     }
     expect(live().newRecord).toEqual({ office: false, personal: ['Ann'], team: false });
     expect(fire.mock.calls.flatMap(c => c[0]).map((c: { fact: { event?: string } }) => c.fact.event)).toContain('newRecord');
+  });
+});
+
+describe('quick games (GLOSSARY: Szybka gra)', () => {
+  /** The latest state a device got. */
+  function stateOf() {
+    const ws = Object.assign(new EventEmitter(), { OPEN: 1, readyState: 1, send: (s: string) => ws.emit('out', JSON.parse(s)) });
+    let last: Extract<ServerMessage, { type: 'state' }>['state'] | undefined;
+    ws.on('out', (m: ServerMessage) => m.type === 'state' && (last = m.state));
+    hub.connect(ws as never, false);
+    ws.emit('message', JSON.stringify({ type: 'hello', clientId: 'watcher', deviceName: 'test' }));
+    return () => last!;
+  }
+  const settled = () => new Promise(r => setImmediate(r)); // the state goes out right after the result
+
+  it('start with X01 for 2+ and 121 for solo, two empty slots each', () => {
+    client(true);
+    const q = stateOf()().quickGames;
+    expect(q.multi).toEqual([{ game: 'x01', options: { startScore: 501, checkIn: 'straight', checkOut: 'double', matchMode: { kind: 'off' } } }, null, null]);
+    expect(q.solo).toEqual([{ game: '121', options: { visits: 4, refill: false } }, null, null]);
+    expect(db.quickGames()).toBeNull();
+  });
+
+  it('saves a slot for every device and keeps the other slots', async () => {
+    const pilot = client(true);
+    const state = stateOf();
+    expect(await pilot({ type: 'setQuickGame', set: 'multi', index: 2, slot: { game: 'killer', options: { lives: 5 } } })).toMatchObject({ ok: true });
+    await settled();
+    expect(state().quickGames.multi).toEqual([
+      { game: 'x01', options: { startScore: 501, checkIn: 'straight', checkOut: 'double', matchMode: { kind: 'off' } } }, null, { game: 'killer', options: { lives: 5 } }]);
+    expect(state().quickGames.solo[0]).toMatchObject({ game: '121' });
+    expect(db.quickGames()).toEqual(state().quickGames);
+  });
+
+  it('empties a slot with null', async () => {
+    const pilot = client(true);
+    const state = stateOf();
+    expect(await pilot({ type: 'setQuickGame', set: 'solo', index: 0, slot: null })).toMatchObject({ ok: true });
+    await settled();
+    expect(state().quickGames.solo).toEqual([null, null, null]);
+    expect(state().quickGames.multi[0]).toMatchObject({ game: 'x01' });
+  });
+
+  it('refuses Killer in solo and Free throw for 2+, and leaves the slots as they were', async () => {
+    const pilot = client(true);
+    expect(await pilot({ type: 'setQuickGame', set: 'solo', index: 1, slot: { game: 'killer', options: {} } })).toMatchObject({ ok: false, error: 'Killer needs 2 or more players' });
+    expect(await pilot({ type: 'setQuickGame', set: 'multi', index: 1, slot: { game: 'freethrow', options: {} } })).toMatchObject({ ok: false, error: 'Free throw is for 1 player' });
+    expect(db.quickGames()).toBeNull();
+  });
+
+  it('refuses an unknown game, a slot out of range and a device that is not the Pilot', async () => {
+    const pilot = client(true);
+    expect(await pilot({ type: 'setQuickGame', set: 'multi', index: 0, slot: { game: 'darts' as never, options: {} } })).toMatchObject({ ok: false, error: 'Unknown game' });
+    expect(await pilot({ type: 'setQuickGame', set: 'multi', index: 3, slot: null })).toMatchObject({ ok: false, error: 'Invalid input' });
+    expect(await pilot({ type: 'setQuickGame', set: 'team' as never, index: 0, slot: null })).toMatchObject({ ok: false, error: 'Invalid input' });
+    const phone = client(false);
+    expect(await phone({ type: 'setQuickGame', set: 'multi', index: 0, slot: null })).toMatchObject({ ok: false, error: 'Take control first' });
+    expect(db.quickGames()).toBeNull();
+  });
+
+  it('cleans bad options through the game and keeps the bull-off out', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'setQuickGame', set: 'multi', index: 1, slot: { game: 'x01', options: { startScore: 999, checkOut: 'master', matchMode: { kind: 'legs', firstTo: 99 }, bullOff: 'pdc' } } });
+    expect((db.quickGames() as { multi: unknown[] }).multi[1]).toEqual(
+      { game: 'x01', options: { startScore: 501, checkIn: 'straight', checkOut: 'master', matchMode: { kind: 'legs', firstTo: 3 } } });
   });
 });

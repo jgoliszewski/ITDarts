@@ -20,18 +20,18 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 
 ### Setup na Pilocie
 
-- Kolejność kroków: gra, opcje, gracze.
+- Kroki: **Players → Game → Options** ([UI.md](UI.md#start-i-koniec-meczu), od 2026-11-27; wcześniej jeden ekran: gra, opcje, gracze).
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
   - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40;
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
-  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”, „1 player”, „2 players”). Te same grupy są w wyborze gry na `/stats`.
-- **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
-- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players” albo „Free throw is for 1 player”.
+  Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players”, „2 players” (Hare and Hounds) albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
+- **Gracze, kolejność, Shuffle i goście** działają tak samo jak w X01. **Bull-off** wybiera się w kroku Players, jeden dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
+- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players”, „Free throw is for 1 player” albo „Hare and Hounds is for 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
-- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op, Bull-off) są widoczne od razu, zanim ktoś zostanie dodany (od 2026-10-27). Bez graczy przycisk startu jest wyszarzony i mówi „Add players to start” (od 2026-11-18 stoi w nim też powód każdej innej blokady).
+- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Add players to continue”). Wyjątek: edycja Szybkiej gry (ołówek, „+ Add quick game”) działa także przy 0 graczach, wtedy dla zestawu 2+.
 
 ### Opis gry („How to play”)
 

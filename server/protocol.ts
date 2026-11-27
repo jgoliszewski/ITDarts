@@ -16,6 +16,7 @@ import type { KnockoutOptions, KnockoutView } from '../games/knockout.ts';
 import type { AtcOptions, AtcView, FullBoardOptions, FullBoardView } from '../games/race.ts';
 import type { RcOptions, RcView } from '../games/randomco.ts';
 import type { ShanghaiOptions, ShanghaiView } from '../games/shanghai.ts';
+import type { QuickGames, QuickSet } from '../games/quick.ts';
 import type { GameId } from '../games/turns.ts';
 import type { X01Options, X01View } from '../games/x01/index.ts';
 
@@ -153,6 +154,8 @@ export interface ClientState {
   howTo: { game: GameId; options: unknown } | null;
   /** Pilot switches, the master volume over all kiosk sound (0–100) with Mute, and the effects volume (0–100). `rev` changes with every effects change. */
   effects: { sounds: boolean; caller: boolean; leds: boolean; master: number; muted: boolean; volume: number; rev: number };
+  /** Quick start on the Players step of New match: three slots for solo and three for 2+, the same on every device. */
+  quickGames: QuickGames;
 }
 
 export type PlayerCommand =
@@ -187,6 +190,8 @@ export type Command =
   | { type: 'boardTest'; on: boolean }
   | { type: 'showQr'; show: boolean }
   | { type: 'boardRotated' }
+  /** Saves a quick game in its slot, or empties the slot with null. */
+  | { type: 'setQuickGame'; set: QuickSet; index: number; slot: { game: GameId; options: unknown } | null }
   | { type: 'player'; cmd: PlayerCommand }
   | { type: 'effects'; sounds?: boolean; caller?: boolean; leds?: boolean; master?: number; muted?: boolean }
   | { type: 'ledsWhite' }

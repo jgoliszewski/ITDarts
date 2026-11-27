@@ -105,8 +105,12 @@ W X01 gracz nie rzuca do końca bieżącego legu („Back next leg”) i wraca w
 _Avoid_: kick, wyrzucenie, pauza
 
 **Bull-off**:
-Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC.
+Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC. Wybierany w kroku Players Nowego meczu, jeden dla wszystkich gier.
 _Avoid_: losowanie
+
+**Szybka gra**:
+Zapisana gra z opcjami, startowana jednym stuknięciem z kroku Players w Nowym meczu, ze składem i Bull-offem z tego kroku. Trzy sloty osobno dla solo i dla 2+ graczy, wspólne dla wszystkich urządzeń. W UI: Quick game, nagłówek Quick start.
+_Avoid_: preset, ulubiona gra, skrót
 
 **Zając / ogar**:
 Role w Hare and Hounds: zając ucieka po obwodzie tarczy od 20, ogar startuje kilka sektorów za nim i go goni. W UI „Hare” i „Hound”.
