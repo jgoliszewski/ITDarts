@@ -47,6 +47,9 @@ interface VisitRow {
   darts_count: number;
   options: string;
 }
+
+/** Variants by label, numbers as numbers: 5, 10, 20, 40 targets, 7 before 20 rounds. */
+const byLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label, undefined, { numeric: true });
 
 export class Stats {
   constructor(private db: Db, private now = () => Date.now(), private ocheMeters = 2.37) {}
@@ -316,10 +319,10 @@ export class Stats {
       matches: rows.length,
       totals: Stats.totals(rows),
       previous: before.length < MIN_PREVIOUS ? null : { matches: before.length, totals: Stats.totals(before) },
-      bests: !rec ? [] : variants.sort().map(v => {
+      bests: !rec ? [] : variants.map(v => {
         const best = this.db.records(v, rec.better, 1, playerId)[0];
         return { label: this.variantLabel(game, v), value: rec.format(best.value) };
-      }),
+      }).sort(byLabel),
       recent: this.recent(playerId, game, w),
     };
   }
@@ -332,7 +335,7 @@ export class Stats {
   lobbyRecords(): LobbyRecord[] {
     const order = GAME_GROUPS.flatMap(g => g.ids);
     return this.playedVariants().flatMap(p => { const r = this.lobbyRecord(p.game, p.variant); return r ? [{ r, order: order.indexOf(p.game) }] : []; })
-      .sort((a, b) => a.order - b.order || a.r.label.localeCompare(b.r.label)).map(e => e.r);
+      .sort((a, b) => a.order - b.order || byLabel(a.r, b.r)).map(e => e.r);
   }
 
   /**
@@ -383,12 +386,12 @@ export class Stats {
     const rec = GAMES[game]?.record;
     if (!rec) return [];
     const variants = (this.db.sql.prepare('SELECT DISTINCT variant FROM matches WHERE game = ? AND variant IS NOT NULL').all(game) as { variant: string }[])
-      .map(r => r.variant).sort();
+      .map(r => r.variant);
     return variants.map(key => ({
       key,
       label: this.variantLabel(game, key),
       rows: this.db.records(key, rec.better).map(r => ({ value: rec.format(r.value), who: r.who, at: r.at })),
-    }));
+    })).sort(byLabel);
   }
 
   /**

@@ -344,7 +344,7 @@ Postanowienia z grillingu z 2026-11-27. Trening checkoutów 61–100 z punktami 
 - **Wdrożenie** (2026-11-27, decyzje spoza grillingu):
   - Hero według makiety: chipy „Points” i „Attempt 14 / 40” (przy 40 celach; licznik liczy z opcji „Targets”) w miejscu serc 121, „Visit 1 of 2” pod wynikiem, po prawej „This turn” i trasa checkoutu, bez drabinki. Plakietki rekordów (Best, PB) stoją w tym samym wierszu za chipami, bo Catch 40 nie ma tarczy ani drabinki (makieta ich nie pokazywała).
   - Karta pod listą: „Darts left” z kropkami podejścia i „Checkout %”; „Darts per checkout” tylko na ekranie końca i na `/stats`. Lista: punkty, „Target 74” i pasek rozegranych celów (z liczby celów gry).
-  - Karta Tury po checkoucie pokazuje zdobyte punkty („+2”), po nieudanym podejściu „Attempt failed”. Ekran końca: wynik „78 points”, kafelki Points, Checkout %, Darts per checkout.
+  - Karta Tury po checkoucie pokazuje zdobyte punkty („+2”), po nieudanym podejściu „Attempt failed”. Ekran końca i Podsumowanie: wynik „78 points”, kafelki Points (surowe punkty, nie „Points per target”; decyzja użytkownika z 2026-11-27, po review), Checkout %, Darts per checkout. „Points per target” jest tylko na `/stats`.
   - Gra zakończona „End match” nie ma wyniku rekordowego, więc lobby i „Recent matches” pokazują przy niej punkty ze statystyk.
 
 ## Bob's 27

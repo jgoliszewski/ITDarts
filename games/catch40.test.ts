@@ -196,9 +196,25 @@ describe('catch 40: the end', () => {
     expect(v.targets).toBe(5);
     expect(v.hero.note).toBe('All 5 targets done');
     expect(v.scores).toEqual([v.points[0]]);
+    expect(v.checkout).toBeNull();
+    expect(v.rows[0].meta).toBe('Finished');
     const four = view(outs(61, 64), 1, five);
     expect(four.phase).toBe('throwing');
     expect(four.target).toBe(65);
+  });
+
+  it('plays on with 2 players at 5 targets until both have finished', () => {
+    const five = { ...c40.defaults, targets: 5 as const };
+    // Round-robin for 61 to 64; then Ann takes 65 and Bob has not played it yet.
+    const upTo64 = Array.from({ length: 4 }, (_, i) => [...out(61 + i), ...out(61 + i)]).flat();
+    const annDone = view([...upTo64, ...out(65)], 2, five);
+    expect(annDone.phase).toBe('throwing');
+    expect(annDone.progress).toEqual([5, 4]);
+    expect(annDone.current).toBe(1);
+    expect(annDone.target).toBe(65);
+    // Bob's first visit on 65 misses: he stays up, the finished Ann is skipped.
+    expect(view([...upTo64, ...out(65), ...nothing()], 2, five).current).toBe(1);
+    expect(view([...upTo64, ...out(65), ...out(65)], 2, five).phase).toBe('matchWon');
   });
 
   it('ends on the last target of 10 and 20 as well', () => {
@@ -278,7 +294,7 @@ describe('catch 40: stats, record and options', () => {
     expect(v.stats[0]).toEqual({ points: 3, attempts: 2, checkouts: 1, checkoutDarts: 2 });
   });
 
-  it('keeps one record: most points, with the best still reachable as the bound', () => {
+  it('keeps one record per length: most points, with the best still reachable as the bound', () => {
     const rec = c40.record!;
     expect(rec.variant(O40, 1)).toEqual(rec.variant(O40, 5));
     expect(rec.better).toBe('higher');
@@ -302,7 +318,7 @@ describe('catch 40: stats, record and options', () => {
     expect(c40.describe(O40, 1)).toBe('Catch 40 · 40 targets');
   });
 
-  it('takes 1 to 8 players and only the bull-off option', () => {
+  it('takes 1 to 8 players, with the bull-off and targets options', () => {
     expect(c40.minPlayers).toBe(1);
     expect(c40.maxPlayers).toBeUndefined();
     expect(c40.options.map(o => o.key)).toEqual(['bullOff', 'targets']);

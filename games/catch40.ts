@@ -1,4 +1,4 @@
-// Catch 40: check out 61 to 100 in two visits each, the faster the more points (docs/GRY.md). 1-8 players on their own targets. Pure, no I/O.
+// Catch 40: check out the targets from 61 (5 to 40 of them) in two visits each, the faster the more points (docs/GRY.md). 1-8 players on their own targets. Pure, no I/O.
 import { attemptVisit } from './attempt.ts';
 import type { Happening } from './effects.ts';
 import { hintLines } from './x01/checkout.ts';
