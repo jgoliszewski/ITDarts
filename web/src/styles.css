@@ -1395,7 +1395,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   /* Options: the game on the left, its options in two columns on the right. */
   .gameinfo { width: 340px; flex: none; }
   .setup-game-name { font-size: var(--fs-ui-num-sm); }
-  .setup-opts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-6); align-content: start; row-gap: clamp(var(--sp-5), 5vh, var(--sp-8)); }
+  .setup-opts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-6); align-content: start; row-gap: clamp(var(--sp-5), 5vh, var(--sp-8)); overflow-y: auto; }
   .setup-opts .opt-label b { font-size: var(--fs-ui-lg); }
   .setup-opts .seg button { height: 60px; font-size: var(--fs-ui-lg); }
   .setup-opts .stepper-row { min-height: 64px; }
