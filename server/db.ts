@@ -239,6 +239,22 @@ export class Db {
     this.sql.prepare("INSERT INTO settings (key, value) VALUES ('boardRotatedAt', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(iso);
   }
 
+  // ---------- quick games ----------
+
+  /** The stored quick games as JSON, or null before the first change (the hub gives the starting set). */
+  quickGames(): unknown {
+    const r = this.sql.prepare("SELECT value FROM settings WHERE key = 'quickGames'").get() as { value: string } | undefined;
+    try {
+      return r ? JSON.parse(r.value) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  setQuickGames(q: unknown) {
+    this.sql.prepare("INSERT INTO settings (key, value) VALUES ('quickGames', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(q));
+  }
+
   // ---------- players ----------
 
   players(): PlayerInfo[] {

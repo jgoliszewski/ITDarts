@@ -25,6 +25,7 @@ import type { Change, Fact, Happening } from '../games/effects.ts';
 import { changes } from '../games/effects.ts';
 import type { MatchReport } from '../games/report.ts';
 import { matchReport } from '../games/report.ts';
+import { QUICK_SLOTS, normalizeQuickGames, normalizeSlot } from '../games/quick.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import type { Db, LiveRecord } from './db.ts';
@@ -277,6 +278,7 @@ export class Hub {
       boardTest: this.boardTest,
       howTo: this.howTo,
       effects: { ...(({ sounds, caller, leds, master, muted, volume }) => ({ sounds, caller, leds, master, muted, volume }))(this.effects.store.settings()), rev: this.effects.store.rev },
+      quickGames: normalizeQuickGames(this.db.quickGames()),
     };
   }
 
@@ -550,6 +552,18 @@ export class Hub {
     this.startMatch(game, ...rematchSetup(options, roster, removed));
   }
 
+  private setQuickGame(cmd: Extract<Command, { type: 'setQuickGame' }>) {
+    if ((cmd.set !== 'solo' && cmd.set !== 'multi') || !Number.isInteger(cmd.index) || cmd.index < 0 || cmd.index >= QUICK_SLOTS) throw new UserError('Invalid input');
+    let slot = null;
+    if (cmd.slot !== null) {
+      if (!isGameId(cmd.slot?.game)) throw new UserError('Unknown game');
+      slot = normalizeSlot(cmd.slot, cmd.set);
+      if (!slot) throw new UserError(cmd.set === 'solo' ? `${GAMES[cmd.slot.game].name} needs 2 or more players` : `${GAMES[cmd.slot.game].name} is for 1 player`);
+    }
+    const q = normalizeQuickGames(this.db.quickGames());
+    this.db.setQuickGames({ ...q, [cmd.set]: q[cmd.set].map((s, i) => (i === cmd.index ? slot : s)) });
+  }
+
   private player(c: PlayerCommand): { playerId?: number } {
     switch (c.action) {
       case 'create': return { playerId: this.db.createPlayer(c.name) };
@@ -683,6 +697,9 @@ export class Hub {
         return {};
       case 'boardRotated':
         this.db.setBoardRotatedAt(new Date().toISOString());
+        return {};
+      case 'setQuickGame':
+        this.setQuickGame(cmd);
         return {};
       case 'player':
         return this.player(cmd.cmd);
