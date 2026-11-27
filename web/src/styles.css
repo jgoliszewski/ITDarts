@@ -652,45 +652,6 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .center-msg p { margin: 0; color: var(--muted); }
 
 /* ---------- minigames ---------- */
-/* New match: one column on the phone; on the laptop (1100 px+) game, options and players side by side, no scrolling. */
-.match-setup { max-width: 640px; }
-.steppers { display: flex; flex-direction: column; gap: 16px; }
-/* Steppers in New match are as tall as the switches next to them. */
-.match-setup .stepper button { width: var(--tap); height: var(--tap); }
-.match-setup .stepper span { width: 40px; font-size: var(--fs-ui-2xl); }
-.setup-options { gap: 16px; }
-@media (min-width: 1100px) {
-  .match-setup { max-width: 1600px; height: 100vh; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 40px; padding: 0 40px 24px; }
-  .match-setup .phone-header { grid-column: 1 / -1; padding: 0; }
-  .match-setup .phone-body { display: contents; }
-  .match-setup .setup-games, .match-setup .setup-options, .match-setup .setup-players { min-height: 0; overflow: auto; }
-  .match-setup .setup-games { grid-column: 1; grid-row: 2 / 4; }
-  /* Options never scroll: the info bubble may hang over the column edge. */
-  .match-setup .setup-options { grid-column: 2; grid-row: 2 / 4; gap: 12px; overflow: visible; }
-  .match-setup .setup-players { grid-column: 3; grid-row: 2; }
-  .match-setup .p-actions { grid-column: 3; grid-row: 3; position: static; padding: 16px 0 0; background: none; }
-  .match-setup .setup-options .section { gap: 6px; }
-  .match-setup .list-row { min-height: var(--tap); }
-  .match-setup .steppers.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .match-setup .steppers.two .option-row { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .match-setup .steppers.two .muted { display: none; }
-  .match-setup .seg button, .match-setup .stepper button { height: var(--tap); }
-}
-.game-group { display: flex; flex-direction: column; gap: 8px; }
-.setup-games { gap: 16px; }
-.game-group-title { margin: 0; font-size: var(--fs-ui-sm); }
-.game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.game-tile { text-align: left; min-height: 92px; border-radius: var(--r-box); background: var(--card); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
-.game-tile b { font-size: var(--fs-ui-md); font-weight: 800; }
-.game-tile span { font-size: var(--fs-ui-sm); color: var(--muted); line-height: 1.3; }
-.game-tile small { margin-top: auto; font-size: var(--fs-ui-xs); font-weight: 700; color: var(--muted2); }
-.game-tile.on { background: var(--accent); color: var(--on-accent); }
-.game-tile.on span, .game-tile.on small { color: var(--accent-ink); }
-/* The game's icon as the tile's background, a sixth cut off by the corner (docs/UI.md, Ikony gier). */
-.game-tile { position: relative; overflow: hidden; }
-.game-tile > b, .game-tile > span, .game-tile > small { position: relative; }
-.game-tile .tile-icon { position: absolute; right: -16px; bottom: -16px; width: 96px; height: 96px; color: var(--faint); pointer-events: none; }
-.game-tile.on .tile-icon { color: var(--ink); opacity: 0.2; }
 .chip .chip-icon { margin-right: 6px; flex-shrink: 0; }
 .howto-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px 0 8px; border-radius: var(--r-pill); border: 2px solid var(--line); color: var(--text); font-weight: 800; font-size: var(--fs-ui-md); white-space: nowrap; }
 .howto-btn .q { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--muted2); display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-ui-lg); }
@@ -1214,37 +1175,181 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .phone-start .caps { font-size: var(--fs-ui-xs); }
 .phone-start h2 { margin: 0; font-size: var(--fs-ui-2xl); font-weight: 800; }
 
-/* ---------- setup ---------- */
-.setup-game-name { margin: 0; font-size: var(--fs-ui-xl); font-weight: 800; }
-.setup-blurb { display: none; margin: 0; font-size: var(--fs-ui-sm); color: var(--muted); line-height: 1.4; }
+/* ---------- setup: New match in three steps, Players → Game → Options (docs/UI.md, Start i koniec meczu) ---------- */
+/* Phone and windows under 1100 px: one column, the step's main button pinned at the bottom. */
+.match-setup { max-width: 640px; }
+.match-setup .seg button { font-size: var(--fs-ui-md); }
+.setup-head { gap: 8px; }
+.setup-head h1 { font-size: var(--fs-ui-lg); }
+.steps { display: flex; align-items: center; gap: 4px; flex: none; }
+.step { height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 6px; border-radius: var(--r-pill); color: var(--muted); font-size: var(--fs-ui-md); font-weight: 600; white-space: nowrap; }
+.step .n { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--raised); font-weight: 700; flex: none; }
+.step.cur { background: var(--raised); color: var(--text); padding-right: 16px; }
+.step.cur .n { background: var(--text); color: var(--ink); }
+.step.done { color: var(--soft); }
+.step.done .n { background: var(--green); color: var(--ink); }
+.step .val { color: var(--muted); font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.step-sep { width: 12px; height: 2px; background: var(--line); flex: none; }
+.setup-main { flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 0 16px 16px; }
+.setup-foot { position: sticky; bottom: 0; z-index: var(--z-actions); display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 24px 16px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 24px); }
+.setup-foot .btn { height: 56px; font-size: 18px; white-space: nowrap; }
+.setup-foot .btn.primary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.setup-foot .sum { display: none; }
+.setup-foot .sum b { color: var(--soft); font-weight: 600; }
+/* Players */
+.setup-pick { display: flex; flex-direction: column; gap: 12px; }
+.setup-title { margin: 0; font-size: var(--fs-ui-2xl); font-weight: 800; letter-spacing: -0.01em; }
+.ptiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ptile { height: 56px; min-width: 0; border-radius: var(--r-key); background: var(--tile); display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: var(--fs-ui-md); font-weight: 700; text-align: left; }
+.ptile .plus { display: flex; color: var(--muted); }
+.ptile .nm, .pchip .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptile .nm { flex: 1; }
+.ptile.on { background: var(--text); color: var(--ink); }
+.setup-pick .badge { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--text); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex: none; }
+.setup-chips { display: flex; flex-direction: column; gap: 8px; }
+.pchip { gap: 8px; max-width: 100%; padding: 0 16px; border-color: transparent; background: var(--tile); font-size: var(--fs-ui-md); }
+.pchip .badge { width: 26px; height: 26px; font-size: 17px; }
+.pchip.dash { background: transparent; border: 2px dashed var(--faint); }
+.guest-form .field { flex: 1; min-width: 0; }
+.guest-note { font-size: var(--fs-ui-md); }
+.quick { display: flex; flex-direction: column; gap: 10px; }
+.qgrid { display: grid; gap: 8px; }
+.qslot { position: relative; min-width: 0; }
+.qmain { width: 100%; min-height: 72px; border-radius: var(--r-key); background: var(--tile); text-align: left; padding: 12px 52px 12px 14px; display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 2px; }
+.qmain .qic { color: var(--soft); }
+.qmain b { font-size: var(--fs-ui-lg); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qmain .qd { grid-column: 1 / -1; font-size: var(--fs-ui-md); line-height: 1.3; color: var(--soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qmain .qa { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-ui-md); font-weight: 700; color: var(--text); }
+.qmain:disabled { background: var(--card); }
+.qmain:disabled :is(.qic, b, .qd) { color: var(--disabled-fg); }
+.qmain:disabled .qa { color: var(--amber); }
+.qedit { position: absolute; top: 4px; right: 4px; background: transparent; color: var(--muted); }
+.qempty { width: 100%; min-height: 72px; border-radius: var(--r-key); border: 2px dashed var(--faint); color: var(--muted); font-size: var(--fs-ui-md); font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 12px; }
+.setup-side { display: flex; flex-direction: column; gap: 12px; }
+.order-card { background: var(--card); border-radius: var(--r-box); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.order-card > .option-row .caps { font-size: var(--fs-ui-md); }
+.roster-list { display: flex; flex-direction: column; gap: 8px; }
+.order-card .list-row { min-height: 52px; background: var(--raised); border-radius: var(--r-sm); padding: 0 0 0 16px; gap: 8px; }
+.order-card .list-row .grow { font-size: 18px; font-weight: 700; }
+.roster-no { font-size: var(--fs-ui-xl); color: var(--muted); width: 18px; }
+.guest-tag { font-weight: 500; font-size: var(--fs-ui-md); }
+.order-hint { border: 2px dashed var(--line); border-radius: var(--r-sm); padding: 12px 16px; font-size: var(--fs-ui-md); color: var(--muted); line-height: 1.4; }
+.order-hint b { color: var(--soft); }
+.bull-pick { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.bull-pick .opt-label { font-size: 18px; }
+.bull-tag { margin-left: 4px; font-size: var(--fs-ui-md); font-weight: 500; color: var(--muted); }
+/* On the phone the Players step reads Recent, everyone else, the throwing order with the bull-off, Quick start, Next (Q9). */
+@media (max-width: 1099px) {
+  .step-players .setup-pick, .step-players .setup-side { display: contents; }
+  .step-players .order-card { order: 1; }
+  .step-players .quick { order: 2; }
+  .step-players .setup-foot { order: 3; margin: auto -16px -16px; }
+  /* Numbers only, so the title keeps its room. */
+  .step .label, .step .val { display: none; }
+  .step.cur { padding-right: 6px; }
+}
+/* Game */
+.setup-games { gap: 16px; }
+.games-col { display: contents; }
+.game-group { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.game-group-title { margin: 0; font-size: var(--fs-ui-sm); }
+.game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.g-classic .game-grid { grid-template-columns: minmax(0, 1fr); }
+.game-tile { position: relative; overflow: hidden; text-align: left; min-height: 92px; border-radius: var(--r-box); background: var(--tile); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.game-tile b { position: relative; font-size: var(--fs-ui-lg); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.game-tile span { position: relative; font-size: var(--fs-ui-md); color: var(--soft); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.game-tile small { position: relative; font-size: var(--fs-ui-md); font-weight: 600; color: var(--amber); }
+.game-tile.on { background: var(--accent); color: var(--on-accent); }
+.game-tile.on span { color: var(--accent-ink); }
+/* Games that don't fit the lineup (or the quick game's set): greyed out with the reason, not faded (DESIGN.md, Off Floor Rule). */
+.game-tile:disabled { background: var(--card); }
+.game-tile:disabled span { color: var(--disabled-fg); -webkit-line-clamp: 1; }
+/* The game's icon as the tile's background, a sixth cut off by the corner (docs/UI.md, Ikony gier). */
+.game-tile .tile-icon { position: absolute; right: -14px; bottom: -14px; width: 84px; height: 84px; color: var(--faint); pointer-events: none; }
+.game-tile.on .tile-icon { color: var(--ink); opacity: 0.2; }
+/* Options */
+.gameinfo { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.gameinfo-icon { width: 48px; height: 48px; color: var(--soft); }
+.setup-game-name { margin: 0; font-size: var(--fs-ui-2xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.setup-blurb { margin: 0; font-size: var(--fs-ui-md); color: var(--soft); line-height: 1.4; }
+.who .names { font-size: var(--fs-ui-md); font-weight: 600; line-height: 1.4; margin-top: 4px; }
+.setup-opts { display: flex; flex-direction: column; gap: 16px; }
+.setup-opts .section { gap: 10px; }
+.setup-opts .opt-label { font-size: var(--fs-ui-md); }
+.setup-opts .range-row label { font-size: var(--fs-ui-md); }
+.opt-note { font-size: var(--fs-ui-md); color: var(--muted); line-height: 1.4; }
+.opt-note b { color: var(--soft); }
+.stepper-row { min-height: 56px; padding: 4px 4px 4px 20px; border-radius: var(--r-pill); background: var(--card); }
+.stepper-row b { font-size: var(--fs-ui-md); }
+.stepper-row .muted { font-size: var(--fs-ui-md); }
+.stepper-row .stepper { padding: 0; background: none; }
+.stepper-row .stepper button { width: var(--tap); height: var(--tap); }
+.stepper-row .stepper span { width: 40px; font-size: var(--fs-ui-2xl); }
+.opt-block { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 20px; border-radius: var(--r-box); background: var(--amber-bg); color: var(--amber); font-size: 18px; font-weight: 600; line-height: 1.4; }
+.opt-block .btn { margin-left: auto; color: var(--text); }
+/* Laptop (1100 px+): steps on the right of the header, no page scroll from 1280×720 with 1–8 players. */
+@media (min-width: 1100px) {
+  .match-setup { max-width: none; height: 100vh; padding: 0 32px; overflow: hidden; }
+  .match-setup .phone-header { height: 72px; padding: 0; gap: 12px; flex: none; }
+  .setup-head h1 { flex: 0 1 auto; font-size: var(--fs-ui-2xl); }
+  .steps { margin-left: auto; }
+  .step-sep { width: 20px; }
+  .setup-main { min-height: 0; flex-direction: row; gap: 24px; padding: 4px 0 16px; }
+  .setup-foot { position: static; flex: none; height: 88px; margin: 0; padding: 0 0 20px; gap: 16px; background: none; }
+  .setup-foot .sum { display: block; flex: 1; min-width: 0; color: var(--muted); font-size: var(--fs-ui-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .setup-foot .btn { padding: 0 28px; }
+  .setup-foot .btn.primary { flex: none; min-width: 360px; }
+  .match-setup .caps { font-size: var(--fs-ui-md); }
+  .match-setup .chip { font-size: var(--fs-ui-md); }
+  /* Players: who's playing and Quick start on the left, the throwing order with the bull-off and Next on the right. */
+  .setup-pick { flex: 1; min-width: 0; min-height: 0; }
+  .ptiles { gap: 10px; }
+  .ptile { height: 64px; padding: 0 16px; font-size: var(--fs-ui-lg); }
+  .setup-pick .ptile .badge { width: 32px; height: 32px; font-size: 20px; }
+  /* Many registered players scroll here; Quick start stays at the bottom edge. */
+  .setup-chips { min-height: 0; overflow-y: auto; }
+  .quick { margin-top: auto; flex: none; }
+  .qgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .qmain, .qempty { height: 120px; }
+  .qmain { grid-template-rows: auto 1fr auto; align-items: start; }
+  .qmain .qic, .qmain b { align-self: center; }
+  .setup-side { width: 430px; flex: none; min-height: 0; }
+  .order-card { flex: 1; min-height: 0; padding: 20px; }
+  /* A fallback only: 8 players fit from 1280×720 (and 1513×690) without it. */
+  .roster-list { min-height: 0; overflow-y: auto; flex: 0 1 auto; }
+  .setup-side .setup-foot { height: auto; padding: 0; }
+  .setup-side .setup-foot .btn.primary { width: 100%; min-width: 0; }
+  /* 6–8 players: lower rows, a tighter card and the bull-off on one line, so the list, the bull-off and Next fit. */
+  .order-card.many { padding: 14px 16px; gap: 8px; }
+  .order-card.many .roster-list { gap: 4px; }
+  .order-card.many .list-row { min-height: 44px; }
+  .order-card.many .bull-pick { flex-direction: row; align-items: center; gap: 12px; padding-top: 8px; }
+  .order-card.many .bull-pick .seg { flex: 1; }
+  .order-card.many .bull-tag { display: none; }
+  .order-card.many + .setup-foot .btn { height: 52px; }
+  /* Game: Classic and Practice on the left, Versus on the right, every tile in sight. */
+  .setup-games { gap: 20px; }
+  .games-col { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; min-height: 0; }
+  .g-practice, .g-versus { flex: 1; }
+  .game-group-title { font-size: var(--fs-ui-md); }
+  .game-group .game-grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 10px; }
+  .g-classic .game-grid { flex: none; }
+  .game-tile { min-height: 0; }
+  /* Options: the game on the left, its options in two columns on the right. */
+  .gameinfo { width: 340px; flex: none; gap: 14px; }
+  .gameinfo-icon { width: 72px; height: 72px; }
+  .setup-game-name { font-size: 40px; }
+  .setup-blurb { font-size: 18px; }
+  .who { margin-top: auto; }
+  .who .names { font-size: 18px; }
+  .setup-opts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; align-content: start; }
+  .setup-opts .opt-label { font-size: 18px; }
+  .match-setup .setup-opts .seg button { height: 48px; }
+  .stepper-row, .setup-opts > .opt-note { align-self: end; }
+  .opt-full { grid-column: 1 / -1; }
+}
 /* Throwing order: a 44 px grip in a readable grey; arrow keys move the row (B#16). */
 .grip { display: flex; align-items: center; justify-content: center; width: var(--tap); height: var(--tap); flex-shrink: 0; color: var(--muted2); touch-action: none; cursor: grab; border-radius: var(--r-sm); }
-.roster-full { font-size: var(--fs-ui-sm); }
-.add-players { display: flex; flex-direction: column; gap: var(--sp-2); }
-.recent-players { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
-.guest-note { font-size: var(--fs-ui-sm); }
-/* Laptop: the add buttons wrap into rows above the throwing order, so everyone is in sight; the column scrolls when there are many. */
-@media (min-width: 1100px) {
-  .match-setup .add-players { flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .match-setup .add-players > .recent-players, .match-setup .add-players > .chip-row { display: contents; }
-  .match-setup .add-players .btn, .match-setup .add-players .chip { flex: none; height: var(--tap); padding: 0 var(--sp-4); white-space: nowrap; }
-  .match-setup .add-players > form { flex: 0 0 100%; }
-  .match-setup .add-players .chip-row > .muted { display: none; }
-}
-.roster-empty { min-height: 56px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--line); border-radius: var(--r-key); color: var(--muted); font-size: var(--fs-ui-sm); }
-/* Phone and small laptop (D4, D5): compact game tiles without the line, three in a row; the game's line moves to the
-   options, and the players come before the options. */
-@media (max-width: 1099px) {
-  .match-setup .game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
-  .match-setup .game-tile { min-height: 64px; padding: var(--sp-2) var(--sp-3); gap: 2px; justify-content: center; }
-  .match-setup .game-tile b { font-size: var(--fs-ui-sm); line-height: 1.2; }
-  .match-setup .game-tile span { display: none; }
-  .match-setup .game-tile small { margin-top: 0; }
-  .match-setup .game-tile .tile-icon { width: 64px; height: 64px; right: -14px; bottom: -14px; }
-  .match-setup .setup-blurb { display: block; }
-}
-/* Laptop: the group titles name the games, so no extra "Game" above them (B#19). */
-@media (min-width: 1100px) { .match-setup .setup-games-title { display: none; } }
 
 /* ---------- scoreboard, variant D (DECISIONS.md; prototype proto/x01-variants.html?v=D) ---------- */
 /* The hero's right half: This turn and the route, apart from the score by a line. */
