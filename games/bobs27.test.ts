@@ -37,6 +37,12 @@ describe("bob's 27: points", () => {
     expect(v.round).toBe(1);
   });
 
+  it('lists every player with the round they are on, a finished one as Finished', () => {
+    const v = view([...hit(1), d('D2')], 2);
+    expect(v.rows.map(r => r.meta)).toEqual(['Round 2 · D2', 'Round 1 · D1']);
+    expect(view(hits(1, 21)).rows[0].meta).toBe('Finished');
+  });
+
   it('adds the value of the double for every dart that hits it', () => {
     expect(view([d('D1')]).points).toEqual([29]);
     const v = view([d('D1'), d('D1'), d('D1')]);

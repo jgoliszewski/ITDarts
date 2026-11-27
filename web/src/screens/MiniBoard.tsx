@@ -128,7 +128,7 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
 
 /** The games with targets on the board put it next to the hero (bug report 2026-10-27); Cricket and Killer since 2026-11-26. */
 export const hasBoard = (m: MiniMatch): m is BoardMatch =>
-  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'bobs27' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
   || m.game === 'cricket' || m.game === 'killer' || m.game === 'hare';
 
 /** Hare and Hounds: the role of player `i`. */
@@ -220,7 +220,8 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : m.game === 'hare' ? <div className="num">{m.view.gap}</div>
-            : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
+            // Bob's 27 scores run to four digits.
+            : <div className={`num ${v.hero.big.length > (m.game === 'bobs27' ? 3 : 4) ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
         {note && <div className="hero-note">{note}</div>}
         {legend && (

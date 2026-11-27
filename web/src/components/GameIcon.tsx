@@ -37,6 +37,8 @@ const PATHS: Record<GameId, ReactNode> = {
   hare: <><circle cx="12" cy="12" r="8.5" />{dot(12, 3.5, 2.2)}{dot(4.6, 16.3, 2.2)}<path d="M15.5 20l3-1.6-.4-3.4" /></>,
   // A stopwatch.
   catch40: <><circle cx="12" cy="13.5" r="8" /><path d="M12 9v4.5l3 2M9.5 2.5h5" /></>,
+  // Points won and lost on a double.
+  bobs27: <><circle cx="12" cy="12" r="9" /><path d="M12 6.5v5M9.5 9h5M9.5 15.5h5" /></>,
 };
 
 /** One game's icon in the text colour; `stroke` is thinner when drawn big as a tile's background. */

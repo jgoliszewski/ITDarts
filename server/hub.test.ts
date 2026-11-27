@@ -393,6 +393,95 @@ describe('Catch 40', () => {
   });
 });
 
+describe("Bob's 27", () => {
+  type L = { view: { phase: string; winners: number[]; points: number[]; scores: (number | null)[] } } | null;
+  const live = () => (hub as unknown as { live: L }).live;
+  const next: Command = { type: 'next' };
+  const facts = () => fire.mock.calls.flatMap(c => c[0] as { fact: { kind: string; event?: string } }[]).map(c => c.fact);
+
+  it('fires Hit and Miss for every dart, Player eliminated at the end of a missed visit and the caller stays silent', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: roster(1) });
+    await pilot(dart('D1'));
+    await pilot(dart('S1'));
+    expect(facts().map(f => f.kind)).toContain('hit');
+    expect(facts().map(f => f.kind)).toContain('miss');
+    await pilot(next);
+    // D1 hit (+2), then D2 to D4 missed: 27 + 2 - 4 - 6 - 8 = 11. D5 costs 10 and leaves 1, D6 costs 12 and puts Ann out.
+    for (let i = 0; i < 4; i++) {
+      for (const x of ['M', 'M', 'M']) await pilot(dart(x));
+      await pilot(next);
+    }
+    expect(facts().some(f => f.kind === 'game' && f.event === 'eliminated')).toBe(false);
+    for (const x of ['M', 'M', 'M']) await pilot(dart(x));
+    expect(facts().some(f => f.kind === 'game' && f.event === 'eliminated')).toBe(true);
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [] });
+    expect(fire.mock.calls.flatMap(c => c[1] ?? [])).toEqual([]);
+  });
+
+  it('ends on End match with Save: the best score of those still in wins', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: roster(2) });
+    await pilot(dart('D1'));
+    await pilot(next);
+    await pilot(dart('S1'));
+    await pilot({ type: 'endMatch', save: true });
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [0], points: [29, 27] });
+  });
+
+  it('keeps a record only from a game played through the bull round', async () => {
+    const ann = { playerId: db.createPlayer('Ann'), name: 'Ann' };
+    const score = () => db.sql.prepare('SELECT mp.score, m.variant FROM match_players mp JOIN matches m ON m.id = mp.match_id ORDER BY m.id DESC LIMIT 1').get();
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: [ann] });
+    await pilot(dart('D1'));
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    expect(score()).toMatchObject({ score: null });
+    expect(db.records('bobs27', 'higher')).toEqual([]);
+    // The full game, one hit in every round: 27 + 2 * (1 + ... + 20) + 50.
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: [ann] });
+    await pilot({ type: 'skipIntro' });
+    for (let r = 1; r <= 21; r++) {
+      await pilot(dart(r === 21 ? 'Bull' : `D${r}`));
+      await pilot(next);
+    }
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [0], points: [497] });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    expect(score()).toMatchObject({ score: 497, variant: 'bobs27' });
+    expect(db.records('bobs27', 'higher').map(r => r.value)).toEqual([497]);
+  });
+
+  it('keeps no record from a solo game that went out', async () => {
+    const ann = { playerId: db.createPlayer('Ann'), name: 'Ann' };
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: [ann] });
+    await pilot({ type: 'skipIntro' });
+    for (let i = 0; i < 5; i++) {
+      for (const x of ['M', 'M', 'M']) await pilot(dart(x));
+      if (i < 4) await pilot(next);
+    }
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [], scores: [null] });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    expect(db.records('bobs27', 'higher')).toEqual([]);
+  });
+
+  it('does not let a player who went out count towards the two that must remain', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'bobs27', options: {}, roster: roster(3) });
+    // Ann misses every round until she is out; Bob and Cy hit D1 to D5.
+    for (let r = 1; r <= 5; r++) {
+      for (const x of ['M', 'M', 'M']) await pilot(dart(x));
+      await pilot(next);
+      for (let who = 1; who <= 2; who++) {
+        await pilot(dart(`D${r}`));
+        await pilot(next);
+      }
+    }
+    expect((await pilot(remove(1))).ok).toBe(false);
+  });
+});
+
 describe('saving a Gotcha match', () => {
   // Bull + T17 = 101: the starter wins the game; the starter of the next game is the other player.
   const win = [dart('Bull'), dart('T17')];

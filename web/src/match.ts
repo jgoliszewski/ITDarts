@@ -124,6 +124,7 @@ export function visitScored(m: LiveMatch): number | null {
   switch (m.game) {
     case 'hol': return m.view.sum ?? 0;
     case 'shanghai': return m.view.visitPoints;
+    case 'bobs27': return m.view.delta;
     case 'knockout': return m.view.visitScore;
     case 'freethrow': return m.view.visitTotal;
     case '121': case 'catch40': case 'randomco': case 'gotcha':
@@ -140,6 +141,7 @@ export function turnHead(m: LiveMatch): { text: string; tone: 'sum' | 'count' | 
   if (isX01(m)) return m.view.visit.bust ? { text: 'BUST', tone: 'bad' } : { text: String(m.view.visit.total), tone: 'sum' };
   if (m.view.visit.verdict) return { text: m.view.visit.verdict.text.toUpperCase(), tone: m.view.visit.verdict.tone };
   if (m.game === 'bullseye') return { text: signed(m.view.visitPoints, true), tone: 'sum' };
+  if (m.game === 'bobs27') return { text: signed(m.view.delta, true), tone: 'sum' };
   const scored = visitScored(m);
   if (scored !== null) return { text: String(scored), tone: 'sum' };
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [m.view.visit.good.filter(Boolean).length, 'hit'];

@@ -33,6 +33,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
       ['Checkout %', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`],
       ['Darts per checkout', t.checkouts ? (t.checkoutDarts / t.checkouts).toFixed(1) : '–'],
     ];
+    case 'bobs27': return [['Score', String(t.score ?? 0)], ['Double hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`]];
     case 'shanghai': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Shanghais', String(t.shanghais ?? 0)]];
     case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
     case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];

@@ -747,7 +747,7 @@ function shuffle<T>(a: T[]) {
 }
 
 /** Games where End match with Save ends the game itself, with the end screen first (docs/GRY.md). */
-const SAVE_ENDS: GameId[] = ['randomco', 'football', 'bullseye', 'freethrow', 'catch40', 'hare'];
+const SAVE_ENDS: GameId[] = ['randomco', 'football', 'bullseye', 'freethrow', 'catch40', 'hare', 'bobs27'];
 
 /**
  * Rematch of Hare and Hounds (docs/GRY.md#hare-and-hounds): the roles swap, so last match's hound throws first as the hare.

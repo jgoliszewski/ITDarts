@@ -8,6 +8,7 @@ import { hareAndHounds } from '../../../games/hare.ts';
 import type { HareOptions } from '../../../games/hare.ts';
 import { killer } from '../../../games/killer.ts';
 import { atc, fullBoard } from '../../../games/race.ts';
+import { bobs27 } from '../../../games/bobs27.ts';
 import { shanghai } from '../../../games/shanghai.ts';
 import type { TurnEvent } from '../../../games/turns.ts';
 import type { Segment } from '../components/targets.ts';
@@ -77,6 +78,40 @@ describe('Shanghai on the board', () => {
 
   it('starts a Turn with empty ticks', () => {
     expect(board(match('shanghai', o, shanghai.view([], 1, o))).segments[1].ticks).toEqual([false, false, false]);
+  });
+});
+
+describe("Bob's 27 on the board", () => {
+  const o = bobs27.defaults;
+  const m = (events: TurnEvent[]) => match('bobs27', o, bobs27.view(events, 1, o));
+
+  it('targets only the double of the round, and no other sector', () => {
+    const b = m([]);
+    expect(board(b).segments[1]).toEqual({ state: 'target', ring: 2 });
+    expect(inState(b, 'target')).toEqual([1]);
+    expect(inState(b, 'off')).toHaveLength(20);
+    // Only the double ring of 1 is lit, nothing else on the board.
+    expect(isLit(board(b), 1, 2)).toBe(true);
+    expect([1, 3, 'big', 'in'].filter(p => isLit(board(b), 1, p as 'in' | 'big' | 3))).toEqual([]);
+    expect(isLit(board(b), 2, 2)).toBe(false);
+    expect(boardTargets(b).label).toBe('Aim for D1');
+  });
+
+  it('moves to the next double with the round', () => {
+    const b = m([...visit('D1', 'M', 'M'), ...visit('M', 'M', 'M')]);
+    expect(inState(b, 'target')).toEqual([3]);
+    expect(board(b).segments[3]).toEqual({ state: 'target', ring: 2 });
+    expect(boardTargets(b).label).toBe('Aim for D3');
+  });
+
+  it('lights only the bullseye in the bull round', () => {
+    const hits = Array.from({ length: 20 }, (_, i) => visit(`D${i + 1}`, 'M', 'M')).flat();
+    const b = m(hits);
+    expect(inState(b, 'target')).toEqual([25]);
+    expect(board(b).segments[25]).toEqual({ state: 'target', ring: 2 });
+    expect(isLit(board(b), 25, 2)).toBe(true);
+    expect(isLit(board(b), 25, 'big')).toBe(false);
+    expect(boardTargets(b).label).toBe('Aim for the bullseye');
   });
 });
 

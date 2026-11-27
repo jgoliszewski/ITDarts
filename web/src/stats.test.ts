@@ -158,8 +158,15 @@ describe('the figures of each game', () => {
     expect(c[1].sub).toBe('60 / 80 targets');
   });
 
+  it("gives Bob's 27 the average score, the double hit rate and the games completed", () => {
+    const b = profileMetrics('bobs27', { ...tot({ score: 300, darts: 120, hits: 30, completed: 1 }), matches: 3 });
+    expect(b.map(m => [m.label, m.value])).toEqual([['Score', '100.0'], ['Double hit rate', '25%'], ['Games completed', '1']]);
+    expect(b[0].main).toBe(true);
+    expect(b[1].sub).toBe('30 / 120 darts');
+  });
+
   it('knows a headline for every game with minigame stats', () => {
-    for (const g of ['atc', 'fullboard', 'shanghai', 'cricket', '121', 'randomco', 'knockout', 'killer', 'football', 'gotcha', 'bullseye', 'hol', 'freethrow', 'hare', 'catch40'] as const) {
+    for (const g of ['atc', 'fullboard', 'shanghai', 'cricket', '121', 'randomco', 'knockout', 'killer', 'football', 'gotcha', 'bullseye', 'hol', 'freethrow', 'hare', 'catch40', 'bobs27'] as const) {
       expect(METRICS[g]?.some(m => m.main), g).toBe(true);
     }
   });

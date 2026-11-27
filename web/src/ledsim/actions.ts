@@ -47,7 +47,7 @@ export const MOMENTS: Moment[] = [
   { id: 'set-won', name: 'Set won', group: 'Leg end', when: 'Set won', strength: 'L', mood: 'good', often: 'matches on sets', sound: 'set-won' },
   { id: 'match-won', name: 'Match won', group: 'Leg end', when: 'Match won', strength: 'XL', mood: 'good', often: 'once a match', sound: 'match-won' },
 
-  { id: 'hit', name: 'Hit', group: 'Minigames', when: 'A dart that counts (ATC, Full Board, Cricket, Shanghai, Higher or Lower)', strength: 'S', mood: 'good', often: 'every dart', sound: 'hit' },
+  { id: 'hit', name: 'Hit', group: 'Minigames', when: 'A dart that counts (ATC, Full Board, Cricket, Shanghai, Bob\'s 27, Higher or Lower)', strength: 'S', mood: 'good', often: 'every dart', sound: 'hit' },
   { id: 'miss', name: 'Miss', group: 'Minigames', when: 'A dart that does not count', strength: 'S', mood: 'bad', often: 'every dart', sound: 'miss' },
   { id: 'sector-closed', name: 'Sector closed', group: 'Minigames', when: 'Cricket: sector closed', strength: 'M', mood: 'good', often: 'a few a game', sound: 'hit' },
   { id: 'white-horse', name: 'White Horse', group: 'Minigames', when: 'Cricket: three different trebles', strength: 'L', mood: 'good', often: 'very rare', sound: 'white-horse' },

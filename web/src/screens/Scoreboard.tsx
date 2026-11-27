@@ -169,7 +169,8 @@ function TurnCard({ s, m, onDart, canEdit }: { s: ClientState; m: LiveMatch; onD
   // Cricket counts marks, so a fixed S17 to T17 shows; hits would not change.
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [hits, 'hit'];
   // Bullseye: the visit's points with a sign, +3 or −2.
-  const big = verdict ? verdict.text : m.game === 'bullseye' ? signed(m.view.visitPoints, true) : scored !== null ? String(scored) : `${n} ${unit}${n === 1 ? '' : 's'}`;
+  // Bob's 27 names who went out.
+  const big = verdict ? (m.game === 'bobs27' && verdict.text === 'Out' ? `${m.roster[v.current].name} is out` : verdict.text) : m.game === 'bullseye' ? signed(m.view.visitPoints, true) : scored !== null ? String(scored) : `${n} ${unit}${n === 1 ? '' : 's'}`;
   // Only the name, the headline and the darts; what the visit left shows on the hero once the card is gone.
   return (
     <div className="overlay">

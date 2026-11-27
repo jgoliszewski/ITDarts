@@ -141,7 +141,8 @@ function view(events: TurnEvent[], players: number, o: Bobs27Options): Bobs27Vie
     },
     rows: s.points.map((pts, i) => ({
       value: signed(pts),
-      meta: s.outAt[i] ? `Out at ${roundName(s.outAt[i])}` : finished(i) ? 'Finished' : `Next ${roundName(s.done[i] + 1)}`,
+      // The player up keeps the round of the visit on screen, like the hero.
+      meta: s.outAt[i] ? `Out at ${roundName(s.outAt[i])}` : finished(i) ? 'Finished' : `Round ${i === c ? s.round : s.done[i] + 1} · ${roundName(i === c ? s.round : s.done[i] + 1)}`,
       out: s.outAt[i] > 0,
     })),
     result: !s.over ? '' : s.outAt[w] ? `Out at ${roundName(s.outAt[w])}` : plural(s.points[w], 'point'),

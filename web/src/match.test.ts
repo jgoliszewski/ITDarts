@@ -9,7 +9,7 @@ describe('minigame dart tile colour', () => {
   const tone = (game: string, good: boolean) => dartTone({ game } as MiniMatch, good);
 
   it('shows hits green and misses red in games counted in hits', () => {
-    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'football', 'hare']) {
+    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'bobs27', 'football', 'hare']) {
       expect(tone(game, true)).toBe('hit');
       expect(tone(game, false)).toBe('miss');
     }
@@ -103,6 +103,21 @@ describe('Hare and Hounds aim on the phone', () => {
 describe('Cricket column initials (5+ players)', () => {
   it('takes two letters of a name, a guest keeps its number', () => {
     expect(['Anna', 'Aleksandra', 'Guest 2', 'Guest 12', 'Bo', 'Ż'].map(initials)).toEqual(['AN', 'AL', 'G2', 'G12', 'BO', 'Ż']);
+  });
+});
+
+describe("Bob's 27 visit", () => {
+  const b = (delta: number, verdict: { text: string; tone: 'good' | 'bad' } | null = null) => ({ game: 'bobs27', view: { delta, visit: { darts: [], verdict } } }) as unknown as LiveMatch;
+
+  it('scores what the visit gave or cost, with a sign on the phone', () => {
+    expect(visitScored(b(20))).toBe(20);
+    expect(visitScored(b(-10))).toBe(-10);
+    expect(turnHead(b(20))).toEqual({ text: '+20', tone: 'sum' });
+    expect(turnHead(b(-10))).toEqual({ text: '−10', tone: 'sum' });
+  });
+
+  it('headlines a finished visit with its verdict, going out in red', () => {
+    expect(turnHead(b(-10, { text: 'Out', tone: 'bad' }))).toEqual({ text: 'OUT', tone: 'bad' });
   });
 });
 
