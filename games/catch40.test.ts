@@ -1,6 +1,6 @@
 // Catch 40 from event logs (docs/GRY.md#catch-40).
 import { describe, expect, it } from 'vitest';
-import { catch40 as c40, checkoutPoints } from './catch40.ts';
+import { catch40 as c40, checkoutPoints, type Catch40Options } from './catch40.ts';
 import { label, parseDart } from './darts.ts';
 import type { TurnEvent } from './turns.ts';
 import { hint } from './x01/checkout.ts';
@@ -13,8 +13,10 @@ const end: TurnEvent = { t: 'end' };
 const remove = (player: number): TurnEvent => ({ t: 'remove', player, scope: 'match' });
 const visit = (...s: string[]): TurnEvent[] => [...s.map(d), next];
 const nothing = () => visit('M', 'M', 'M');
-const view = (log: TurnEvent[], players = 1) => c40.view(log, players, c40.defaults);
-const facts = (log: TurnEvent[], players = 1) => c40.happenings(log, players, c40.defaults);
+/** The long game (the default is 5 targets), which most of these tests were written for. */
+const O40: Catch40Options = { ...c40.defaults, targets: 40 };
+const view = (log: TurnEvent[], players = 1, o = O40) => c40.view(log, players, o);
+const facts = (log: TurnEvent[], players = 1) => c40.happenings(log, players, O40);
 const kinds = (log: TurnEvent[], players = 1) => facts(log, players).map(h => (h.fact.kind === 'game' ? h.fact.event : h.fact.kind));
 /** One visit that checks out n (2 or 3 darts, always possible from 61 to 100). */
 const out = (n: number) => visit(...hint(n, 3, 'double')!.darts.map(x => label(x)));
@@ -38,6 +40,7 @@ describe('catch 40: points', () => {
     const v = view([...nothing(), ...nothing()]);
     expect(v.points).toEqual([0]);
     expect(v.progress).toEqual([1]);
+    expect(v.targets).toBe(40);
     expect(v.target).toBe(62);
     expect(v.remaining).toBe(62);
     expect(v.stats[0]).toMatchObject({ attempts: 1, checkouts: 0 });
@@ -185,6 +188,43 @@ describe('catch 40: the end', () => {
     expect(view(outs(61, 99)).phase).toBe('throwing');
   });
 
+  it('ends after 5 targets (61 to 65) when the game has 5', () => {
+    const five = { ...c40.defaults, targets: 5 as const };
+    const v = view(outs(61, 65), 1, five);
+    expect(v.phase).toBe('matchWon');
+    expect(v.progress).toEqual([5]);
+    expect(v.targets).toBe(5);
+    expect(v.hero.note).toBe('All 5 targets done');
+    expect(v.scores).toEqual([v.points[0]]);
+    expect(v.checkout).toBeNull();
+    expect(v.rows[0].meta).toBe('Finished');
+    const four = view(outs(61, 64), 1, five);
+    expect(four.phase).toBe('throwing');
+    expect(four.target).toBe(65);
+  });
+
+  it('plays on with 2 players at 5 targets until both have finished', () => {
+    const five = { ...c40.defaults, targets: 5 as const };
+    // Round-robin for 61 to 64; then Ann takes 65 and Bob has not played it yet.
+    const upTo64 = Array.from({ length: 4 }, (_, i) => [...out(61 + i), ...out(61 + i)]).flat();
+    const annDone = view([...upTo64, ...out(65)], 2, five);
+    expect(annDone.phase).toBe('throwing');
+    expect(annDone.progress).toEqual([5, 4]);
+    expect(annDone.current).toBe(1);
+    expect(annDone.target).toBe(65);
+    // Bob's first visit on 65 misses: he stays up, the finished Ann is skipped.
+    expect(view([...upTo64, ...out(65), ...nothing()], 2, five).current).toBe(1);
+    expect(view([...upTo64, ...out(65), ...out(65)], 2, five).phase).toBe('matchWon');
+  });
+
+  it('ends on the last target of 10 and 20 as well', () => {
+    for (const targets of [10, 20] as const) {
+      const o = { ...c40.defaults, targets };
+      expect(view(outs(61, 60 + targets - 1), 1, o).phase).toBe('throwing');
+      expect(view(outs(61, 60 + targets), 1, o).phase).toBe('matchWon');
+    }
+  });
+
   it('plays on until every player has finished the 40', () => {
     const half = full([[visit(...TWO)], [visit(...TWO)]]).slice(0, -out(100).length);
     const v = view(half, 2);
@@ -254,17 +294,43 @@ describe('catch 40: stats, record and options', () => {
     expect(v.stats[0]).toEqual({ points: 3, attempts: 2, checkouts: 1, checkoutDarts: 2 });
   });
 
-  it('keeps one record: most points, with the best still reachable as the bound', () => {
+  it('keeps one record per length: most points, with the best still reachable as the bound', () => {
     const rec = c40.record!;
-    expect(rec.variant(c40.defaults, 1)).toEqual(rec.variant(c40.defaults, 5));
+    expect(rec.variant(O40, 1)).toEqual(rec.variant(O40, 5));
     expect(rec.better).toBe('higher');
-    expect(rec.bound!(view(visit(...TWO)), 0, c40.defaults)).toBe(3 + 3 * 39);
+    expect(rec.bound!(view(visit(...TWO)), 0, O40)).toBe(3 + 3 * 39);
   });
 
-  it('takes 1 to 8 players and only the bull-off option', () => {
+  it('keeps a record per length: 40 under the old key, the others under their own', () => {
+    const rec = c40.record!;
+    expect(rec.variant(O40, 1)).toEqual({ key: 'catch40', label: 'Catch 40 · 40 targets' });
+    expect(rec.variant(c40.defaults, 1)).toEqual({ key: 'catch40:5', label: 'Catch 40 · 5 targets' });
+    expect(rec.variant({ ...c40.defaults, targets: 20 }, 1)?.key).toBe('catch40:20');
+  });
+
+  it('bounds the record by the targets left in a 5-target game', () => {
+    const five = c40.defaults;
+    expect(c40.record!.bound!(view(visit(...TWO), 1, five), 0, five)).toBe(3 + 3 * 4);
+  });
+
+  it('describes the game with its targets', () => {
+    expect(c40.describe(c40.defaults, 1)).toBe('Catch 40 · 5 targets');
+    expect(c40.describe(O40, 1)).toBe('Catch 40 · 40 targets');
+  });
+
+  it('takes 1 to 8 players, with the bull-off and targets options', () => {
     expect(c40.minPlayers).toBe(1);
     expect(c40.maxPlayers).toBeUndefined();
-    expect(c40.options.map(o => o.key)).toEqual(['bullOff']);
-    expect(c40.normalizeOptions({ bullOff: 'nope' })).toEqual({ bullOff: 'off' });
+    expect(c40.options.map(o => o.key)).toEqual(['bullOff', 'targets']);
+    expect(c40.defaults.targets).toBe(5);
+    expect(c40.normalizeOptions({ bullOff: 'nope', targets: 5 })).toEqual({ bullOff: 'off', targets: 5 });
+  });
+
+  it('reads options saved before Targets existed as 40, and a bad value as 5', () => {
+    for (const old of [null, undefined, {}, { bullOff: 'pdc' }]) expect(c40.normalizeOptions(old).targets).toBe(40);
+    expect(c40.normalizeOptions({ bullOff: 'pdc' })).toEqual({ bullOff: 'pdc', targets: 40 });
+    expect(c40.normalizeOptions({ targets: 7 }).targets).toBe(5);
+    expect(c40.normalizeOptions({ targets: '20' }).targets).toBe(5);
+    expect(c40.normalizeOptions({ targets: 20 }).targets).toBe(20);
   });
 });

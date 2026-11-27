@@ -409,6 +409,16 @@ describe('lobby records', () => {
     expect(r[2].options).toMatchObject({ rounds: 7 });
   });
 
+  it('orders the variants of a game by number, not by text: 5 before 10, 7 before 20', () => {
+    save('catch40', { targets: 40 }, 'catch40', [A()], [90], 1);
+    for (const n of [20, 10, 5]) save('catch40', { targets: n }, `catch40:${n}`, [A()], [n], 1);
+    save('shanghai', { rounds: 20 }, 'shanghai:solo:20', [A()], [90], 1);
+    save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [80], 1);
+    expect(stats.lobbyRecords().map(x => x.key)).toEqual(['catch40:5', 'catch40:10', 'catch40:20', 'catch40', 'shanghai:solo:7', 'shanghai:solo:20']);
+    expect(stats.records('catch40').map(t => t.label)).toEqual(['Catch 40 · 5 targets', 'Catch 40 · 10 targets', 'Catch 40 · 20 targets', 'Catch 40 · 40 targets']);
+    expect(stats.game(anna, 'catch40', 'all')!.bests.map(b => b.label)).toEqual(['Catch 40 · 5 targets', 'Catch 40 · 10 targets', 'Catch 40 · 20 targets', 'Catch 40 · 40 targets']);
+  });
+
   it('fills the options the record match did not save with the game defaults', () => {
     save('atc', {}, 'atc:any:skips', [A()], [20], 1);
     expect(stats.lobbyRecords()[0].options).toEqual(GAMES.atc.normalizeOptions({}));
