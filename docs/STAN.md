@@ -1,6 +1,6 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-23. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-27. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
@@ -9,6 +9,9 @@ Stan na 2026-11-23. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Nowy mecz jako kreator i Szybkie gry** (2026-11-27, gałąź `jgoliszewskiitboom/new-match-flow`, [UI.md](UI.md#start-i-koniec-meczu), plan i makieta w `.scratch/new-match-flow/`, wariant C): Setup to kroki Players → Game → Options (stuknięcie w grę przechodzi dalej, kroki klikalne wstecz), Recent jako 3 kafle-przełączniki, bull-off w Players przy kolejności (jeden dla wszystkich gier, `itdarts.bullOff`, poza opcjami gier), Quick start z 3 slotami osobno dla solo i 2+ (stuknięcie startuje, ołówek edytuje przez Game → Options, „Remove” z potwierdzeniem). Serwer: klucz `quickGames` w `settings`, `ClientState.quickGames`, komenda `setQuickGame`; wspólna logika w `games/quick.ts`.
+  - **Sprawdzone:** `npm test` i `npm run typecheck`; testy z mutacjami w `games/quick.test.ts` i `server/hub.test.ts`; własna instancja na porcie 3410 (nie `dev:shot`): pomiar bez przewijania, tekstu < 16 px i celów < 44 px przy 1280×720 (1–8 graczy) i 1513×690 (5–8 graczy), kroki Game i Options (X01 z Sets, Random Checkouts, Cricket solo), edycja, zapis i usunięcie slotu, start z Quick start i z Options z bull-offem, 390 px i 1920×1080.
+  - **Niesprawdzone:** zrzuty `dev:shot` jako dowód, Recent na bazie z meczami (baza testowa była bez zapisanych meczów), gra z góry z kafla rekordu na telefonie, prawdziwy dotyk i przeciąganie kolejności przy niższych wierszach (6–8 graczy).
 - **Lobby z rekordami** (2026-11-25, gałąź `feat/lobby-records`, [UI.md](UI.md#lobby-i-qr), plan, makieta i raport w `.scratch/lobby-records/`): rekordy zajmują większość lobby na kiosku (siatka 4×2, top 8 po meczach z 30 dni z dopełnieniem), kafelek ma pościg (2. i 3. miejsce), ostatni mecz to jedna linia, a stuknięcie w kafelek otwiera okno „Record attempt” (wybór graczy, Start bez Setupu). Telefon bez zmian. Niesprawdzone na prawdziwej tarczy ani na prawdziwym ekranie 1280×720.
 - **Rekordy w trakcie gry** (2026-11-23, gałąź `feat/records-live`, [GRY.md](GRY.md#rekordy-w-trakcie-gry), [UI.md](UI.md#rekordy-w-trakcie-gry), plan, makieta i raport w `.scratch/records-live/`): plakietki „Best” i „PB” (Co-op: „Team”, rekord składu) w prawym górnym rogu hero ATC, Full Board, solo Cricket i solo Shanghai, szarzejące poza zasięgiem (`RecordDef.bound`); w 121 chorągiewka PB/Team na drabince i zielony szczebel z ✓ po pobiciu; wspólny modal rekordów z top 5 biura; PB i Team na Ekranie rekordu; suma punktów w notce Shanghai; „NEW TEAM BEST” w Co-op bez Wyzwalacza. Serwer: `Db.records` z filtrem składu i `lineup`, rozszerzony `RecordInfo`, `newRecord.team`.
   - **Sprawdzone:** `npm test` i `npm run typecheck`; testy z mutacjami (`server/db.test.ts`, `server/hub.test.ts`, `games/bound.test.ts`, `web/src/records.test.ts`, `web/src/components/Ladder.test.ts`); zrzuty `dev:shot` w `.scratch/records-live/shots/` porównane z makietą.
