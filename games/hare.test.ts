@@ -87,7 +87,8 @@ describe('hare and hounds: the hare', () => {
     expect(v.phase).toBe('matchWon');
     expect(v.winners).toEqual([0]);
     expect(v.visit.dartsLeft).toBe(0);
-    expect(v.result).toBe('Hare won');
+    expect(v.result).toBe('Hare made it round the board');
+    expect(v.rows[0].value).toBe('20 / 20');
     expect(v.stats[0]).toMatchObject({ hits: 20, hareWins: 1, houndWins: 0 });
     expect(facts(log).filter(h => h.fact.kind === 'matchWon')).toHaveLength(1);
     // Nothing counts after the win.
@@ -108,7 +109,8 @@ describe('hare and hounds: the hound', () => {
     const caught = view([...nothing(), d('S12'), d('S5'), d('S20')]);
     expect(caught.phase).toBe('matchWon');
     expect(caught.winners).toEqual([1]);
-    expect(caught.result).toBe('Hound won');
+    expect(caught.result).toBe('Hound caught the hare on 20');
+    expect(caught.visit.verdict).toEqual({ text: 'Caught', tone: 'good' });
     expect(caught.stats[1]).toMatchObject({ houndWins: 1, hareWins: 0 });
   });
 
@@ -134,6 +136,23 @@ describe('hare and hounds: the hound', () => {
   it('falls behind when the hare runs on: the gap grows with each hare hit', () => {
     const v = view([...visit('S1', 'S18', 'S4'), d('S12')]);
     expect(v.gap).toBe(5);
+  });
+});
+
+describe('hare and hounds: the screen', () => {
+  it('shows each role, the hare’s hits of 20 and the hound’s hits of his way to the hare', () => {
+    // Hare on 4 (3 hits), hound on 12 (1 hit): the hound has 1 + gap 5 to go, 6 in all.
+    const v = view([...visit('S1', 'S18', 'S4'), d('S12')]);
+    expect(v.rows).toEqual([
+      { value: '3 / 20', meta: 'Hare', out: false },
+      { value: '1 / 6', meta: 'Hound', out: false },
+    ]);
+    expect(v.hero).toEqual({ big: '5', caption: 'Hound', note: 'Gap 5' });
+  });
+
+  it('fills the hound’s row once he catches the hare, with no verdict on a plain visit', () => {
+    expect(view([...nothing(), d('S12'), d('S5'), d('S20')]).rows[1].value).toBe('3 / 3');
+    expect(view(visit('S1', 'M', 'M').slice(0, 3)).visit.verdict).toBeNull();
   });
 });
 
@@ -192,6 +211,8 @@ describe('hare and hounds: Undo, End match and removal', () => {
     expect(hound.removed).toEqual([null, 'match']);
     const hare = view([...nothing(), remove(0)]);
     expect(hare.winners).toEqual([1]);
+    expect(hare.result).toBe('Hound won');
+    expect(hare.visit.verdict).toBeNull();
     expect(view([...nothing(), remove(0), undo]).phase).toBe('throwing');
   });
 });

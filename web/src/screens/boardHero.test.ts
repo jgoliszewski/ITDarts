@@ -4,6 +4,7 @@ import { cricket } from '../../../games/cricket.ts';
 import { parseDart } from '../../../games/darts.ts';
 import { football } from '../../../games/football.ts';
 import { freethrow } from '../../../games/freethrow.ts';
+import { hareAndHounds } from '../../../games/hare.ts';
 import { killer } from '../../../games/killer.ts';
 import { atc, fullBoard } from '../../../games/race.ts';
 import { shanghai } from '../../../games/shanghai.ts';
@@ -137,5 +138,26 @@ describe('Shanghai, Bullseye and Free throw around the board', () => {
     const o = freethrow.defaults;
     const f = match('freethrow', o, freethrow.view([...visit('T20', 'T20', 'S20'), d('S1')], 1, o));
     expect(boardStats(f)).toEqual([['Average', '105.8'], ['Darts', '4'], ['Highest visit', '140']]);
+  });
+});
+
+describe('Hare and Hounds around the board', () => {
+  const o = hareAndHounds.defaults;
+  // The hare runs 1, 18, 4 (3 of 3); the hound hits 12, misses twice.
+  const m = match('hare', o, hareAndHounds.view([...visit('S1', 'S18', 'S4'), ...visit('S12', 'M', 'M')], 2, o));
+
+  it('puts Gap over the big number and no line under it', () => {
+    expect(boardCaption(m)).toBe('Gap');
+    expect(boardNote(m)).toBeNull();
+  });
+
+  it('shows darts and hit rate of the player throwing', () => {
+    expect(boardStats(m)).toEqual([['Darts', '3'], ['Hit rate', '100%']]);
+  });
+
+  it('fills the hare’s bar with his targets of 20, the hound’s with his hits of his way to the hare', () => {
+    expect(boardProgress(m, 0)).toBeCloseTo(3 / 20);
+    // 1 hit, gap 5: 1 of 6.
+    expect(boardProgress(m, 1)).toBeCloseTo(1 / 6);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -9,7 +9,7 @@ describe('minigame dart tile colour', () => {
   const tone = (game: string, good: boolean) => dartTone({ game } as MiniMatch, good);
 
   it('shows hits green and misses red in games counted in hits', () => {
-    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'football']) {
+    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'football', 'hare']) {
       expect(tone(game, true)).toBe('hit');
       expect(tone(game, false)).toBe('miss');
     }
@@ -21,7 +21,7 @@ describe('minigame dart tile colour', () => {
   });
 
   it('dims darts that did nothing in scoring games', () => {
-    for (const game of ['hol', '121', 'randomco', 'gotcha', 'knockout']) {
+    for (const game of ['hol', '121', 'catch40', 'randomco', 'gotcha', 'knockout']) {
       expect(tone(game, true)).toBe('');
       expect(tone(game, false)).toBe('dead');
     }
@@ -68,7 +68,7 @@ describe('visit total', () => {
   });
 
   it('counts only the darts that scored in 121, Random Checkouts and Gotcha', () => {
-    for (const game of ['121', 'randomco', 'gotcha']) expect(visitScored(mini(game, {}))).toBe(61);
+    for (const game of ['121', 'catch40', 'randomco', 'gotcha']) expect(visitScored(mini(game, {}))).toBe(61);
   });
 
   it('takes the game\'s own number elsewhere, and none in games counted in hits', () => {
@@ -76,13 +76,27 @@ describe('visit total', () => {
     expect(visitScored(mini('freethrow', { visitTotal: 70 }))).toBe(70);
     expect(visitScored(mini('hol', { sum: 41 }))).toBe(41);
     expect(visitScored(mini('atc', {}))).toBeNull();
+    expect(visitScored(mini('hare', {}))).toBeNull();
   });
 });
 
 describe('hero with a This turn panel', () => {
   it('is X01 and the minigames that score a visit without a board', () => {
-    for (const game of ['x01', '121', 'randomco', 'gotcha', 'knockout']) expect(turnPanel({ game } as LiveMatch)).toBe(true);
-    for (const game of ['hol', 'atc', 'cricket', 'killer', 'shanghai', 'freethrow', 'football', 'bullseye']) expect(turnPanel({ game } as LiveMatch)).toBe(false);
+    for (const game of ['x01', '121', 'catch40', 'randomco', 'gotcha', 'knockout']) expect(turnPanel({ game } as LiveMatch)).toBe(true);
+    for (const game of ['hol', 'atc', 'cricket', 'killer', 'shanghai', 'freethrow', 'football', 'bullseye', 'hare']) expect(turnPanel({ game } as LiveMatch)).toBe(false);
+  });
+});
+
+describe('Hare and Hounds aim on the phone', () => {
+  const hare = (target: string, phase = 'throwing') => ({ game: 'hare', options: { target }, view: { phase, target: 17 } }) as unknown as LiveMatch;
+
+  it('names the sector, with the ring in Doubles and Trebles', () => {
+    expect([aimHint(hare('any')), aimHint(hare('doubles')), aimHint(hare('trebles'))]).toEqual(['Throw at 17', 'Throw at the double 17', 'Throw at the treble 17']);
+  });
+
+  it('says nothing once the game is over, nor in other games', () => {
+    expect(aimHint(hare('any', 'matchWon'))).toBeNull();
+    expect(aimHint({ ...hare('any'), game: 'atc' } as unknown as LiveMatch)).toBeNull();
   });
 });
 

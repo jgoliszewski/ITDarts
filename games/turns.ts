@@ -355,7 +355,7 @@ export const rotate = (order: number[], k: number) => order.map((_, i) => order[
 
 // ---------- game modules ----------
 
-export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye' | 'freethrow';
+export type GameId = 'x01' | 'atc' | 'fullboard' | '121' | 'cricket' | 'killer' | 'hol' | 'randomco' | 'shanghai' | 'gotcha' | 'knockout' | 'football' | 'bullseye' | 'freethrow' | 'hare' | 'catch40';
 
 /** The setup and /stats tiles come in these groups, in this order (docs/GRY.md, Setup na Pilocie). */
 export type GameGroup = 'classic' | 'practice' | 'versus';

@@ -33,6 +33,10 @@ const PATHS: Record<GameId, ReactNode> = {
   freethrow: <><path d="M3.5 20.5l3-3" /><path d="M6.5 17.5l9-9" /><path d="M13 6l1-3.5 1.5 1.5M18 11l3.5-1-1.5-1.5" /><path d="M15.5 8.5L19 5" /></>,
   // A dart in the bull.
   bullseye: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" />{dot(12, 12, 1.6)}<path d="M13.4 10.6l6-6M17 3.5h2.5V6" /></>,
+  // Two dots chasing round a ring.
+  hare: <><circle cx="12" cy="12" r="8.5" />{dot(12, 3.5, 2.2)}{dot(4.6, 16.3, 2.2)}<path d="M15.5 20l3-1.6-.4-3.4" /></>,
+  // A stopwatch.
+  catch40: <><circle cx="12" cy="13.5" r="8" /><path d="M12 9v4.5l3 2M9.5 2.5h5" /></>,
 };
 
 /** One game's icon in the text colour; `stroke` is thinner when drawn big as a tile's background. */

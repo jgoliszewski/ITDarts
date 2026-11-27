@@ -147,8 +147,19 @@ describe('the figures of each game', () => {
     expect(f[3].sub).toBe('1 of 3 visits');
   });
 
+  it('gives Hare and Hounds the hit rate and the wins by role as totals', () => {
+    const h = profileMetrics('hare', { ...tot({ darts: 40, hits: 10, hareWins: 2, houndWins: 1 }), matches: 4 });
+    expect(h.map(m => [m.label, m.value])).toEqual([['Hit rate', '25%'], ['Wins as hare', '2'], ['Wins as hound', '1'], ['Hits', '10'], ['Darts', '40']]);
+  });
+
+  it('gives Catch 40 points per match, checkout % and darts per checkout', () => {
+    const c = profileMetrics('catch40', { ...tot({ points: 150, attempts: 80, checkouts: 60, checkoutDarts: 174 }), matches: 2 });
+    expect(c.map(m => [m.label, m.value])).toEqual([['Points', '75.0'], ['Checkout %', '75%'], ['Darts per checkout', '2.9']]);
+    expect(c[1].sub).toBe('60 / 80 targets');
+  });
+
   it('knows a headline for every game with minigame stats', () => {
-    for (const g of ['atc', 'fullboard', 'shanghai', 'cricket', '121', 'randomco', 'knockout', 'killer', 'football', 'gotcha', 'bullseye', 'hol', 'freethrow'] as const) {
+    for (const g of ['atc', 'fullboard', 'shanghai', 'cricket', '121', 'randomco', 'knockout', 'killer', 'football', 'gotcha', 'bullseye', 'hol', 'freethrow', 'hare', 'catch40'] as const) {
       expect(METRICS[g]?.some(m => m.main), g).toBe(true);
     }
   });

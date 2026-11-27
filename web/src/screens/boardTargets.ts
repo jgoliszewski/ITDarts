@@ -5,7 +5,7 @@ import type { BoardTargets, Segment, TargetRing } from '../components/targets.ts
 import { BULL, boardOf, ticks } from '../components/targets.ts';
 import type { MiniMatch } from '../match.ts';
 
-export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket' | 'killer';
+export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket' | 'killer' | 'hare';
 export type BoardMatch = Extract<MiniMatch, { game: BoardGame }>;
 
 const OFF: Segment = { state: 'off' };
@@ -62,6 +62,14 @@ export function boardTargets(m: BoardMatch): { board: BoardTargets; label: strin
       });
       const label = isKiller[cur] ? `Rival doubles: ${over.filter(([, s]) => s.state === 'target').map(([n]) => `D${n}`).join(' · ')}` : `Your double: D${numbers[cur]}`;
       return { board: boardOf(OFF, over), label };
+    }
+    case 'hare': {
+      // The sectors the two stand on in their colours, the target of the player throwing over them; no target once it is over.
+      const { hareSector, houndSector, target } = m.view;
+      const over: [number, Segment][] = [[hareSector, { state: 'hare' }], [houndSector, { state: 'hound' }]];
+      const live = m.view.phase === 'throwing';
+      if (live) over.push([target, { state: 'target', ring: ringOf(m.options.target, target) }]);
+      return { board: { ...boardOf(OFF, over), roles: { hare: hareSector, hound: houndSector } }, label: live ? `Target ${m.view.hero.big}` : `Hare on ${hareSector}, hound on ${houndSector}` };
     }
     case 'cricket': {
       // Ticks are the marks of the player throwing; closed by them green (still scores), closed by everyone hatched.

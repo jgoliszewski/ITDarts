@@ -65,6 +65,23 @@ describe('the hero board', () => {
     expect(svgOf(boardOf({ state: 'target', ring: 2 }))).not.toMatch(/class="tb-outline|animation/);
   });
 
+  it('marks the hare and the hound with their tokens, and moves their numbers out of the way', () => {
+    const svg = svgOf({ ...boardOf(OFF, [[1, { state: 'hare' }], [9, { state: 'hound' }]]), roles: { hare: 1, hound: 9 } });
+    expect(svg.match(/class="tok-(hare|hound)"/g)).toEqual(['class="tok-hound"', 'class="tok-hare"']);
+    const size = (n: number) => Number(new RegExp(`font-size="(\\d+)"[^>]*>${n}</text>`).exec(svg)![1]);
+    expect([size(1), size(9), size(20)]).toEqual([32, 32, 36]);
+    // The band takes the role colours.
+    expect(svg).toContain('fill="#16B2C9"');
+    expect(svg).toContain('fill="#A78BFA"');
+    expect(svgOf(boardOf(OFF))).not.toContain('tok-');
+  });
+
+  it('puts both tokens side by side on one sector once the hare is caught', () => {
+    const svg = svgOf({ ...boardOf(OFF, [[19, { state: 'hound' }]]), roles: { hare: 19, hound: 19 } });
+    const at = (role: string) => new RegExp(`class="tok-${role}" transform="translate\\(([-\\d.]+) ([-\\d.]+)\\)`).exec(svg)!.slice(1).join(' ');
+    expect(at('hare')).not.toBe(at('hound'));
+  });
+
   it('labels the board for screen readers and draws all 20 numbers', () => {
     const svg = renderToStaticMarkup(createElement(HeroBoard, { board: boardOf(OFF), darts: [], label: 'Target 7' }));
     expect(svg).toContain('aria-label="Target 7"');

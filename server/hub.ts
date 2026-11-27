@@ -15,6 +15,7 @@ import { drawNumbers } from '../games/killer.ts';
 import type { RcView } from '../games/randomco.ts';
 import { callerLinesFreethrow } from '../games/freethrow.ts';
 import { callerLinesGotcha } from '../games/gotcha.ts';
+import type { Catch40View } from '../games/catch40.ts';
 import { callerLinesRc } from '../games/randomco.ts';
 import type { MiniView } from '../games/turns.ts';
 import type { Removed } from '../games/turns.ts';
@@ -334,12 +335,13 @@ export class Hub {
     if (passed) this.effects.fire([{ fact: { kind: 'nextPlayer' }, before: null }]);
   }
 
-  /** The caller speaks in X01, 121, Random Checkouts, Free throw, Gotcha and Knockout only (docs/EFEKTY.md#caller). */
+  /** The caller speaks in X01, 121, Catch 40, Random Checkouts, Free throw, Gotcha and Knockout only (docs/EFEKTY.md#caller). */
   private caller(l: Live, cs: Change[], turnStart: boolean): string[] {
     if (l.rec.game === 'x01') return callerLines(cs, l.view as X01View, turnStart);
     if (l.rec.game === 'randomco') return callerLinesRc(cs, l.view as RcView, turnStart);
     if (l.rec.game === 'gotcha' || l.rec.game === 'knockout') return callerLinesGotcha(cs);
     if (l.rec.game === 'freethrow') return callerLinesFreethrow(cs);
+    if (l.rec.game === 'catch40') return callerLines121(cs, l.view as Catch40View, turnStart);
     return l.rec.game === '121' ? callerLines121(cs, l.view as View121, turnStart) : [];
   }
 
@@ -546,8 +548,9 @@ export class Hub {
     }, null, 2) + '\n');
   }
 
-  private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[], removed: Removed[] = []) {
-    this.startMatch(game, ...rematchSetup(options, roster, removed));
+  /** `starter`: who threw first in the match (roster index), null when unknown. */
+  private rematch(game: GameId, options: LiveRecord['options'], roster: RosterEntry[], removed: Removed[] = [], starter: number | null = null) {
+    this.startMatch(game, ...(game === 'hare' ? hareRematch(options, roster, starter) : rematchSetup(options, roster, removed)));
   }
 
   private player(c: PlayerCommand): { playerId?: number } {
@@ -582,7 +585,7 @@ export class Hub {
       case 'rematch': {
         const last = this.db.lastMatchSetup();
         if (!last) throw new UserError('No match to repeat');
-        this.rematch(last.game, last.options, last.roster, last.removed);
+        this.rematch(last.game, last.options, last.roster, last.removed, last.starter);
         return {};
       }
       case 'skipIntro':
@@ -640,8 +643,9 @@ export class Hub {
         return {};
       }
       case 'endMatch':
-        // Random Checkouts has no end of its own, and Football and Bullseye count points: Save ends them as won, with the win screen first (Free throw: with no winner).
-        if (cmd.save && (this.live?.rec.game === 'randomco' || this.live?.rec.game === 'football' || this.live?.rec.game === 'bullseye' || this.live?.rec.game === 'freethrow') && v?.phase === 'throwing') {
+        // Random Checkouts has no end of its own, and Football, Bullseye and Catch 40 count points: Save ends them as won, with the win screen first
+        // (Free throw and Hare and Hounds: with no winner).
+        if (cmd.save && this.live && SAVE_ENDS.includes(this.live.rec.game) && v?.phase === 'throwing') {
           this.apply({ t: 'end' });
           return {};
         }
@@ -649,8 +653,9 @@ export class Hub {
         return {};
       case 'closeMatch': {
         const removed = this.live?.view.removed ?? [];
+        const starter = this.live?.view.order?.[0] ?? null;
         const rec = this.finish(true, cmd.then === 'summary');
-        if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster, removed);
+        if (cmd.then === 'rematch') this.rematch(rec.game, rec.options, rec.roster, removed, starter);
         return {};
       }
       case 'closeSummary':
@@ -722,6 +727,18 @@ function shuffle<T>(a: T[]) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
+}
+
+/** Games where End match with Save ends the game itself, with the end screen first (docs/GRY.md). */
+const SAVE_ENDS: GameId[] = ['randomco', 'football', 'bullseye', 'freethrow', 'catch40', 'hare'];
+
+/**
+ * Rematch of Hare and Hounds (docs/GRY.md#hare-and-hounds): the roles swap, so last match's hound throws first as the hare.
+ * No bull-off, it would draw the roles again. `starter`: last match's hare, the first in the setup order when unknown.
+ */
+export function hareRematch(options: LiveRecord['options'], roster: RosterEntry[], starter: number | null): [LiveRecord['options'], RosterEntry[]] {
+  const hare = starter ?? 0;
+  return [{ ...(options as object), bullOff: 'off' } as LiveRecord['options'], [roster[1 - hare], roster[hare]]];
 }
 
 /**

@@ -5,7 +5,7 @@ import { TARGET, hits, targetLabel } from './race.ts';
 import type { TargetMode } from './race.ts';
 import type { BullOff } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, choiceLabel, compactTurns, dartSlot, frame, isGone, isValidTurnEvent, nextUp, normalizeByDefs, replayTurns, turnHappenings, walk } from './turns.ts';
 
 export interface HareOptions {
   target: TargetMode;
@@ -94,16 +94,23 @@ function view(events: TurnEvent[], players: number, o: HareOptions): HareView {
   const isHare = f.current === s.hareP;
   const target = isHare ? sectorAfter(s.hare) : sectorAfter(s.hound - o.headStart);
   const role = (p: number) => (p === s.hareP ? 'Hare' : 'Hound');
+  const caught = s.winner === s.houndP && !isGone(t, s.hareP);
+  const result = s.winner === null ? (s.over ? 'No winner' : '')
+    : caught ? `Hound caught the hare on ${sectorAt(s.hare)}`
+    : s.winner === s.hareP && s.hare >= LAP ? 'Hare made it round the board' : `${role(s.winner)} won`;
   return {
     ...f,
+    // The visit that catches the hare headlines its turn card.
+    visit: caught && f.visit.player === s.houndP ? { ...f.visit, verdict: { text: 'Caught', tone: 'good' } } : f.visit,
     winners: s.winner === null ? [] : [s.winner],
-    hero: { big: targetLabel(target, o.target), caption: `${role(f.current)} target`, note: `Gap ${gap}` },
+    hero: { big: targetLabel(target, o.target), caption: role(f.current), note: `Gap ${gap}` },
+    // Hits of the hare of 20; the hound's of his way to the hare (hits + gap), so his bar fills as he closes in.
     rows: [0, 1].map(p => ({
-      value: p === s.hareP ? `${s.hare} / ${LAP}` : `Gap ${gap}`,
-      meta: `${role(p)} · ${plural(s.darts[p], 'dart')}`,
+      value: p === s.hareP ? `${s.hare} / ${LAP}` : `${s.hound} / ${s.hare + o.headStart}`,
+      meta: role(p),
       out: false,
     })),
-    result: s.winner !== null ? `${role(s.winner)} won` : s.over ? 'No winner' : '',
+    result,
     scores: [null, null],
     stats: [0, 1].map(p => ({
       darts: s.darts[p], hits: s.hits[p],
@@ -121,7 +128,8 @@ function view(events: TurnEvent[], players: number, o: HareOptions): HareView {
 }
 
 const OPTIONS: OptionDef<HareOptions>[] = [
-  TARGET as OptionDef<HareOptions>,
+  // The bull is not on the way, so ATC's note on the bullseye does not apply.
+  { ...(TARGET as OptionDef<HareOptions>), info: 'Which ring counts: any segment of the target, only its double or only its treble.' },
   {
     key: 'headStart',
     label: 'Head start',
@@ -136,7 +144,7 @@ const DEFAULTS: HareOptions = { target: 'any', headStart: 3, bullOff: 'off' };
 const describe = (o: HareOptions) => ['Hare and Hounds', ...(o.target === 'any' ? [] : [choiceLabel(OPTIONS, o, 'target')]), `Head start ${o.headStart}`].join(' · ');
 
 export const hareAndHounds: GameModule<HareOptions, HareView> = {
-  id: 'hare' as never, // TODO(T2): add 'hare' to GameId when registering
+  id: 'hare',
   name: 'Hare and Hounds',
   blurb: 'A chase round the board for two.',
   group: 'versus',
@@ -146,7 +154,7 @@ export const hareAndHounds: GameModule<HareOptions, HareView> = {
   options: OPTIONS,
   howTo: {
     goal: 'The hare runs once round the board, 20 targets from the 20 and back. The hound starts a few sectors behind and has to catch him.',
-    turn: 'Three darts per visit. The player who throws first is the hare. After a hit your next dart already goes at the next sector on the way.',
+    turn: 'Three darts per visit. The player who throws first is the hare; a rematch swaps the roles. After a hit your next dart already goes at the next sector on the way.',
     counts: 'Your target is the next sector clockwise from where you stand: 1, 18, 4, 13 and on for the hare. With Doubles or Trebles only that ring counts. A double or treble moves you one sector, no skips.',
     win: 'The hare wins by clearing 20 targets. The hound wins by hitting the sector the hare stands on, and his remaining darts are gone. Tip: set Head start to 4 for Doubles and Trebles.',
   },

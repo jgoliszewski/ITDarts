@@ -55,8 +55,26 @@ describe('catch 40: points', () => {
     const v = view([d(TWO[0]), d(TWO[1])]);
     expect(v.target).toBe(61);
     expect(v.remaining).toBe(0);
-    expect(v.visit.verdict?.text).toBe('Checkout');
     expect(v.points).toEqual([3]);
+  });
+
+  it('headlines a checkout with the points it gave', () => {
+    expect(view([d(TWO[0]), d(TWO[1])]).visit.verdict).toEqual({ text: '+3', tone: 'good' });
+    expect(view(visit(...THREE).slice(0, 3)).visit.verdict).toEqual({ text: '+2', tone: 'good' });
+    expect(view([...nothing(), d(TWO[0]), d(TWO[1])]).visit.verdict).toEqual({ text: '+1', tone: 'good' });
+  });
+
+  it('names the visit of the attempt and the target in the list', () => {
+    expect(view([]).hero).toEqual({ big: '61', caption: 'Target 61', note: 'Visit 1 of 2' });
+    expect(view(nothing()).hero.note).toBe('Visit 2 of 2');
+    // The finished visit is held with its target, in the hero and in the player's row.
+    const held = view([d(TWO[0]), d(TWO[1])], 2);
+    expect(held.hero.note).toBe('Visit 1 of 2');
+    expect(held.rows.map(r => r.meta)).toEqual(['Target 61', 'Target 61']);
+    expect(view(visit(...TWO), 2).rows.map(r => r.meta)).toEqual(['Target 62', 'Target 61']);
+    const done = view(outs(61, 100));
+    expect(done.hero.note).toBe('All 40 targets done');
+    expect(done.rows[0].meta).toBe('Finished');
   });
 });
 
@@ -161,7 +179,7 @@ describe('catch 40: the end', () => {
     expect(v.phase).toBe('matchWon');
     expect(v.points[0]).toBe(v.points[1]);
     expect(v.winners).toEqual([0]);
-    expect(v.result).toMatch(/^Won with/);
+    expect(v.result).toBe(`${v.points[0]} points`);
   });
 
   it('gives a full tie to everyone level on points and darts', () => {
