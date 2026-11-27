@@ -21,7 +21,6 @@ export const Icon = {
   back: (s?: number) => svg(<path d="m15 18-6-6 6-6" />, s),
   undo: (s?: number) => svg(<><path d="M9 14 4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-3" /></>, s),
   play: (s?: number) => <svg width={s ?? 20} height={s ?? 20} viewBox="0 0 24 24" fill="#F58224" aria-hidden="true"><path d="M6 4l14 8-14 8z" /></svg>,
-  grip: (s?: number) => <svg width={s ?? 18} height={s ?? 18} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>,
   plus: (s?: number) => svg(<path d="M12 5v14M5 12h14" />, s),
   down: (s?: number) => svg(<path d="m6 9 6 6 6-6" />, s),
   spinner: () => (

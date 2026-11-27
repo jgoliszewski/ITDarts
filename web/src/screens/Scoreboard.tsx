@@ -283,6 +283,17 @@ export function QrOverlay({ s, onClose }: { s: ClientState; onClose: () => void 
   );
 }
 
+/** Hero and list of a minigame; Cricket's grid tells the hero whether its names overflow (state here, set before paint). */
+function MiniMain({ m, flash, onFix, isPilot, onRecords, onPlayer, actions }: { m: Exclude<LiveMatch, X01Match>; flash: number | null; onFix: (i: number) => void; isPilot: boolean; onRecords: () => void; onPlayer?: (i: number) => void; actions: ReactNode }) {
+  const [overflow, setOverflow] = useState(false);
+  return (
+    <>
+      <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} onRecords={onRecords} overflow={overflow} />
+      <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} overflow={overflow} onOverflow={setOverflow} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}{actions}</aside>
+    </>
+  );
+}
+
 export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay }: {
   s: ClientState;
   /** Opens the removal dialog for a player; the pilot only. */
@@ -333,10 +344,7 @@ export function Scoreboard({ s, onMenu, onBoard, onFix, onEnd, onPlayer, overlay
             </aside>
           </>
         ) : (
-          <>
-            <MiniHero m={m} flash={flash} onDart={onFix} canEdit={isPilot} onRecords={() => setRecords(m.key)} />
-            <aside className="side">{m.game === 'cricket' ? <CricketGrid m={m} onPick={onPlayer} /> : <><MiniList m={m} onPick={onPlayer} /><MiniSide m={m} /></>}{actions}</aside>
-          </>
+          <MiniMain m={m} flash={flash} onFix={onFix} isPilot={isPilot} onRecords={() => setRecords(m.key)} onPlayer={onPlayer} actions={actions} />
         )}
       </main>
       {m.intro && !isX01(m) ? <RecordIntro m={m} isPilot={isPilot} />

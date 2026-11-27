@@ -1,6 +1,8 @@
 // What the pilot can do right now, shared by the laptop bar and the phone pilot.
 import { value } from '../../games/darts.ts';
 import { dartPoints } from '../../games/bullseye.ts';
+import { MAX_PLAYERS } from '../../games/index.ts';
+import type { GameModule } from '../../games/index.ts';
 import { signed } from '../../games/turns.ts';
 import { holValue } from '../../games/hol.ts';
 import type { DartRec } from '../../games/x01/engine.ts';
@@ -122,6 +124,7 @@ export function visitScored(m: LiveMatch): number | null {
   switch (m.game) {
     case 'hol': return m.view.sum ?? 0;
     case 'shanghai': return m.view.visitPoints;
+    case 'bobs27': return m.view.delta;
     case 'knockout': return m.view.visitScore;
     case 'freethrow': return m.view.visitTotal;
     case '121': case 'catch40': case 'randomco': case 'gotcha':
@@ -138,6 +141,7 @@ export function turnHead(m: LiveMatch): { text: string; tone: 'sum' | 'count' | 
   if (isX01(m)) return m.view.visit.bust ? { text: 'BUST', tone: 'bad' } : { text: String(m.view.visit.total), tone: 'sum' };
   if (m.view.visit.verdict) return { text: m.view.visit.verdict.text.toUpperCase(), tone: m.view.visit.verdict.tone };
   if (m.game === 'bullseye') return { text: signed(m.view.visitPoints, true), tone: 'sum' };
+  if (m.game === 'bobs27') return { text: signed(m.view.delta, true), tone: 'sum' };
   const scored = visitScored(m);
   if (scored !== null) return { text: String(scored), tone: 'sum' };
   const [n, unit] = m.game === 'cricket' ? [m.view.visitMarks, 'mark'] : [m.view.visit.good.filter(Boolean).length, 'hit'];
@@ -155,8 +159,39 @@ export function aimHint(m: LiveMatch): string | null {
   return `Throw at ${ring}${m.view.target}`;
 }
 
-/** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
-export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());
+/** The pair a name asks for before collisions: a digit keeps the number (Guest 2 → G2), two words give their first letters, one word its first two. */
+function baseInitials(name: string): string {
+  // By code points, punctuation skipped: "O'Neil" gives ON, not "O'".
+  const t = name.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+  const first = (w: string) => Array.from(w)[0] ?? '';
+  if (/\d/.test(t)) return (first(t) + t.replace(/\D/g, '')).toUpperCase();
+  const words = t.split(/\s+/).filter(Boolean);
+  const pair = (words.length > 1 ? first(words[0]) + first(words[1]) : Array.from(t).slice(0, 2).join('')).toUpperCase();
+  // Only emoji or punctuation: the first code point of the name, so the disc is never empty.
+  return pair || first(name.trim()) || '?';
+}
+
+/**
+ * Round-avatar initials, unique within one list (the match roster, or all Players tiles; docs/UI.md, Awatary graczy).
+ * On a collision the later name takes its first letter and the next letter that gives a free pair (Anna AN, Andrzej AD);
+ * with none free it keeps the asked pair.
+ */
+export function initialsOf(names: string[]): string[] {
+  const used = new Set<string>();
+  return names.map(name => {
+    const base = baseInitials(name);
+    let pick = base;
+    if (used.has(base)) {
+      const letters = Array.from(name.trim().replace(/[^\p{L}\p{N}]/gu, '').toUpperCase());
+      pick = letters.slice(1).map(c => letters[0] + c).find(p => !used.has(p)) ?? base;
+    }
+    used.add(pick);
+    return pick;
+  });
+}
+
+/** Cricket column headers: 5+ players always the place number and an avatar; up to 4 the names, or avatars for all once any name overflows. */
+export const cricketHeaders = (players: number, overflow: boolean): 'names' | 'avatars' | 'numbers' => (players > 4 ? 'numbers' : overflow ? 'avatars' : 'names');
 
 /**
  * X01 with double in: darts before the opening double don't count, so their tiles are dimmed like a dead dart in 121.
@@ -185,7 +220,7 @@ export function removeIntro(canLeg: boolean, canMatch: boolean, blocked: string 
 }
 
 /** The lobby's rematch button: up to three names, then only how many (B#13). */
-export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : `Rematch · ${names.length} players`);
+export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : 'Rematch');
 
 /** Setup's start button says what starts (B#4). */
 export const startLabel = (game: string, players: number): string => `Start · ${game} · ${players} ${players === 1 ? 'player' : 'players'}`;
@@ -195,3 +230,24 @@ export const startLabel = (game: string, players: number): string => `Start · $
  * (setup closed, control lost, which sends the screen to main) drops them, so a later New match opens the last game.
  */
 export const presetFor = <T>(preset: T | null, screen: string): T | null => (screen === 'setup' ? preset : null);
+
+/** On Next in New match: why the game is not for this lineup (“Solo only”, “2 players”, “2+ players”), or null when it fits. */
+const whyNot = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>) =>
+  g.maxPlayers === 1 ? 'Solo only' : g.maxPlayers === g.minPlayers ? `${g.minPlayers} players` : `${g.minPlayers}+ players`;
+export const fits = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
+/** The reason inside the disabled Next button of the Players step. */
+export const lineupBlock = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => (n === 0 ? 'Pick players' : fits(g, n) ? null : whyNot(g));
+
+/** The roster as sent to startMatch: Random (bull-off 'off') with 2+ players draws the throwing order here; Closest and PDC keep it, the server draws the bull-off order. */
+export const throwOrder = <T,>(roster: T[], bullOff: 'off' | 'closest' | 'pdc', rnd: () => number = Math.random): T[] =>
+  bullOff === 'off' && roster.length >= 2 ? shuffled(roster, rnd) : roster;
+
+/** Fisher–Yates copy. */
+export function shuffled<T>(a: T[], rnd: () => number = Math.random): T[] {
+  const r = [...a];
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}

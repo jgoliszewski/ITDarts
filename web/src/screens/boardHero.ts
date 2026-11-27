@@ -40,6 +40,10 @@ export function boardStats(m: BoardMatch): [string, string][] {
       const { darts, hits, shanghais } = m.view.stats[p] as { darts: number; hits: number; shanghais: number };
       return [['Darts', String(darts)], ['Hit rate', pct(hits, darts)], ['Shanghais', String(shanghais)]];
     }
+    case 'bobs27': {
+      const { darts, hits } = m.view.stats[p] as { darts: number; hits: number };
+      return [['Darts', String(darts)], ['Hit rate', pct(hits, darts)]];
+    }
     case 'cricket': {
       const { darts, marks } = m.view.stats[p] as { darts: number; marks: number };
       // Solo: the darts are the big number.

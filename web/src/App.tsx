@@ -229,6 +229,8 @@ function Main({ s }: { s: ClientState }) {
             ? "Save ends the game: the most checkouts wins, and the darts go into everyone's stats. Discard removes the match completely."
             : m?.game === 'catch40' && m.view.phase === 'throwing'
             ? "Save ends the game: the most points wins, and the darts go into everyone's stats, but not into the records. Discard removes the match completely."
+            : m?.game === 'bobs27' && m.view.phase === 'throwing'
+            ? "Save ends the game: the best score of those still in wins, and the darts go into everyone's stats, but not into the records. Discard removes the match completely."
             : "The match isn't finished. Save keeps the darts in everyone's stats without a win or loss. Discard removes the match completely."}</p>
         </Dialog>
       )}</Presence>

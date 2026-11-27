@@ -5,7 +5,7 @@ import type { BoardTargets, Segment, TargetRing } from '../components/targets.ts
 import { BULL, boardOf, ticks } from '../components/targets.ts';
 import type { MiniMatch } from '../match.ts';
 
-export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket' | 'killer' | 'hare';
+export type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'bobs27' | 'football' | 'bullseye' | 'freethrow' | 'cricket' | 'killer' | 'hare';
 export type BoardMatch = Extract<MiniMatch, { game: BoardGame }>;
 
 const OFF: Segment = { state: 'off' };
@@ -36,6 +36,11 @@ export function boardTargets(m: BoardMatch): { board: BoardTargets; label: strin
       const n = m.view.sector;
       const hit = [1, 2, 3].map(r => m.view.visit.darts.some(d => d.dart.n === n && d.dart.m === r));
       return { board: boardOf(OFF, [[n, { state: 'target', ring: 'any', ticks: hit }]]), label: `Round sector ${n}` };
+    }
+    case 'bobs27': {
+      // Only the double of the round is lit, orange; in the bull round the bullseye.
+      const n = m.view.sector;
+      return { board: boardOf(OFF, [[n, { state: 'target', ring: 2 }]]), label: n === BULL ? 'Aim for the bullseye' : `Aim for D${n}` };
     }
     case 'football': {
       // With the ball: the big singles of four sectors, or every double all round. Without: the bull, or only the bullseye.

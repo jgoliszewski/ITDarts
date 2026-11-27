@@ -1,4 +1,4 @@
-// Quick games (GLOSSARY: Szybka gra): three saved games per set, started from the Players step of New match with one tap.
+// Quick games (GLOSSARY: Szybka gra): three saved games per set, once started from New match with one tap (no UI since 2026-11-27).
 // The server keeps them for every device; the setup and the hub share these rules.
 import { GAMES, MAX_PLAYERS, isGameId } from './index.ts';
 import type { GameId } from './turns.ts';

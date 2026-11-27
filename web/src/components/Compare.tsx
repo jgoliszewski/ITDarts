@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import type { X01Stats } from '../../../games/x01/stats.ts';
 import { plural } from '../../../games/turns.ts';
+import { initialsOf } from '../match.ts';
+import { Avatar } from './Avatar.tsx';
 import type { GameStatsResponse } from '../../../server/protocol.ts';
 import { BAND_BETTER, METRICS, X01_BANDS, X01_METRICS, fmtPct, sharedBestLeg, visitShare } from '../stats.ts';
 
@@ -33,6 +35,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
       ['Checkout %', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`],
       ['Darts per checkout', t.checkouts ? (t.checkoutDarts / t.checkouts).toFixed(1) : '–'],
     ];
+    case 'bobs27': return [['Score', String(t.points ?? 0)], ['Double hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`]];
     case 'shanghai': return [['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`], ['Shanghais', String(t.shanghais ?? 0)]];
     case 'cricket': return [['MPR', t.darts ? ((t.marks / t.darts) * 3).toFixed(2) : '–', 'marks per round'], ['Darts', String(t.darts ?? 0)]];
     case '121': return [['Attempts won', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`]];
@@ -147,6 +150,7 @@ export function fill(r: Row, i: number): number | null {
  */
 export function CompareTable({ names, rows, left = [], hideNames = false }: { names: string[]; rows: Row[]; left?: boolean[]; hideNames?: boolean }) {
   const two = names.length === 2;
+  const ini = initialsOf(names);
   const value = (r: Row, best: Set<number>, i: number) => (
     <span className={`cmp-val ${best.has(i) ? 'best' : ''}`} style={best.has(i) ? { background: playerColor(i) } : undefined}>{r.values[i]}</span>
   );
@@ -156,9 +160,16 @@ export function CompareTable({ names, rows, left = [], hideNames = false }: { na
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
-      {!hideNames && <div className="cmp-names">{names.map((n, i) => left[i]
-        ? <span key={i} className="left">{n}<small>Left</small></span>
-        : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>}
+      {!hideNames && (names.length < 3
+        ? <div className="cmp-names">{names.map((n, i) => left[i]
+          ? <span key={i} className="left">{n}<small>Left</small></span>
+          : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
+        // From 3 players a column is narrow: the avatar over the name, the name in one line with an ellipsis.
+        : <div className="cmp-names avatars">{names.map((n, i) => (
+          <span key={i} className={left[i] ? 'left' : ''} style={left[i] ? undefined : { color: playerColor(i) }} title={n}>
+            <Avatar text={ini[i]} tone={playerColor(i)} name={n} left={left[i]} size="var(--cmp-av)" decorative />
+            <span className="nm">{n}</span>{left[i] && <small>Left</small>}
+          </span>))}</div>)}
       {rows.map(r => {
         const best = bestOf(r, left);
         // One player has nothing to measure against: no bars at all.

@@ -1,6 +1,6 @@
 // Scoreboard parts for the minigames: hero, player list, game widgets, record screen and end screen.
 import type { ReactNode } from 'react';
-import { useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
 import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
@@ -10,13 +10,14 @@ import { FIRST_TARGET, TARGETS } from '../../../games/catch40.ts';
 import type { BoardMatch } from './boardTargets.ts';
 import { boardTargets } from './boardTargets.ts';
 import { boardCaption, boardNote, boardProgress, boardStats } from './boardHero.ts';
-import { gameStats } from '../components/Compare.tsx';
+import { Avatar } from '../components/Avatar.tsx';
+import { gameStats, playerColor } from '../components/Compare.tsx';
 import { DartFace } from '../components/DartFace.tsx';
 import { Icon, act } from '../components/ui.tsx';
 import { HeroBoard, RoleToken } from '../components/HeroBoard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
-import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
+import { cricketHeaders, dartTone, initialsOf, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
 import type { IntroPill } from '../records.ts';
 import { introPills, ladderMarks, modalRows, ownRecord, recordPills, splitValue } from '../records.ts';
 import { shortDate } from '../util.ts';
@@ -128,7 +129,7 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
 
 /** The games with targets on the board put it next to the hero (bug report 2026-10-27); Cricket and Killer since 2026-11-26. */
 export const hasBoard = (m: MiniMatch): m is BoardMatch =>
-  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
+  m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'bobs27' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
   || m.game === 'cricket' || m.game === 'killer' || m.game === 'hare';
 
 /** Hare and Hounds: the role of player `i`. */
@@ -200,11 +201,13 @@ function HeroDarts({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number 
  * The games with a board (docs/UI.md, Ekran wyników): the player in the left column (name, big number, stats of this match),
  * the board in its own card with the darts under it and the record pills in its top right corner. The list is the right column.
  */
-function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
+function BoardHero({ m, flash, onDart, canEdit, onRecords, overflow }: { m: BoardMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void; overflow: boolean }) {
   const v = m.view;
   const caption = boardCaption(m), note = boardNote(m), stats = boardStats(m);
-  // Cricket from 5 players: the columns show a place number, the names stand here (A#3).
-  const legend = m.game === 'cricket' && m.roster.length > 4;
+  // Cricket columns that show avatars (or numbers from 5 players) leave the names to this legend (docs/UI.md, Awatary graczy).
+  const headers = cricketHeaders(m.roster.length, overflow);
+  const legend = m.game === 'cricket' && headers !== 'names';
+  const ini = legend ? initialsOf(m.roster.map(r => r.name)) : [];
   return (
     <>
       <section className="hero board-hero">
@@ -220,13 +223,18 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
             : m.game === 'hare' ? <div className="num">{m.view.gap}</div>
-            : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
+            // Bob's 27 scores run to four digits.
+            : <div className={`num ${v.hero.big.length > (m.game === 'bobs27' ? 3 : 4) ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
         {note && <div className="hero-note">{note}</div>}
         {legend && (
-          <div className="legend">
+          <div className="legend" style={{ gridTemplateColumns: `${headers === 'numbers' ? 'auto ' : ''}auto minmax(0, 1fr)` }}>
             {playOrder(m).map((i, k) => (
-              <div key={i} className={i === v.current ? 'on' : ''}><span className="n num">{k + 1}</span><span className="who">{m.roster[i].name}</span></div>
+              <div key={i} className={i === v.current ? 'on' : ''}>
+                {headers === 'numbers' && <span className="n num">{k + 1}</span>}
+                <Avatar text={ini[i]} tone={playerColor(i)} name={m.roster[i].name} left={m.game === 'cricket' && !!m.view.removed[i]} size="max(28px, calc(36 * var(--u)))" decorative />
+                <span className="who">{m.roster[i].name}</span>
+              </div>
             ))}
           </div>
         )}
@@ -245,8 +253,9 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
   );
 }
 
-export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
-  if (hasBoard(m)) return <BoardHero m={m} flash={flash} onDart={onDart} canEdit={canEdit} onRecords={onRecords} />;
+/** `overflow`: a Cricket name overflows its column header, measured by CricketGrid (the hero then shows the legend). */
+export function MiniHero({ m, flash, onDart, canEdit, onRecords, overflow = false }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void; overflow?: boolean }) {
+  if (hasBoard(m)) return <BoardHero m={m} flash={flash} onDart={onDart} canEdit={canEdit} onRecords={onRecords} overflow={overflow} />;
   const v = m.view;
   const split = turnPanel(m);
   return (
@@ -374,15 +383,34 @@ const MARK = [null, 1, 2, 3].map(n => n && (
   </svg>
 ));
 
-export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void }) {
+/** `overflow` comes from the parent, which also gives it to the hero; the layout effect sets it, so both change before paint. */
+export function CricketGrid({ m, onPick, overflow = false, onOverflow }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void; overflow?: boolean; onOverflow?: (on: boolean) => void }) {
   const v = m.view;
-  const many = m.roster.length > 4;
+  const grid = useRef<HTMLDivElement>(null);
+  const headers = cricketHeaders(m.roster.length, overflow);
+  const ini = initialsOf(m.roster.map(r => r.name));
+  const names = m.roster.map(r => r.name).join('\n');
+  // Measure the names before paint and again when the grid resizes. The names stay in the DOM (hidden once avatars show),
+  // so the measure does not depend on what is shown and cannot flip back and forth.
+  useLayoutEffect(() => {
+    const el = grid.current;
+    if (!el) return;
+    let alive = true;
+    const measure = () => { if (alive) onOverflow?.([...el.querySelectorAll<HTMLElement>('.ch .n')].some(n => n.scrollWidth > n.clientWidth)); };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    void document.fonts?.ready.then(measure);
+    return () => { alive = false; ro.disconnect(); };
+  }, [names, onOverflow]);
   return (
-    <div className={`cricket ${many ? 'many' : ''} n${m.roster.length}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
+    <div ref={grid} className={`cricket h-${headers} n${m.roster.length}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
       {playOrder(m).map((i, k) => (
         <div key={i} className={`ch ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`} {...pickProps(onPick, i, m.roster[i].name)}>
-          {many ? <><span className="no num">{k + 1}</span><span className="ini">{initials(m.roster[i].name)}</span></> : <span className="n">{m.roster[i].name}</span>}
+          {headers === 'numbers' && <span className="no num">{k + 1}</span>}
+          {headers !== 'names' && <Avatar text={ini[i]} tone={playerColor(i)} name={m.roster[i].name} left={!!v.removed[i]} size={headers === 'numbers' ? 'min(calc(44 * var(--u)), 80cqi)' : 'min(calc(64 * var(--u)), 80cqi)'} />}
+          {headers !== 'numbers' && <span className="n">{m.roster[i].name}</span>}
           {!v.solo && <span className="num">{v.points[i]}</span>}
           {v.removed[i] && <span className="left">Left</span>}
         </div>

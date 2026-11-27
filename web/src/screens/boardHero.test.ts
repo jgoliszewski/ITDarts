@@ -7,6 +7,7 @@ import { freethrow } from '../../../games/freethrow.ts';
 import { hareAndHounds } from '../../../games/hare.ts';
 import { killer } from '../../../games/killer.ts';
 import { atc, fullBoard } from '../../../games/race.ts';
+import { bobs27 } from '../../../games/bobs27.ts';
 import { shanghai } from '../../../games/shanghai.ts';
 import type { TurnEvent } from '../../../games/turns.ts';
 import { boardCaption, boardNote, boardProgress, boardStats } from './boardHero.ts';
@@ -124,6 +125,15 @@ describe('Shanghai, Bullseye and Free throw around the board', () => {
     const s = match('shanghai', o, shanghai.view([d('T1'), d('S1'), d('S5')], 1, o));
     expect(boardStats(s)).toEqual([['Darts', '3'], ['Hit rate', '66.7%'], ['Shanghais', '0']]);
     expect(boardNote(s)).toBe(s.view.hero.note);
+    expect(boardProgress(s, 0)).toBeNull();
+  });
+
+  it("Bob's 27: darts and hit rate, the round and the visit in the caption and the line", () => {
+    const o = bobs27.defaults;
+    const s = match('bobs27', o, bobs27.view([d('D1'), d('S1')], 1, o));
+    expect(boardStats(s)).toEqual([['Darts', '2'], ['Hit rate', '50%']]);
+    expect(boardCaption(s)).toBe('Round 1 / 21 · D1');
+    expect(boardNote(s)).toBe('+2 this visit');
     expect(boardProgress(s, 0)).toBeNull();
   });
 

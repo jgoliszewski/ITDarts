@@ -1,22 +1,22 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import type { GameId, GameModule } from '../../../games/index.ts';
 import { GAMES, GAME_GROUPS, MAX_PLAYERS } from '../../../games/index.ts';
-import type { QuickSet, QuickSlot } from '../../../games/quick.ts';
-import { fitsSet, quickSet, setPlayers, slotLabel, withBullOff } from '../../../games/quick.ts';
+import { hasBullOff, slotLabel, withBullOff } from '../../../games/quick.ts';
 import type { RcOptions } from '../../../games/randomco.ts';
 import { RANGE_PRESETS, highestNumber, lowestNumber } from '../../../games/randomco.ts';
 import type { OptionDef } from '../../../games/turns.ts';
-import { BULL_OFF, plural } from '../../../games/turns.ts';
+import { plural } from '../../../games/turns.ts';
 import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { BullOff, X01Options } from '../../../games/x01/rules.ts';
-import type { ClientState, PlayerInfo, RosterEntry } from '../../../server/protocol.ts';
+import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
+import { Avatar } from '../components/Avatar.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';
-import { HowToButton, HowToScreen, Info } from '../components/HowTo.tsx';
-import { startLabel } from '../match.ts';
-import { Dialog, Icon, Presence, act, toast } from '../components/ui.tsx';
+import { HowToButton, HowToScreen } from '../components/HowTo.tsx';
+import { fits, initialsOf, lineupBlock, startLabel, throwOrder } from '../match.ts';
+import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
-const GAP = 8; // between roster rows
 const LAST_GAME_KEY = 'itdarts.lastGame';
 // One bull-off for every game, picked on the Players step (docs/UI.md, Start i koniec meczu).
 const BULL_OFF_KEY = 'itdarts.bullOff';
@@ -42,15 +42,17 @@ function loadBullOff(): BullOff {
   return b === 'closest' || b === 'pdc' ? b : 'off';
 }
 
-const fits = (g: GameModule, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
-/** On a greyed-out tile: why the game is not for this lineup. */
-const whyNot = (g: GameModule) => (g.maxPlayers === 1 ? 'Solo only' : g.maxPlayers === g.minPlayers ? `${g.minPlayers} players` : `${g.minPlayers}+ players`);
 const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 player` : g.maxPlayers === g.minPlayers ? `${g.name} is for ${g.minPlayers} players` : `${g.name} needs ${g.minPlayers} or more players`);
 const namesShort = (r: RosterEntry[]) => (r.length <= 3 ? r.map(p => p.name).join(', ') : `${r[0].name}, ${r[1].name} +${r.length - 2}`);
 const andList = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : l[0]);
 
-const pencil = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>;
-const play = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z" /></svg>;
+const ico = (c: ReactNode) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{c}</svg>;
+/** Who throws first: the BullOff value ('off' is Random), its name, one sentence and an icon. */
+const THROW_FIRST: [BullOff, string, string, ReactNode][] = [
+  ['off', 'Random', 'Order drawn when the match starts.', ico(<><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1" fill="currentColor" /><circle cx="15" cy="15" r="1" fill="currentColor" /><circle cx="15" cy="9" r="1" fill="currentColor" /><circle cx="9" cy="15" r="1" fill="currentColor" /></>)],
+  ['closest', 'Closest', 'Bull-off: closest to the bull throws first.', ico(<><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>)],
+  ['pdc', 'PDC', 'Bull-off by PDC rules, a bull re-throws.', ico(<><circle cx="12" cy="12" r="8" /><path d="M12 7v10M7 12h10" /></>)],
+];
 
 function Seg<T extends string | number | boolean>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -70,77 +72,8 @@ function Stepper({ value, min, max, onChange, label }: { value: number; min: num
   );
 }
 
-function RosterList({ roster, setRoster }: { roster: RosterEntry[]; setRoster: (r: RosterEntry[]) => void }) {
-  const [drag, setDrag] = useState<{ from: number; dy: number } | null>(null);
-  const start = useRef(0);
-  // Row height + gap, measured on grab: rows are lower on the laptop.
-  const row = useRef(64);
-  const ROW = row.current;
-  const target = drag ? Math.max(0, Math.min(roster.length - 1, drag.from + Math.round(drag.dy / ROW))) : -1;
-
-  // The drop re-orders the rows and puts every shift back to 0 in one render: without transitions in that render the
-  // rows don't animate from their old slot (T5 in the motion audit); they come back two frames later.
-  const [dropped, setDropped] = useState(false);
-  useEffect(() => {
-    if (!dropped) return;
-    let id = requestAnimationFrame(() => (id = requestAnimationFrame(() => setDropped(false))));
-    return () => cancelAnimationFrame(id);
-  }, [dropped]);
-
-  if (roster.length === 0) return null;
-  return (
-    <div className={`roster-list ${dropped ? 'dropped' : ''}`}>
-      {roster.map((r, i) => {
-        let shift = 0;
-        if (drag) {
-          if (i === drag.from) shift = drag.dy;
-          else if (drag.from < i && i <= target) shift = -ROW;
-          else if (target <= i && i < drag.from) shift = ROW;
-        }
-        return (
-          <div key={`${r.playerId ?? 'g'}-${r.name}`} className={`list-row roster-row ${drag?.from === i ? 'held' : ''}`}
-            style={{ transform: `translateY(${shift}px)` }}>
-            <span className="num roster-no">{i + 1}</span>
-            <span className="grow">{r.name}{r.playerId === null && <span className="muted guest-tag"> · guest</span>}</span>
-            <button className="icon-btn" style={{ background: 'transparent', color: 'var(--muted2)' }} aria-label={`Remove ${r.name}`}
-              onClick={() => setRoster(roster.filter((_, j) => j !== i))}>{Icon.close(18)}</button>
-            <span aria-label={`Move ${r.name}: drag, or press up or down`} role="button" tabIndex={0} className="grip"
-              onKeyDown={e => {
-                const to = e.key === 'ArrowUp' ? i - 1 : e.key === 'ArrowDown' ? i + 1 : -1;
-                if (to < 0 || to >= roster.length) return;
-                e.preventDefault();
-                const next = [...roster];
-                [next[i], next[to]] = [next[to], next[i]];
-                setRoster(next);
-              }}
-              onPointerDown={e => {
-                (e.target as Element).setPointerCapture(e.pointerId);
-                start.current = e.clientY;
-                row.current = (e.currentTarget.closest('.list-row') as HTMLElement).offsetHeight + parseFloat(getComputedStyle(e.currentTarget.closest('.roster-list')!).rowGap || `${GAP}`);
-                setDrag({ from: i, dy: 0 });
-              }}
-              onPointerMove={e => drag && drag.from === i && setDrag({ from: i, dy: e.clientY - start.current })}
-              onPointerUp={() => {
-                if (!drag) return;
-                const next = [...roster];
-                const [moved] = next.splice(drag.from, 1);
-                next.splice(target, 0, moved);
-                setDropped(true);
-                setDrag(null);
-                setRoster(next);
-              }}
-              onPointerCancel={() => setDrag(null)}>
-              {Icon.grip()}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function Label({ def, text }: { def?: OptionDef<any>; text: string }) {
-  return <div className="opt-label"><b>{text}</b>{def && <Info text={def.info} />}</div>;
+  return <div className="opt-label"><b>{text}</b>{def && <div className="opt-desc">{def.info}</div>}</div>;
 }
 
 /** A stepper with its name, level with the switches beside it in the options grid. */
@@ -264,13 +197,12 @@ function Steps({ steps, at, onGo }: { steps: { label: string; value?: string }[]
   );
 }
 
-type Step = 'players' | 'game' | 'options';
-/** A quick game being edited: its own game and its own copy of the options, apart from the last used ones (Q14). */
-interface Edit { index: number; set: QuickSet; game: GameId; options: Record<string, unknown> }
+type Step = 'game' | 'players' | 'options';
+const ORDER: Step[] = ['game', 'players', 'options'];
 
 /**
- * New match as three steps, Players → Game → Options (docs/UI.md, Start i koniec meczu). Quick start on the Players step
- * starts a saved quick game at once; its pencil edits the slot through Game → Options.
+ * New match as three steps, Game → Players → Options (docs/UI.md, Start i koniec meczu). A game picked on the phone's
+ * record tile opens straight on Players.
  */
 export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game: GameId; options: unknown } | null; onClose: () => void }) {
   // The last game played is preselected, or the game of a lobby record with its options.
@@ -279,9 +211,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     () => (preset ? { [preset.game]: GAMES[preset.game].normalizeOptions(preset.options) as Record<string, unknown> } : {}));
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [bullOff, setBullOffState] = useState<BullOff>(loadBullOff);
-  const [step, setStep] = useState<Step>('players');
-  const [edit, setEdit] = useState<Edit | null>(null);
-  const [askRemove, setAskRemove] = useState(false);
+  const [step, setStep] = useState<Step>(preset ? 'players' : 'game');
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -291,13 +221,9 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
   useEffect(() => { if (step === 'game') document.querySelector('.game-tile.on')?.scrollIntoView({ block: 'nearest' }); }, [step]);
 
   const n = roster.length;
-  const cur = edit?.game ?? game;
-  const g = GAMES[cur];
-  /** Players the options are for: the lineup, or the quick game's set while editing. */
-  const forPlayers = edit ? setPlayers(edit.set) : n;
-  const options = edit ? edit.options : (allOptions[game] ?? loadOptions(game));
+  const g = GAMES[game];
+  const options = allOptions[game] ?? loadOptions(game);
   const setOptions = (o: Record<string, unknown>) => {
-    if (edit) return setEdit({ ...edit, options: o });
     setAllOptions({ ...allOptions, [game]: o });
     store.set(optionsKey(game), JSON.stringify(o));
   };
@@ -305,17 +231,17 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     setBullOffState(b);
     store.set(BULL_OFF_KEY, b);
   };
-  const editSlot = edit && s.quickGames[edit.set][edit.index];
 
   const add = (r: RosterEntry) => {
     if (n >= MAX_PLAYERS) return toast({ text: `At most ${MAX_PLAYERS} players`, kind: 'error' });
     setRoster([...roster, r]);
   };
-  // Player tiles and chips switch: a second tap takes the player out (Q6).
-  const toggle = (p: PlayerInfo) => {
-    const i = roster.findIndex(r => r.playerId === p.id);
-    if (i >= 0) setRoster(roster.filter((_, j) => j !== i));
-    else add({ playerId: p.id, name: p.name });
+  // A registered player is told apart by id (a rename elsewhere keeps the tile), a guest by name.
+  const same = (a: RosterEntry, b: RosterEntry) => (a.playerId === null || b.playerId === null ? a.playerId === b.playerId && a.name === b.name : a.playerId === b.playerId);
+  // Player tiles switch: a second tap takes the player out (Q6).
+  const toggle = (r: RosterEntry) => {
+    if (roster.some(x => same(x, r))) setRoster(roster.filter(x => !same(x, r)));
+    else add(r);
   };
 
   const submitGuest = () => {
@@ -332,172 +258,42 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     setName(`Guest ${roster.filter(r => r.playerId === null).length + 1}`);
   };
 
-  const shuffle = () => {
-    const next = [...roster];
-    for (let i = next.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [next[i], next[j]] = [next[j], next[i]];
-    }
-    setRoster(next);
-  };
-
-  /** Starts a match with the lineup and the bull-off from the Players step, for a game from the steps or a quick game. */
-  const startMatch = async (id: GameId, o: Record<string, unknown>) => {
+  /** Starts the match with the lineup and the bull-off from the Players step; Random shuffles the throwing order here. */
+  const startMatch = async () => {
     setBusy(true);
-    const r = await act({ type: 'startMatch', game: id, options: withBullOff(id, o, bullOff), roster });
+    const r = await act({ type: 'startMatch', game, options: withBullOff(game, options, bullOff), roster: throwOrder(roster, bullOff) });
     setBusy(false);
     if (r.ok) {
-      store.set(LAST_GAME_KEY, id);
+      store.set(LAST_GAME_KEY, game);
       onClose();
     }
   };
 
-  const openEdit = (index: number) => {
-    const set = quickSet(n);
-    const slot = s.quickGames[set][index];
-    const id = slot?.game ?? (fitsSet(game, set) ? game : set === 'solo' ? '121' : 'x01');
-    setEdit({ index, set, game: id, options: slot ? GAMES[id].normalizeOptions(slot.options) as Record<string, unknown> : loadOptions(id) });
-    setStep('game');
-  };
-  const closeEdit = () => {
-    setEdit(null);
-    setAskRemove(false);
-    setStep('players');
-  };
-  const saveSlot = async (slot: QuickSlot | null) => {
-    if (!edit) return;
-    setBusy(true);
-    const r = await act({ type: 'setQuickGame', set: edit.set, index: edit.index, slot });
-    setBusy(false);
-    if (r.ok) closeEdit();
-  };
-
   const pickGame = (id: GameId) => {
-    if (edit) setEdit({ ...edit, game: id, options: id === edit.game ? edit.options : loadOptions(id) });
-    else setGame(id);
-    setStep('options');
+    setGame(id);
+    setStep('players');
   };
 
   const back = () => {
-    if (step === 'options') setStep('game');
-    else if (step === 'game') edit ? closeEdit() : setStep('players');
+    if (step === 'options') setStep('players');
+    else if (step === 'players') setStep('game');
     else onClose();
   };
 
-  if (howTo) return <HowToScreen game={cur} options={options} onClose={() => setHowTo(false)} />;
+  if (howTo) return <HowToScreen game={game} options={options} onClose={() => setHowTo(false)} />;
 
-  const order: Step[] = edit ? ['game', 'options'] : ['players', 'game', 'options'];
-  const steps = order.map(st => ({ label: st[0].toUpperCase() + st.slice(1), value: st === 'players' ? namesShort(roster) : st === 'game' ? g.name : undefined }));
-  const title = edit && `Quick game ${edit.index + 1} · ${edit.set === 'solo' ? 'solo' : '2+ players'}`;
+  const steps = ORDER.map(st => ({ label: st[0].toUpperCase() + st.slice(1), value: st === 'players' ? namesShort(roster) : st === 'game' ? g.name : undefined }));
 
   const header = (
     <header className="phone-header setup-head">
       <button className="icon-btn" style={{ background: 'transparent' }} aria-label="Back" onClick={back}>{Icon.back(22)}</button>
-      <h1>{title || 'New match'}</h1>
-      <Steps steps={steps} at={order.indexOf(step)} onGo={i => setStep(order[i])} />
+      <h1>New match</h1>
+      <Steps steps={steps} at={ORDER.indexOf(step)} onGo={i => setStep(ORDER[i])} />
     </header>
   );
 
-  // ---------- Players ----------
-  if (step === 'players') {
-    const active = s.players.filter(p => !p.archived);
-    const recent = s.recentPlayerIds.map(id => active.find(p => p.id === id)).filter(p => !!p).slice(0, 3);
-    const others = active.filter(p => !recent.includes(p));
-    const seat = (p: PlayerInfo) => roster.findIndex(r => r.playerId === p.id);
-    const set = quickSet(n);
-    const next = preset ? 'options' : 'game';
-    return (
-      <div className="phone match-setup step-players">
-        {header}
-        <div className="setup-main">
-          <div className="setup-pick">
-            <h2 className="setup-title">Who's playing?</h2>
-            {recent.length > 0 && <>
-              <div className="caps">Recent</div>
-              <div className="ptiles">
-                {recent.map(p => {
-                  const i = seat(p);
-                  return (
-                    <button key={p.id} className={`ptile ${i >= 0 ? 'on' : ''}`} aria-pressed={i >= 0} onClick={() => toggle(p)}>
-                      {i < 0 && <span className="plus">{Icon.plus(18)}</span>}<span className="nm">{p.name}</span>{i >= 0 && <span className="badge num">{i + 1}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </>}
-            <div className="caps">{recent.length ? 'Everyone else' : 'Players'}</div>
-            <div className="setup-chips">
-              <div className="chip-row">
-                {others.map(p => {
-                  const i = seat(p);
-                  return (
-                    <button key={p.id} className={`chip pchip ${i >= 0 ? 'on' : ''}`} aria-pressed={i >= 0} onClick={() => toggle(p)}>
-                      {i >= 0 ? <span className="badge num">{i + 1}</span> : '+ '}<span className="nm">{p.name}</span>
-                    </button>
-                  );
-                })}
-                {!adding && <button className="chip pchip dash" onClick={startGuest}>+ Guest</button>}
-              </div>
-              {adding && <>
-                <form className="option-row guest-form" onSubmit={e => { e.preventDefault(); submitGuest(); }}>
-                  <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)} placeholder="Guest name" aria-label="Guest name" />
-                  <button className="btn primary" type="submit">Add</button>
-                  <button className="btn" type="button" onClick={() => setAdding(false)}>Cancel</button>
-                </form>
-                <div className="muted guest-note">Guests play this match only. No stats or records are kept for them.</div>
-              </>}
-            </div>
-            <section className="quick">
-              <div className="caps">Quick start · {set === 'solo' ? 'solo' : '2+ players'}</div>
-              <div className="qgrid">
-                {s.quickGames[set].map((slot, i) => {
-                  if (!slot) return <button key={i} className="qempty" onClick={() => openEdit(i)}>+ Add quick game</button>;
-                  const sg = GAMES[slot.game];
-                  const why = s.match ? 'A match is in progress' : n === 0 ? 'Add players' : !fits(sg, n) ? whyNot(sg) : null;
-                  return (
-                    <div key={i} className="qslot">
-                      {/* While a start is on its way the tiles keep their look; a second tap does nothing. */}
-                      <button className="qmain" disabled={!!why} onClick={() => !busy && void startMatch(slot.game, slot.options)}>
-                        <GameIcon game={slot.game} size={28} stroke={1.75} className="qic" />
-                        <b>{sg.name}</b>
-                        <span className="qd">{slotLabel(slot.game, slot.options, setPlayers(set))}</span>
-                        <span className="qa">{why ?? <>{play}Start · {plural(n, 'player')}</>}</span>
-                      </button>
-                      <button className="icon-btn qedit" aria-label={`Edit quick game ${i + 1}`} onClick={() => openEdit(i)}>{pencil}</button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
-          <div className="setup-side">
-            <div className={`order-card ${n >= 6 ? 'many' : ''}`}>
-              <div className="option-row">
-                <span className="caps">Throwing order</span>
-                <button className="chip" onClick={shuffle} disabled={n < 2}>Shuffle</button>
-              </div>
-              <RosterList roster={roster} setRoster={setRoster} />
-              {n === 0 && <div className="order-hint">Tap players to add them. The order here is the throwing order.</div>}
-              {n === 1 && <div className="order-hint"><b>Solo.</b> Add a second player for versus games, bull-off and co-op.</div>}
-              {n >= 2 && (
-                <div className="bull-pick">
-                  <div className="opt-label"><b>Bull-off</b><Info text={BULL_OFF.info} /><span className="bull-tag">{bullOff === 'off' ? `${roster[0].name} throws first` : 'decides who throws first'}</span></div>
-                  <Seg value={bullOff} options={BULL_OFF.choices as [BullOff, string][]} onChange={setBullOff} />
-                </div>
-              )}
-            </div>
-            <div className="setup-foot">
-              <button className="btn primary" disabled={n === 0} onClick={() => setStep(next)}>{n ? `Next · ${next === 'game' ? 'Game' : 'Options'}` : 'Add players to continue'}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ---------- Game ----------
   if (step === 'game') {
-    const ok = (id: GameId) => (edit ? fitsSet(id, edit.set) : fits(GAMES[id], n));
     const group = (i: number) => {
       const { group: grp, title, ids } = GAME_GROUPS[i];
       return (
@@ -507,11 +303,10 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
             {ids.map(id => {
               const t = GAMES[id];
               return (
-                <button key={id} className={`game-tile ${id === cur && ok(id) ? 'on' : ''}`} aria-pressed={id === cur && ok(id)} disabled={!ok(id)} onClick={() => pickGame(id)}>
+                <button key={id} className={`game-tile ${id === game ? 'on' : ''}`} aria-pressed={id === game} onClick={() => pickGame(id)}>
                   <GameIcon game={id} className="tile-icon" stroke={1.25} />
                   <b>{t.name}</b>
                   <span>{t.blurb}</span>
-                  {!ok(id) && <small>{whyNot(t)}</small>}
                 </button>
               );
             })}
@@ -527,64 +322,108 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           <div className="games-col">{group(2)}</div>
         </div>
         <div className="setup-foot">
-          <button className="btn ghost" onClick={back}>Back</button>
+          <button className="btn ghost" onClick={back}>Close</button>
           <span className="sum">Tap a game</span>
         </div>
       </div>
     );
   }
 
+  // ---------- Players ----------
+  if (step === 'players') {
+    const active = s.players.filter(p => !p.archived);
+    // Recent players first, then everyone else in the list's order.
+    const recent = s.recentPlayerIds.map(id => active.find(p => p.id === id)).filter(p => !!p).slice(0, 3);
+    const tiles: RosterEntry[] = [...recent, ...active.filter(p => !recent.includes(p))].map(p => ({ playerId: p.id, name: p.name }));
+    // A selected player who lost the tile (archived on another device) keeps one, so they can be taken out.
+    const all = [...tiles, ...roster.filter(r => !tiles.some(t => same(t, r)))];
+    const block = lineupBlock(g, n);
+    const tileInitials = initialsOf(all.map(r => r.name));
+    return (
+      <div className="phone match-setup step-players">
+        {header}
+        <div className="setup-main">
+          <div className="setup-pick">
+            <h2 className="setup-title">Who's playing?</h2>
+            <div className="ptiles" style={{ '--rows': Math.ceil((all.length + (adding ? 0 : 1)) / 3) } as CSSProperties}>
+              {all.map((r, k) => {
+                const on = roster.some(x => same(x, r));
+                return (
+                  <button key={`${r.playerId ?? 'g'}-${r.name}`} className={`ptile ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r)}>
+                    <Avatar text={tileInitials[k]} tone={null} name={r.name} decorative /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
+                  </button>
+                );
+              })}
+              {!adding && <button className="ptile dash" onClick={startGuest}>+ Guest</button>}
+            </div>
+            {adding && <>
+              <form className="option-row guest-form" onSubmit={e => { e.preventDefault(); submitGuest(); }}>
+                <input className="field" autoFocus value={name} maxLength={24} onChange={e => setName(e.target.value)} placeholder="Guest name" aria-label="Guest name" />
+                <button className="btn primary" type="submit">Add</button>
+                <button className="btn" type="button" onClick={() => setAdding(false)}>Cancel</button>
+              </form>
+              <div className="muted guest-note">Guests play this match only. No stats or records are kept for them.</div>
+            </>}
+          </div>
+          <div className="throw-col">
+            {hasBullOff(game) && <>
+              <div className="caps" id="tf-label">Who throws first</div>
+              <div className="tf" role="radiogroup" aria-labelledby="tf-label" onKeyDown={e => {
+                const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+                if (!d || n < 2) return;
+                e.preventDefault();
+                const next = THROW_FIRST[(THROW_FIRST.findIndex(t => t[0] === bullOff) + d + THROW_FIRST.length) % THROW_FIRST.length][0];
+                setBullOff(next);
+                (e.currentTarget.querySelector(`[data-v="${next}"]`) as HTMLElement | null)?.focus();
+              }}>
+                {THROW_FIRST.map(([v, label, desc, icon]) => (
+                  <button key={v} data-v={v} className="tfc" role="radio" aria-checked={n >= 2 && bullOff === v} tabIndex={bullOff === v ? 0 : -1} disabled={n < 2} onClick={() => setBullOff(v)}>
+                    <span className="ic">{icon}</span><span className="tx"><b>{label}</b><span>{n < 2 ? '2+ players' : desc}</span></span>
+                  </button>
+                ))}
+              </div>
+            </>}
+            <div className="tf-sum muted">{n ? <><b>{plural(n, 'player')}:</b> {roster.map(r => r.name).join(', ')}</> : 'Tap players to add them.'}</div>
+            <div className="setup-foot">
+              <button className="btn primary" disabled={!!block} onClick={() => setStep('options')}>{block ?? 'Next · Options'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ---------- Options ----------
-  const fitsNow = edit ? fitsSet(cur, edit.set) : fits(g, n);
-  const blocked = edit ? null : s.match ? 'A match is in progress' : !fitsNow ? blockText(g) : null;
+  const chipInitials = initialsOf(roster.map(r => r.name));
+  const blocked = s.match ? 'A match is in progress' : !fits(g, n) ? blockText(g) : null;
   return (
     <div className="phone match-setup step-options">
       {header}
       <div className="setup-main">
         <aside className="gameinfo">
-          <GameIcon game={cur} size={72} stroke={1.5} className="gameinfo-icon" />
-          <h2 className="setup-game-name">{g.name}</h2>
-          <p className="setup-blurb">{g.blurb}</p>
-          <HowToButton onClick={() => setHowTo(true)} />
-          <div className="who">
-            {edit ? <>
-              <div className="caps">Quick game {edit.index + 1}</div>
-              <div className="names">Shown for {edit.set === 'solo' ? 'solo' : '2 or more players'}</div>
-            </> : <>
-              <div className="caps">{plural(n, 'player')}</div>
-              <div className="names">{roster.map(r => r.name).join(', ')}</div>
-            </>}
+          <div className="gamecard">
+            <GameIcon game={game} className="tile-icon" stroke={1.25} />
+            <h2 className="setup-game-name">{g.name}</h2>
+            <p className="setup-blurb">{g.blurb}</p>
+            <HowToButton onClick={() => setHowTo(true)} />
+          </div>
+          <div className="who-card">
+            <div className="caps">{plural(n, 'player')}</div>
+            <div className="pchips">{roster.map((r, k) => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar text={chipInitials[k]} tone={null} name={r.name} decorative />{r.name}</span>)}</div>
+            {n >= 2 && hasBullOff(game) && <div className="muted">Throws first: <b>{THROW_FIRST.find(t => t[0] === bullOff)![1]}</b></div>}
           </div>
         </aside>
         <div className="setup-opts">
-          {!fitsNow ? (
-            <div className="opt-block opt-full">
-              <span>{g.maxPlayers === 1 ? `${g.name} is played solo. You have ${plural(n, 'player')}.` : `${g.name} needs ${g.minPlayers} or more players. You have ${n}.`}</span>
-              <button className="btn" onClick={() => setStep('players')}>Change players</button>
-            </div>
-          ) : cur === 'x01'
+          {game === 'x01'
             ? <X01Section options={options as unknown as X01Options} setOptions={o => setOptions(o as unknown as Record<string, unknown>)} />
-            : <MiniSection game={cur} options={options} players={forPlayers} setOptions={setOptions} />}
+            : <MiniSection game={game} options={options} players={n} setOptions={setOptions} />}
         </div>
       </div>
       <div className="setup-foot">
         <button className="btn ghost" onClick={back}>Back</button>
-        <span className="sum">
-          {!edit && <><b>{namesShort(roster)}</b> · </>}<b>{g.name}</b>{fitsNow && <> · {slotLabel(cur, options, forPlayers)}</>}
-        </span>
-        {edit && editSlot && <button className="btn ghost" disabled={busy} onClick={() => setAskRemove(true)}>Remove</button>}
-        {edit
-          ? <button className="btn primary" disabled={busy} onClick={() => void saveSlot({ game: cur, options })}>Save quick game {edit.index + 1}</button>
-          : <button className="btn primary" disabled={!!blocked || busy} onClick={() => void startMatch(cur, options)}>{blocked ?? startLabel(g.name, n)}</button>}
+        <span className="sum"><b>{namesShort(roster)}</b> · <b>{g.name}</b> · {slotLabel(game, options, n)}</span>
+        <button className="btn primary" disabled={!!blocked || busy} onClick={() => void startMatch()}>{blocked ?? startLabel(g.name, n)}</button>
       </div>
-      <Presence>{askRemove && edit && editSlot && (
-        <Dialog title={`Remove quick game ${edit.index + 1}?`} onClose={() => setAskRemove(false)} actions={<>
-          <button className="btn" onClick={() => setAskRemove(false)}>Cancel</button>
-          <button className="btn danger" disabled={busy} onClick={() => void saveSlot(null)}>Remove</button>
-        </>}>
-          <p>{GAMES[editSlot.game].name} leaves Quick start for {edit.set === 'solo' ? 'solo' : '2+ players'} on every device.</p>
-        </Dialog>
-      )}</Presence>
     </div>
   );
 }

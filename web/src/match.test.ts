@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { lineupBlock, shuffled, throwOrder, aimHint, controls, dartTone, heroCorner, initialsOf, cricketHeaders, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -9,7 +9,7 @@ describe('minigame dart tile colour', () => {
   const tone = (game: string, good: boolean) => dartTone({ game } as MiniMatch, good);
 
   it('shows hits green and misses red in games counted in hits', () => {
-    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'football', 'hare']) {
+    for (const game of ['atc', 'cricket', 'fullboard', 'shanghai', 'bobs27', 'football', 'hare']) {
       expect(tone(game, true)).toBe('hit');
       expect(tone(game, false)).toBe('miss');
     }
@@ -100,9 +100,58 @@ describe('Hare and Hounds aim on the phone', () => {
   });
 });
 
-describe('Cricket column initials (5+ players)', () => {
-  it('takes two letters of a name, a guest keeps its number', () => {
-    expect(['Anna', 'Aleksandra', 'Guest 2', 'Guest 12', 'Bo', 'Ż'].map(initials)).toEqual(['AN', 'AL', 'G2', 'G12', 'BO', 'Ż']);
+describe('Avatar initials', () => {
+  it('takes two letters of a one-word name, a guest keeps its number', () => {
+    expect(initialsOf(['Anna', 'Bo', 'Ż', 'Guest 2', 'Guest 12'])).toEqual(['AN', 'BO', 'Ż', 'G2', 'G12']);
+  });
+  it('takes the first letters of the first two words', () => {
+    expect(initialsOf(['Kuba G.', 'ola ma kota'])).toEqual(['KG', 'OM']);
+  });
+  it('lets a later name with the same pair take its next letter', () => {
+    expect(initialsOf(['Anna', 'Andrzej'])).toEqual(['AN', 'AD']);
+    expect(initialsOf(['Anna', 'Annika'])).toEqual(['AN', 'AI']);
+  });
+  it('skips letters whose pair is taken too', () => {
+    expect(initialsOf(['Anna', 'Annika', 'Ania', 'Anita'])).toEqual(['AN', 'AI', 'AA', 'AT']);
+  });
+  it('keeps the asked pair when no pair is free', () => {
+    expect(initialsOf(['Ola', 'Ol'])).toEqual(['OL', 'OL']);
+  });
+  it('skips punctuation and keeps whole code points', () => {
+    expect(initialsOf(["O'Neil", '.Kuba', '\u{1D49C}nna', '\u{1F600}Bob'])).toEqual(['ON', 'KU', '\u{1D49C}N', 'BO']);
+  });
+  it('never leaves the disc empty for a name of only emoji or punctuation', () => {
+    expect(initialsOf(['\u{1F600}', '!!!', ' '])).toEqual(['\u{1F600}', '!', '?']);
+  });
+  it('does not depend on the case of the name', () => {
+    expect(initialsOf(['anna', 'ANDRZEJ'])).toEqual(['AN', 'AD']);
+  });
+});
+
+describe('Cricket headers', () => {
+  it('shows names up to 4 players until a name overflows, then avatars for all', () => {
+    expect(cricketHeaders(3, false)).toBe('names');
+    expect(cricketHeaders(3, true)).toBe('avatars');
+    expect(cricketHeaders(4, true)).toBe('avatars');
+  });
+  it('shows numbers with avatars from 5 players, fitting or not', () => {
+    expect(cricketHeaders(5, false)).toBe('numbers');
+    expect(cricketHeaders(8, true)).toBe('numbers');
+  });
+});
+
+describe("Bob's 27 visit", () => {
+  const b = (delta: number, verdict: { text: string; tone: 'good' | 'bad' } | null = null) => ({ game: 'bobs27', view: { delta, visit: { darts: [], verdict } } }) as unknown as LiveMatch;
+
+  it('scores what the visit gave or cost, with a sign on the phone', () => {
+    expect(visitScored(b(20))).toBe(20);
+    expect(visitScored(b(-10))).toBe(-10);
+    expect(turnHead(b(20))).toEqual({ text: '+20', tone: 'sum' });
+    expect(turnHead(b(-10))).toEqual({ text: '−10', tone: 'sum' });
+  });
+
+  it('headlines a finished visit with its verdict, going out in red', () => {
+    expect(turnHead(b(-10, { text: 'Out', tone: 'bad' }))).toEqual({ text: 'OUT', tone: 'bad' });
   });
 });
 
@@ -140,7 +189,7 @@ describe('lobby and setup labels', () => {
   it('names up to three players in a rematch, then counts them', () => {
     expect(rematchLabel(['Anna'])).toBe('Rematch Anna');
     expect(rematchLabel(['Anna', 'Bob', 'Cy'])).toBe('Rematch Anna vs Bob vs Cy');
-    expect(rematchLabel(['Anna', 'Bob', 'Cy', 'Dee'])).toBe('Rematch · 4 players');
+    expect(rematchLabel(['Anna', 'Bob', 'Cy', 'Dee'])).toBe('Rematch');
   });
 
   it('says the game and the players on the start button', () => {
@@ -206,5 +255,39 @@ describe('phone This turn line', () => {
   it("shows the finished visit's verdict in its colour", () => {
     expect(turnHead(mini('killer', {}, [false, false, false], { text: 'Life lost', tone: 'bad' }))).toEqual({ text: 'LIFE LOST', tone: 'bad' });
     expect(turnHead(mini('121', {}, [true, true, true], { text: 'Checkout', tone: 'good' }))).toEqual({ text: 'CHECKOUT', tone: 'good' });
+  });
+});
+
+describe('New match: lineup and Random order', () => {
+  const solo = { minPlayers: 1, maxPlayers: 1 };
+  const two = { minPlayers: 2, maxPlayers: 2 };
+  const many = { minPlayers: 2, maxPlayers: undefined };
+  it('asks for players first, then names the lineup the game needs', () => {
+    expect(lineupBlock(two, 0)).toBe('Pick players');
+    expect(lineupBlock(two, 3)).toBe('2 players');
+    expect(lineupBlock(solo, 2)).toBe('Solo only');
+    expect(lineupBlock(many, 1)).toBe('2+ players');
+  });
+  it('lets a fitting lineup through', () => {
+    expect(lineupBlock(two, 2)).toBeNull();
+    expect(lineupBlock(solo, 1)).toBeNull();
+    expect(lineupBlock(many, 8)).toBeNull();
+  });
+  it('draws the order for Random with 2+ players only; Closest, PDC and solo keep it', () => {
+    const a = ['a', 'b', 'c'];
+    expect(throwOrder(a, 'off', () => 0)).toEqual(['b', 'c', 'a']);
+    expect(throwOrder(a, 'closest', () => 0)).toBe(a);
+    expect(throwOrder(a, 'pdc', () => 0)).toBe(a);
+    expect(throwOrder(['a', 'b'], 'off', () => 0)).toEqual(['b', 'a']);
+    expect(throwOrder(['a'], 'off', () => 0)).toEqual(['a']);
+    expect(throwOrder([], 'off', () => 0)).toEqual([]);
+  });
+  it('shuffles into a permutation without touching the input', () => {
+    const a = [1, 2, 3, 4, 5];
+    const r = shuffled(a, () => 0);
+    expect(a).toEqual([1, 2, 3, 4, 5]);
+    expect([...r].sort()).toEqual(a);
+    expect(r).not.toEqual(a);
+    expect(shuffled([], () => 0)).toEqual([]);
   });
 });

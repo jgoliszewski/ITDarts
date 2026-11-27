@@ -185,6 +185,11 @@ export const METRICS: Partial<Record<GameId, Metric[]>> = {
     { label: 'Checkout %', better: 'higher', fmt: fmtPct, value: t => percent(t.checkouts, t.attempts), sub: t => `${t.checkouts ?? 0} / ${t.attempts ?? 0} targets` },
     { label: 'Darts per checkout', better: 'lower', fmt: f1, value: t => (t.checkouts ? Math.round((t.checkoutDarts / t.checkouts) * 10) / 10 : null) },
   ],
+  bobs27: [
+    { label: 'Score', better: 'higher', main: true, perMatch: true, fmt: f1, value: (t, m) => perMatch(t.points, m), sub: () => 'average per game, going out counts as 0' },
+    { label: 'Double hit rate', better: 'higher', fmt: fmtPct, value: t => percent(t.hits, t.darts), sub: t => `${t.hits ?? 0} / ${t.darts ?? 0} darts` },
+    total('Games completed', 'completed'),
+  ],
   hol: [{
     label: 'Visits survived', better: 'higher', main: true, fmt: fmtPct,
     // Matches saved before the figure existed have no visits: no data, not zero.

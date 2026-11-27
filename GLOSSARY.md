@@ -34,6 +34,10 @@ _Avoid_: kontroler, remote
 Widok Ekranu wyników, gdy nie trwa mecz: duże „New match” i „Rematch” oraz wynik ostatniego meczu.
 _Avoid_: ekran startowy, home
 
+**Awatar**:
+Okrągłe koło z inicjałami gracza. Zastępuje imię tam, gdzie się nie mieści (Cricket, Rematch od 4 graczy, „Numbers” w Killerze na telefonie), w Podsumowaniu od 3 graczy stoi nad imieniem, a w Nowym meczu obok imienia i jest neutralne. W meczu ma kolor miejsca w składzie ([UI.md](docs/UI.md#awatary-graczy)).
+_Avoid_: ikona gracza, profilówka
+
 **Panel tarczy**:
 Część Pilota ze statusem połączenia i akcjami na Board Managerze: reset, detekcja, kalibracja, restart.
 _Avoid_: ustawienia, settings
@@ -105,11 +109,11 @@ W X01 gracz nie rzuca do końca bieżącego legu („Back next leg”) i wraca w
 _Avoid_: kick, wyrzucenie, pauza
 
 **Bull-off**:
-Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC. Wybierany w kroku Players Nowego meczu, jeden dla wszystkich gier.
+Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” (Closest) albo zasady PDC. Wybierany w kroku Players Nowego meczu, w kartach „Who throws first” (**Random / Closest / PDC**) razem z losową kolejnością: „Random” to dawne „Off” (bez bull-offu, kolejność losuje Nowy mecz przy starcie).
 _Avoid_: losowanie
 
 **Szybka gra**:
-Zapisana gra z opcjami, startowana jednym stuknięciem z kroku Players w Nowym meczu, ze składem i Bull-offem z tego kroku. Trzy sloty osobno dla solo i dla 2+ graczy, wspólne dla wszystkich urządzeń. W UI: Quick game, nagłówek Quick start.
+Zapisana gra z opcjami w trzech slotach osobno dla solo i dla 2+ graczy, wspólnych dla wszystkich urządzeń. **Bez UI od 2026-11-27**: kafle Quick start i edycja zniknęły z Nowego meczu (gra najpierw), serwer dalej trzyma sloty (`quickGames`, `setQuickGame`).
 _Avoid_: preset, ulubiona gra, skrót
 
 **Zając / ogar**:
@@ -119,6 +123,10 @@ _Avoid_: lis, fox, uciekający, goniący
 **Przewaga**:
 Liczba sektorów, o którą ogar startuje za zającem w Hare and Hounds. W UI „Head start”.
 _Avoid_: handicap, gap (w UI „Gap” to bieżący dystans w trakcie gry)
+
+**Odpadnięcie** (w Bob's 27):
+Stan gracza, którego wynik spadł do 0 lub niżej po zakończonej Turze: kolejka go pomija, a w rankingu stoi za tymi, którzy doszli do końca rundy bull (później odpadł, wyżej). W UI „Out at D5”, a karta Tury mówi „OUT”. Inne niż wycofanie z meczu: odpadnięty może wygrać versus, gdy odpadli wszyscy, wycofany nigdy. W Killerze, Knockoucie i Higher or Lower mówi się o eliminacji (życia), tu o odpadnięciu (wynik), ale to ten sam Wyzwalacz „Player eliminated”.
+_Avoid_: bust (bust to X01, 121 i Catch 40)
 
 **Gra wspólna**:
 Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co-op.
