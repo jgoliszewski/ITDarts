@@ -47,7 +47,7 @@ interface VisitRow {
   darts_count: number;
   options: string;
 }
-
+
 /** Variants by label, numbers as numbers: 5, 10, 20, 40 targets, 7 before 20 rounds. */
 const byLabel = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label, undefined, { numeric: true });
 
@@ -351,7 +351,7 @@ export class Stats {
     }
     const popular = (a: { recent: number; n: number }, b: { recent: number; n: number }) => b.recent - a.recent || b.n - a.n;
     played.sort((a, b) => popular(games.get(a.game)!, games.get(b.game)!) || GAMES[a.game].name.localeCompare(GAMES[b.game].name)
-      || popular(a, b) || a.label.localeCompare(b.label));
+      || popular(a, b) || byLabel(a, b));
     return played.flatMap(p => this.lobbyRecord(p.game, p.variant, p.label) ?? []);
   }
 

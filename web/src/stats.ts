@@ -184,7 +184,7 @@ export const METRICS: Partial<Record<GameId, Metric[]>> = {
   catch40: [
     // Matches have different lengths, so the average over targets, not over matches.
     { label: 'Points per target', better: 'higher', main: true, fmt: fmtFixed(2), value: t => (t.attempts ? Math.round((t.points / t.attempts) * 100) / 100 : null), sub: t => `${plural(t.points ?? 0, 'point')} in ${plural(t.attempts ?? 0, 'target')}` },
-    { ...total('Points', 'points'), better: 'higher' },
+    total('Points', 'points'),
     { label: 'Checkout %', better: 'higher', fmt: fmtPct, value: t => percent(t.checkouts, t.attempts), sub: t => `${t.checkouts ?? 0} / ${t.attempts ?? 0} targets` },
     { label: 'Darts per checkout', better: 'lower', fmt: f1, value: t => (t.checkouts ? Math.round((t.checkoutDarts / t.checkouts) * 10) / 10 : null) },
   ],

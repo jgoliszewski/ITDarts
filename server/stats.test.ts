@@ -416,6 +416,7 @@ describe('lobby records', () => {
     save('shanghai', { rounds: 7 }, 'shanghai:solo:7', [A()], [80], 1);
     expect(stats.lobbyRecords().map(x => x.key)).toEqual(['catch40:5', 'catch40:10', 'catch40:20', 'catch40', 'shanghai:solo:7', 'shanghai:solo:20']);
     expect(stats.records('catch40').map(t => t.label)).toEqual(['Catch 40 · 5 targets', 'Catch 40 · 10 targets', 'Catch 40 · 20 targets', 'Catch 40 · 40 targets']);
+    expect(stats.game(anna, 'catch40', 'all')!.bests.map(b => b.label)).toEqual(['Catch 40 · 5 targets', 'Catch 40 · 10 targets', 'Catch 40 · 20 targets', 'Catch 40 · 40 targets']);
   });
 
   it('fills the options the record match did not save with the game defaults', () => {
