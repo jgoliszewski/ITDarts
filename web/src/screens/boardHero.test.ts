@@ -25,7 +25,7 @@ describe('ATC and Full Board around the board', () => {
   const m = match('atc', o, atc.view([...visit('S1', 'S5', 'S7'), ...visit('S20', 'S2', 'S9')], 1, o));
 
   it('shows darts, hit rate and darts per target', () => {
-    expect(boardStats(m)).toEqual([['Darts', '6'], ['Hit rate', '33%'], ['Per target', '3.0']]);
+    expect(boardStats(m)).toEqual([['Darts', '6'], ['Hit rate', '33.3%'], ['Per target', '3.0']]);
   });
 
   it('shows a dash before the first target or dart, never a division by zero', () => {
@@ -121,7 +121,7 @@ describe('Shanghai, Bullseye and Free throw around the board', () => {
   it('Shanghai: darts, hit rate and Shanghais; the points stay in the line', () => {
     const o = shanghai.defaults;
     const s = match('shanghai', o, shanghai.view([d('T1'), d('S1'), d('S5')], 1, o));
-    expect(boardStats(s)).toEqual([['Darts', '3'], ['Hit rate', '67%'], ['Shanghais', '0']]);
+    expect(boardStats(s)).toEqual([['Darts', '3'], ['Hit rate', '66.7%'], ['Shanghais', '0']]);
     expect(boardNote(s)).toBe(s.view.hero.note);
     expect(boardProgress(s, 0)).toBeNull();
   });

@@ -92,7 +92,7 @@ Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/
 - **Trafienie:** w „Any” każdy segment celu, a bull to 25 albo 50. W „Doubles” tylko D, w „Trebles” tylko T, a bull w obu tylko 50.
 - **Koniec:** gdy ktoś zaliczy bulla, dogrywamy rundę, żeby wszyscy mieli tyle samo Tur. Wygrywa najmniej lotek. Przy tej samej liczbie lotek wygrywają wszyscy remisujący. Pozostali są sklasyfikowani według postępu.
 - **Ekran wyników:** układ w trzech kolumnach jak w każdej grze z tarczą ([UI.md](UI.md#ekran-wyników-dla-gier-z-tarczą)). Po lewej imię, duży aktualny cel i statystyki Darts, Hit rate, Per target. W środku tarcza w hero z rzędem kafelków lotek (trafienie zielone, pudło czerwone) i pigułkami rekordów w rogu. Po prawej lista graczy z postępem („7 / 21”), celem i paskiem postępu. Tarcza ([UI.md](UI.md#tarcza-w-hero)):
-  - aktualny cel jest pomarańczowym segmentem. W „Any” świeci cały jego klin, a w „Doubles” i „Trebles” tylko ten pierścień, z pomarańczowym obrysem (bull w obu tylko bullseye);
+  - aktualny cel jest pomarańczowym segmentem. W „Any” świeci cały jego klin, a w „Doubles” i „Trebles” tylko jego ring double albo treble, z pomarańczowym obrysem (bull w obu tylko bullseye);
   - zaliczone cele są zielonymi segmentami z przygaszonym klinem, reszta jest szara;
   - lotki z bieżącej Tury są małymi kropkami w białej obwódce, zielonymi przy trafieniu i czerwonymi przy pudle. Kropka leży na środku swojego pola, więc single nigdy nie wypada na trebla (test w `web/src/components/Dartboard.test.ts`).
   - Tarcza pokazuje cele gracza, który rzuca. Hero nie powtarza postępu ani liczby lotek („3 / 21 · 5 darts” zniknęło 2026-11-26).
@@ -104,7 +104,7 @@ Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/
 - **Cele:** każdy sektor 1–20 i bull, w dowolnej kolejności. Jedno trafienie zalicza sektor, mnożnik nic nie daje.
 - **Opcje:** „Target” jak w ATC (w „Doubles” i „Trebles” bull tylko 50), „Co-op”.
 - **Koniec:** jak w ATC.
-- **Ekran wyników:** jak w ATC, w układzie z tarczą ([UI.md](UI.md#ekran-wyników-dla-gier-z-tarczą)). Tarcza aktywnego gracza: sektory jeszcze do zaliczenia są pomarańczowe (w „Doubles” i „Trebles” z obrysem pierścienia, bull tylko bullseye), zaliczone zielone z przygaszonym klinem, a lotki z bieżącej Tury są kropkami. Po lewej licznik „13 / 21” z kickerem „Sectors” i statystyki Darts, Hit rate, Per sector (bez „N darts” w notce). Lista graczy pokazuje licznik i pasek postępu.
+- **Ekran wyników:** jak w ATC, w układzie z tarczą ([UI.md](UI.md#ekran-wyników-dla-gier-z-tarczą)). Tarcza aktywnego gracza: sektory jeszcze do zaliczenia są pomarańczowe (w „Doubles” i „Trebles” z obrysem ringu celu, bull tylko bullseye), zaliczone zielone z przygaszonym klinem, a lotki z bieżącej Tury są kropkami. Po lewej licznik „13 / 21” z kickerem „Sectors” i statystyki Darts, Hit rate, Per sector (bez „N darts” w notce). Lista graczy pokazuje licznik i pasek postępu.
 - **Wyzwalacze:** „Sector cleared”, „Board cleared” (wygrana).
 - **Statystyki:** rekordem jest najmniej lotek do końca, osobno dla każdego „Target”.
 

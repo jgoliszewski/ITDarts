@@ -1272,7 +1272,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .master-controls input:disabled { accent-color: var(--off); cursor: default; }
 
 /* ---------- lobby records (D6) ---------- */
-/* The phone home: one tile per minigame variant with a record; the kiosk has its own grid (.rec-grid). */
+/* The phone home: one tile per minigame variant with a record; the kiosk has its own record pages (.rec-pager). */
 .lobby-records .record-groups { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: flex; flex-direction: column; gap: calc(12 * var(--u)); }
 .lobby-records .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
 .record-ghead { margin: 0; display: flex; align-items: center; gap: 10px; height: 32px; font-size: 18px; font-weight: 800; white-space: nowrap; }

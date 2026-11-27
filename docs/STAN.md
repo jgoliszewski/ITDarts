@@ -1,19 +1,17 @@
 # ITDarts: stan prac
 
-Stan na 2026-11-26. Aktualizuj przy każdym większym kroku.
+Stan na 2026-11-27. Aktualizuj przy każdym większym kroku.
 
 ## Gałęzie
 
 - **`main`:** cała aplikacja v1, minigierki i efekty. `feat/v1` jest w niej w całości wmergowana.
 - **`feat/ui-overhaul`:** przeróbka UI/UX (wpis niżej), jeszcze niewmergowana.
-- **`feat/lobby-groups`:** rekordy w lobby pogrupowane po grach, na stronach (wpis niżej), z `feat/board-targets`; review OK i przeklikane przez użytkownika, czeka na merge razem z `feat/board-targets`.
-- **`feat/board-targets`:** tarcza w hero i układ w trzech kolumnach (wpis niżej), z `main` e54a251, bez merge do czasu akceptacji.
 
 ## Gotowe
 
 - **Tarcza w hero i układ w trzech kolumnach** (2026-11-26, gałąź `feat/board-targets`, [UI.md](UI.md#tarcza-w-hero), [UI.md](UI.md#ekran-wyników-dla-gier-z-tarczą), [GRY.md](GRY.md), plan, decyzje, makiety v3–v9 i raporty ticketów w `.scratch/cricket-board-vis/`): nowy komponent `HeroBoard` z pierścieniem numerów zastępuje `TargetBoard` w hero wszystkich gier z tarczą (ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket Random) i dodaje tarczę zwykłemu Cricketowi i Killerowi (cele, kreski żyć, własny double czerwony). Model segmentów w `web/src/components/targets.ts`, mapowanie gier w `web/src/screens/boardTargets.ts`, lewa kolumna i lista w `web/src/screens/boardHero.ts`. Układ: gracz ze statystykami po lewej, karta tarczy z lotkami i pigułkami Best/PB w rogu pośrodku, lista z paskiem postępu po prawej; zniknęły teksty, które tarcza powtarza. `TargetBoard` zostaje dla Heatmap i Test board, bez biegnącego obwodu `tb-march`.
   - **Sprawdzone:** `npm test` (45 plików, 852 testy) i `npm run typecheck`; testy z mutacjami czystych funkcji i renderu (`targets.test.ts`, `HeroBoard.test.ts`, `boardTargets.test.ts`, `boardHero.test.ts`, `MiniBoard.layout.test.ts`); zrzuty `dev:shot` 1920×1080 i 1280×720 dla 22 scenariuszy (każda gra, 2 i 5 graczy, Killer przed statusem i jako killer, Football z piłką u rywala) ze skryptem sprawdzającym przewijanie, ucinanie, tekst ≥ 16 px i cele ≥ 44 px (wszystkie 44 ok), w `.scratch/cricket-board-vis/shots-t3/`.
-  - **Niesprawdzone:** prawdziwa tarcza i prawdziwy ekran 1280×720; pigułka PB na żywo (zrzuty tylko z gośćmi) i dłuższa etykieta „Best · PB 123”; w Football kafelki „Ball won” i „Shots” (widok ma tylko gole, więc jest „To win”), a w Bullseye kafelki statystyk (widok ma tylko punkty); tarcza do wklikiwania lotek bez zmian i poza zakresem. Review całego brancha i akceptacja użytkownika przed merge do `main`.
+  - **Niesprawdzone:** prawdziwa tarcza i prawdziwy ekran 1280×720; pigułka PB na żywo (zrzuty tylko z gośćmi) i dłuższa etykieta „Best · PB 123”; w Football kafelki „Ball won” i „Shots” (widok ma tylko gole, więc jest „To win”), a w Bullseye kafelki statystyk (widok ma tylko punkty); tarcza do wklikiwania lotek bez zmian i poza zakresem.
 - **Rekordy w lobby po grach, na stronach** (2026-11-26, gałąź `feat/lobby-groups`, [UI.md](UI.md#lobby-i-qr), plan, makieta H i raport w `.scratch/lobby-groups/`): kiosk pokazuje wszystkie warianty z rekordem, pogrupowane po grach (nagłówek z ikoną, kafelek z opcjami bez nazwy gry), na stronach 4×2 z pakowaniem first-fit i „(cont.)” dla gry ponad 8 wariantów; kropki, nazwy gier i „All records →” pod siatką. Strony jadą sprężyną (swipe 1:1, pęd, złapanie w ruchu, gumka, auto-rotacja co 10 s z ostatniej na pierwszą jednym przejściem), także przy `prefers-reduced-motion` (decyzja użytkownika). Miejsce w pościgu to okrągła plakietka. Telefon: nagłówki gier nad grupami.
   - **Sprawdzone:** `npm test` i `npm run typecheck`; testy podziału na strony, `groupSpan` i maszyny stanów gestu z mutacjami; review w trzech rundach (`.scratch/lobby-groups/REVIEW.md`, werdykt OK); zrzuty `dev:shot` 1920 i 1280 dla 3, 5, 18 i 26 wariantów oraz telefon 375 px (`.scratch/lobby-groups/shots/`); przeklikanie przez użytkownika na `dev:shot` z 23 wariantami (2026-11-27): gest, pęd, dokończenie ruchu, gumka, auto-rotacja, kropki, okno „Record attempt”, plakietki, etykiety, telefon.
   - **Niesprawdzone:** prawdziwy dotyk kiosku (dwa palce, puszczenie jednego) i prawdziwa liczba wariantów biura (dziś gry mają razem 26 wariantów z rekordem).

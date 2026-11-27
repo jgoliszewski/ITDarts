@@ -2,7 +2,8 @@
 import { SECTORS } from '../../../games/race.ts';
 import type { BoardMatch } from './boardTargets.ts';
 
-const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '–');
+// The same rounding as the summary (Compare.tsx), so the left column and the summary show the same number.
+const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : '–');
 const per = (darts: number, done: number) => (done ? (darts / done).toFixed(1) : '–');
 
 /** The kicker over the big number, only where the number would read wrong without it: Cricket's points need none. */

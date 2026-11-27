@@ -109,7 +109,7 @@ export interface RecordGroup {
   col: number;
 }
 
-/** A page: a lone group of 5–8 records fills it (`rows` is 1 and `cols` at most 4), small groups share its up to two rows. */
+/** A page: always the 4×2 grid (a lone group of 5–8 records fills it, small groups share its two rows); only 1–4 records in all get 1 / 2×1 / 2×2. */
 export interface RecordPage { cols: number; rows: number; groups: RecordGroup[] }
 
 export const groupTitle = (g: Pick<RecordGroup, 'title' | 'cont'>) => (g.cont ? `${g.title} (cont.)` : g.title);

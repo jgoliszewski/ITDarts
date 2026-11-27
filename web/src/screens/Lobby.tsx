@@ -96,7 +96,7 @@ function RecordPageView({ page, tab, onPick }: { page: RecordPage; tab: boolean;
   );
 }
 
-type Phase = 'idle' | 'pressed' | 'dragging';
+type Phase = Gesture['touch']['phase'];
 
 /**
  * The kiosk's records: every variant with a record as big tiles, grouped by game, on pages (docs/UI.md, Lobby i QR).

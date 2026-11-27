@@ -415,8 +415,8 @@ describe('lobby records', () => {
   });
 });
 
-// Lobby top 8 (.scratch/lobby-records/PLAN.md): by matches of the last 30 days, filled up with the most played of all time.
-describe('lobby records: top 8, chase, players', () => {
+// Lobby records (docs/UI.md, Lobby i QR): every variant with a record, games and variants by matches of the last 30 days, then of all time.
+describe('lobby records: order, chase, players', () => {
   const save = (game: string, options: object, variant: string, roster: RosterEntry[], scores: (number | null)[], daysAgo: number) =>
     db.saveMatch({
       game: game as SaveMatch['game'], options, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
