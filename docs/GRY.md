@@ -30,7 +30,7 @@ Backlogu nie ma. Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 
 - **Gracze, kolejność rzucania (Random, Closest, PDC) i goście** działają tak samo jak w X01. Kolejność wybiera się w kroku Players, jedna dla wszystkich gier; Nowy mecz wkłada bull-off do opcji każdej gry, która go ma (wszystkie poza Free throw).
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players”, „Free throw is for 1 player” albo „Hare and Hounds is for 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
-- **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
+- **Opis opcji:** pod etykietą każdej opcji stoi jedno zdanie opisu (`info` z definicji opcji, ta sama co w sekcji „Options” w „How to play”), od 2026-11-27 zamiast ikony „i” z dymkiem.
 - **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Pick players” w przycisku „Next”).
 
 ### Opis gry („How to play”)

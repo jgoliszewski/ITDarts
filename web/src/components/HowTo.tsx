@@ -1,5 +1,4 @@
 // “How to play”: the game's own text in a fixed layout, on the pilot or on the big screen.
-import { useEffect, useState } from 'react';
 import type { GameId } from '../../../games/index.ts';
 import { GAMES } from '../../../games/index.ts';
 import type { OptionDef } from '../../../games/turns.ts';
@@ -11,26 +10,6 @@ export function HowToButton({ onClick, compact }: { onClick: () => void; compact
     <button className={`howto-btn ${compact ? 'compact' : ''}`} onClick={onClick}>
       <span className="q">?</span>How to play
     </button>
-  );
-}
-
-/** A small “i” that shows one sentence about an option in a bubble over the layout; a tap anywhere closes it. */
-export function Info({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && close();
-    // Next tick, so the tap that opened the bubble doesn't close it.
-    const t = setTimeout(() => addEventListener('pointerdown', close));
-    addEventListener('keydown', key);
-    return () => { clearTimeout(t); removeEventListener('pointerdown', close); removeEventListener('keydown', key); };
-  }, [open]);
-  return (
-    <>
-      <button className={`info-btn ${open ? 'on' : ''}`} aria-label="What is this?" aria-expanded={open} onClick={() => setOpen(!open)}>i</button>
-      {open && <div className="info-bubble" role="tooltip">{text}</div>}
-    </>
   );
 }
 

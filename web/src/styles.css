@@ -676,11 +676,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .chip .chip-icon { margin-right: 6px; flex-shrink: 0; }
 .howto-btn { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px 0 8px; border-radius: var(--r-pill); border: 2px solid var(--line); color: var(--text); font-weight: 800; font-size: var(--fs-ui-md); white-space: nowrap; }
 .howto-btn .q { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--muted2); display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-ui-lg); }
-.opt-label { position: relative; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-ui-md); }
-.info-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); font-size: var(--fs-ui-sm); font-weight: 800; font-style: italic; font-family: Georgia, serif; }
-.info-btn.on { background: var(--text); color: var(--ink); border-color: var(--text); }
-/* Floats under the label, over the options below, so opening it never moves the layout. */
-.info-bubble { position: absolute; z-index: var(--z-actions); top: calc(100% + 6px); left: 0; right: 0; max-width: 360px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line); box-shadow: var(--shadow-float); font-size: var(--fs-ui-sm); font-weight: 500; color: var(--soft); line-height: 1.4; }
+.opt-label { font-size: var(--fs-ui-md); }
 .howto-screen { position: fixed; inset: 0; z-index: var(--z-screen); background: var(--bg); overflow: auto; }
 .howto { display: flex; flex-direction: column; gap: 18px; }
 .howto h3 { margin: 0 0 6px; font-size: var(--fs-ui-sm); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
@@ -1314,9 +1310,9 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .tfc .tx { display: flex; flex-direction: column; min-width: 0; }
 .tfc b { font-size: var(--fs-ui-lg); }
 .tfc .tx > span { font-size: var(--fs-ui-md); color: var(--muted); line-height: 1.3; }
-.tfc[aria-pressed='true'] { background: var(--text); color: var(--ink); }
-.tfc[aria-pressed='true'] .tx > span { color: var(--off-on-accent); }
-.tfc[aria-pressed='true'] .ic { background: var(--ink); color: var(--text); }
+.tfc[aria-checked='true'] { background: var(--text); color: var(--ink); }
+.tfc[aria-checked='true'] .tx > span { color: var(--off-on-accent); }
+.tfc[aria-checked='true'] .ic { background: var(--ink); color: var(--text); }
 .tfc:disabled { background: var(--card); color: var(--disabled-fg); }
 .tfc:disabled .tx > span { color: var(--disabled-fg); }
 .tf-sum { font-size: var(--fs-ui-md); line-height: 1.4; }
@@ -1360,7 +1356,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .gamecard .tile-icon { position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; color: var(--ink); opacity: 0.18; pointer-events: none; }
 .gamecard .howto-btn { margin-top: var(--sp-3); border-color: var(--off-on-accent); color: var(--on-accent); }
 .gamecard .howto-btn .q { border-color: var(--off-on-accent); }
-.setup-game-name { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+.setup-game-name { margin: 0; font-size: var(--fs-ui-2xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
 .setup-blurb { margin: 0; font-size: var(--fs-ui-md); line-height: 1.4; max-width: 280px; }
 .who-card { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border-radius: var(--r-box); background: var(--card); font-size: var(--fs-ui-md); }
 .who-card b { color: var(--soft); }
@@ -1369,7 +1365,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .opt-desc { font-size: var(--fs-ui-md); font-weight: 400; color: var(--muted); line-height: 1.35; margin-top: var(--sp-1); }
 .setup-opts { display: flex; flex-direction: column; gap: 16px; }
 .setup-opts .section { gap: 10px; }
-.setup-opts .opt-label { display: block; font-size: var(--fs-ui-md); }
 .setup-opts .range-row label { font-size: var(--fs-ui-md); }
 .opt-note { font-size: var(--fs-ui-md); color: var(--muted); line-height: 1.4; }
 .opt-note b { color: var(--soft); }
@@ -1410,7 +1405,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   .game-tile { min-height: 0; }
   /* Options: the game on the left, its options in two columns on the right. */
   .gameinfo { width: 340px; flex: none; }
-  .setup-opts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-6); align-content: space-evenly; }
+  .setup-game-name { font-size: var(--fs-ui-num-sm); }
+  .setup-opts { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-6); align-content: start; row-gap: clamp(var(--sp-5), 5vh, var(--sp-8)); overflow-y: auto; }
   .setup-opts .opt-label b { font-size: var(--fs-ui-lg); }
   .setup-opts .seg button { height: 60px; font-size: var(--fs-ui-lg); }
   .setup-opts .stepper-row { min-height: 64px; }
@@ -1482,11 +1478,9 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .wide-fix { animation: wide-in var(--dur-base) var(--ease-out); }
 @keyframes wide-in { from { opacity: 0; scale: 0.98; } }
 .leaving > .wide-fix { animation: dialog-out var(--dur-exit) var(--ease-out) forwards; }
-/* Dropdown list and info bubble open from where they hang (M8, M9). */
+/* The dropdown list opens from where it hangs (M8). */
 .pick-list { transform-origin: top center; animation: pop-in var(--dur-fast) var(--ease-out); }
 @keyframes pop-in { from { opacity: 0; transform: scale(0.97); } }
-.info-bubble { transform-origin: top left; animation: drop-in var(--dur-fast) var(--ease-out); }
-@keyframes drop-in { from { opacity: 0; transform: translateY(-4px); } }
 /* Toasts come in from their edge and leave by fading (M12): the bottom on the phone, the top on the scoreboard. */
 .toast { animation: toast-in var(--dur-base) var(--ease-out); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
@@ -1520,7 +1514,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   .takeout-band svg { animation: none; }
   ::view-transition-group(*) { animation-duration: 0s; }
   /* UI: dialogs, sheets, drawer, lists and toasts only fade; switch knob and rows jump. */
-  .dialog, .wide-fix, .sheet, .drawer, .pick-list, .info-bubble, .toast, .big ~ .toasts .toast { animation-name: fade-in; }
+  .dialog, .wide-fix, .sheet, .drawer, .pick-list, .toast, .big ~ .toasts .toast { animation-name: fade-in; }
   .leaving > .dialog, .leaving > .wide-fix, .leaving > .sheet, .leaving > .drawer, .toasts .toast.leaving { animation-name: fade-out; }
   .switch span { transition: none; }
   /* Disclosure arrows flip without turning. */
