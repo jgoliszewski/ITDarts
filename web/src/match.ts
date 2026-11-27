@@ -159,8 +159,35 @@ export function aimHint(m: LiveMatch): string | null {
   return `Throw at ${ring}${m.view.target}`;
 }
 
-/** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
-export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());
+/** The pair a name asks for before collisions: a digit keeps the number (Guest 2 → G2), two words give their first letters, one word its first two. */
+function baseInitials(name: string): string {
+  const t = name.trim();
+  if (/\d/.test(t)) return (t[0] + t.replace(/\D/g, '')).toUpperCase();
+  const words = t.split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : t.slice(0, 2)).toUpperCase();
+}
+
+/**
+ * Round-avatar initials, unique within one list (the match roster, or all Players tiles; docs/UI.md, Awatary graczy).
+ * On a collision the later name takes its first letter and the next letter that gives a free pair (Anna AN, Andrzej AD);
+ * with none free it keeps the asked pair.
+ */
+export function initialsOf(names: string[]): string[] {
+  const used = new Set<string>();
+  return names.map(name => {
+    const base = baseInitials(name);
+    let pick = base;
+    if (used.has(base)) {
+      const letters = Array.from(name.trim().replace(/[^\p{L}\p{N}]/gu, '').toUpperCase());
+      pick = letters.slice(1).map(c => letters[0] + c).find(p => !used.has(p)) ?? base;
+    }
+    used.add(pick);
+    return pick;
+  });
+}
+
+/** Cricket column headers: 5+ players always the place number and an avatar; up to 4 the names, or avatars for all once any name overflows. */
+export const cricketHeaders = (players: number, overflow: boolean): 'names' | 'avatars' | 'numbers' => (players > 4 ? 'numbers' : overflow ? 'avatars' : 'names');
 
 /**
  * X01 with double in: darts before the opening double don't count, so their tiles are dimmed like a dead dart in 121.
@@ -189,7 +216,7 @@ export function removeIntro(canLeg: boolean, canMatch: boolean, blocked: string 
 }
 
 /** The lobby's rematch button: up to three names, then only how many (B#13). */
-export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : `Rematch · ${names.length} players`);
+export const rematchLabel = (names: string[]): string => (names.length <= 3 ? `Rematch ${names.join(' vs ')}` : 'Rematch');
 
 /** Setup's start button says what starts (B#4). */
 export const startLabel = (game: string, players: number): string => `Start · ${game} · ${players} ${players === 1 ? 'player' : 'players'}`;

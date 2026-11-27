@@ -725,7 +725,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .board-hero .mini-big .num .of { font-size: 0.4em; }
 .board-hero .hero-note { font-size: max(16px, calc(30 * var(--u))); line-height: 1.2; }
 /* Cricket from 5 players: the grid columns show a place number, the names stand here (A#3). */
-.board-hero > .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(4 * var(--u)) calc(14 * var(--u)); font-size: calc(28 * var(--u)); min-width: 0; }
+.board-hero > .legend { display: grid; align-items: center; gap: calc(4 * var(--u)) calc(14 * var(--u)); font-size: calc(28 * var(--u)); min-width: 0; }
 .board-hero > .legend > div { display: contents; }
 .board-hero > .legend .n { font-size: calc(32 * var(--u)); min-width: 0; }
 .board-hero > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -788,7 +788,6 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .board-main.with-board .cricket .sector { font-size: calc(40 * var(--u)); }
 .board-main.with-board .cricket .mk { font-size: calc(60 * var(--u)); }
 .board-main.with-board .cricket .ch .n { font-size: calc(30 * var(--u)); }
-.board-main.with-board .cricket.many .ch .ini { font-size: calc(28 * var(--u)); }
 .mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
 .target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; min-height: 0; }
 .hol-scale { position: relative; height: calc(430 * var(--u)); margin: calc(8 * var(--u)) 0; }
@@ -808,8 +807,10 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .cricket { display: grid; grid-template-rows: auto repeat(7, minmax(0, 1fr)); gap: calc(6 * var(--u)); border-radius: var(--r-card); background: var(--card); padding: calc(16 * var(--u)); min-height: 0; height: 100%; overflow: hidden; }
 .cricket .ch { container-type: inline-size; display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u)); padding: calc(10 * var(--u)) calc(4 * var(--u)); border-radius: var(--r-tile); background: var(--card2); min-width: 0; }
 .cricket .ch .n { font-size: calc(28 * var(--u)); font-weight: 700; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cricket.many .ch .no { font-size: calc(44 * var(--u)); line-height: 0.95; }
-.cricket.many .ch .ini { font-size: calc(24 * var(--u)); font-weight: 800; letter-spacing: 0.04em; }
+.cricket.h-numbers .ch .no { font-size: calc(44 * var(--u)); line-height: 0.95; }
+/* With avatars the names stay for measuring, hidden: same width as a shown name, out of the layout. */
+.cricket .ch { position: relative; }
+.cricket.h-avatars .ch .n { position: absolute; left: calc(4 * var(--u)); right: calc(4 * var(--u)); visibility: hidden; max-width: none; }
 .cricket .ch .num { font-size: min(calc(96 * var(--u)), 40cqi); line-height: 1; }
 .cricket .ch.active { background: var(--accent); color: var(--on-accent); }
 .cricket .sector { display: flex; align-items: center; justify-content: center; font-size: calc(56 * var(--u)); color: var(--soft); }
@@ -1094,6 +1095,10 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .cmp-names { font-size: var(--fs-ui-md); font-weight: 800; }
 /* A 24-letter name without spaces breaks inside its column instead of running into the next one (break-ui). */
 .cmp-names > * { min-width: 0; overflow-wrap: anywhere; }
+.cmp { --cmp-av: 36px; }
+.summary.wide .cmp { --cmp-av: max(36px, calc(52 * var(--u))); }
+.cmp-names.avatars > * { display: flex; flex-direction: column; align-items: center; gap: 0.2em; overflow-wrap: normal; }
+.cmp-names.avatars .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cmp.two .cmp-names span:last-child { text-align: right; }
 .cmp-row { display: flex; flex-direction: column; gap: 8px; }
 .cmp-line { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
@@ -1294,8 +1299,13 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .ptile.on { background: var(--text); color: var(--ink); }
 .ptile.on .mark { background: var(--ink); border-color: var(--ink); color: var(--text); }
 .ptile.dash { background: transparent; border: 2px dashed var(--faint); color: var(--soft); justify-content: center; }
-.av { width: var(--tap); height: var(--tap); border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--raised); color: var(--tone); font-weight: 800; font-size: var(--fs-ui-md); }
-.ptile.on .av { background: var(--ink); color: var(--text); }
+.avatar { --sz: var(--sp-6); width: var(--sz); height: var(--sz); border-radius: 50%; flex: none; display: inline-grid; place-items: center; background: var(--tone, var(--off)); color: var(--ink); font-weight: 800; font-size: max(16px, calc(var(--sz) * 0.42)); line-height: 1; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
+.avatar.neutral { color: var(--text); }
+.ptile .avatar { --sz: var(--tap); }
+.ptile.on .avatar.neutral { background: var(--ink); }
+.av-row { display: inline-flex; gap: 4px; margin-left: 4px; }
+.av-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.av-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px 2px 2px; border-radius: var(--r-pill); background: var(--raised); font-size: var(--fs-ui-md); }
 .tf { display: flex; flex-direction: column; gap: var(--sp-2); }
 .tfc { border-radius: var(--r-key); background: var(--tile); padding: var(--sp-3) var(--sp-4); text-align: left; display: flex; align-items: center; gap: var(--sp-3); }
 .tfc .ic { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--raised); display: grid; place-items: center; flex: none; }
@@ -1354,7 +1364,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .who-card b { color: var(--soft); }
 .pchips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .pchip { display: flex; align-items: center; gap: var(--sp-2); height: 40px; padding: 0 var(--sp-3) 0 var(--sp-1); border-radius: var(--r-pill); background: var(--tile); font-size: var(--fs-ui-md); font-weight: 700; }
-.pchip .av { width: var(--sp-6); height: var(--sp-6); background: var(--tone); color: var(--ink); }
 .opt-desc { font-size: var(--fs-ui-md); font-weight: 400; color: var(--muted); line-height: 1.35; margin-top: var(--sp-1); }
 .setup-opts { display: flex; flex-direction: column; gap: 16px; }
 .setup-opts .section { gap: 10px; }

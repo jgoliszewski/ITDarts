@@ -5,9 +5,11 @@ import type { ReactNode } from 'react';
 import type { Dart } from '../../../games/darts.ts';
 import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
+import { AvatarChip, RematchLabel } from '../components/Avatar.tsx';
+import { playerColor } from '../components/Compare.tsx';
 import { Icon, act } from '../components/ui.tsx';
 import type { LobbyRecord } from '../../../server/protocol.ts';
-import { aimHint, controls, dartTone, dartValue, isX01, legTarget, pickProps, playOrder, rematchLabel, removedNote, shortDescription, turnHead, winnersOf, x01Dead } from '../match.ts';
+import { aimHint, controls, dartTone, dartValue, initialsOf, isX01, legTarget, pickProps, playOrder, removedNote, shortDescription, turnHead, winnersOf, x01Dead } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { Records } from './Lobby.tsx';
 import { NewRecord } from './MiniBoard.tsx';
@@ -154,9 +156,10 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
     return <div className="banner info" style={{ borderRadius: 16 }}>Removing darts… don't throw yet</div>;
   }
   if (m.game === 'killer' && m.view.canReroll) {
+    const ini = initialsOf(m.roster.map(r => r.name));
     return (
       <div className="box">
-        <span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers: {m.roster.map((r, i) => `${r.name} ${m.view.numbers[i]}`).join(' · ')}</span>
+        <div className="av-chips"><span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers:</span>{m.roster.map((r, i) => <AvatarChip key={i} text={ini[i]} tone={playerColor(i)} name={r.name} value={m.view.numbers[i]} />)}</div>
         <button className="btn block" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
       </div>
     );
@@ -263,7 +266,7 @@ export function PhoneHome({ s, onMenu, onBoard, onNew, onRecord, onPlayers }: {
       </div>
       <div className="p-actions" style={{ gridTemplateColumns: '1fr' }}>
         <button className="btn primary" onClick={onNew}>New match</button>
-        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}>{rematchLabel(last.players.filter(p => !p.left).map(p => p.name))}</button>}
+        {last && <button className="btn" onClick={() => act({ type: 'rematch' })}><RematchLabel players={last.players} /></button>}
       </div>
     </div>
   );

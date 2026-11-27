@@ -10,9 +10,10 @@ import { plural } from '../../../games/turns.ts';
 import { X01_OPTIONS } from '../../../games/x01/index.ts';
 import type { BullOff, X01Options } from '../../../games/x01/rules.ts';
 import type { ClientState, RosterEntry } from '../../../server/protocol.ts';
+import { Avatar } from '../components/Avatar.tsx';
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToButton, HowToScreen } from '../components/HowTo.tsx';
-import { fits, initials, lineupBlock, startLabel, throwOrder } from '../match.ts';
+import { fits, initialsOf, lineupBlock, startLabel, throwOrder } from '../match.ts';
 import { Icon, act, toast } from '../components/ui.tsx';
 import { store } from '../util.ts';
 
@@ -52,11 +53,6 @@ const THROW_FIRST: [BullOff, string, string, ReactNode][] = [
   ['closest', 'Closest', 'Bull-off: closest to the bull throws first.', ico(<><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></>)],
   ['pdc', 'PDC', 'Bull-off by PDC rules, a bull re-throws.', ico(<><circle cx="12" cy="12" r="8" /><path d="M12 7v10M7 12h10" /></>)],
 ];
-
-/** Round initials in the player's colour (--p1…--p4 by id); a guest is neutral. */
-function Avatar({ r }: { r: RosterEntry }) {
-  return <span className="av" style={{ '--tone': r.playerId === null ? 'var(--muted)' : `var(--p${(r.playerId % 4) + 1})` } as CSSProperties}>{initials(r.name)}</span>;
-}
 
 function Seg<T extends string | number | boolean>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -342,6 +338,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
     // A selected player who lost the tile (archived on another device) keeps one, so they can be taken out.
     const all = [...tiles, ...roster.filter(r => !tiles.some(t => same(t, r)))];
     const block = lineupBlock(g, n);
+    const tileInitials = initialsOf(all.map(r => r.name));
     return (
       <div className="phone match-setup step-players">
         {header}
@@ -349,11 +346,11 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           <div className="setup-pick">
             <h2 className="setup-title">Who's playing?</h2>
             <div className="ptiles" style={{ '--rows': Math.ceil((all.length + 1) / 3) } as CSSProperties}>
-              {all.map(r => {
+              {all.map((r, k) => {
                 const on = roster.some(x => same(x, r));
                 return (
                   <button key={`${r.playerId ?? 'g'}-${r.name}`} className={`ptile ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r)}>
-                    <Avatar r={r} /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
+                    <Avatar text={tileInitials[k]} tone={null} name={r.name} /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
                   </button>
                 );
               })}
@@ -390,6 +387,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
   }
 
   // ---------- Options ----------
+  const chipInitials = initialsOf(roster.map(r => r.name));
   const blocked = s.match ? 'A match is in progress' : !fits(g, n) ? blockText(g) : null;
   return (
     <div className="phone match-setup step-options">
@@ -404,7 +402,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           </div>
           <div className="who-card">
             <div className="caps">{plural(n, 'player')}</div>
-            <div className="pchips">{roster.map(r => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar r={r} />{r.name}</span>)}</div>
+            <div className="pchips">{roster.map((r, k) => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar text={chipInitials[k]} tone={null} name={r.name} />{r.name}</span>)}</div>
             {n >= 2 && hasBullOff(game) && <div className="muted">Throws first: <b>{THROW_FIRST.find(t => t[0] === bullOff)![1]}</b></div>}
           </div>
         </aside>

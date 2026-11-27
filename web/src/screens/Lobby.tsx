@@ -4,7 +4,7 @@ import type { ClientState, LobbyRecord, PlayerInfo } from '../../../server/proto
 import { GameIcon } from '../components/GameIcon.tsx';
 import { HowToOverlay } from '../components/HowTo.tsx';
 import { Dialog, Presence, act } from '../components/ui.tsx';
-import { rematchLabel } from '../match.ts';
+import { RematchLabel } from '../components/Avatar.tsx';
 import type { RecordPage } from '../records.ts';
 import type { Gesture, GestureResult, PointerStep } from '../records.ts';
 import { ROTATE_RESPONSE, SWIPE_RESPONSE, attemptCommand, attemptHint, attemptReady, dotWeight, gestureClick, gestureDown, gestureEnd, gestureMove, groupByGame, groupSpan, groupTitle, idleGesture, lastLine, nextPage, recordPages, splitValue, springStep, togglePick } from '../records.ts';
@@ -340,7 +340,7 @@ export function Lobby({ s, onMenu, onBoard, onNew, onPlayers, overlay }: {
           <button className="btn primary" onClick={() => takeThen(onNew)}>New match</button>
           {last && (
             <button className="btn secondary" onClick={() => takeThen(() => act({ type: 'rematch' }))}>
-              {rematchLabel(last.players.filter(p => !p.left).map(p => p.name))}
+              <RematchLabel players={last.players} />
             </button>
           )}
           {last && <div className="last-line" title={lastLine(last)}>{lastLine(last)}{last.status === 'ended' ? ' · ended early' : ''}</div>}
