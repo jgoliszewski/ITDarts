@@ -106,7 +106,7 @@ function raceView<P>(t: Turns, s: RaceState<P>, coop: boolean, progress: (p: P) 
   };
 }
 
-const TARGET: OptionDef<{ target: TargetMode }> = {
+export const TARGET: OptionDef<{ target: TargetMode }> = {
   key: 'target',
   label: 'Target',
   info: 'Which ring counts. In Doubles and Trebles only the bullseye (50) counts for the bull.',

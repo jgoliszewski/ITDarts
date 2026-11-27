@@ -1,10 +1,10 @@
 // 121: check out a target within a few visits, then the next one up (docs/GRY.md). Solo or co-op. Pure, no I/O.
-import { hint, hintLines } from './x01/checkout.ts';
+import { attemptVisit } from './attempt.ts';
+import { hintLines } from './x01/checkout.ts';
 import type { Change, Happening } from './effects.ts';
 import type { BullOff } from './x01/rules.ts';
-import { scoreDart } from './x01/rules.ts';
 import type { GameModule, MiniView, OptionDef, Turn, TurnEvent, Turns } from './turns.ts';
-import { BULL_OFF, ON_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextIn, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings, walk } from './turns.ts';
+import { BULL_OFF, ON_OFF, compactTurns, frame, isGone, isValidTurnEvent, nextIn, nextUp, normalizeByDefs, plural, replayTurns, turnHappenings } from './turns.ts';
 
 export interface O121 {
   visits: 3 | 4;
@@ -28,8 +28,6 @@ interface State extends Turn {
   scored: number;
 }
 
-const RULE = { checkIn: 'straight', checkOut: 'double' } as const;
-
 function play(t: Turns, players: number, o: O121): State {
   let target = START_TARGET, remaining = target, lives = LIVES, used = 0, best: number | null = null;
   let over = false, left = 3, visitStart = remaining;
@@ -52,22 +50,9 @@ function play(t: Turns, players: number, o: O121): State {
   for (const [vi, v] of t.visits.entries()) {
     if (used === 0) starter = v.player;
     const start = (visitStart = remaining);
-    let bust = false, out = false;
     const lastVisit = used + 1 >= o.visits;
-    const w = walk(v, (d, i) => {
-      if (over) return { good: false, end: true };
-      const r = scoreDart(remaining, true, d, RULE);
-      if (r.bust) {
-        bust = true;
-        return { good: false, end: true };
-      }
-      remaining -= r.scored;
-      if (r.checkout) out = true;
-      // On the attempt's last visit, stop once the darts left can't check out (e.g. one dart on an odd score).
-      const hopeless = lastVisit && !r.checkout && i < 2 && !hint(remaining, 2 - i, 'double')?.finish;
-      return { good: r.scored > 0, end: r.checkout || hopeless };
-    });
-    if (bust) remaining = start;
+    const { w, bust, out, remaining: after } = attemptVisit(v, remaining, lastVisit, over);
+    remaining = after;
     goods.push(w.good);
     left = w.dartsLeft;
     if (!w.complete || over) continue;

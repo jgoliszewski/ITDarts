@@ -360,7 +360,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
                       <GameIcon game={id} className="tile-icon" stroke={1.25} />
                       <b>{t.name}</b>
                       <span>{t.blurb}</span>
-                      <small>{t.maxPlayers === 1 ? '1 player' : `${t.minPlayers}–${t.maxPlayers ?? MAX_PLAYERS} players`}</small>
+                      <small>{t.maxPlayers === t.minPlayers ? plural(t.minPlayers, 'player') : `${t.minPlayers}–${t.maxPlayers ?? MAX_PLAYERS} players`}</small>
                     </button>
                   );
                 })}

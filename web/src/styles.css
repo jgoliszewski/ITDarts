@@ -1513,3 +1513,33 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .trow .when { font-size: calc(22 * var(--u)); color: var(--muted); text-align: right; }
 .trow.first .num { color: var(--accent); }
 .trow.gap { grid-template-columns: 1fr; padding: 0 calc(24 * var(--u)); background: none; color: var(--muted2); line-height: 1; }
+/* ---------- Hare and Hounds (docs/UI.md#hare-and-hounds) ---------- */
+/* Role colours: the hare in the cyan of player 2, the hound violet; orange stays the target. The token (the glyph on a dark
+   disc) is the same on the board, in the left column and in the list. */
+:root { --hare: var(--p2); --hound: #A78BFA; }
+.tok.hare, .role.hare { --role: var(--hare); }
+.tok.hound, .role.hound { --role: var(--hound); }
+.tok { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 1.55em; height: 1.55em; border-radius: 50%; background: var(--ink); color: var(--role); }
+.tok svg { width: 1.05em; height: 1.05em; }
+.board-hero .role { display: flex; align-items: center; gap: calc(14 * var(--u)); font-size: calc(32 * var(--u)); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--role); }
+.board-hero .role .tok { font-size: calc(30 * var(--u)); }
+.plist.roles .prow .meta .tok { font-size: calc(24 * var(--u)); }
+.plist.roles.few .prow .meta .tok { font-size: calc(28 * var(--u)); }
+.board-main.with-board .plist.roles.few .prow .meta { flex-wrap: nowrap; }
+.board-main.with-board .plist.roles.few .prow .score { font-size: calc(88 * var(--u)); white-space: nowrap; }
+.plist.roles .prow .score .of { font-size: .36em; color: var(--muted); letter-spacing: 0; }
+.plist.roles .prow.active .score .of { color: var(--accent-ink); }
+.p-player .num .of { font-size: .42em; color: var(--muted2); letter-spacing: 0; }
+.p-player.active .num .of { color: var(--accent-ink); }
+
+/* ---------- Catch 40 (docs/GRY.md#catch-40) ---------- */
+/* Where 121 has the hearts: the player's points and the target counter, then the record pills, Best over PB. */
+.c40-chips { display: flex; gap: calc(16 * var(--u)); flex: none; }
+.c40-chip { display: flex; align-items: baseline; gap: calc(14 * var(--u)); height: calc(72 * var(--u)); padding: 0 calc(28 * var(--u)); border-radius: var(--r-pill); background: var(--raised); align-self: center; }
+.c40-chip .l { font-size: max(16px, calc(22 * var(--u))); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); align-self: center; }
+.c40-chip .num { font-size: calc(52 * var(--u)); line-height: 1; align-self: center; }
+.c40-chip .num .of { font-size: .62em; color: var(--muted); }
+.c40-chip.pts .num { color: var(--accent); }
+.hero-top > .rpills { display: flex; flex-direction: column; align-items: flex-end; gap: calc(8 * var(--u)); flex: none; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; }
+/* Kiosk text stays 16 px or more on a 1280 screen, as in the board card. */
+.hero-top > .rpills .rp { height: max(30px, calc(40 * var(--u))); font-size: max(16px, calc(17 * var(--u))); }

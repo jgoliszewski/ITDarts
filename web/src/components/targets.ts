@@ -5,8 +5,11 @@ import { BOARD_ORDER } from '../../../games/darts.ts';
 /**
  * target: hit it now (orange). done: closed or cleared by the player (green). danger: hitting it hurts you (red, Killer's own double).
  * off: out of play (grey, wedge dimmed). closedAll: closed by every player (grey, wedge hatched). none: no target, full colours (Free throw).
+ * hare, hound: a Hare and Hounds player stands here (cyan, violet; wedge dimmed).
  */
-export type SegmentState = 'target' | 'done' | 'danger' | 'off' | 'closedAll' | 'none';
+export type SegmentState = 'target' | 'done' | 'danger' | 'off' | 'closedAll' | 'none' | 'hare' | 'hound';
+
+export type Role = 'hare' | 'hound';
 
 /** The part of the wedge that counts: any segment, the big single (1), the double (2) or the treble (3). For the bull 2 is the bullseye. */
 export type TargetRing = 'any' | 1 | 2 | 3;
@@ -24,6 +27,8 @@ export interface BoardTargets {
   segments: Record<number, Segment>;
   /** The whole ring counts all round (Football doubles): only it is lit, outlined by two circles. */
   wholeRing?: 1 | 2 | 3;
+  /** Hare and Hounds: the sectors the two stand on, each marked with its token in the number ring. */
+  roles?: Record<Role, number>;
 }
 
 export const BULL = 25;

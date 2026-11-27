@@ -3,7 +3,7 @@
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
 import { DOT, SHOWN as S, arc, dartSpot, inputSpot, pt } from './Dartboard.tsx';
-import type { BoardTargets, Run, Segment, SegmentState } from './targets.ts';
+import type { BoardTargets, Role, Run, Segment, SegmentState } from './targets.ts';
 import { BULL, isLit, numberTurn, outlineKey, runs } from './targets.ts';
 
 const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'];
@@ -11,6 +11,8 @@ const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'];
 const DIM_SINGLE = ['#1E1E21', '#2C2C30'], DIM_RING = ['#432D2C', '#26392E'];
 const ACCENT = '#F58224', GREEN = '#3CCB7F', RED = '#FF5A5F', INK = '#111111', WIRE = '#0A0A0B';
 const BAND = '#1F1F23', INK_OFF = 'rgba(17,17,17,.25)';
+// Hare and Hounds role colours (--hare, --hound in styles.css).
+const HARE = '#16B2C9', HOUND = '#A78BFA';
 const FONT = 'Barlow Condensed, Inter, sans-serif';
 // The number ring (S1): a band round the double ring, the number in it, ticks on its inner edge.
 const B_IN = 346, B_OUT = 420, NUM_R = 392, NUM_SIZE = 36, TICK = [350, 361] as const;
@@ -25,7 +27,29 @@ const LOOK: Record<SegmentState, [string, string, string, string]> = {
   off: [BAND, '#7A7A80', '#7A7A80', INK_OFF],
   closedAll: [BAND, '#5A5A60', '#5A5A60', INK_OFF],
   none: [BAND, '#A1A1A6', '#A1A1A6', INK_OFF],
+  hare: [HARE, INK, INK, INK_OFF],
+  hound: [HOUND, INK, INK, INK_OFF],
 };
+
+/** The hare and the hound on the 24 grid, line drawings with a few filled dots (eye, nose), in the role colour. */
+function Glyph({ role, colour }: { role: Role; colour: string }) {
+  const dot = (cx: number, cy: number, r = 1) => <circle cx={cx} cy={cy} r={r} fill={colour} stroke="none" />;
+  return role === 'hare'
+    ? <><ellipse cx="8.8" cy="6.6" rx="1.9" ry="4.6" transform="rotate(-10 8.8 6.6)" /><ellipse cx="15.2" cy="6.6" rx="1.9" ry="4.6" transform="rotate(10 15.2 6.6)" /><circle cx="12" cy="16" r="5.2" />{dot(12, 17.6)}</>
+    : <><path d="M8 8.6C4.6 7.6 3.2 11.5 4.2 16.2" /><path d="M16 8.6c3.4-1 4.8 2.9 3.8 7.6" /><circle cx="12" cy="13" r="5" />{dot(10.2, 12)}{dot(13.8, 12)}{dot(12, 15.4, 1.2)}</>;
+}
+
+/** A role's token for the player list and the left column: the glyph on a dark disc (docs/UI.md, Hare and Hounds). */
+export function RoleToken({ role }: { role: Role }) {
+  return (
+    <span className={`tok ${role}`} aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><Glyph role={role} colour="currentColor" /></svg>
+    </span>
+  );
+}
+
+// Tokens sit on the band's inner edge; the number of their sector moves out and shrinks to make room.
+const TOKEN_R = 364, ROLE_NUM_R = 404, ROLE_NUM_SIZE = 32;
 const OUTLINE: Partial<Record<SegmentState, string>> = { target: ACCENT, danger: RED };
 const RING_R = { 1: [S[3], S[4]], 2: [S[4], S[5]], 3: [S[2], S[3]] } as const;
 
@@ -143,6 +167,18 @@ export function HeroBoard({ board, darts, label }: {
         })}
       </>}
 
+      {board.roles && ([['hound', board.roles.hound], ['hare', board.roles.hare]] as const).map(([role, n]) => {
+        // Caught: both on one sector, side by side.
+        const side = board.roles!.hare === board.roles!.hound ? (role === 'hare' ? 1 : -1) : 0;
+        const { angle, flipped } = numberTurn(n), a = angle + side * 5.4, [x, y] = pt(TOKEN_R, a), colour = role === 'hare' ? HARE : HOUND;
+        return (
+          <g key={role} className={`tok-${role}`} transform={`translate(${f(x)} ${f(y)}) rotate(${flipped ? a + 180 : a}) scale(1.16) translate(-12 -12)`}>
+            <circle cx="12" cy="12" r="12.6" fill={INK} />
+            <g fill="none" stroke={colour} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><Glyph role={role} colour={colour} /></g>
+          </g>
+        );
+      })}
+
       {darts.map(({ dart, good, coords }, i) => {
         // Board Manager reports some misses at (0, 0) or on the board; only a miss off the board is drawn where it landed.
         const landed = coords && (dart.n !== 0 || Math.hypot(coords.x, coords.y) > 1);
@@ -151,10 +187,11 @@ export function HeroBoard({ board, darts, label }: {
       })}
       {/* The numbers go over the darts: a miss is drawn on their ring and must not hide one. */}
       {BOARD_ORDER.map(n => {
-        const { angle, flipped } = numberTurn(n), [x, y] = pt(NUM_R, angle);
+        const token = board.roles?.hare === n || board.roles?.hound === n;
+        const { angle, flipped } = numberTurn(n), [x, y] = pt(token ? ROLE_NUM_R : NUM_R, angle);
         return (
           <text key={`t${n}`} x={f(x)} y={f(y)} transform={`rotate(${flipped ? angle + 180 : angle} ${f(x)} ${f(y)})`} fill={LOOK[seg(n).state][1]}
-            fontSize={NUM_SIZE} fontWeight="800" fontFamily={FONT} textAnchor="middle" dominantBaseline="central">{n}</text>
+            fontSize={token ? ROLE_NUM_SIZE : NUM_SIZE} fontWeight="800" fontFamily={FONT} textAnchor="middle" dominantBaseline="central">{n}</text>
         );
       })}
     </svg>
