@@ -6,10 +6,13 @@ import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
+import type { BoardMatch } from './boardTargets.ts';
+import { boardTargets } from './boardTargets.ts';
+import { boardCaption, boardNote, boardProgress, boardStats } from './boardHero.ts';
 import { gameStats } from '../components/Compare.tsx';
 import { DartFace } from '../components/DartFace.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { TargetBoard } from '../components/Dartboard.tsx';
+import { HeroBoard } from '../components/HeroBoard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
 import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
@@ -122,44 +125,16 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
   );
 }
 
-type BoardGame = 'atc' | 'fullboard' | 'shanghai' | 'football' | 'bullseye' | 'freethrow' | 'cricket';
-
-/** ATC and Full Board put the board next to the hero (bug report 2026-10-27); Cricket only with random sectors, to show which are in play. */
-export const hasBoard = (m: MiniMatch): m is Extract<MiniMatch, { game: BoardGame }> =>
+/** The games with targets on the board put it next to the hero (bug report 2026-10-27); Cricket and Killer since 2026-11-26. */
+export const hasBoard = (m: MiniMatch): m is BoardMatch =>
   m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
-  || (m.game === 'cricket' && m.options.sectors === 'random');
+  || m.game === 'cricket' || m.game === 'killer';
 
-function RaceBoard({ m }: { m: Extract<MiniMatch, { game: BoardGame }> }) {
+function RaceBoard({ m }: { m: BoardMatch }) {
   const v = m.view;
   const darts = v.visit.darts.map((d, i) => ({ dart: d.dart, good: v.visit.good[i], coords: d.coords }));
-  // Cricket Random: the whole board in its colours; the sectors still in play (and the bull) are outlined, closed ones lose it.
-  if (m.game === 'cricket') {
-    const live = m.view.sectors.filter((_, k) => !m.view.dead[k]);
-    return <TargetBoard cleared={[]} target={live} ring={null} still darts={darts} label={`Sectors in play: ${live.map(s => s === 25 ? 'Bull' : s).join(' · ')}`} />;
-  }
-  // Shanghai lights the round's sector; nothing is crossed off.
-  if (m.game === 'shanghai') return <TargetBoard cleared={[]} target={m.view.sector} ring={null} darts={darts} label={`Round sector ${m.view.sector}`} />;
-  // Free throw has no target: the board only shows where the darts stuck.
-  if (m.game === 'freethrow') return <TargetBoard cleared={[]} target={null} ring={null} darts={darts} label="No target" />;
-  if (m.game === 'bullseye') return <TargetBoard cleared={[]} target={25} ring={null} darts={darts} label="Aim for the bull" />;
-  // Football: the bull wins the ball (only the bullseye with Bull only); with the ball, the doubles or the big singles of four sectors score.
-  if (m.game === 'football') {
-    if (m.view.ball === v.current && m.view.sectors) {
-      return <TargetBoard cleared={[]} target={m.view.sectors} ring={1} darts={darts} label={`Big singles ${m.view.sectors.join(' · ')} score`} />;
-    }
-    return m.view.ball === v.current
-      ? <TargetBoard cleared={[]} target="ring" ring={2} darts={darts} label="Doubles score" />
-      : <TargetBoard cleared={[]} target={25} ring={m.options.kickOff === 'bullseye' ? 2 : null} darts={darts} label="The bull wins the ball" />;
-  }
-  const ring = m.options.target === 'doubles' ? 2 : m.options.target === 'trebles' ? 3 : null;
-  if (m.game === 'fullboard') {
-    const cleared = m.view.cleared[v.current];
-    return <TargetBoard cleared={cleared} target={null} ring={ring} darts={darts} label={`${cleared.length} of ${SECTORS.length} sectors cleared`} />;
-  }
-  const { targets, progress } = m.view;
-  const i = progress[v.current];
-  const target = i < targets.length ? targets[i] : null;
-  return <TargetBoard cleared={targets.slice(0, i)} target={target} ring={ring} darts={darts} label={target === null ? 'All targets cleared' : `Target ${v.hero.big}`} />;
+  const { board, label } = boardTargets(m);
+  return <HeroBoard board={board} darts={darts} label={label} />;
 }
 
 /** Gotcha: who the last visit sent to zero, on the hero once that visit's card is gone (docs/GRY.md). */
@@ -170,13 +145,9 @@ export const gotchaNote = (m: MiniMatch): string | null =>
 export const knockoutNote = (m: MiniMatch): string | null =>
   m.game === 'knockout' && m.view.roundEnd ? roundEndText(m.view.roundEnd, m.roster.map(r => r.name)) : null;
 
-/** The hero's line under the score: the game's own, with names where the game module has none. */
+/** The hero's line under the score in the games without a board: the game's own, with names where the game module has none. */
 function heroNote(m: MiniMatch): string {
-  if (m.game === 'killer') return m.view.killer[m.view.current] ? 'Hit a rival double' : 'Hit your double to become a killer';
   if (m.game === 'knockout' && m.view.visit.darts.length === 0) return knockoutNote(m) ?? m.view.hero.note;
-  if (m.game === 'football' && m.view.ball !== null && m.view.ball !== m.view.current) {
-    return `${m.roster[m.view.ball].name} has the ball · hit ${m.options.kickOff === 'any' ? 'the bull' : 'the bullseye'}`;
-  }
   return gotchaNote(m) ?? m.view.hero.note;
 }
 
@@ -184,8 +155,8 @@ function heroNote(m: MiniMatch): string {
 const recordBound = (m: MiniMatch): number | null => GAMES[m.game].record?.bound?.(m.view, m.view.current, m.options) ?? null;
 
 /**
- * Top right of the hero: the office record over the player's PB (co-op: Team best), or one merged pill, greyed and struck
- * through once out of reach. One button for the records modal. 121 shows them as ladder flags instead.
+ * Top right of the board card: the office record over the player's PB (co-op: Team best), or one merged pill, greyed and struck
+ * through once out of reach. One button for the records modal. Every game with a record has a board but 121, which shows them as ladder flags.
  */
 function RecordPills({ m, onOpen }: { m: MiniMatch; onOpen?: () => void }) {
   const pills = recordPills(m.record!, m.roster, m.view.current, recordBound(m));
@@ -197,15 +168,83 @@ function RecordPills({ m, onOpen }: { m: MiniMatch; onOpen?: () => void }) {
   );
 }
 
-export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
+/** The three darts of the visit as tiles; the pilot taps one to fix it, or the next empty one to add a dart. */
+function HeroDarts({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean }) {
   const v = m.view;
   const visit = v.visit;
-  const board = hasBoard(m);
-  const split = turnPanel(m) && !board;
+  return (
+  <div className="hero-darts">
+    {[0, 1, 2].map(i => {
+      const d = visit.darts[i];
+      if (!d) {
+        const addable = canEdit && i === visit.darts.length && visit.dartsLeft > 0 && v.phase === 'throwing';
+        return addable
+          ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
+          : <div key={i} className="dart-tile empty" />;
+      }
+      const tile = <DartFace m={m} rec={d} />;
+      const cls = `dart-tile ${dartTone(m, visit.good[i], d)} ${flash === i ? 'flash' : ''}`;
+      return canEdit
+        ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
+        : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
+    })}
+  </div>
+  );
+}
+
+/**
+ * The games with a board (docs/UI.md, Ekran wyników): the player in the left column (name, big number, stats of this match),
+ * the board in its own card with the darts under it and the record pills in its top right corner. The list is the right column.
+ */
+function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
+  const v = m.view;
+  const caption = boardCaption(m), note = boardNote(m), stats = boardStats(m);
   // Cricket from 5 players: the columns show a place number, the names stand here (A#3).
   const legend = m.game === 'cricket' && m.roster.length > 4;
   return (
-    <section className={`hero ${board ? 'with-board' : ''} ${m.game === '121' ? 'with-ladder' : ''} ${split ? 'split' : ''} ${legend ? 'with-legend' : ''}`}>
+    <>
+      <section className="hero board-hero">
+        <div className="hero-top">
+          {Icon.play()}
+          <div className="hero-name">{m.roster[v.current].name}</div>
+        </div>
+        {/* Under the name, not next to it: five hearts would push the name out. */}
+        {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
+        <div className="mini-big">
+          {caption && <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{caption}</div>}
+          {m.game === 'fullboard'
+            ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
+            : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
+        </div>
+        {note && <div className="hero-note">{note}</div>}
+        {legend && (
+          <div className="legend">
+            {playOrder(m).map((i, k) => (
+              <div key={i} className={i === v.current ? 'on' : ''}><span className="n num">{k + 1}</span><span className="who">{m.roster[i].name}</span></div>
+            ))}
+          </div>
+        )}
+        {stats.length > 0 && (
+          <div className="hero-stats" aria-label={`${m.roster[v.current].name} · This match`}>
+            {stats.map(([l, val]) => <div key={l}><span className="l">{l}</span><span className="num">{val}</span></div>)}
+          </div>
+        )}
+      </section>
+      <section className="board-card">
+        <RaceBoard m={m} />
+        <HeroDarts m={m} flash={flash} onDart={onDart} canEdit={canEdit} />
+        {m.record && <RecordPills m={m} onOpen={onRecords} />}
+      </section>
+    </>
+  );
+}
+
+export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
+  if (hasBoard(m)) return <BoardHero m={m} flash={flash} onDart={onDart} canEdit={canEdit} onRecords={onRecords} />;
+  const v = m.view;
+  const split = turnPanel(m);
+  return (
+    <section className={`hero ${m.game === '121' ? 'with-ladder' : ''} ${split ? 'split' : ''}`}>
       <div className="hero-top">
         {Icon.play()}
         <div className="hero-name">{m.roster[v.current].name}</div>
@@ -213,15 +252,11 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
         {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd(m) === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
-        {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
       </div>
-      {m.record && m.game !== '121' && <RecordPills m={m} onOpen={onRecords} />}
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
         {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
-          <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
-          {m.game === 'fullboard'
-            ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
-            : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
+          <div className="caps">{m.game === '121' ? <>Target <Odometer value={m.view.target} /></> : v.hero.caption}</div>
+          <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>
         </div>}
       </div>}
       {split && (
@@ -229,32 +264,9 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
           {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
         </TurnPanel>
       )}
-      {legend && (
-        <div className="legend">
-          {playOrder(m).map((i, k) => (
-            <div key={i} className={i === v.current ? 'on' : ''}><span className="n num">{k + 1}</span><span className="who">{m.roster[i].name}</span></div>
-          ))}
-        </div>
-      )}
-      {board && <RaceBoard m={m} />}
       {m.game === '121' && <Ladder target={m.view.target} marks={ladderMarks(m.record, m.roster)} onOpen={onRecords} />}
       {m.game !== 'hol' && heroNote(m) && <div className="hero-note">{heroNote(m)}</div>}
-      <div className="hero-darts">
-        {[0, 1, 2].map(i => {
-          const d = visit.darts[i];
-          if (!d) {
-            const addable = canEdit && i === visit.darts.length && visit.dartsLeft > 0 && v.phase === 'throwing';
-            return addable
-              ? <button key={i} className="dart-tile empty" onClick={() => onDart(i)}><span className="lbl">+ Add</span></button>
-              : <div key={i} className="dart-tile empty" />;
-          }
-          const tile = <DartFace m={m} rec={d} />;
-          const cls = `dart-tile ${dartTone(m, visit.good[i], d)} ${flash === i ? 'flash' : ''}`;
-          return canEdit
-            ? <button key={`${i}-${flash}`} className={cls} onClick={() => onDart(i)} aria-label={`Fix dart ${i + 1}: ${label(d.dart)}`}>{tile}</button>
-            : <div key={`${i}-${flash}`} className={cls}>{tile}</div>;
-        })}
-      </div>
+      <HeroDarts m={m} flash={flash} onDart={onDart} canEdit={canEdit} />
     </section>
   );
 }
@@ -268,6 +280,8 @@ const attemptEnd = (m: Extract<MiniMatch, { game: '121' }>): 'out' | 'failed' | 
  * and in 121 the darts left in the attempt first (docs/UI.md, Ekran wyników).
  */
 export function MiniSide({ m }: { m: MiniMatch }) {
+  // The games with a board show these numbers at the bottom of the left column.
+  if (hasBoard(m)) return null;
   const p = m.view.current;
   const stats = m.roster.length <= 4 ? gameStats(m.game, m.view.stats[p] ?? {}) : [];
   const n = stats.length + (m.game === '121' ? 1 : 0);
@@ -294,26 +308,30 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
   const v = m.view;
   // Same as X01: full-size rows up to 4 players.
   const compact = m.roster.length > 4;
+  // Games with a board: the rows fill the column, larger up to 3 players, with a progress bar where the game has one.
+  const board = hasBoard(m);
   // Small hearts under the name in the games with lives per player.
   const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives }
     : m.game === 'killer' ? { lives: m.view.lives, max: m.options.lives } : null;
   return (
-    <div className="plist">
+    <div className={`plist ${board && m.roster.length <= 3 ? 'few' : ''} ${board && m.roster.length > 5 ? 'many' : ''}`}>
       {playOrder(m).map(i => {
         const r = m.roster[i];
         const row = v.rows[i];
         const active = i === v.current && v.phase !== 'bulloff';
         const note = removedNote(m, i);
+        const bar = board ? boardProgress(m, i) : null;
         return (
           <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${row.out || note ? 'out' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="info">
               <div className="name">{r.name}</div>
               {note ? <div className="meta"><span>{note}</span></div>
                 : hearts && !row.out
-                ? <div className="meta list-hearts" aria-label={row.meta}>{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}{m.game === 'killer' && m.view.killer[i] && <b className="tag">Killer</b>}</div>
+                ? <div className="meta list-hearts" aria-label={row.meta}><span className="lh">{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</span>{m.game === 'killer' && m.view.killer[i] && <b className="tag">Killer</b>}</div>
                 : <div className="meta"><span>{row.meta}</span></div>}
+              {bar !== null && <span className="pbar" role="presentation"><i style={{ width: `${(bar * 100).toFixed(1)}%` }} /></span>}
             </div>
-            <div className="score num">{row.value}</div>
+            <div className={`score num ${board && row.value.length > 3 ? 'long' : ''}`}>{row.value}</div>
           </div>
         );
       })}
@@ -334,7 +352,7 @@ export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cric
   const v = m.view;
   const many = m.roster.length > 4;
   return (
-    <div className={`cricket ${many ? 'many' : ''}`} style={{ gridTemplateColumns: `calc(110 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
+    <div className={`cricket ${many ? 'many' : ''} n${m.roster.length}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />
       {playOrder(m).map((i, k) => (
         <div key={i} className={`ch ${i === v.current ? 'active' : ''} ${v.removed[i] ? 'out' : ''}`} {...pickProps(onPick, i, m.roster[i].name)}>

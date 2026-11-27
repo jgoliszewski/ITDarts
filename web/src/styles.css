@@ -11,6 +11,8 @@
   --muted: #A1A1A6;
   --muted2: #8E8E94;
   --accent: #F58224;
+  --silver: #C9CDD4;
+  --bronze: #B98A5E;
   --on-accent: var(--ink);
   --accent-ink: #3A2410;
   --green: #3CCB7F;
@@ -237,6 +239,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .prow .meta.list-hearts { gap: calc(6 * var(--u)); font-size: calc(60 * var(--u)); line-height: 1; color: var(--off); }
 .prow.compact .meta.list-hearts { font-size: calc(52 * var(--u)); }
 .prow .meta.list-hearts .on { color: var(--red); }
+/* The hearts wrap as one group, so the Killer tag goes to the next line on its own. */
+.list-hearts .lh { gap: calc(6 * var(--u)); }
 .prow.active .meta.list-hearts { color: var(--off-on-accent); }
 .prow.active .meta.list-hearts .on { color: var(--ink); }
 .hero-bust { font-size: var(--fs-tv-xl); color: var(--red); line-height: 0.9; }
@@ -399,26 +403,43 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 .lobby-main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) calc(500 * var(--u)); gap: calc(24 * var(--u)); padding: calc(8 * var(--u)) calc(40 * var(--u)) calc(32 * var(--u)); min-height: 0; }
 /* Records on the left (docs/UI.md, Lobby i QR): the grid takes the room, "All records" sits under it. */
 .lobby-records-col { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-height: 0; min-width: 0; }
-.rec-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(16 * var(--u)); }
-.rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(24 * var(--u)) calc(26 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
-.rec-tile > :not(.rec-icon) { position: relative; max-width: 100%; }
-.rec-tile .what { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
-.rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(10 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
-.rec-tile .val .num { font-size: calc(120 * var(--u)); }
-.rec-tile .val .unit { font-size: max(16px, calc(26 * var(--u))); font-weight: 700; }
-.rec-tile .who { font-size: max(16px, calc(32 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-/* The chase: 2nd and 3rd place, a row each, lighter than the muted grey of the rest. */
-.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); min-height: calc(2 * 1.2 * max(16px, calc(23 * var(--u)))); font-size: max(16px, calc(23 * var(--u))); color: var(--soft); }
-.rec-tile .chase .row { display: flex; gap: 0.5em; min-width: 0; line-height: 1.2; }
-.rec-tile .chase .pl { color: var(--muted); }
+/* Pages of records (docs/UI.md, Lobby i QR): a strip of pages slides under the pointer; each page is a 4-column grid of game groups. */
+.rec-pager { flex: 1; min-height: 0; position: relative; overflow: clip; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.rec-track { position: absolute; inset: 0; display: flex; will-change: transform; }
+/* A finger on the strip: the tile under it neither presses nor takes the click. */
+.rec-pager.dragging .rec-tile { transform: none !important; pointer-events: none; }
+.rec-page { flex: none; width: 100%; height: 100%; display: grid; gap: calc(16 * var(--u)); }
+.rec-group { display: flex; flex-direction: column; gap: calc(10 * var(--u)); min-height: 0; min-width: 0; }
+.rec-ghead { margin: 0; display: flex; align-items: center; gap: calc(12 * var(--u)); flex: none; min-width: 0; height: max(28px, calc(40 * var(--u))); font-size: max(16px, calc(28 * var(--u))); font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.rec-ghead .rec-gico { width: calc(34 * var(--u)); height: calc(34 * var(--u)); min-width: 22px; flex: none; color: var(--soft); }
+.rec-ghead .gline { flex: 1; height: 2px; border-radius: 2px; background: var(--line); min-width: 8px; }
+.rec-tiles { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: calc(12 * var(--u)); }
+.rec-tile { position: relative; overflow: hidden; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(8 * var(--u)); padding: calc(20 * var(--u)) calc(22 * var(--u)); border-radius: calc(28 * var(--u)); background: var(--card2); text-align: left; transition: transform var(--dur-press) var(--ease-out); }
+.rec-tile > * { max-width: 100%; min-width: 0; }
+.opt { white-space: nowrap; }
+.rec-tile .what { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; line-height: 1.2; color: var(--soft); }
+.rec-tile .val { margin-top: auto; display: flex; align-items: baseline; gap: calc(8 * var(--u)); color: var(--accent); line-height: 0.85; white-space: nowrap; }
+.rec-tile .val .num { font-size: calc(104 * var(--u)); }
+.rec-tile .val .unit { font-size: max(16px, calc(24 * var(--u))); font-weight: 700; }
+.rec-tile .who { font-size: max(16px, calc(28 * var(--u))); font-weight: 800; line-height: 1.15; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+/* The chase: 2nd and 3rd place, a row each; the place is a round badge (silver, bronze) so it does not blend into the name. */
+.rec-tile .chase { width: 100%; display: flex; flex-direction: column; gap: calc(2 * var(--u)); min-height: calc(3em + calc(2 * var(--u))); font-size: max(16px, calc(20 * var(--u))); color: var(--soft); }
+.rec-tile .chase .row { display: flex; align-items: center; gap: 0.5em; min-width: 0; line-height: 1.2; }
+.rec-tile .chase .pl { flex: none; width: 1.5em; height: 1.5em; border-radius: 50%; display: grid; place-items: center; background: var(--silver); color: var(--ink); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.rec-tile .chase .pl.bronze { background: var(--bronze); }
 .rec-tile .chase .none { color: var(--muted); }
 .rec-tile .chase .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rec-tile .chase .v { font-weight: 700; white-space: nowrap; }
-.rec-tile .rec-icon { position: absolute; right: calc(-18 * var(--u)); bottom: calc(-18 * var(--u)); width: calc(120 * var(--u)); height: calc(120 * var(--u)); color: var(--faint); pointer-events: none; opacity: 0.45; }
 .rec-tile.empty { grid-column: 1 / -1; grid-row: 1 / -1; align-items: center; justify-content: center; background: transparent; border: 2px dashed var(--line); cursor: default; }
 .rec-tile.empty b { font-size: max(16px, calc(40 * var(--u))); font-weight: 800; }
 .rec-tile.empty span { font-size: max(16px, calc(26 * var(--u))); color: var(--muted); }
-.all-link { align-self: flex-end; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
+.rec-foot { flex: none; display: flex; align-items: center; gap: calc(12 * var(--u)); min-height: max(var(--tap), calc(56 * var(--u))); }
+.rec-dots { display: flex; flex: none; }
+.rec-dot { width: max(var(--tap), calc(48 * var(--u))); height: max(var(--tap), calc(48 * var(--u))); display: flex; align-items: center; justify-content: center; }
+/* --k (0..1) is set every frame from the strip's position, so the dot widens and lights up as the page comes. */
+.rec-dot i { display: block; --dot: max(10px, calc(14 * var(--u))); width: calc(var(--dot) + (max(24px, calc(34 * var(--u))) - var(--dot)) * var(--k, 0)); height: var(--dot); border-radius: var(--r-pill); background: color-mix(in srgb, var(--text) calc(var(--k, 0) * 100%), var(--faint)); }
+.rec-names { flex: 1; min-width: 0; font-size: max(16px, calc(22 * var(--u))); font-weight: 700; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.all-link { margin-left: auto; display: inline-flex; align-items: center; gap: 0.5em; flex: none; min-height: max(var(--tap), calc(56 * var(--u))); padding: 0 calc(8 * var(--u)); color: var(--soft); font-weight: 700; text-decoration: none; font-size: max(16px, calc(24 * var(--u))); }
 .all-link .arrow { color: var(--accent); }
 .lobby-col { padding: calc(36 * var(--u)); display: flex; flex-direction: column; gap: calc(22 * var(--u)); min-width: 0; min-height: 0; }
 .lobby-col .lobby-text { gap: calc(12 * var(--u)); }
@@ -693,19 +714,83 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .attempt-pips span { width: calc(18 * var(--u)); height: calc(18 * var(--u)); border-radius: 50%; background: var(--text); }
 .attempt-pips span.used { background: transparent; box-shadow: inset 0 0 0 2px var(--muted2); }
 .hero-note { font-size: var(--fs-tv-name); color: var(--soft); font-weight: 600; }
-/* Games with a board: the board takes the right half of the hero, the target on the left and the darts across the bottom as in every game. */
-.hero.with-board { display: grid; grid-template-columns: minmax(calc(380 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); grid-template-rows: auto 1fr auto auto; column-gap: calc(40 * var(--u)); row-gap: calc(24 * var(--u)); min-height: 0; }
-.hero.with-board > :not(.target-board) { grid-column: 1; }
-.hero.with-board .hero-score-row { align-self: center; }
-.hero.with-board .mini-big .num { font-size: calc(280 * var(--u)); }
-.hero.with-board .mini-big .num.long { font-size: calc(200 * var(--u)); }
+/* ---------- games with a board (docs/UI.md, Ekran wyników): the player | the board card with the darts | the list or the Cricket grid ---------- */
+.board-main.with-board, .board-main.with-board:has(.cricket) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(460 * var(--u)); }
+/* Left: name, (Killer: hearts), big number, its line, and this match's numbers at the bottom. */
+.hero.board-hero { justify-content: flex-start; gap: calc(20 * var(--u)); padding: calc(40 * var(--u)) calc(36 * var(--u)); min-height: 0; overflow: hidden; }
+.board-hero .hero-name { font-size: calc(54 * var(--u)); }
+.board-hero .hearts { position: static; transform: none; flex-wrap: wrap; gap: calc(6 * var(--u)); font-size: calc(46 * var(--u)); }
+.board-hero .mini-big .num { font-size: calc(200 * var(--u)); }
+.board-hero .mini-big .num.long { font-size: calc(120 * var(--u)); }
+.board-hero .mini-big .num .of { font-size: 0.4em; }
+.board-hero .hero-note { font-size: max(16px, calc(30 * var(--u))); line-height: 1.2; }
+/* Cricket from 5 players: the grid columns show a place number, the names stand here (A#3). */
+.board-hero > .legend { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(4 * var(--u)) calc(14 * var(--u)); font-size: calc(28 * var(--u)); min-width: 0; }
+.board-hero > .legend > div { display: contents; }
+.board-hero > .legend .n { font-size: calc(32 * var(--u)); min-width: 0; }
+.board-hero > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hero-stats { margin-top: auto; display: grid; gap: calc(10 * var(--u)); }
+.hero-stats > div { display: flex; align-items: center; justify-content: space-between; gap: calc(12 * var(--u)); min-width: 0; padding: calc(10 * var(--u)) calc(20 * var(--u)); border-radius: calc(20 * var(--u)); background: var(--card2); }
+/* A long label (Highest visit) wraps next to a long number (120.6) instead of being cut. */
+.hero-stats .l { font-size: max(16px, calc(22 * var(--u))); line-height: 1.15; font-weight: 600; color: var(--muted); min-width: 0; }
+.hero-stats .num { font-size: calc(56 * var(--u)); line-height: 1; white-space: nowrap; }
+/* Middle: the board as large as the card allows, the three darts in a row under it. */
+.board-card { position: relative; min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; row-gap: calc(12 * var(--u)); padding: calc(14 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u)); border-radius: var(--r-card); background: var(--card); }
+.board-card > .target-board { grid-column: 1; grid-row: 1; width: 100%; height: 100%; aspect-ratio: auto; max-height: none; }
+.board-card .hero-darts { grid-row: 2; }
+.board-card .dart-tile { flex: 1 1 0; width: auto; min-width: 0; height: max(56px, calc(116 * var(--u))); }
+.board-card .dart-tile .num { font-size: calc(72 * var(--u)); }
+/* Records (B): Best over PB in the card's top right corner, clear of the ring of numbers; one button for the records modal. */
+.board-card .rp { height: max(30px, calc(44 * var(--u))); font-size: max(16px, calc(18 * var(--u))); }
+/* Right: the rows fill the column; larger up to 3 players. */
+.board-main.with-board .side { gap: calc(20 * var(--u)); min-width: 0; }
+.board-main.with-board .plist { flex: 1; }
+.board-main.with-board .prow { flex: 1 1 0; min-height: 0; }
+.board-main.with-board .prow .info { gap: calc(8 * var(--u)); }
+.board-main.with-board .prow .name { font-size: calc(38 * var(--u)); }
+.board-main.with-board .prow .meta { font-size: calc(30 * var(--u)); flex-wrap: wrap; row-gap: calc(6 * var(--u)); min-width: 0; }
+.board-main.with-board .prow .meta.list-hearts { font-size: calc(40 * var(--u)); }
+.board-main.with-board .list-hearts .tag { margin-left: 0; font-size: max(16px, calc(24 * var(--u))); padding: calc(4 * var(--u)) calc(12 * var(--u)); border-radius: var(--r-pill); background: var(--red); color: var(--ink); }
+.board-main.with-board .prow .score { font-size: calc(96 * var(--u)); }
+.board-main.with-board .plist.few .prow { padding: calc(24 * var(--u)) calc(32 * var(--u)); }
+.board-main.with-board .plist.few .info { gap: calc(14 * var(--u)); }
+.board-main.with-board .plist.few .name { font-size: calc(52 * var(--u)); }
+.board-main.with-board .plist.few .meta { font-size: calc(36 * var(--u)); }
+.board-main.with-board .plist.few .meta.list-hearts { font-size: calc(44 * var(--u)); }
+.board-main.with-board .plist.few .score { font-size: calc(120 * var(--u)); }
+/* Free throw's average (120.6) leaves the name room. */
+.board-main.with-board .prow .score.long { font-size: calc(72 * var(--u)); }
+/* 6–8 players: compact rows, so eight fit at 1280×720 with the active name whole; the Killer tag stays next to the hearts. */
+.board-main.with-board .plist.many { gap: calc(6 * var(--u)); }
+.board-main.with-board .plist.many .prow { padding: calc(8 * var(--u)) calc(20 * var(--u)); gap: calc(12 * var(--u)); }
+.board-main.with-board .plist.many .info { gap: calc(4 * var(--u)); }
+.board-main.with-board .plist.many .name { font-size: calc(28 * var(--u)); }
+.board-main.with-board .plist.many .meta { font-size: max(16px, calc(24 * var(--u))); flex-wrap: nowrap; }
+.board-main.with-board .plist.many .meta.list-hearts { font-size: calc(30 * var(--u)); }
+.board-main.with-board .plist.many .list-hearts .tag { font-size: max(16px, calc(20 * var(--u))); padding: calc(2 * var(--u)) calc(10 * var(--u)); }
+.board-main.with-board .plist.many .score { font-size: calc(64 * var(--u)); }
+.board-main.with-board .plist.many .pbar { height: calc(8 * var(--u)); min-height: 4px; }
+/* How far the player is (ATC, Full Board, Football). */
+.pbar { display: block; height: calc(14 * var(--u)); min-height: 6px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.pbar i { display: block; height: 100%; border-radius: var(--r-pill); background: var(--green); }
+.plist.few .pbar { height: calc(20 * var(--u)); }
+.prow.active .pbar { background: rgba(17, 17, 17, 0.18); }
+.prow.active .pbar i { background: var(--ink); }
+.prow.out .pbar i { background: var(--off); }
+/* Cricket grid in the narrower column: a slimmer sector column, the marks as large as v9. */
+.board-main.with-board .cricket { flex: 1; height: auto; padding: calc(12 * var(--u)); }
+/* 6–8 players: the grid column grows (90 u + 78 u per player) so every player column stays ≥ 44 px at 1280×720; the board gives way, ≥ 600 px at 1920. */
+.board-main.with-board:has(.cricket.n6) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(558 * var(--u)); }
+.board-main.with-board:has(.cricket.n7) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(636 * var(--u)); }
+.board-main.with-board:has(.cricket.n8) { grid-template-columns: calc(340 * var(--u)) minmax(0, 1fr) calc(714 * var(--u)); }
+/* 5 players at 1280×720: the points shrink with the column, but not under 16 px. */
+.board-main.with-board .cricket .ch .num { font-size: max(16px, min(calc(96 * var(--u)), 40cqi)); }
+.board-main.with-board .cricket .sector { font-size: calc(40 * var(--u)); }
+.board-main.with-board .cricket .mk { font-size: calc(60 * var(--u)); }
+.board-main.with-board .cricket .ch .n { font-size: calc(30 * var(--u)); }
+.board-main.with-board .cricket.many .ch .ini { font-size: calc(28 * var(--u)); }
 .mini-big .num .of { font-size: calc(110 * var(--u)); color: var(--muted); }
-.hero.with-board .hero-darts { grid-column: 1 / -1; grid-row: 4; }
 .target-board { grid-column: 2; grid-row: 1 / 4; align-self: center; justify-self: end; width: 100%; height: auto; max-height: 100%; aspect-ratio: 1; min-height: 0; }
-.tb-outline { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linejoin: round; stroke-dasharray: 18 6; animation: tb-march 1.2s linear infinite; }
-@keyframes tb-march { to { stroke-dashoffset: -48; } }
-/* Marks without pointing: Cricket Random's sectors in play. */
-.tb-outline.still { animation: none; }
 .hol-scale { position: relative; height: calc(430 * var(--u)); margin: calc(8 * var(--u)) 0; }
 .hol-scale .pin-num { position: absolute; bottom: calc(240 * var(--u)); font-size: calc(220 * var(--u)); line-height: 0.85; white-space: nowrap; color: var(--text); }
 .hol-scale .stem { position: absolute; bottom: calc(176 * var(--u)); width: calc(10 * var(--u)); height: calc(56 * var(--u)); border-radius: var(--r-pill); background: var(--text); }
@@ -1148,26 +1233,30 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .master-controls input:disabled { accent-color: var(--off); cursor: default; }
 
 /* ---------- lobby records (D6) ---------- */
-/* The phone home: one tile per minigame variant with a record; the kiosk has its own grid (.rec-grid). */
-.lobby-records .record-list { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
+/* The phone home: one tile per minigame variant with a record; the kiosk has its own record pages (.rec-pager). */
+.lobby-records .record-groups { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(40 * var(--u)); mask-image: linear-gradient(to bottom, #000 calc(100% - 40 * var(--u)), transparent); display: flex; flex-direction: column; gap: calc(12 * var(--u)); }
+.lobby-records .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: min-content; gap: calc(12 * var(--u)); }
+.record-ghead { margin: 0; display: flex; align-items: center; gap: 10px; height: 32px; font-size: 18px; font-weight: 800; white-space: nowrap; }
+.record-ghead .record-gico { width: 22px; height: 22px; flex: none; color: var(--soft); }
+.record-ghead .gline { flex: 1; height: 2px; border-radius: 2px; background: var(--line); min-width: 8px; }
+.record-group { display: flex; flex-direction: column; gap: var(--sp-2); }
 .record-tile { position: relative; overflow: hidden; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(4 * var(--u)); min-height: max(var(--tap), calc(132 * var(--u))); padding: calc(16 * var(--u)) calc(20 * var(--u)); border-radius: var(--r-tile); background: var(--card2); text-align: left; }
-.record-tile > :not(.record-icon) { position: relative; max-width: 100%; }
+.record-tile > * { max-width: 100%; }
 .record-tile .what { font-size: max(16px, calc(20 * var(--u))); font-weight: 600; line-height: 1.2; color: var(--soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .record-tile .num { font-size: calc(48 * var(--u)); line-height: 1; color: var(--text); }
 .record-tile .who { font-size: max(16px, calc(18 * var(--u))); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.record-tile .record-icon { position: absolute; right: calc(-14 * var(--u)); bottom: calc(-14 * var(--u)); width: calc(84 * var(--u)); height: calc(84 * var(--u)); color: var(--faint); pointer-events: none; }
 .record-tile.empty { justify-content: center; background: transparent; border: 2px dashed var(--line); }
 .record-tile.empty b { font-size: max(16px, calc(24 * var(--u))); }
 .record-tile.empty span { font-size: max(16px, calc(20 * var(--u))); color: var(--muted); }
 /* The same records on the phone pilot's home, in px: the list runs with the page, no scroll inside. */
 .phone .lobby-records { border-radius: var(--r-box); padding: var(--sp-5) 20px; gap: var(--sp-3); }
 .phone .lobby-records .caps { font-size: var(--fs-ui-sm); }
-.phone .record-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.phone .record-list { gap: var(--sp-2); }
+.phone .record-groups { gap: var(--sp-3); }
 .phone .record-tile { min-height: 96px; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-key); gap: var(--sp-1); }
 .phone .record-tile .what { font-size: var(--fs-ui-sm); }
 .phone .record-tile .num { font-size: var(--fs-ui-2xl); }
 .phone .record-tile .who { font-size: var(--fs-ui-sm); }
-.phone .record-tile .record-icon { right: -8px; bottom: -8px; width: 56px; height: 56px; }
 .phone .record-tile.empty b { font-size: var(--fs-ui-md); }
 .phone .record-tile.empty span { font-size: var(--fs-ui-sm); }
 /* Phone home: the same words as the lobby, just above the buttons (B#21). */
@@ -1375,27 +1464,6 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .list-hearts .tag { margin-left: calc(8 * var(--u)); font-size: max(16px, var(--fs-tv-label)); letter-spacing: 0.08em; text-transform: uppercase; }
 /* Higher or Lower: what the red range means (A#20). */
 .hol-scale .legend { position: absolute; left: 0; right: 0; top: calc(100% + 12 * var(--u)); text-align: center; font-size: max(16px, calc(24 * var(--u))); color: var(--muted); }
-/* Cricket from 5 players: place number → name next to the score (A#3). */
-.hero.with-legend { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: 'top top' 'score legend' 'note legend' 'darts darts'; column-gap: calc(40 * var(--u)); }
-.with-legend > .hero-top { grid-area: top; }
-.with-legend > .hero-score-row { grid-area: score; align-self: center; }
-.with-legend > .hero-note { grid-area: note; }
-.with-legend > .hero-darts { grid-area: darts; }
-.with-legend > .legend { grid-area: legend; align-self: center; display: grid; grid-template-columns: auto auto; gap: calc(10 * var(--u)) calc(18 * var(--u)); align-items: center; font-size: calc(34 * var(--u)); font-weight: 700; }
-.with-legend > .legend > div { display: contents; }
-/* Cricket Random: the grid column is 860u, so the hero is narrower than in Shanghai; a smaller score keeps the board at 540u or more. */
-.board-main:has(.cricket) .hero.with-board { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); }
-.board-main:has(.cricket) .hero.with-board > .hero-top { grid-column: 1 / -1; }
-.board-main:has(.cricket) .hero.with-board:not(.with-legend) > .target-board { grid-row: 2 / 4; }
-.board-main:has(.cricket) .hero.with-board .mini-big .num { font-size: calc(170 * var(--u)); }
-/* Cricket Random from 5 players: the board takes the right, the legend sits under the score. */
-.hero.with-board.with-legend { grid-template-columns: minmax(calc(260 * var(--u)), 1fr) minmax(0, calc(620 * var(--u))); grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: 'top top' 'score board' 'legend board' 'note board' 'darts darts'; }
-.hero.with-board.with-legend > .target-board { grid-area: board; grid-row: 2 / 5; align-self: center; min-height: 0; }
-.hero.with-board.with-legend > .hero-top { grid-column: 1 / -1; }
-.hero.with-board.with-legend .hero-darts { grid-row: 5; }
-.with-board.with-legend > .legend { grid-template-columns: auto minmax(0, 1fr); min-width: 0; align-self: start; font-size: calc(28 * var(--u)); gap: calc(4 * var(--u)) calc(14 * var(--u)); }
-.with-board.with-legend > .legend .who { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.with-board.with-legend > .legend .n { font-size: calc(32 * var(--u)); }
 .legend .n { font-size: calc(40 * var(--u)); color: var(--muted); text-align: right; min-width: calc(40 * var(--u)); }
 .legend .who { white-space: nowrap; color: var(--soft); }
 .legend .on .n, .legend .on .who { color: var(--accent); }
@@ -1477,8 +1545,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   /* 121: the ladder and the odometer jump to where they end. */
   .ladder .track.slide { animation: none; }
   .odometer .digit.roll .stack { animation: none; transform: translateY(-1em); }
-  /* The takeout spinner and the target outline stand still; the text and the dashes still say what they mean. */
-  .takeout-band svg, .tb-outline { animation: none; }
+  /* The takeout spinner stands still; the text still says what it means. */
+  .takeout-band svg { animation: none; }
   ::view-transition-group(*) { animation-duration: 0s; }
   /* UI: dialogs, sheets, drawer, lists and toasts only fade; switch knob and rows jump. */
   .dialog, .wide-fix, .sheet, .drawer, .pick-list, .info-bubble, .toast, .big ~ .toasts .toast { animation-name: fade-in; }
@@ -1491,12 +1559,10 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 @keyframes heart-fade { 0%, 60% { color: var(--red); } 100% { color: var(--off); } }
 
 /* ---------- records during the game (docs/UI.md#rekordy-w-trakcie-gry) ---------- */
-/* Top right of the hero, Best over PB (Team), right-aligned, level with the name. Out of the grid: in the board games they sit in the
-   empty corner of the board's square (its ring of numbers is round), so the board keeps its 620 u. One button for the records modal. */
-.hero:has(> .rpills) { position: relative; }
-.hero > .rpills { position: absolute; right: calc(56 * var(--u)); top: calc(48 * var(--u)); z-index: 3; grid-column: auto; grid-row: auto;
+/* Every game with a record but 121 has a board: Best over PB (Team), right-aligned, in the empty top right corner of the board card,
+   clear of the round ring of numbers. One button for the records modal. */
+.board-card > .rpills { position: absolute; right: calc(20 * var(--u)); top: calc(20 * var(--u)); z-index: 3;
   display: flex; flex-direction: column; align-items: flex-end; gap: calc(8 * var(--u)); min-height: 44px; padding: 0; border: 0; background: none; border-radius: calc(20 * var(--u)); cursor: pointer; }
-.hero:not(.with-board):has(> .rpills) > .hero-top { margin-right: calc(260 * var(--u)); }
 .rp { display: flex; align-items: center; gap: calc(8 * var(--u)); height: calc(40 * var(--u)); padding: 0 calc(16 * var(--u)); border-radius: var(--r-pill); background: var(--raised);
   font-size: max(14px, calc(17 * var(--u))); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .rp b { font-family: var(--num); font-size: calc(28 * var(--u)); font-weight: 800; line-height: 1; letter-spacing: 0; color: var(--text); }

@@ -15,7 +15,9 @@ export const pt = (r: number, deg: number) => [r * Math.sin((deg * Math.PI) / 18
 export function arc(r1: number, r2: number, a1: number, a2: number) {
   const [x1, y1] = pt(r2, a1), [x2, y2] = pt(r2, a2), [x3, y3] = pt(r1, a2), [x4, y4] = pt(r1, a1);
   const f = (n: number) => n.toFixed(2);
-  return `M${f(x1)} ${f(y1)}A${r2} ${r2} 0 0 1 ${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}A${r1} ${r1} 0 0 0 ${f(x4)} ${f(y4)}Z`;
+  // Past half a turn the arcs take the long way round (a run of neighbours on the hero board).
+  const big = a2 - a1 > 180 ? 1 : 0;
+  return `M${f(x1)} ${f(y1)}A${r2} ${r2} 0 ${big} 1 ${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}A${r1} ${r1} 0 ${big} 0 ${f(x4)} ${f(y4)}Z`;
 }
 
 /** Where the i-th dart of a visit is drawn: the middle of its field, nudged by i so darts in one field don't overlap. */
@@ -104,71 +106,26 @@ export function Dartboard({ marks, selected, hot, onPick, size = 760 }: {
   );
 }
 
-// The input board's colours (Dartboard above). Cleared targets are hatched grey; the target keeps its colours
-// and gets a dashed orange outline that runs around it.
-const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'], CLEARED = 'url(#tb-hatch)', HIT_DOT = '#3CCB7F', MISS_DOT = '#FF5A5F';
+// The input board's colours (Dartboard above).
+const SINGLE = ['#232327', '#4A4A50'], RING = ['#B8322F', '#1F8A52'];
 
-/**
- * Read-only board for the games with a board in the hero (docs/UI.md, mockup O): cleared targets hatched, the target outlined
- * (only its ring with Doubles or Trebles; standing still with `still`, as in Cricket Random) and this visit's darts as dots, green for a hit, red otherwise.
- */
-export function TargetBoard({ cleared, target, ring, darts, label, still, children }: {
-  cleared: number[];
-  /** A sector or the bull (25), 'ring': the whole of `ring` all round (Football with the ball), or sectors (the big singles of Football's Big singles). */
-  target: number | number[] | 'ring' | null;
-  /** The ring that counts on the target: null for any segment, 1 the big single, 2 doubles, 3 trebles. */
-  ring: 1 | 2 | 3 | null;
-  /** With coords a dot sits where the dart stuck; without (fixed or added by hand) in the middle of its field. */
-  darts: { dart: Dart; good: boolean; coords?: { x: number; y: number } }[];
-  label: string;
-  /** Outline that does not march (Cricket Random: it marks the sectors in play, not a target to hit next). */
-  still?: boolean;
-  /** Drawn over the board (Test board). */
-  children?: ReactNode;
-}) {
+/** Read-only board in full colours, near real proportions (SHOWN): the Heatmap's base and the Test board's, with what they draw over it. */
+export function TargetBoard({ label, children }: { label: string; children?: ReactNode }) {
   const S = SHOWN;
-  const done = new Set(cleared);
-  const paint = (n: number, normal: string) => done.has(n) ? CLEARED : normal;
-  const cls = still ? 'tb-outline still' : 'tb-outline';
-  const tk = typeof target === 'number' && target !== 25 ? BOARD_ORDER.indexOf(target) : -1;
-  const [o1, o2] = ring === 1 ? [S[3], S[4]] : ring === 3 ? [S[2], S[3]] : ring === 2 ? [S[4], S[5]] : [S[1], S[5]];
-  // Only the bullseye counts for the bull with Doubles or Trebles.
-  const outline = target === null ? null
-    : Array.isArray(target) ? target.map(n => n === 25
-      ? <circle key={n} className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
-      : <path key={n} className={cls} d={arc(o1, o2, BOARD_ORDER.indexOf(n) * 18 - 9, BOARD_ORDER.indexOf(n) * 18 + 9)} />)
-    : target === 'ring' ? <><circle className={cls} cx="0" cy="0" r={o1} /><circle className={cls} cx="0" cy="0" r={o2} /></>
-    : target === 25 ? <circle className={cls} cx="0" cy="0" r={ring === null ? S[1] : S[0]} />
-    : <path className={cls} d={arc(o1, o2, tk * 18 - 9, tk * 18 + 9)} />;
   return (
     <svg className="target-board" viewBox="-380 -380 760 760" role="img" aria-label={label}>
-      <defs>
-        <pattern id="tb-hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          {/* About 15% darker than the live singles, so cleared sectors drop back (docs/UI.md, Ekran wyników). */}
-          <rect width="14" height="14" fill="#1C1C1F" />
-          <rect width="5" height="14" fill="#3B3B40" />
-        </pattern>
-      </defs>
       <circle cx="0" cy="0" r="380" fill="#141416" />
       {BOARD_ORDER.map((n, k) => {
         const parts: [number, number, 1 | 2 | 3][] = [[S[1], S[2], 1], [S[2], S[3], 3], [S[3], S[4], 1], [S[4], S[5], 2]];
         return parts.map(([r1, r2, m], j) => (
-          <path key={`${n}-${j}`} d={arc(r1, r2, k * 18 - 9, k * 18 + 9)} fill={paint(n, m === 1 ? SINGLE[k % 2] : RING[k % 2])} stroke="#0A0A0B" strokeWidth="2" />
+          <path key={`${n}-${j}`} d={arc(r1, r2, k * 18 - 9, k * 18 + 9)} fill={m === 1 ? SINGLE[k % 2] : RING[k % 2]} stroke="#0A0A0B" strokeWidth="2" />
         ));
       })}
-      <circle cx="0" cy="0" r={S[1]} fill={paint(25, RING[1])} stroke="#0A0A0B" strokeWidth="2" />
-      <circle cx="0" cy="0" r={S[0]} fill={paint(25, RING[0])} stroke="#0A0A0B" strokeWidth="2" />
-      {outline}
-      {darts.map(({ dart, good, coords }, i) => {
-        // Board Manager reports some misses at (0, 0) or on the board; only a miss off the board is drawn where it landed.
-        const landed = coords && (dart.n !== 0 || Math.hypot(coords.x, coords.y) > 1);
-        const [x, y] = landed ? inputSpot(coords.x, coords.y, S) : dartSpot(dart, i, S);
-        return <circle key={i} cx={x} cy={y} r={DOT} fill={good ? HIT_DOT : MISS_DOT} stroke="#FFFFFF" strokeWidth="3" />;
-      })}
-      {/* The numbers go over the darts: a miss is drawn on their ring and must not hide one. */}
+      <circle cx="0" cy="0" r={S[1]} fill={RING[1]} stroke="#0A0A0B" strokeWidth="2" />
+      <circle cx="0" cy="0" r={S[0]} fill={RING[0]} stroke="#0A0A0B" strokeWidth="2" />
       {BOARD_ORDER.map((n, k) => {
         const [x, y] = pt(360, k * 18);
-        return <text key={`t${n}`} x={x} y={y} fill={done.has(n) ? '#5A5A60' : '#A1A1A6'} fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
+        return <text key={`t${n}`} x={x} y={y} fill="#A1A1A6" fontSize="30" fontWeight="700" fontFamily="Barlow Condensed, Inter, sans-serif" textAnchor="middle" dominantBaseline="central">{n}</text>;
       })}
       {children}
     </svg>

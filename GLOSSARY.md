@@ -38,6 +38,30 @@ _Avoid_: ekran startowy, home
 Część Pilota ze statusem połączenia i akcjami na Board Managerze: reset, detekcja, kalibracja, restart.
 _Avoid_: ustawienia, settings
 
+**Tarcza w hero**:
+Narysowana tarcza w grach z tarczą na Ekranie wyników: pokazuje, w co trafić, i stan celów gracza, który rzuca. To obraz, nie fizyczna Tarcza. Komponent `HeroBoard`; do wklikiwania lotek (telefon, laptop) służy osobny `Dartboard`, a `TargetBoard` w pełnych kolorach zostaje tylko jako tło Heatmap i Test board.
+_Avoid_: minitarcza, plansza, tarcza celów
+
+**Pierścień numerów**:
+Pas z numerami 1–20 wokół tarczy w hero. Składa się z Segmentów, po jednym na sektor, a numery są obrócone promieniście.
+_Avoid_: obwódka, ramka z numerami
+
+**Segment** (w hero):
+Jedno pole Pierścienia numerów: sektor 1–20 albo bull (pierścień wokół zewnętrznego bulla). Ma stan (cel, zaliczony, własny double killera, poza grą, zamknięty u wszystkich, bez celu), kolor tego stanu i Kreski stanu. Nie mylić z segmentem Rzutu z Board Managera.
+_Avoid_: kafelek (kafelek to lotka), pole, klocek
+
+**Ciąg**:
+Sąsiednie Segmenty (5 sąsiaduje z 20) w tym samym kolorze albo, dla obrysu, z tym samym Ringiem celu i kolorem: rysują się jako jeden pas albo jeden obrys. Segmenty w różnych kolorach nie tworzą Ciągu, nawet gdy sąsiadują.
+_Avoid_: grupa, blok, seria
+
+**Kreski stanu**:
+Do trzech (w Killer pięciu) łuków na wewnętrznej krawędzi Segmentu: znaczniki Cricketa, życia w Killer, S, D i T w Shanghai. Pełna kreska to „jest”, pusta to „jeszcze nie”. Nie mylić ze znacznikami w siatce Cricketa ani z kropkami lotek.
+_Avoid_: pipsy, kropki (kropki to lotki Tury na tarczy), znaczniki (w tym znaczeniu)
+
+**Ring celu**:
+Ta część sektora, w którą trzeba trafić: cały sektor, duży single, double albo treble (dla bulla bullseye). Widać go tylko na tarczy jako obrys i pełne kolory, a Pierścień numerów go nie powtarza. Nie mylić z ringami ledów ([MAPA.md](docs/MAPA.md)).
+_Avoid_: pierścień (samo słowo), obwód, obrys celu
+
 ## Mecz
 
 **Tura**:
@@ -109,7 +133,11 @@ Okno w lobby kiosku po stuknięciu kafelka rekordu: pokazuje rekord do pobicia i
 _Avoid_: challenge, quick start
 
 **Pościg**:
-Dwie szare linie na kafelku rekordu z 2. i 3. miejscem („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
+Dwie szare linie na kafelku rekordu z 2. i 3. miejscem w okrągłej plakietce („2 Bob 28”, „3 Cy 31”), czyli to, co trzeba jeszcze pobić po rekordziście. Miejsce liczy osoby (co-op: składy), nie wyniki. W UI bez nazwy.
+
+**Strona rekordów**:
+Jeden ekran siatki 4×2 kafelków rekordów w lobby kiosku, z grupami po grach pod nagłówkiem (ikona i nazwa gry). Strony przesuwają się swipe'em, kropkami i same co 10 s; gra z ponad 8 wariantami ciągnie się jako „<Gra> (cont.)”.
+_Avoid_: slajd, karuzela (w UI bez nazwy)
 
 **Ekran rekordu**:
 Kilkusekundowy ekran przed startem gry z rekordem biura dla wybranego wariantu gry, a pod nim rekordami osobistymi graczy albo rekordem składu.

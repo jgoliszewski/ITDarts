@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Dart } from '../../../games/darts.ts';
 import { BOARD_ORDER } from '../../../games/darts.ts';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { createElement } from 'react';
 import { isBigSingle } from '../../../games/darts.ts';
-import { DOT, R, SHOWN, TargetBoard, coordsSpot, dartSpot, inputSpot, spotCoords } from './Dartboard.tsx';
+import { DOT, R, SHOWN, coordsSpot, dartSpot, inputSpot, spotCoords } from './Dartboard.tsx';
 
 // The scoreboard board widens trebles, doubles and the bulls, so check every dot still sits wholly in its own field.
 describe('dart dots on the scoreboard board', () => {
@@ -92,33 +90,5 @@ describe('a tap on the fix board as Board Manager coords', () => {
     const tap = (r: number) => spotCoords(0, -r);
     expect(isBigSingle({ dart: { n: 20, m: 1 }, coords: tap((R[3] + R[4]) / 2) })).toBe(true);
     expect(isBigSingle({ dart: { n: 20, m: 1 }, coords: tap((R[1] + R[2]) / 2) })).toBe(false);
-  });
-});
-
-describe('the Big singles outline on the hero board', () => {
-  const outlines = (sectors: number[]) => renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: sectors, ring: 1, darts: [], label: 'x' })).match(/class="tb-outline"/g) ?? [];
-  it('draws one outline per sector', () => {
-    expect(outlines([20, 6, 3, 11])).toHaveLength(4);
-    expect(outlines([])).toHaveLength(0);
-  });
-
-  it('outlines the field between the treble and the double', () => {
-    const svg = renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: [20], ring: 1, darts: [], label: 'x' }));
-    const d = /class="tb-outline" d="([^"]+)"/.exec(svg)![1];
-    expect(d).toContain(`A${SHOWN[4]} ${SHOWN[4]}`);
-    expect(d).toContain(`A${SHOWN[3]} ${SHOWN[3]}`);
-  });
-});
-
-describe('still outline and the bull in a target list', () => {
-  const svgOf = (target: number[], still?: boolean) => renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target, ring: null, still, darts: [], label: 'x' }));
-  it('outlines the bull in a list with the outer bull circle', () => {
-    const svg = svgOf([20, 25]);
-    expect(svg.match(/class="tb-outline"/g)).toHaveLength(2);
-    expect(svg).toContain(`<circle class="tb-outline" cx="0" cy="0" r="${SHOWN[1]}"`);
-  });
-  it('is still only when asked; other games keep the marching outline', () => {
-    expect(svgOf([20], true)).toContain('class="tb-outline still"');
-    expect(svgOf([20])).not.toContain('still');
   });
 });

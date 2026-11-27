@@ -415,8 +415,8 @@ describe('lobby records', () => {
   });
 });
 
-// Lobby top 8 (.scratch/lobby-records/PLAN.md): by matches of the last 30 days, filled up with the most played of all time.
-describe('lobby records: top 8, chase, players', () => {
+// Lobby records (docs/UI.md, Lobby i QR): every variant with a record, games and variants by matches of the last 30 days, then of all time.
+describe('lobby records: order, chase, players', () => {
   const save = (game: string, options: object, variant: string, roster: RosterEntry[], scores: (number | null)[], daysAgo: number) =>
     db.saveMatch({
       game: game as SaveMatch['game'], options, roster, startedAt: NOW - daysAgo * DAY - 1000, endedAt: NOW - daysAgo * DAY, status: 'finished',
@@ -449,10 +449,48 @@ describe('lobby records: top 8, chase, players', () => {
     expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:7', 'shanghai:solo:8', 'shanghai:solo:9']);
   });
 
-  it('keeps 8 variants at most', () => {
+  it('keeps every variant with a record, none is cut', () => {
     for (let r = 3; r <= 12; r++) shanghai(r, 1, 3);
-    expect(stats.lobbyTop()).toHaveLength(8);
+    expect(stats.lobbyTop()).toHaveLength(10);
     expect(stats.lobbyRecords()).toHaveLength(10);
+  });
+
+  it('groups the variants by game and orders the games by their matches in the last 30 days', () => {
+    // ATC: 3 recent matches over two variants; Shanghai: 4 recent in one; Full Board: only old ones, but many.
+    save('atc', { target: 'any', skips: true }, 'atc:any:skips', [A()], [30], 2);
+    save('atc', { target: 'any', skips: false }, 'atc:any:noskips', [A()], [30], 3);
+    save('atc', { target: 'any', skips: false }, 'atc:any:noskips', [B()], [31], 4);
+    shanghai(4, 4, 5);
+    for (let i = 0; i < 6; i++) save('fullboard', { target: 'any' }, 'fullboard:any', [A()], [40 + i], 100);
+    // Shanghai (4 recent) before ATC (3), the old Full Board last; within ATC the busier variant first.
+    expect(stats.lobbyTop().map(r => r.key)).toEqual(['shanghai:solo:4', 'atc:any:noskips', 'atc:any:skips', 'fullboard:any']);
+  });
+
+  it('keeps a game together although another game has a variant in between by popularity', () => {
+    // ATC's busiest variant (3) beats Shanghai's (2), but Shanghai has more matches in all; the game total decides.
+    save('atc', { target: 'any', skips: true }, 'atc:any:skips', [A()], [30], 2);
+    save('atc', { target: 'any', skips: true }, 'atc:any:skips', [B()], [31], 2);
+    save('atc', { target: 'any', skips: true }, 'atc:any:skips', [B()], [32], 2);
+    shanghai(4, 2, 3); shanghai(5, 2, 3);
+    expect(stats.lobbyTop().map(r => r.game)).toEqual(['shanghai', 'shanghai', 'atc']);
+  });
+
+  it('breaks a tie between games by matches of all time, then by name', () => {
+    save('atc', { target: 'any', skips: true }, 'atc:any:skips', [A()], [30], 100);
+    shanghai(4, 2, 100);
+    for (let i = 0; i < 2; i++) save('fullboard', { target: 'any' }, 'fullboard:any', [A()], [40 + i], 100);
+    // None recent; Shanghai and Full Board have 2 each, ATC 1. Around the Clock < Full Board < Shanghai only by name, so Full Board first.
+    expect(stats.lobbyTop().map(r => r.game)).toEqual(['fullboard', 'shanghai', 'atc']);
+  });
+
+  it('names the game and gives the options without it', () => {
+    save('atc', { target: 'any', order: 'clockwise', skips: true }, 'atc:any:skips', [A()], [24], 1);
+    save('121', { visits: 3, refill: true }, '121:v3:refill:coop', [A(), B()], [140, 140], 1);
+    save('cricket', {}, 'cricket:solo', [A()], [50], 1);
+    const by = Object.fromEntries(stats.lobbyTop().map(r => [r.game, r]));
+    expect(by.atc).toMatchObject({ title: 'ATC', sub: 'Any · Skips · Clockwise', label: 'ATC · Any · Skips · Clockwise' });
+    expect(by['121']).toMatchObject({ title: '121', sub: '3 visits · Refill lives · Co-op' });
+    expect(by.cricket).toMatchObject({ title: 'Cricket', sub: 'Solo' });
   });
 
   it('counts only the last 30 days as recent, the 30th day included', () => {

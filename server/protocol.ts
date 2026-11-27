@@ -257,6 +257,10 @@ export interface LobbyRecord {
   game: GameId;
   key: string;
   label: string;
+  /** The game's short name as the label starts with it (“ATC”): the lobby's group heading. */
+  title: string;
+  /** `label` without the game name (“Any · Skips · Clockwise”): the tile under its group heading. */
+  sub: string;
   value: string;
   who: string;
   at: number;

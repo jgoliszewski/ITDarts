@@ -6,7 +6,9 @@ vi.mock('../net.ts', () => ({ onFx: () => () => {}, send: async () => ({ ok: tru
 import { bullseye } from '../../../games/bullseye.ts';
 import { football } from '../../../games/football.ts';
 import { MiniHero, hasBoard } from './MiniBoard.tsx';
-import { DOT, SHOWN, TargetBoard, coordsSpot, dartSpot } from '../components/Dartboard.tsx';
+import { DOT, SHOWN, coordsSpot, dartSpot } from '../components/Dartboard.tsx';
+import { HeroBoard } from '../components/HeroBoard.tsx';
+import { boardOf } from '../components/targets.ts';
 
 const o = { kickOff: 'any', goals: 5, bullOff: 'off' } as const;
 // A single 20 thrown into the INNER single, a bit left of centre.
@@ -38,10 +40,10 @@ describe('Bullseye hero board', () => {
   });
 });
 
-// The hero board of ATC, Full Board, Shanghai, Football and Bullseye (TargetBoard) with and without coords.
+// The hero board of ATC, Full Board, Shanghai, Football and Bullseye (HeroBoard) with and without coords.
 describe('dart dots on the hero board', () => {
   const dots = (darts: { dart: { n: number; m: 1 | 2 | 3 }; good: boolean; coords?: { x: number; y: number } }[]) =>
-    [...renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: null, ring: null, darts, label: 'x' }))
+    [...renderToStaticMarkup(createElement(HeroBoard, { board: boardOf({ state: 'none' }), darts, label: 'x' }))
       .matchAll(/<circle cx="([-\d.e]+)" cy="([-\d.e]+)" r="7"/g)].map(m => [Number(m[1]), Number(m[2])]);
 
   it('keeps a miss with coords far off the board inside the view, on its own side', () => {
@@ -60,7 +62,7 @@ describe('dart dots on the hero board', () => {
   });
 
   it('draws miss dots under the numbers, so a number stays readable', () => {
-    const svg = renderToStaticMarkup(createElement(TargetBoard, { cleared: [], target: null, ring: null, darts: [{ dart: { n: 0, m: 1 }, good: false, coords: { x: 3, y: 0 } }], label: 'x' }));
+    const svg = renderToStaticMarkup(createElement(HeroBoard, { board: boardOf({ state: 'none' }), darts: [{ dart: { n: 0, m: 1 }, good: false, coords: { x: 3, y: 0 } }], label: 'x' }));
     expect(svg.indexOf('r="7"')).toBeLessThan(svg.indexOf('<text'));
   });
 
@@ -70,29 +72,14 @@ describe('dart dots on the hero board', () => {
   });
 });
 
-describe('Cricket Random hero board', () => {
-  const cricketRandom = (dead: boolean[]) => {
-    const sectors = [20, 19, 18, 17, 16, 15, 25];
-    return { game: 'cricket', options: { sectors: 'random' }, roster: [{ name: 'A' }, { name: 'B' }], record: null,
-      view: { current: 0, sectors, dead, hero: { caption: 'Points', big: '0', note: '' }, visit: { darts: [], good: [], dartsLeft: 3 }, phase: 'throwing', removed: [false, false] } } as never;
-  };
-  const hero = (dead: boolean[]) => renderToStaticMarkup(createElement(MiniHero, { m: cricketRandom(dead), flash: null, onDart: () => {}, canEdit: false }));
-  it('outlines every sector in play, still, and the bull', () => {
-    const svg = hero([false, false, false, false, false, false, false]);
-    expect(svg.match(/class="tb-outline still"/g)).toHaveLength(7);
-    expect(svg).toContain('aria-label="Sectors in play: 20 · 19 · 18 · 17 · 16 · 15 · Bull"');
-  });
-  it('drops the outline of a sector closed by everyone, and from the label', () => {
-    const svg = hero([true, false, false, false, false, false, true]);
-    expect(svg.match(/class="tb-outline still"/g)).toHaveLength(5);
-    expect(svg).toContain('aria-label="Sectors in play: 19 · 18 · 17 · 16 · 15"');
-  });
-});
-
-describe('hasBoard for Cricket', () => {
+describe('hasBoard for Cricket and Killer', () => {
   const cricket = (sectors: string) => ({ game: 'cricket', options: { sectors } }) as never;
-  it('shows the board only with random sectors', () => {
+  it('shows the board in Cricket with either sectors, and in Killer', () => {
     expect(hasBoard(cricket('random'))).toBe(true);
-    expect(hasBoard(cricket('classic'))).toBe(false);
+    expect(hasBoard(cricket('classic'))).toBe(true);
+    expect(hasBoard({ game: 'killer', options: {} } as never)).toBe(true);
+  });
+  it('shows no board in a game without one', () => {
+    expect(hasBoard({ game: 'knockout', options: {} } as never)).toBe(false);
   });
 });
