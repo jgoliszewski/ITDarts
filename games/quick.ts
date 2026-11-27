@@ -40,7 +40,7 @@ export function normalizeSlot(input: unknown, set: QuickSet): QuickSlot | null {
 
 /** Stored quick games, three slots per set; nothing stored gives the starting set. */
 export function normalizeQuickGames(input: unknown): QuickGames {
-  if (input === null || input === undefined) return QUICK_START;
+  if (input === null || input === undefined) return structuredClone(QUICK_START);
   const q = input as Partial<Record<QuickSet, unknown[]>>;
   const set = (k: QuickSet) => Array.from({ length: QUICK_SLOTS }, (_, i) => normalizeSlot(Array.isArray(q[k]) ? q[k][i] : null, k));
   return { solo: set('solo'), multi: set('multi') };

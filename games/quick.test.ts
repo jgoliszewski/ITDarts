@@ -71,6 +71,13 @@ describe('normalizeQuickGames', () => {
     expect(normalizeQuickGames(undefined)).toEqual(QUICK_START);
   });
 
+  it('gives a copy of the starting set, so a change to it never reaches the next one', () => {
+    const q = normalizeQuickGames(null);
+    expect(q).not.toBe(QUICK_START);
+    q.multi[0]!.options.startScore = 301;
+    expect(normalizeQuickGames(null).multi[0]!.options.startScore).toBe(501);
+  });
+
   it('starts with X01 501 for 2+ and 121 for solo, two empty slots each', () => {
     expect(QUICK_START.multi).toEqual([
       { game: 'x01', options: { startScore: 501, checkIn: 'straight', checkOut: 'double', matchMode: { kind: 'off' } } }, null, null]);
@@ -88,5 +95,10 @@ describe('withBullOff', () => {
   it('adds the bull-off to games that have one, and leaves it out of the rest', () => {
     expect(withBullOff('killer', { lives: 3 }, 'pdc')).toEqual({ lives: 3, bullOff: 'pdc' });
     expect(withBullOff('freethrow', { visits: 10 }, 'pdc')).toEqual({ visits: 10 });
+  });
+
+  it('replaces a bull-off left in old options, and drops it from games without one', () => {
+    expect(withBullOff('x01', { bullOff: 'pdc' }, 'off')).toEqual({ bullOff: 'off' });
+    expect(withBullOff('freethrow', { bullOff: 'pdc' }, 'pdc')).toEqual({});
   });
 });

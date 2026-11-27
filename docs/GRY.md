@@ -27,11 +27,11 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
   - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye.
 
   Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players” albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
-- **Gracze, kolejność, Shuffle i goście** działają tak samo jak w X01. **Bull-off** wybiera się w kroku Players, jeden dla wszystkich gier; Setup wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
-- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players” albo „Free throw is for 1 player”.
+- **Gracze, kolejność, Shuffle i goście** działają tak samo jak w X01. **Bull-off** wybiera się w kroku Players, jeden dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
+- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players” albo „Free throw is for 1 player”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
-- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Add players to continue”).
+- **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Add players to continue”). Wyjątek: edycja Szybkiej gry (ołówek, „+ Add quick game”) działa także przy 0 graczach, wtedy dla zestawu 2+.
 
 ### Opis gry („How to play”)
 

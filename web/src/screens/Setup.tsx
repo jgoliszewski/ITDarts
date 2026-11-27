@@ -36,15 +36,16 @@ function lastGame(): GameId {
   return g && g in GAMES ? (g as GameId) : 'x01';
 }
 
+/** Until the first pick on the Players step, the bull-off last used with X01, where it used to be an option. */
 function loadBullOff(): BullOff {
-  const b = store.get(BULL_OFF_KEY);
+  const b = store.get(BULL_OFF_KEY) ?? loadOptions('x01').bullOff;
   return b === 'closest' || b === 'pdc' ? b : 'off';
 }
 
 const fits = (g: GameModule, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
 /** On a greyed-out tile: why the game is not for this lineup. */
 const whyNot = (g: GameModule) => (g.maxPlayers === 1 ? 'Solo only' : `${g.minPlayers}+ players`);
-const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 player` : `${g.name} needs at least ${g.minPlayers} players`);
+const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 player` : `${g.name} needs ${g.minPlayers} or more players`);
 const namesShort = (r: RosterEntry[]) => (r.length <= 3 ? r.map(p => p.name).join(', ') : `${r[0].name}, ${r[1].name} +${r.length - 2}`);
 const andList = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : l[0]);
 
@@ -455,7 +456,8 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
                   const why = s.match ? 'A match is in progress' : n === 0 ? 'Add players' : !fits(sg, n) ? whyNot(sg) : null;
                   return (
                     <div key={i} className="qslot">
-                      <button className="qmain" disabled={!!why || busy} onClick={() => void startMatch(slot.game, slot.options)}>
+                      {/* While a start is on its way the tiles keep their look; a second tap does nothing. */}
+                      <button className="qmain" disabled={!!why} onClick={() => !busy && void startMatch(slot.game, slot.options)}>
                         <GameIcon game={slot.game} size={28} stroke={1.75} className="qic" />
                         <b>{sg.name}</b>
                         <span className="qd">{slotLabel(slot.game, slot.options, setPlayers(set))}</span>
@@ -505,7 +507,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
             {ids.map(id => {
               const t = GAMES[id];
               return (
-                <button key={id} className={`game-tile ${id === cur ? 'on' : ''}`} aria-pressed={id === cur} disabled={!ok(id)} onClick={() => pickGame(id)}>
+                <button key={id} className={`game-tile ${id === cur && ok(id) ? 'on' : ''}`} aria-pressed={id === cur && ok(id)} disabled={!ok(id)} onClick={() => pickGame(id)}>
                   <GameIcon game={id} className="tile-icon" stroke={1.25} />
                   <b>{t.name}</b>
                   <span>{t.blurb}</span>
@@ -557,7 +559,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
         <div className="setup-opts">
           {!fitsNow ? (
             <div className="opt-block opt-full">
-              <span>{g.maxPlayers === 1 ? `${g.name} is played solo. You have ${plural(n, 'player')}.` : `${g.name} needs at least ${g.minPlayers} players. You have ${n}.`}</span>
+              <span>{g.maxPlayers === 1 ? `${g.name} is played solo. You have ${plural(n, 'player')}.` : `${g.name} needs ${g.minPlayers} or more players. You have ${n}.`}</span>
               <button className="btn" onClick={() => setStep('players')}>Change players</button>
             </div>
           ) : cur === 'x01'

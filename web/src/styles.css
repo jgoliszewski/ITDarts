@@ -1263,6 +1263,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .game-tile.on span { color: var(--accent-ink); }
 /* Games that don't fit the lineup (or the quick game's set): greyed out with the reason, not faded (DESIGN.md, Off Floor Rule). */
 .game-tile:disabled { background: var(--card); }
+.game-tile:disabled { color: var(--disabled-fg); }
 .game-tile:disabled span { color: var(--disabled-fg); -webkit-line-clamp: 1; }
 /* The game's icon as the tile's background, a sixth cut off by the corner (docs/UI.md, Ikony gier). */
 .game-tile .tile-icon { position: absolute; right: -14px; bottom: -14px; width: 84px; height: 84px; color: var(--faint); pointer-events: none; }

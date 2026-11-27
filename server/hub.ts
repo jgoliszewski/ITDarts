@@ -436,7 +436,7 @@ export class Hub {
     if (!isGameId(gameId)) throw new UserError('Unknown game');
     const game = GAMES[gameId];
     const roster = this.checkRoster(rosterInput);
-    if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs at least ${game.minPlayers} players`);
+    if (roster.length < game.minPlayers) throw new UserError(`${game.name} needs ${game.minPlayers} or more players`);
     if (game.maxPlayers !== undefined && roster.length > game.maxPlayers) throw new UserError(`${game.name} is for ${plural(game.maxPlayers, 'player')}`);
     this.summary = null;
     // Alone there is nobody to bull off against, whatever the setup says.
@@ -558,7 +558,7 @@ export class Hub {
     if (cmd.slot !== null) {
       if (!isGameId(cmd.slot?.game)) throw new UserError('Unknown game');
       slot = normalizeSlot(cmd.slot, cmd.set);
-      if (!slot) throw new UserError(cmd.set === 'solo' ? `${GAMES[cmd.slot.game].name} needs 2 or more players` : `${GAMES[cmd.slot.game].name} is for 1 player`);
+      if (!slot) throw new UserError(cmd.set === 'solo' ? `${GAMES[cmd.slot.game].name} needs ${GAMES[cmd.slot.game].minPlayers} or more players` : `${GAMES[cmd.slot.game].name} is for 1 player`);
     }
     const q = normalizeQuickGames(this.db.quickGames());
     this.db.setQuickGames({ ...q, [cmd.set]: q[cmd.set].map((s, i) => (i === cmd.index ? slot : s)) });
