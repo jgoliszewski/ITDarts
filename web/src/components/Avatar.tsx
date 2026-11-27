@@ -10,7 +10,7 @@ export function Avatar({ text, tone, name, left = false, size, decorative = fals
   const style = { '--tone': left ? 'var(--off)' : tone ?? undefined, '--sz': size } as CSSProperties;
   // `decorative` when the name is written next to it: a reader would say it twice.
   const a11y = decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': name };
-  return <span className={`avatar ${tone === null && !left ? 'neutral' : ''} ${text.length > 2 ? 'long' : ''}`} style={style} {...a11y} title={name}>{text}</span>;
+  return <span className={`avatar ${tone === null && !left ? 'neutral' : ''} ${Array.from(text).length > 2 ? 'long' : ''}`} style={style} {...a11y} title={name}>{text}</span>;
 }
 
 /** Content of a Rematch button: names up to 3 players, from 4 a row of avatars in the last match's colours and order (full names are the labels). */

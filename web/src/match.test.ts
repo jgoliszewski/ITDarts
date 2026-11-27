@@ -120,6 +120,9 @@ describe('Avatar initials', () => {
   it('skips punctuation and keeps whole code points', () => {
     expect(initialsOf(["O'Neil", '.Kuba', '\u{1D49C}nna', '\u{1F600}Bob'])).toEqual(['ON', 'KU', '\u{1D49C}N', 'BO']);
   });
+  it('never leaves the disc empty for a name of only emoji or punctuation', () => {
+    expect(initialsOf(['\u{1F600}', '!!!', ' '])).toEqual(['\u{1F600}', '!', '?']);
+  });
   it('does not depend on the case of the name', () => {
     expect(initialsOf(['anna', 'ANDRZEJ'])).toEqual(['AN', 'AD']);
   });

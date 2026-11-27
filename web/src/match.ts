@@ -166,7 +166,9 @@ function baseInitials(name: string): string {
   const first = (w: string) => Array.from(w)[0] ?? '';
   if (/\d/.test(t)) return (first(t) + t.replace(/\D/g, '')).toUpperCase();
   const words = t.split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? first(words[0]) + first(words[1]) : Array.from(t).slice(0, 2).join('')).toUpperCase();
+  const pair = (words.length > 1 ? first(words[0]) + first(words[1]) : Array.from(t).slice(0, 2).join('')).toUpperCase();
+  // Only emoji or punctuation: the first code point of the name, so the disc is never empty.
+  return pair || first(name.trim()) || '?';
 }
 
 /**
