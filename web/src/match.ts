@@ -1,6 +1,8 @@
 // What the pilot can do right now, shared by the laptop bar and the phone pilot.
 import { value } from '../../games/darts.ts';
 import { dartPoints } from '../../games/bullseye.ts';
+import { MAX_PLAYERS } from '../../games/index.ts';
+import type { GameModule } from '../../games/index.ts';
 import { signed } from '../../games/turns.ts';
 import { holValue } from '../../games/hol.ts';
 import type { DartRec } from '../../games/x01/engine.ts';
@@ -195,3 +197,20 @@ export const startLabel = (game: string, players: number): string => `Start · $
  * (setup closed, control lost, which sends the screen to main) drops them, so a later New match opens the last game.
  */
 export const presetFor = <T>(preset: T | null, screen: string): T | null => (screen === 'setup' ? preset : null);
+
+/** On Next in New match: why the game is not for this lineup (“Solo only”, “2 players”, “2+ players”), or null when it fits. */
+export const whyNot = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>) =>
+  g.maxPlayers === 1 ? 'Solo only' : g.maxPlayers === g.minPlayers ? `${g.minPlayers} players` : `${g.minPlayers}+ players`;
+export const fits = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
+/** The reason inside the disabled Next button of the Players step. */
+export const lineupBlock = (g: Pick<GameModule, 'minPlayers' | 'maxPlayers'>, n: number) => (n === 0 ? 'Pick players' : fits(g, n) ? null : whyNot(g));
+
+/** Fisher–Yates copy: the throwing order for Random. */
+export function shuffled<T>(a: T[], rnd: () => number = Math.random): T[] {
+  const r = [...a];
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDart } from '../../games/darts.ts';
 import type { MiniMatch, X01Match } from './match.ts';
-import { aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
+import { lineupBlock, shuffled, aimHint, controls, dartTone, heroCorner, initials, presetFor, rematchLabel, removeIntro, turnHead, startLabel, turnPanel, visitScored, x01Dead } from './match.ts';
 import type { ClientState, LiveMatch } from '../../server/protocol.ts';
 
 // Bug reports: ATC and Cricket darts on the main screen were orange, the summary showed green and red.
@@ -206,5 +206,30 @@ describe('phone This turn line', () => {
   it("shows the finished visit's verdict in its colour", () => {
     expect(turnHead(mini('killer', {}, [false, false, false], { text: 'Life lost', tone: 'bad' }))).toEqual({ text: 'LIFE LOST', tone: 'bad' });
     expect(turnHead(mini('121', {}, [true, true, true], { text: 'Checkout', tone: 'good' }))).toEqual({ text: 'CHECKOUT', tone: 'good' });
+  });
+});
+
+describe('New match: lineup and Random order', () => {
+  const solo = { minPlayers: 1, maxPlayers: 1 };
+  const two = { minPlayers: 2, maxPlayers: 2 };
+  const many = { minPlayers: 2, maxPlayers: undefined };
+  it('asks for players first, then names the lineup the game needs', () => {
+    expect(lineupBlock(two, 0)).toBe('Pick players');
+    expect(lineupBlock(two, 3)).toBe('2 players');
+    expect(lineupBlock(solo, 2)).toBe('Solo only');
+    expect(lineupBlock(many, 1)).toBe('2+ players');
+  });
+  it('lets a fitting lineup through', () => {
+    expect(lineupBlock(two, 2)).toBeNull();
+    expect(lineupBlock(solo, 1)).toBeNull();
+    expect(lineupBlock(many, 8)).toBeNull();
+  });
+  it('shuffles into a permutation without touching the input', () => {
+    const a = [1, 2, 3, 4, 5];
+    const r = shuffled(a, () => 0);
+    expect(a).toEqual([1, 2, 3, 4, 5]);
+    expect([...r].sort()).toEqual(a);
+    expect(r).not.toEqual(a);
+    expect(shuffled([], () => 0)).toEqual([]);
   });
 });

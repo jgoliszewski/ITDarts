@@ -105,11 +105,11 @@ W X01 gracz nie rzuca do końca bieżącego legu („Back next leg”) i wraca w
 _Avoid_: kick, wyrzucenie, pauza
 
 **Bull-off**:
-Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” albo zasady PDC. Wybierany w kroku Players Nowego meczu, jeden dla wszystkich gier.
+Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” (Closest) albo zasady PDC. Wybierany w kroku Players Nowego meczu, w segmencie **Random / Closest / PDC** razem z losową kolejnością: „Random” to dawne „Off” (bez bull-offu, kolejność losuje Nowy mecz przy starcie).
 _Avoid_: losowanie
 
 **Szybka gra**:
-Zapisana gra z opcjami, startowana jednym stuknięciem z kroku Players w Nowym meczu, ze składem i Bull-offem z tego kroku. Trzy sloty osobno dla solo i dla 2+ graczy, wspólne dla wszystkich urządzeń. W UI: Quick game, nagłówek Quick start.
+Zapisana gra z opcjami w trzech slotach osobno dla solo i dla 2+ graczy, wspólnych dla wszystkich urządzeń. **Bez UI od 2026-11-27**: kafle Quick start i edycja zniknęły z Nowego meczu (gra najpierw), serwer dalej trzyma sloty (`quickGames`, `setQuickGame`).
 _Avoid_: preset, ulubiona gra, skrót
 
 **Zając / ogar**:
