@@ -350,7 +350,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
                 const on = roster.some(x => same(x, r));
                 return (
                   <button key={`${r.playerId ?? 'g'}-${r.name}`} className={`ptile ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(r)}>
-                    <Avatar text={tileInitials[k]} tone={null} name={r.name} /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
+                    <Avatar text={tileInitials[k]} tone={null} name={r.name} decorative /><span className="nm">{r.name}</span>{r.playerId === null && <span className="muted">guest</span>}<span className="mark">{on && '✓'}</span>
                   </button>
                 );
               })}
@@ -402,7 +402,7 @@ export function Setup({ s, preset, onClose }: { s: ClientState; preset?: { game:
           </div>
           <div className="who-card">
             <div className="caps">{plural(n, 'player')}</div>
-            <div className="pchips">{roster.map((r, k) => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar text={chipInitials[k]} tone={null} name={r.name} />{r.name}</span>)}</div>
+            <div className="pchips">{roster.map((r, k) => <span key={`${r.playerId ?? 'g'}-${r.name}`} className="pchip"><Avatar text={chipInitials[k]} tone={null} name={r.name} decorative />{r.name}</span>)}</div>
             {n >= 2 && hasBullOff(game) && <div className="muted">Throws first: <b>{THROW_FIRST.find(t => t[0] === bullOff)![1]}</b></div>}
           </div>
         </aside>

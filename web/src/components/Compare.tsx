@@ -160,14 +160,14 @@ export function CompareTable({ names, rows, left = [], hideNames = false }: { na
   };
   return (
     <div className={`cmp ${two ? 'two' : ''}`} style={{ '--n': names.length } as CSSProperties}>
-      {!hideNames && (two || names.length < 3
+      {!hideNames && (names.length < 3
         ? <div className="cmp-names">{names.map((n, i) => left[i]
           ? <span key={i} className="left">{n}<small>Left</small></span>
           : <span key={i} style={{ color: playerColor(i) }}>{n}</span>)}</div>
         // From 3 players a column is narrow: the avatar over the name, the name in one line with an ellipsis.
         : <div className="cmp-names avatars">{names.map((n, i) => (
           <span key={i} className={left[i] ? 'left' : ''} style={left[i] ? undefined : { color: playerColor(i) }} title={n}>
-            <Avatar text={ini[i]} tone={playerColor(i)} name={n} left={left[i]} size="var(--cmp-av)" />
+            <Avatar text={ini[i]} tone={playerColor(i)} name={n} left={left[i]} size="var(--cmp-av)" decorative />
             <span className="nm">{n}</span>{left[i] && <small>Left</small>}
           </span>))}</div>)}
       {rows.map(r => {

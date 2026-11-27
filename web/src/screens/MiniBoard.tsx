@@ -1,6 +1,6 @@
 // Scoreboard parts for the minigames: hero, player list, game widgets, record screen and end screen.
 import type { ReactNode } from 'react';
-import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { LIVES } from '../../../games/121.ts';
 import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
@@ -201,11 +201,11 @@ function HeroDarts({ m, flash, onDart, canEdit }: { m: MiniMatch; flash: number 
  * The games with a board (docs/UI.md, Ekran wyników): the player in the left column (name, big number, stats of this match),
  * the board in its own card with the darts under it and the record pills in its top right corner. The list is the right column.
  */
-function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
+function BoardHero({ m, flash, onDart, canEdit, onRecords, overflow }: { m: BoardMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void; overflow: boolean }) {
   const v = m.view;
   const caption = boardCaption(m), note = boardNote(m), stats = boardStats(m);
   // Cricket columns that show avatars (or numbers from 5 players) leave the names to this legend (docs/UI.md, Awatary graczy).
-  const headers = cricketHeaders(m.roster.length, useCricketOverflow());
+  const headers = cricketHeaders(m.roster.length, overflow);
   const legend = m.game === 'cricket' && headers !== 'names';
   const ini = legend ? initialsOf(m.roster.map(r => r.name)) : [];
   return (
@@ -232,7 +232,7 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
             {playOrder(m).map((i, k) => (
               <div key={i} className={i === v.current ? 'on' : ''}>
                 {headers === 'numbers' && <span className="n num">{k + 1}</span>}
-                <Avatar text={ini[i]} tone={playerColor(i)} name={m.roster[i].name} left={m.game === 'cricket' && !!m.view.removed[i]} size="max(28px, calc(36 * var(--u)))" />
+                <Avatar text={ini[i]} tone={playerColor(i)} name={m.roster[i].name} left={m.game === 'cricket' && !!m.view.removed[i]} size="max(28px, calc(36 * var(--u)))" decorative />
                 <span className="who">{m.roster[i].name}</span>
               </div>
             ))}
@@ -253,8 +253,9 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
   );
 }
 
-export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void }) {
-  if (hasBoard(m)) return <BoardHero m={m} flash={flash} onDart={onDart} canEdit={canEdit} onRecords={onRecords} />;
+/** `overflow`: a Cricket name overflows its column header, measured by CricketGrid (the hero then shows the legend). */
+export function MiniHero({ m, flash, onDart, canEdit, onRecords, overflow = false }: { m: MiniMatch; flash: number | null; onDart: (i: number) => void; canEdit: boolean; onRecords?: () => void; overflow?: boolean }) {
+  if (hasBoard(m)) return <BoardHero m={m} flash={flash} onDart={onDart} canEdit={canEdit} onRecords={onRecords} overflow={overflow} />;
   const v = m.view;
   const split = turnPanel(m);
   return (
@@ -382,20 +383,11 @@ const MARK = [null, 1, 2, 3].map(n => n && (
   </svg>
 ));
 
-// Whether a Cricket name (up to 4 players) overflows its column header: measured by the grid, read by the hero's legend.
-let cricketOverflow = false;
-const overflowSubs = new Set<() => void>();
-const setCricketOverflow = (on: boolean) => {
-  if (on === cricketOverflow) return;
-  cricketOverflow = on;
-  overflowSubs.forEach(f => f());
-};
-const useCricketOverflow = () => useSyncExternalStore(f => { overflowSubs.add(f); return () => { overflowSubs.delete(f); }; }, () => cricketOverflow, () => false);
-
-export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void }) {
+/** `overflow` comes from the parent, which also gives it to the hero; the layout effect sets it, so both change before paint. */
+export function CricketGrid({ m, onPick, overflow = false, onOverflow }: { m: Extract<MiniMatch, { game: 'cricket' }>; onPick?: (i: number) => void; overflow?: boolean; onOverflow?: (on: boolean) => void }) {
   const v = m.view;
   const grid = useRef<HTMLDivElement>(null);
-  const headers = cricketHeaders(m.roster.length, useCricketOverflow());
+  const headers = cricketHeaders(m.roster.length, overflow);
   const ini = initialsOf(m.roster.map(r => r.name));
   const names = m.roster.map(r => r.name).join('\n');
   // Measure the names before paint and again when the grid resizes. The names stay in the DOM (hidden once avatars show),
@@ -403,13 +395,14 @@ export function CricketGrid({ m, onPick }: { m: Extract<MiniMatch, { game: 'cric
   useLayoutEffect(() => {
     const el = grid.current;
     if (!el) return;
-    const measure = () => setCricketOverflow([...el.querySelectorAll<HTMLElement>('.ch .n')].some(n => n.scrollWidth > n.clientWidth));
+    let alive = true;
+    const measure = () => { if (alive) onOverflow?.([...el.querySelectorAll<HTMLElement>('.ch .n')].some(n => n.scrollWidth > n.clientWidth)); };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     void document.fonts?.ready.then(measure);
-    return () => { ro.disconnect(); setCricketOverflow(false); };
-  }, [names]);
+    return () => { alive = false; ro.disconnect(); };
+  }, [names, onOverflow]);
   return (
     <div ref={grid} className={`cricket h-${headers} n${m.roster.length}`} style={{ gridTemplateColumns: `calc(72 * var(--u)) repeat(${m.roster.length}, minmax(0, 1fr))` }}>
       <span />

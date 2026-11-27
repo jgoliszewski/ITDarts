@@ -161,10 +161,12 @@ export function aimHint(m: LiveMatch): string | null {
 
 /** The pair a name asks for before collisions: a digit keeps the number (Guest 2 → G2), two words give their first letters, one word its first two. */
 function baseInitials(name: string): string {
-  const t = name.trim();
-  if (/\d/.test(t)) return (t[0] + t.replace(/\D/g, '')).toUpperCase();
+  // By code points, punctuation skipped: "O'Neil" gives ON, not "O'".
+  const t = name.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+  const first = (w: string) => Array.from(w)[0] ?? '';
+  if (/\d/.test(t)) return (first(t) + t.replace(/\D/g, '')).toUpperCase();
   const words = t.split(/\s+/).filter(Boolean);
-  return (words.length > 1 ? words[0][0] + words[1][0] : t.slice(0, 2)).toUpperCase();
+  return (words.length > 1 ? first(words[0]) + first(words[1]) : Array.from(t).slice(0, 2).join('')).toUpperCase();
 }
 
 /**

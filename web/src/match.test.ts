@@ -117,6 +117,9 @@ describe('Avatar initials', () => {
   it('keeps the asked pair when no pair is free', () => {
     expect(initialsOf(['Ola', 'Ol'])).toEqual(['OL', 'OL']);
   });
+  it('skips punctuation and keeps whole code points', () => {
+    expect(initialsOf(["O'Neil", '.Kuba', '\u{1D49C}nna', '\u{1F600}Bob'])).toEqual(['ON', 'KU', '\u{1D49C}N', 'BO']);
+  });
   it('does not depend on the case of the name', () => {
     expect(initialsOf(['anna', 'ANDRZEJ'])).toEqual(['AN', 'AD']);
   });

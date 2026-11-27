@@ -35,7 +35,7 @@ Widok Ekranu wyników, gdy nie trwa mecz: duże „New match” i „Rematch” 
 _Avoid_: ekran startowy, home
 
 **Awatar**:
-Okrągłe koło z inicjałami gracza, które zastępuje imię tam, gdzie się nie mieści (Cricket, Podsumowanie, Rematch od 4 graczy); kolor to miejsce w meczu, w Nowym meczu jest neutralny ([UI.md](docs/UI.md#awatary-graczy)).
+Okrągłe koło z inicjałami gracza. Zastępuje imię tam, gdzie się nie mieści (Cricket, Rematch od 4 graczy, „Numbers” w Killerze na telefonie), w Podsumowaniu od 3 graczy stoi nad imieniem, a w Nowym meczu obok imienia i jest neutralne. W meczu ma kolor miejsca w składzie ([UI.md](docs/UI.md#awatary-graczy)).
 _Avoid_: ikona gracza, profilówka
 
 **Panel tarczy**:

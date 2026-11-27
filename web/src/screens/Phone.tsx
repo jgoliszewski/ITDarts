@@ -159,7 +159,7 @@ function PhaseCard({ s, m }: { s: ClientState; m: LiveMatch }) {
     const ini = initialsOf(m.roster.map(r => r.name));
     return (
       <div className="box">
-        <div className="av-chips"><span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers:</span>{m.roster.map((r, i) => <AvatarChip key={i} text={ini[i]} tone={playerColor(i)} name={r.name} value={m.view.numbers[i]} />)}</div>
+        <div className="av-chips"><span className="muted" style={{ fontSize: 'var(--fs-ui-sm)' }}>Numbers:</span>{m.roster.map((r, i) => <AvatarChip key={i} text={ini[i]} tone={playerColor(i)} name={r.name} value={m.view.numbers[i]} left={!!removedNote(m, i)} />)}</div>
         <button className="btn block" onClick={() => act({ type: 'reroll' })}>Reroll numbers</button>
       </div>
     );

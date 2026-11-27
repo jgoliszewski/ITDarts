@@ -724,7 +724,7 @@ html:has(.p-actions) { scroll-padding-bottom: 104px; }
 .board-hero .mini-big .num.long { font-size: calc(120 * var(--u)); }
 .board-hero .mini-big .num .of { font-size: 0.4em; }
 .board-hero .hero-note { font-size: max(16px, calc(30 * var(--u))); line-height: 1.2; }
-/* Cricket from 5 players: the grid columns show a place number, the names stand here (A#3). */
+/* Cricket columns with avatars (an overflowing name, or 5+ players): the names stand here, the avatar before each. */
 .board-hero > .legend { display: grid; align-items: center; gap: calc(4 * var(--u)) calc(14 * var(--u)); font-size: calc(28 * var(--u)); min-width: 0; }
 .board-hero > .legend > div { display: contents; }
 .board-hero > .legend .n { font-size: calc(32 * var(--u)); min-width: 0; }
@@ -1301,6 +1301,8 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .ptile.dash { background: transparent; border: 2px dashed var(--faint); color: var(--soft); justify-content: center; }
 .avatar { --sz: var(--sp-6); width: var(--sz); height: var(--sz); border-radius: 50%; flex: none; display: inline-grid; place-items: center; background: var(--tone, var(--off)); color: var(--ink); font-weight: 800; font-size: max(16px, calc(var(--sz) * 0.42)); line-height: 1; letter-spacing: 0; white-space: nowrap; overflow: hidden; }
 .avatar.neutral { color: var(--text); }
+/* Three characters (G12) get a smaller letter so they fit the disc. */
+.avatar.long { font-size: max(11px, calc(var(--sz) * 0.34)); }
 .ptile .avatar { --sz: var(--tap); }
 .ptile.on .avatar.neutral { background: var(--ink); }
 .av-row { display: inline-flex; gap: 4px; margin-left: 4px; }
