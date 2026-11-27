@@ -109,7 +109,7 @@ W X01 gracz nie rzuca do końca bieżącego legu („Back next leg”) i wraca w
 _Avoid_: kick, wyrzucenie, pauza
 
 **Bull-off**:
-Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” (Closest) albo zasady PDC. Wybierany w kroku Players Nowego meczu, w segmencie **Random / Closest / PDC** razem z losową kolejnością: „Random” to dawne „Off” (bez bull-offu, kolejność losuje Nowy mecz przy starcie).
+Rzut w bulla rozstrzygający, kto zaczyna mecz. Wariant „kto bliżej bulla” (Closest) albo zasady PDC. Wybierany w kroku Players Nowego meczu, w kartach „Who throws first” (**Random / Closest / PDC**) razem z losową kolejnością: „Random” to dawne „Off” (bez bull-offu, kolejność losuje Nowy mecz przy starcie).
 _Avoid_: losowanie
 
 **Szybka gra**:

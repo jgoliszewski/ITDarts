@@ -78,6 +78,7 @@ describe('hasBoard for Cricket and Killer', () => {
     expect(hasBoard(cricket('random'))).toBe(true);
     expect(hasBoard(cricket('classic'))).toBe(true);
     expect(hasBoard({ game: 'killer', options: {} } as never)).toBe(true);
+    expect(hasBoard({ game: 'bobs27', options: {} } as never)).toBe(true);
   });
   it('shows no board in a game without one', () => {
     expect(hasBoard({ game: 'knockout', options: {} } as never)).toBe(false);

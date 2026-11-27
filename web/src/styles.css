@@ -1361,7 +1361,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 .who-card { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border-radius: var(--r-box); background: var(--card); font-size: var(--fs-ui-md); }
 .who-card b { color: var(--soft); }
 .pchips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.pchip { display: flex; align-items: center; gap: var(--sp-2); height: 40px; padding: 0 var(--sp-3) 0 var(--sp-1); border-radius: var(--r-pill); background: var(--tile); font-size: var(--fs-ui-md); font-weight: 700; }
+.pchip { display: flex; align-items: center; gap: var(--sp-2); height: var(--sp-7); padding: 0 var(--sp-3) 0 var(--sp-1); border-radius: var(--r-pill); background: var(--tile); font-size: var(--fs-ui-md); font-weight: 700; }
 .opt-desc { font-size: var(--fs-ui-md); font-weight: 400; color: var(--muted); line-height: 1.35; margin-top: var(--sp-1); }
 .setup-opts { display: flex; flex-direction: column; gap: 16px; }
 .setup-opts .section { gap: 10px; }

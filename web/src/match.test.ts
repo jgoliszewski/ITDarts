@@ -278,6 +278,7 @@ describe('New match: lineup and Random order', () => {
     expect(throwOrder(a, 'off', () => 0)).toEqual(['b', 'c', 'a']);
     expect(throwOrder(a, 'closest', () => 0)).toBe(a);
     expect(throwOrder(a, 'pdc', () => 0)).toBe(a);
+    expect(throwOrder(['a', 'b'], 'off', () => 0)).toEqual(['b', 'a']);
     expect(throwOrder(['a'], 'off', () => 0)).toEqual(['a']);
     expect(throwOrder([], 'off', () => 0)).toEqual([]);
   });

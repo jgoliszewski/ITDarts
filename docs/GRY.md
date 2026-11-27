@@ -20,7 +20,7 @@ Backlogu nie ma. Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 
 
 ### Setup na Pilocie
 
-- Kroki: **Players → Game → Options** ([UI.md](UI.md#start-i-koniec-meczu), od 2026-11-27; wcześniej jeden ekran: gra, opcje, gracze).
+- Kroki: **Game → Players → Options** ([UI.md](UI.md#start-i-koniec-meczu), od 2026-11-27; krótko przed tym Players → Game → Options, a wcześniej jeden ekran: gra, opcje, gracze).
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
   - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40, Bob's 27;
@@ -64,7 +64,7 @@ Backlogu nie ma. Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 
 
 ### Rekordy w trakcie gry
 
-Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/`). Dotyczą wszystkich gier z rekordem: ATC, Full Board, solo Cricket, solo Shanghai, 121 i (od 2026-11-27) Bob's 27. X01 i Pilot (telefon) bez zmian.
+Postanowienia z grillingu z 2026-11-23 (plan i makieta w `.scratch/records-live/`). Dotyczą wszystkich gier z rekordem: ATC, Full Board, solo Cricket, solo Shanghai, 121 oraz (od 2026-11-27) Catch 40 i Bob's 27. X01 i Pilot (telefon) bez zmian.
 
 - **Plakietki w hero** (prawy górny róg, górą równo z imieniem, jedna pod drugą, 40 u wysokości): „Best 23” (rekord biura, pomarańcz) nad „PB 31” (rekord osobisty gracza, który rzuca, neutralny). Same liczby, bez kto i kiedy. Wszystkie gry z rekordem poza 121 mają tarczę, więc stoją w prawym górnym rogu karty tarczy, poza pierścieniem numerów ([UI.md](UI.md#rekordy-w-trakcie-gry)).
   - Gracz trzyma rekord biura (jego PB jest pierwszym miejscem): jedna plakietka „Best · PB”. Remis z rekordem ustanowionym wcześniej przez kogoś innego nie scala.
