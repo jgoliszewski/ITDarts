@@ -34,6 +34,10 @@ _Avoid_: kontroler, remote
 Widok Ekranu wyników, gdy nie trwa mecz: duże „New match” i „Rematch” oraz wynik ostatniego meczu.
 _Avoid_: ekran startowy, home
 
+**Awatar**:
+Okrągłe koło z inicjałami gracza, które zastępuje imię tam, gdzie się nie mieści (Cricket, Podsumowanie, Rematch od 4 graczy); kolor to miejsce w meczu, w Nowym meczu jest neutralny ([UI.md](docs/UI.md#awatary-graczy)).
+_Avoid_: ikona gracza, profilówka
+
 **Panel tarczy**:
 Część Pilota ze statusem połączenia i akcjami na Board Managerze: reset, detekcja, kalibracja, restart.
 _Avoid_: ustawienia, settings

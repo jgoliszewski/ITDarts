@@ -9,6 +9,10 @@ Stan na 2026-11-27. Aktualizuj przy każdym większym kroku.
 
 ## Gotowe
 
+- **Awatary graczy** (2026-11-27, gałąź `jgoliszewskiitboom/bobs27`, [UI.md](UI.md#awatary-graczy), plan i raport w `.scratch/avatars/`): okrągłe awatary z inicjałami (`Avatar`, `initialsOf` z unikalnością w liście, wariant A z makiety: kolor miejsca i czarne litery, wycofany szary, w Nowym meczu neutralne). Cricket mierzy nagłówki kolumn (do 4 graczy awatary dla wszystkich, gdy któreś imię się nie mieści; od 5 numer i awatar) i ma legendę „awatar → imię” w hero; Summary od 3 graczy z awatarem nad imieniem w jednej linii; „Numbers” w Killerze na telefonie jako chipy; „Rematch” od 4 graczy z rzędem awatarów w lobby i na telefonie.
+  - **Sprawdzone:** `npm test` i `npm run typecheck`; testy `initialsOf` (Anna/Andrzej, Anna/Annika, „Kuba G.”, goście, Ż, brak wolnej pary) i `cricketHeaders` z mutacjami; zrzuty z `dev:shot` w `.scratch/avatars/shots/` (Cricket 3 długie i 3 krótkie imiona oraz 8 graczy przy 1280×720 i 1920×1080, Summary 4 graczy, Players, Options, Killer na telefonie 390 px, lobby i telefon z Rematch dla 4 graczy).
+  - **Niesprawdzone:** prawdziwa tarcza i telefon; Cricket z wycofanym graczem w trybie awatarów; zmiana rozmiaru okna w trakcie meczu (pomiar przez `ResizeObserver` bez ręcznego testu); imiona w alfabetach spoza łacińskiego; Rematch z 4 graczami po wycofaniu jednego (kolory z ostatniego meczu).
+
 - **Bob's 27** (2026-11-27, gałąź `jgoliszewskiitboom/bobs27`, [GRY.md](GRY.md#bobs-27), [UI.md](UI.md#tarcza-w-hero), [STATYSTYKI.md](STATYSTYKI.md#inne-gry), [EFEKTY.md](EFEKTY.md), plan i raport w `.scratch/bobs27/`): 16. minigierka (Practice, po Catch 40; odwrócona decyzja z 2026-10-30). 21 rund (D1–D20 i bull), start 27 punktów, trafienie dodaje wartość double, pusta Tura ją odejmuje, wynik ≤ 0 po Turze to odpadnięcie; ranking: dograli do końca (wynik), potem odpadnięci (później odpadł, wyżej), solo bez zwycięzcy po odpadnięciu. Tarcza w hero z samym pierścieniem double rundy (w rundzie bull bullseye), „+20 this visit” i „−10 · missed visit”, karta Tury „+20” / „−10” / „Kuba is out”, rekord z gry dograniej do bulla (jeden wariant, plakietki i szarzenie przez `bound`), `/stats` ze średnim wynikiem, hit rate double'ów i liczbą gier dograniętych do końca.
   - **Sprawdzone:** `npm test` i `npm run typecheck`; testy silnika z logu i z mutacjami (`games/bobs27.test.ts`: punkty, kara, odpadnięcie, runda bull z outer 25, Tura zamknięta przed 3. lotką, Undo i poprawka, wycofanie, ranking, End match, rekord, `bound`), tarczy (`boardTargets.test.ts`), lewej kolumny, kafelków, statystyk i huba (Hit i Miss, „Player eliminated”, End match z Save, rekord tylko z dogranej gry, blokada wycofania przy odpadniętych); zrzuty `dev:shot` 1920×1080 i 390 px w `.scratch/bobs27/shots/` (setup z kafelkiem w Practice, D5 po trafieniu, kara, odpadnięcie, runda bull, koniec solo i versus, `/stats`).
   - **Niesprawdzone:** prawdziwa tarcza i telefon; dźwięki Hit, Miss i Player out na żywo; ekran 1280×720; 8 graczy w jednej grze; Takeout na prawdziwej tarczy przy karcie „is out” z długim imieniem (napis w 180 u może się nie zmieścić).
@@ -249,8 +253,7 @@ Brak otwartych. Ostatnie cztery poprawione 2026-10-30 (wyżej, w „Gotowe”).
 3. Przeróbka strony Effects i konfiguratora według [MAPA.md](MAPA.md#do-zrobienia).
 4. Otwarte issues (backlog minigierek z #7 zamknięty 2026-10-30):
    - [#6](https://github.com/jgoliszewski/ITDarts/issues/6): ranking.
-5. Awatary graczy (grilling 2026-11-27, [UI.md](UI.md#awatary-graczy)): unikalne inicjały, kolor miejsca w meczu, neutralne w Nowym meczu, Cricket z pomiarem nagłówków, Summary od 3 graczy, chipy na telefonie, Rematch od 4 graczy.
-6. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
+5. Hosting w internecie, gdy się zdecydujemy: plan i kolejność prac w [HOSTING.md](HOSTING.md), zaczynając od prototypu kiosku jako przekaźnika.
 
 ## Materiały poza repo
 
