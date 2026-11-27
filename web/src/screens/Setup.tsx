@@ -44,8 +44,8 @@ function loadBullOff(): BullOff {
 
 const fits = (g: GameModule, n: number) => n >= g.minPlayers && n <= (g.maxPlayers ?? MAX_PLAYERS);
 /** On a greyed-out tile: why the game is not for this lineup. */
-const whyNot = (g: GameModule) => (g.maxPlayers === 1 ? 'Solo only' : `${g.minPlayers}+ players`);
-const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 player` : `${g.name} needs ${g.minPlayers} or more players`);
+const whyNot = (g: GameModule) => (g.maxPlayers === 1 ? 'Solo only' : g.maxPlayers === g.minPlayers ? `${g.minPlayers} players` : `${g.minPlayers}+ players`);
+const blockText = (g: GameModule) => (g.maxPlayers === 1 ? `${g.name} is for 1 player` : g.maxPlayers === g.minPlayers ? `${g.name} is for ${g.minPlayers} players` : `${g.name} needs ${g.minPlayers} or more players`);
 const namesShort = (r: RosterEntry[]) => (r.length <= 3 ? r.map(p => p.name).join(', ') : `${r[0].name}, ${r[1].name} +${r.length - 2}`);
 const andList = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : l[0]);
 

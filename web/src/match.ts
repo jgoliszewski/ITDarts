@@ -82,7 +82,7 @@ export const dartValue = (m: LiveMatch, rec: DartRec): string | number =>
  */
 export const dartTone = (m: MiniMatch, good: boolean, rec?: DartRec): 'hit' | 'miss' | '' | 'dead' =>
   m.game === 'bullseye' && rec ? (dartPoints(rec) > 0 ? 'hit' : dartPoints(rec) < 0 ? 'miss' : 'dead')
-  : m.game === 'hol' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' || m.game === 'freethrow' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
+  : m.game === 'hol' || m.game === '121' || m.game === 'catch40' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout' || m.game === 'freethrow' ? (good ? '' : 'dead') : good ? 'hit' : 'miss';
 
 /** Pips for legs won toward the current set or match, or null when there is no target. */
 export function legTarget(m: X01Match): number | null {
@@ -124,7 +124,7 @@ export function visitScored(m: LiveMatch): number | null {
     case 'shanghai': return m.view.visitPoints;
     case 'knockout': return m.view.visitScore;
     case 'freethrow': return m.view.visitTotal;
-    case '121': case 'randomco': case 'gotcha':
+    case '121': case 'catch40': case 'randomco': case 'gotcha':
       return m.view.visit.darts.reduce((a, d, i) => a + (m.view.visit.good[i] ? value(d.dart) : 0), 0);
     default: return null;
   }
@@ -146,7 +146,14 @@ export function turnHead(m: LiveMatch): { text: string; tone: 'sum' | 'count' | 
 
 /** Games whose hero has the right half with This turn and the route or the score to beat (variant D); the rest keep their own. */
 export const turnPanel = (m: LiveMatch): boolean =>
-  m.game === 'x01' || m.game === '121' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout';
+  m.game === 'x01' || m.game === '121' || m.game === 'catch40' || m.game === 'randomco' || m.game === 'gotcha' || m.game === 'knockout';
+
+/** Hare and Hounds on the phone: the sector to throw at in words, the ring too in Doubles and Trebles (null once the game is over). */
+export function aimHint(m: LiveMatch): string | null {
+  if (m.game !== 'hare' || m.view.phase !== 'throwing') return null;
+  const ring = m.options.target === 'doubles' ? 'the double ' : m.options.target === 'trebles' ? 'the treble ' : '';
+  return `Throw at ${ring}${m.view.target}`;
+}
 
 /** Cricket from 5 players: two letters for a column, a guest keeps its number (Guest 2 → G2); the number of the place tells them apart. */
 export const initials = (name: string): string => (/\d/.test(name) ? name[0] + name.replace(/\D/g, '') : name.slice(0, 2).toUpperCase());

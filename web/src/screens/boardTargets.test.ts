@@ -4,6 +4,8 @@ import { cricket } from '../../../games/cricket.ts';
 import { parseDart } from '../../../games/darts.ts';
 import { football } from '../../../games/football.ts';
 import { freethrow } from '../../../games/freethrow.ts';
+import { hareAndHounds } from '../../../games/hare.ts';
+import type { HareOptions } from '../../../games/hare.ts';
 import { killer } from '../../../games/killer.ts';
 import { atc, fullBoard } from '../../../games/race.ts';
 import { shanghai } from '../../../games/shanghai.ts';
@@ -240,5 +242,37 @@ describe('Killer on the board', () => {
 
   it('draws as many ticks as the lives option', () => {
     expect(board(m([], 2, { ...o, lives: 3 })).segments[14].ticks).toEqual([true, true, true]);
+  });
+});
+
+describe('Hare and Hounds on the board', () => {
+  const nothing = () => visit('M', 'M', 'M');
+  const m = (log: TurnEvent[], o: Partial<HareOptions> = {}) => {
+    const opts = { ...hareAndHounds.defaults, ...o };
+    return match('hare', opts, hareAndHounds.view(log, 2, opts));
+  };
+
+  it('marks where the hare and the hound stand, and the target of the player throwing in orange', () => {
+    const b = board(m([d('S1')]));
+    expect(b.roles).toEqual({ hare: 1, hound: 9 });
+    expect(b.segments[1]).toEqual({ state: 'hare' });
+    expect(b.segments[9]).toEqual({ state: 'hound' });
+    expect(b.segments[18]).toEqual({ state: 'target', ring: 'any' });
+    expect(b.segments[20].state).toBe('off');
+  });
+
+  it('puts the target over the hare when the hound aims at him, in the ring from the options', () => {
+    // Doubles, head start 2: the hound on 12 hits D5 and aims at the 20 the hare stands on.
+    const b = board(m([...nothing(), d('D5')], { target: 'doubles', headStart: 2 }));
+    expect(b.roles).toEqual({ hare: 20, hound: 5 });
+    expect(b.segments[20]).toEqual({ state: 'target', ring: 2 });
+    expect(b.segments[5]).toEqual({ state: 'hound' });
+  });
+
+  it('shows no target once the hound has caught the hare, both on one sector', () => {
+    const b = board(m([...nothing(), d('S12'), d('S5'), d('S20')]));
+    expect(b.roles).toEqual({ hare: 20, hound: 20 });
+    expect(Object.values(b.segments).some(s => s.state === 'target')).toBe(false);
+    expect(b.segments[20]).toEqual({ state: 'hound' });
   });
 });

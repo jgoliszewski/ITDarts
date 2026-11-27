@@ -4,15 +4,15 @@ Postanowienia z grillingu z 2026-10-26 ([#3](https://github.com/jgoliszewski/ITD
 
 ## Zakres
 
-Gramy w X01 oraz 13 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30), Bullseye (od 2026-11-09) i Free throw (od 2026-11-13).
+Gramy w X01 oraz 15 minigierek: Around the Clock, Full Board, 121, Cricket, Killer, Higher or Lower, Random Checkouts, Shanghai, Gotcha (dwie od 2026-10-29), Knockout, Football (od 2026-10-30), Bullseye (od 2026-11-09), Free throw (od 2026-11-13), Hare and Hounds i Catch 40 (dwie od 2026-11-27).
 
 Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 (Count Up dalej odrzucony jako gra z wynikiem do pobicia: rzuty treningowe bez celu i bez zwycięzcy to osobny [Free throw](#free-throw), decyzja z 2026-11-13), razem z innymi propozycjami z tamtej rozmowy (m.in. Tic-Tac-Toe, Follow the Leader, Baseball, Golf) ([#7](https://github.com/jgoliszewski/ITDarts/issues/7)).
 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem są Higher or Lower i Gotcha z opcją „First to”.
-- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, i Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu). Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
-- **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy, a Free throw dokładnie 1 (pole `maxPlayers` modułu gry: hub odrzuca start z większym składem).
+- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu) i Catch 40, który kończy się po 40 celach. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
+- **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy, Hare and Hounds dokładnie 2, a Free throw dokładnie 1 (pole `maxPlayers` modułu gry: hub odrzuca start z większym składem).
 - **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
 - **Tura** jak w X01: 3 lotki i Takeout. Po trafieniu celu następna lotka w tej samej Turze idzie już w kolejny cel.
@@ -23,12 +23,12 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - Kroki: **Players → Game → Options** ([UI.md](UI.md#start-i-koniec-meczu), od 2026-11-27; wcześniej jeden ekran: gra, opcje, gracze).
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
-  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw;
-  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye.
+  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40;
+  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
-  Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players” albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
+  Kafelek ma nazwę i opis (najwyżej 2 linie). Gra, która nie pasuje do składu, jest wygaszona z „2+ players”, „2 players” (Hare and Hounds) albo „Solo only”. Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle i goście** działają tak samo jak w X01. **Bull-off** wybiera się w kroku Players, jeden dla wszystkich gier; Nowy mecz wkłada go do opcji każdej gry, która go ma (wszystkie poza Free throw).
-- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players” albo „Free throw is for 1 player”.
+- **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs 2 or more players”, „Free throw is for 1 player” albo „Hare and Hounds is for 2 players”.
 - **Opcje** setup pamięta osobno dla każdej gry.
 - **Podpowiedź „i”** przy każdej opcji to jedno zdanie wyjaśnienia w dymku nad układem (od 2026-10-27), więc nic się nie przesuwa. Zamyka go stuknięcie gdziekolwiek. Tekst pochodzi z tej samej definicji co sekcja „Options” w opisie gry.
 - **Opcje dla 2+ graczy** (Mode w Cricket, Co-op) są tylko przy 2+ graczach (od 2026-11-27, wcześniej widoczne od razu). Przy solo zamiast nich stoi linia „Solo: Mode appears with 2 or more players.”. Bez graczy nie da się przejść dalej niż Players („Add players to continue”). Wyjątek: edycja Szybkiej gry (ołówek, „+ Add quick game”) działa także przy 0 graczach, wtedy dla zestawu 2+.
@@ -301,10 +301,55 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 - **Wyzwalacze:** tylko istniejące („Bull”, „Match won”), bez nowego Momentu.
 - **Statystyki:** wygrane i suma punktów. Bez rekordu.
 
+## Hare and Hounds
+
+Postanowienia z grillingu z 2026-11-27. Pogoń po obwodzie tarczy dla dwóch graczy: zając ucieka, ogar goni. W UI „Hare”, „Hound”, „Head start”.
+
+- **Gracze:** dokładnie 2, bez Co-op. Zającem jest pierwszy w kolejności (Shuffle albo Bull-off ustalają ją jak w innych grach), więc rzuca pierwszy. „Rematch” zamienia role.
+- **Trasa:** sektory w kolejności zgodnej z zegarem (`BOARD_ORDER`: 20, 1, 18, 4 … 12, 5). Zając stoi na 20, a jego pierwszym celem jest 1. Wygrywa, gdy zaliczy 20 celów, czyli wróci na 20, w chwili tego trafienia, także w środku Tury.
+- **Ogar** stoi „Head start” sektorów za zającem (przy 3 na 9, pierwszym celem jest 12). Łapie zająca, gdy zaliczy sektor, na którym zając stoi: wygrywa od razu, a reszta jego lotek przepada. Zając stoi na ostatnim zaliczonym sektorze, więc do złapania trzeba go dogonić, nie wyprzedzić.
+- **Trafienie** jak w ATC: cel to następny sektor na trasie, po trafieniu kolejna lotka tej samej Tury idzie w kolejny sektor. Bez przeskoków za double i treble. Bull nie jest na trasie.
+- **Opcje:**
+  - „Target”: „Any” (domyślnie), „Doubles” albo „Trebles”, jak w ATC: w „Doubles” liczy się tylko D celu, w „Trebles” tylko T;
+  - „Head start”: 2, 3 (domyślnie), 4 albo 5 sektorów;
+  - Bull-off.
+- **Balans** (symulacja z 2026-11-27, ta sama celność obu graczy, zając rzuca pierwszy): przy „Head start” 3 zając wygrywa ok. 50% gier przy celności 45% (Any), 40% w Doubles i Trebles, a przy 4 ok. 50% w Doubles i Trebles. „How to play” podpowiada więc 4 dla Doubles i Trebles.
+- **„End match” z „Save”** kończy grę bez zwycięzcy, ekran „Game over”.
+- **Ekran wyników:** układ z tarczą w trzech kolumnach jak w ATC ([UI.md](UI.md#ekran-wyników-dla-gier-z-tarczą)). Po lewej imię, rola („Hare” albo „Hound”), dystans „Gap 3” (ile sektorów ogar ma do zająca) i statystyki Darts, Hit rate. Tarcza pokazuje cel rzucającego jak w ATC (pomarańczowy segment, w „Doubles” i „Trebles” tylko pierścień z obrysem) oraz sektory, na których stoją zając i ogar, każdy we własnym kolorze. Kropki lotek Tury jak w innych grach z tarczą. Lista graczy pokazuje rolę, postęp („7 / 20” zająca, ogar swój dystans) i pasek postępu. Wygląd ustala makieta `.scratch/hh-catch40/`. Nagłówek np. „Hare and Hounds · Head start 3” albo „… · Doubles · Head start 4”.
+- **Caller** milczy.
+- **Wyzwalacze:** tylko istniejące, „Target hit” i „Game won”, bez nowego Momentu.
+- **Statystyki:** wygrane jako zając, wygrane jako ogar i hit rate. Bez rekordu i bez Ekranu rekordu.
+- **Wdrożenie** (2026-11-27, decyzje spoza grillingu i odstępstwa):
+  - „Rematch” zamienia role także po Bull-offie: rewanż startuje bez Bull-offu (wylosowałby role od nowa), a zającem jest ogar poprzedniego meczu. „Rematch” z lobby bierze zająca z zapisanego legu (`legs.starter_position`), bez rzuconych lotek pierwszego w kolejności. Znane ryzyko: mecz z Bull-offem zakończony przed pierwszą lotką nie ma legu, więc „Rematch” z lobby bierze za zająca pierwszego z zapisanego (przetasowanego) składu i role mogą się nie zamienić. „Rematch” z ekranu końca bierze kolejność z widoku meczu i działa zawsze.
+  - Lista graczy według makiety: zając „7 / 20”, ogar „trafienia / (trafienia + dystans)”, np. „12 / 13”, więc jego pasek zapełnia się, gdy dogania zająca, a po złapaniu jest pełny.
+  - Wynik gry: „Hound caught the hare on 19” albo „Hare made it round the board”; po wycofaniu „Hare won” / „Hound won”. Kafelki ekranu wygranej: Hits, Darts, Hit rate.
+  - Tura, która łapie zająca, ma werdykt „Caught”. Widać go na telefonie; kiosk od razu pokazuje ekran wygranej, jak po każdej wygranej Turze w innych grach, więc karty Tury „CAUGHT” z makiety (ekran 3a) na kiosku nie ma.
+  - Telefon podpowiada cel słowami: „Throw at 17”, „Throw at the double 17”.
+
+## Catch 40
+
+Postanowienia z grillingu z 2026-11-27. Trening checkoutów 61–100 z punktami za szybkość (źródło nazwy i zakresu: GoDartsPro; punktacja jest nasza, bo DartCounter nie opisuje jej publicznie).
+
+- **Cele:** kolejno 61, 62 … 100, czyli 40 celów, takie same dla wszystkich graczy. Check-out zawsze z double.
+- **Podejście:** na cel są 2 Tury (6 lotek). Bust jak w X01: wynik wraca do stanu sprzed Tury, a podejście trwa, dopóki są lotki. W drugiej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, jak w [121](#121). Po podejściu, udanym czy nie, gracz przechodzi do następnego celu. Tura zakończona bustem liczy się jako 3 lotki podejścia, jak Tura zamknięta Takeoutem, więc bust nigdy się nie opłaca: T20 (bust) i checkout 2 lotkami w 2. Turze to 5 lotek, 1 pkt, tyle samo co 3 pudła i ten sam checkout (decyzja użytkownika z 2026-11-27, po review). Tak samo liczy średnia lotek na checkout, a karta „Darts left” pokazuje po buście 3.
+- **Punkty:** checkout w 2 lotkach 3 pkt, w 3 lotkach 2 pkt, w 4–6 lotkach 1 pkt, brak checkoutu 0 pkt. Od 61 nie da się zamknąć jedną lotką. Maksimum gry to 120.
+- **Gracze:** 1–8, każdy na siebie, bez Co-op. Tury idą na zmianę jak w X01, a każdy gracz ma własny bieżący cel i własne podejście.
+- **Koniec:** gdy wszyscy zaliczą podejścia do 40 celów. Wygrywa najwięcej punktów, przy remisie mniej lotek, a przy równej liczbie lotek wygrywają wszyscy remisujący.
+- **„End match” z „Save”** kończy grę w każdej chwili, bez opcji długości gry: zwycięzca liczony jak wyżej z dotychczasowych punktów, przy 0 punktów nie ma zwycięzcy.
+- **Ekran wyników:** hero jak w [121](#121): cel, reszta do zamknięcia, podpowiedź checkoutu z X01 i kropki lotek podejścia. Zamiast serc punkty gracza i licznik „23 / 40”. Lista graczy pokazuje punkty i postęp. Wygląd ustala makieta `.scratch/hh-catch40/`. Nagłówek „Catch 40”.
+- **Caller** jak w 121: wynik Tury i „you require”, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
+- **Wyzwalacze:** „Checkout”, „Bust” i „Attempt failed” (istnieją), „Game won”.
+- **Statystyki:** punkty, skuteczność checkoutów w % i średnia liczba lotek na checkout. Rekordem jest najwięcej punktów, tylko z gry rozegranej przez wszystkie 40 celów; gra zakończona „End match” wchodzi do statystyk, ale nie do rekordów. Jeden wariant, solo i versus razem.
+- **Wdrożenie** (2026-11-27, decyzje spoza grillingu):
+  - Hero według makiety: chipy „Points” i „Attempt 14 / 40” w miejscu serc 121, „Visit 1 of 2” pod wynikiem, po prawej „This turn” i trasa checkoutu, bez drabinki. Plakietki rekordów (Best, PB) stoją w tym samym wierszu za chipami, bo Catch 40 nie ma tarczy ani drabinki (makieta ich nie pokazywała).
+  - Karta pod listą: „Darts left” z kropkami podejścia i „Checkout %”; „Darts per checkout” tylko na ekranie końca i na `/stats`. Lista: punkty, „Target 74” i pasek rozegranych celów z 40.
+  - Karta Tury po checkoucie pokazuje zdobyte punkty („+2”), po nieudanym podejściu „Attempt failed”. Ekran końca: wynik „78 points”, kafelki Points, Checkout %, Darts per checkout.
+  - Gra zakończona „End match” nie ma wyniku rekordowego, więc lobby i „Recent matches” pokazują przy niej punkty ze statystyk.
+
 ## Statystyki na `/stats`
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą. X01 ma takie tabele bez Ekranu rekordu: Highest visit, Highest checkout i Best leg osobno na wynik startowy.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw, wygrane jako zając i ogar w Hare and Hounds, punkty, skuteczność checkoutów i lotki na checkout w Catch 40.
 - **Liczniki minigierek jako średnia na mecz** (suma małym drukiem), a główna statystyka gry ze strzałką zmiany względem poprzedniego Okna. Winrate liczy się jak w X01, tylko z meczów versus; w grach solo (Free throw) jest samo „Played” ([STATYSTYKI.md](STATYSTYKI.md#progres)).
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

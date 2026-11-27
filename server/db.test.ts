@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import type { X01Event, X01Options } from '../games/x01/index.ts';
 import { freethrow } from '../games/freethrow.ts';
+import { catch40 } from '../games/catch40.ts';
 import { atc } from '../games/race.ts';
 import { x01 } from '../games/x01/index.ts';
 import { Db } from './db.ts';
@@ -153,6 +154,20 @@ describe('a player removed from the match', () => {
     const summary = rematchSetup(OPTS, roster, ['match', null, null])[1].map(r => r.name);
     expect(lobby).toEqual(summary);
     expect(lobby).toEqual(['Bartek', 'Cezary']);
+  });
+});
+
+describe('Catch 40 result', () => {
+  it('shows the points of a game ended early, which keeps no record score, and the record of a full game', () => {
+    const a = db.createPlayer('Anna');
+    const save = (scores: (number | null)[]) => db.saveMatch({
+      game: 'catch40', options: catch40.defaults, roster: [{ playerId: a, name: 'Anna' }], startedAt: 1, endedAt: Date.now(), status: 'finished',
+      winners: [0], sets: [], legs: [], variant: 'catch40', scores, stats: [{ points: 2, attempts: 1, checkouts: 1, checkoutDarts: 3 }],
+    });
+    save([null]);
+    expect(db.lastMatch()!.players[0].value).toBe('2 points');
+    save([97]);
+    expect(db.lastMatch()!.players[0].value).toBe('97 points');
   });
 });
 

@@ -1,4 +1,5 @@
 import { label } from '../../../games/darts.ts';
+import { plural } from '../../../games/turns.ts';
 import type { ClientState, LiveMatch } from '../../../server/protocol.ts';
 import type { ReactNode } from 'react';
 import type { Dart } from '../../../games/darts.ts';
@@ -6,7 +7,7 @@ import { BullOffPanel } from '../components/BullOff.tsx';
 import { Keypad } from '../components/FixSheet.tsx';
 import { Icon, act } from '../components/ui.tsx';
 import type { LobbyRecord } from '../../../server/protocol.ts';
-import { controls, dartTone, dartValue, isX01, legTarget, pickProps, playOrder, rematchLabel, removedNote, shortDescription, turnHead, winnersOf, x01Dead } from '../match.ts';
+import { aimHint, controls, dartTone, dartValue, isX01, legTarget, pickProps, playOrder, rematchLabel, removedNote, shortDescription, turnHead, winnersOf, x01Dead } from '../match.ts';
 import { fmtAvg, shortDate } from '../util.ts';
 import { Records } from './Lobby.tsx';
 import { NewRecord } from './MiniBoard.tsx';
@@ -49,13 +50,16 @@ function Players({ m, onPick }: { m: LiveMatch; onPick?: (i: number) => void }) 
           // Free throw: the number on the line is the average, the hero's caption names the visit total.
           if (active) meta = [m.game === 'freethrow' ? 'Average' : m.view.hero.caption, m.view.hero.note].filter(Boolean).join(' · ');
           if (active && m.game === '121') meta += ` · ${m.view.attemptLeft} darts left in attempt · ${'♡'.repeat(m.view.lives)}`;
+          if (active && m.game === 'catch40' && m.view.phase === 'throwing') meta = `Target ${m.view.target} · ${m.view.remaining} left · ${plural(m.view.attemptLeft, 'dart')} left`;
         }
         const note = removedNote(m, i);
         if (note) meta = note;
+        // Hare and Hounds: the count big, its total small.
+        const [count, total] = m.game === 'hare' ? big.split(' / ') : [big];
         return (
           <div key={i} className={`p-player ${active ? 'active' : ''} ${out || note ? 'out' : ''} ${onPick ? 'pickable' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="who"><b>{r.name}</b><span>{meta}</span></div>
-            <div className="num">{big}</div>
+            <div className="num">{count}{total && <span className="of"> / {total}</span>}</div>
           </div>
         );
       })}
@@ -65,7 +69,7 @@ function Players({ m, onPick }: { m: LiveMatch; onPick?: (i: number) => void }) 
 
 function checkoutHint(m: LiveMatch): string | null {
   if (m.view.phase !== 'throwing') return null;
-  if (!isX01(m) && m.game !== '121' && m.game !== 'randomco') return null;
+  if (!isX01(m) && m.game !== '121' && m.game !== 'randomco' && m.game !== 'catch40') return null;
   const { checkout, setup } = m.view;
   return checkout ? `Checkout ${checkout}` : setup ? `Setup ${setup}` : null;
 }
@@ -176,7 +180,7 @@ export function PhonePilot({ s, onMenu, onBoard, onFix, onEnd, onPlayer }: {
       <div className="phone-body">
         <Players m={m} onPick={onPlayer} />
         <PhaseCard s={s} m={m} />
-        {!inBull && <Turn m={m} editable onDart={onFix} hint={checkoutHint(m) ?? c.hint} />}
+        {!inBull && <Turn m={m} editable onDart={onFix} hint={checkoutHint(m) ?? aimHint(m) ?? c.hint} />}
         {offline && !inBull && v.phase === 'throwing' && v.visit.dartsLeft > 0 && (
           <div className="section">
             <span className="caps">Enter dart {v.visit.darts.length + 1}</span>

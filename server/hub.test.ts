@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseDart } from '../games/darts.ts';
 import { GAMES } from '../games/index.ts';
 import { atc } from '../games/race.ts';
+import { hint } from '../games/x01/checkout.ts';
 import type { Board } from './board.ts';
 import type { Config } from './config.ts';
 import { Db } from './db.ts';
@@ -267,6 +268,128 @@ describe('Free throw', () => {
     expect(db.sql.prepare('SELECT game, status FROM matches').all()).toEqual([{ game: 'freethrow', status: 'finished' }]);
     expect(db.sql.prepare('SELECT won FROM match_players').all()).toEqual([{ won: 0 }]);
     expect(db.lastMatch()).toMatchObject({ status: 'finished', players: [{ winner: false }] });
+  });
+});
+
+describe('Hare and Hounds', () => {
+  type L = { rec: { roster: RosterEntry[]; options: { bullOff: string } }; view: { phase: string; winners: number[]; hare: number; result: string } } | null;
+  const live = () => (hub as unknown as { live: L }).live;
+  const names = () => live()!.rec.roster.map(r => r.name);
+  const start = (n: number, bullOff = 'off') => client(true)({ type: 'startMatch', game: 'hare', options: { bullOff }, roster: roster(n) });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('is for exactly 2 players', async () => {
+    expect(await start(1)).toMatchObject({ ok: false, error: 'Hare and Hounds is for 2 players' });
+    expect(await start(3)).toMatchObject({ ok: false, error: 'Hare and Hounds is for 2 players' });
+    expect(live()).toBeNull();
+    expect(await start(2)).toMatchObject({ ok: true });
+  });
+
+  it('ends on End match with Save with the end screen and no winner', async () => {
+    const pilot = client(true);
+    await start(2);
+    await pilot(dart('S1'));
+    await pilot({ type: 'endMatch', save: true });
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [], result: 'No winner' });
+    await pilot({ type: 'closeMatch', then: 'summary' });
+    expect(db.sql.prepare('SELECT game, status FROM matches').all()).toEqual([{ game: 'hare', status: 'finished' }]);
+    expect(db.sql.prepare('SELECT won FROM match_players').all()).toEqual([{ won: 0 }, { won: 0 }]);
+  });
+
+  it('keeps the caller silent', async () => {
+    const pilot = client(true);
+    await start(2);
+    for (const x of ['S1', 'S18', 'S4']) await pilot(dart(x));
+    await pilot({ type: 'next' });
+    expect(fire.mock.calls.flatMap(c => c[1] ?? [])).toEqual([]);
+  });
+
+  it('swaps the roles in a rematch: the hound throws first as the hare', async () => {
+    const pilot = client(true);
+    await start(2);
+    expect([names(), live()!.view.hare]).toEqual([['Ann', 'Bob'], 0]);
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    expect([names(), live()!.view.hare]).toEqual([['Bob', 'Ann'], 0]);
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    expect(names()).toEqual(['Ann', 'Bob']);
+  });
+
+  it('swaps the roles won in the bull-off, and plays the rematch without one', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // the draw turns Ann, Bob into Bob, Ann
+    const pilot = client(true);
+    await start(2, 'closest');
+    expect(names()).toEqual(['Bob', 'Ann']);
+    // Bob throws first in the bull-off and misses it; Ann is closest, so she is the hare.
+    await pilot({ type: 'dart', dart: parseDart('S20')!, coords: { x: 0, y: 0.6 } });
+    await pilot({ type: 'dart', dart: parseDart('Bull')!, coords: { x: 0, y: 0.01 } });
+    await pilot({ type: 'bullOff', starter: 1 });
+    expect(live()!.view).toMatchObject({ phase: 'throwing', hare: 1 });
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'rematch' });
+    expect([names(), live()!.view.hare, live()!.rec.options.bullOff]).toEqual([['Bob', 'Ann'], 0, 'off']);
+  });
+
+  it('swaps the roles in the lobby Rematch, from the stored match', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'hare', options: { bullOff: 'off' }, roster: [roster(2)[1], roster(2)[0]] });
+    await pilot(dart('S1'));
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'summary' });
+    await pilot({ type: 'closeSummary' });
+    expect(db.lastMatchSetup()).toMatchObject({ starter: 0 });
+    await pilot({ type: 'rematch' });
+    expect([names(), live()!.view.hare]).toEqual([['Ann', 'Bob'], 0]);
+  });
+});
+
+describe('Catch 40', () => {
+  type L = { view: { phase: string; winners: number[]; points: number[] } } | null;
+  const live = () => (hub as unknown as { live: L }).live;
+  const next: Command = { type: 'next' };
+
+  it('has the caller of 121: game on, you require, the visit total', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'catch40', options: {}, roster: roster(1) });
+    for (const x of ['S20', 'S5', 'S1']) await pilot(dart(x));
+    await pilot(next);
+    expect(fire.mock.calls.flatMap(c => c[1] ?? [])).toEqual(['gameon', 'require_61', '26', 'require_35']);
+  });
+
+  it('ends on End match with Save: the most points win', async () => {
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'catch40', options: {}, roster: roster(2) });
+    for (const x of ['T11', 'D14']) await pilot(dart(x));
+    await pilot(next);
+    await pilot(dart('S1'));
+    await pilot({ type: 'endMatch', save: true });
+    expect(live()?.view).toMatchObject({ phase: 'matchWon', winners: [0], points: [3, 0] });
+  });
+
+  it('keeps a record only from a game played through all 40 targets', async () => {
+    const ann = { playerId: db.createPlayer('Ann'), name: 'Ann' };
+    const score = () => db.sql.prepare('SELECT mp.score, m.variant FROM match_players mp JOIN matches m ON m.id = mp.match_id ORDER BY m.id DESC LIMIT 1').get();
+    const pilot = client(true);
+    await pilot({ type: 'startMatch', game: 'catch40', options: {}, roster: [ann] });
+    for (const x of ['T11', 'D14']) await pilot(dart(x));
+    await pilot({ type: 'endMatch', save: true });
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    expect(score()).toMatchObject({ score: null });
+    expect(db.records('catch40', 'higher')).toEqual([]);
+    // The full game: every target from 61 to 100 checked out in one visit.
+    await pilot({ type: 'startMatch', game: 'catch40', options: {}, roster: [ann] });
+    await pilot({ type: 'skipIntro' });
+    for (let n = 61; n <= 100; n++) {
+      for (const x of hint(n, 3, 'double')!.darts) await pilot({ type: 'dart', dart: x });
+      if (n < 100) await pilot(next);
+    }
+    const points = live()!.view.points[0];
+    expect(live()?.view.phase).toBe('matchWon');
+    expect(points).toBeGreaterThanOrEqual(80);
+    await pilot({ type: 'closeMatch', then: 'lobby' });
+    expect(score()).toMatchObject({ score: points, variant: 'catch40' });
+    expect(db.records('catch40', 'higher').map(r => r.value)).toEqual([points]);
   });
 });
 

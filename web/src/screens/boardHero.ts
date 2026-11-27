@@ -1,4 +1,5 @@
 // What the left column and the player list show around the board in the games with one (docs/UI.md, Ekran wyników). Pure.
+import { BOARD_ORDER } from '../../../games/darts.ts';
 import { SECTORS } from '../../../games/race.ts';
 import type { BoardMatch } from './boardTargets.ts';
 
@@ -7,7 +8,8 @@ const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%`
 const per = (darts: number, done: number) => (done ? (darts / done).toFixed(1) : '–');
 
 /** The kicker over the big number, only where the number would read wrong without it: Cricket's points need none. */
-export const boardCaption = (m: BoardMatch): string | null => (m.game === 'cricket' && !m.view.solo ? null : m.view.hero.caption);
+export const boardCaption = (m: BoardMatch): string | null =>
+  m.game === 'hare' ? 'Gap' : m.game === 'cricket' && !m.view.solo ? null : m.view.hero.caption;
 
 /**
  * The line under the big number, without what the board already shows: progress and darts (ATC, Full Board, also in the
@@ -16,7 +18,8 @@ export const boardCaption = (m: BoardMatch): string | null => (m.game === 'crick
 export function boardNote(m: BoardMatch): string | null {
   const v = m.view;
   switch (m.game) {
-    case 'atc': case 'fullboard': case 'killer': return null;
+    // Hare and Hounds: the gap is the big number, the role its own chip.
+    case 'atc': case 'fullboard': case 'killer': case 'hare': return null;
     case 'football':
       return m.view.ball === v.current ? '⚽ Your ball' : m.view.ball === null ? 'Ball in the centre' : `${m.roster[m.view.ball].name} has the ball`;
     default: return v.hero.note || null;
@@ -46,6 +49,10 @@ export function boardStats(m: BoardMatch): [string, string][] {
       const rivals = m.view.rows.filter((r, i) => i !== p && !r.out).length;
       return [['Lives taken', String((m.view.stats[p] as { taken: number }).taken)], ['Rivals left', String(rivals)]];
     }
+    case 'hare': {
+      const { darts, hits } = m.view.stats[p] as { darts: number; hits: number };
+      return [['Darts', String(darts)], ['Hit rate', pct(hits, darts)]];
+    }
     case 'freethrow': {
       const { darts, points, best } = m.view.stats[0] as { darts: number; points: number; best: number };
       return [['Average', darts ? ((points / darts) * 3).toFixed(1) : '–'], ['Darts', String(darts)], ['Highest visit', String(best)]];
@@ -65,6 +72,11 @@ export function boardProgress(m: BoardMatch, i: number): number | null {
     case 'atc': return Math.min(1, m.view.progress[i] / m.view.targets.length);
     case 'fullboard': return m.view.cleared[i].length / SECTORS.length;
     case 'football': return Math.min(1, m.view.goals[i] / m.options.goals);
+    // The hare's targets of 20, the hound's hits of his way to the hare: full once he catches him.
+    case 'hare': {
+      const v = m.view;
+      return i === v.hare ? v.hareHits / BOARD_ORDER.length : (v.stats[i] as { hits: number }).hits / (v.hareHits + m.options.headStart);
+    }
     default: return null;
   }
 }

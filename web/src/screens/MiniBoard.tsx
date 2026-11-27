@@ -6,13 +6,14 @@ import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
+import { FIRST_TARGET, TARGETS } from '../../../games/catch40.ts';
 import type { BoardMatch } from './boardTargets.ts';
 import { boardTargets } from './boardTargets.ts';
 import { boardCaption, boardNote, boardProgress, boardStats } from './boardHero.ts';
 import { gameStats } from '../components/Compare.tsx';
 import { DartFace } from '../components/DartFace.tsx';
 import { Icon, act } from '../components/ui.tsx';
-import { HeroBoard } from '../components/HeroBoard.tsx';
+import { HeroBoard, RoleToken } from '../components/HeroBoard.tsx';
 import { Ladder, Odometer } from '../components/Ladder.tsx';
 import type { MiniMatch } from '../match.ts';
 import { dartTone, initials, pickProps, playOrder, removedNote, turnPanel, visitScored, winnersOf } from '../match.ts';
@@ -128,7 +129,10 @@ function AttemptTile({ left, of, end, attempt }: { left: number; of: number; end
 /** The games with targets on the board put it next to the hero (bug report 2026-10-27); Cricket and Killer since 2026-11-26. */
 export const hasBoard = (m: MiniMatch): m is BoardMatch =>
   m.game === 'atc' || m.game === 'fullboard' || m.game === 'shanghai' || m.game === 'football' || m.game === 'bullseye' || m.game === 'freethrow'
-  || m.game === 'cricket' || m.game === 'killer';
+  || m.game === 'cricket' || m.game === 'killer' || m.game === 'hare';
+
+/** Hare and Hounds: the role of player `i`. */
+const roleOf = (m: Extract<MiniMatch, { game: 'hare' }>, i: number) => (i === m.view.hare ? 'hare' : 'hound');
 
 function RaceBoard({ m }: { m: BoardMatch }) {
   const v = m.view;
@@ -210,10 +214,12 @@ function BoardHero({ m, flash, onDart, canEdit, onRecords }: { m: BoardMatch; fl
         </div>
         {/* Under the name, not next to it: five hearts would push the name out. */}
         {m.game === 'killer' && <Hearts lives={m.view.lives[v.current]} max={m.options.lives} />}
+        {m.game === 'hare' && <div className={`role ${roleOf(m, v.current)}`}><RoleToken role={roleOf(m, v.current)} />{v.rows[v.current].meta}</div>}
         <div className="mini-big">
           {caption && <div className={`caps ${m.game === 'killer' && m.view.killer[v.current] ? 'killer' : ''}`}>{caption}</div>}
           {m.game === 'fullboard'
             ? <div className="num">{m.view.cleared[v.current].length}<span className="of"> / {SECTORS.length}</span></div>
+            : m.game === 'hare' ? <div className="num">{m.view.gap}</div>
             : <div className={`num ${v.hero.big.length > 4 ? 'long' : ''}`}>{v.hero.big}</div>}
         </div>
         {note && <div className="hero-note">{note}</div>}
@@ -252,6 +258,8 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
         {m.game === '121' && <Hearts lives={m.view.lives} losing={attemptEnd(m) === 'failed'} />}
         {m.game === 'knockout' && <Hearts lives={m.view.lives[v.current]} />}
         {m.game === 'hol' && <Hearts lives={m.view.lives[v.current]} max={m.view.maxLives} losing={m.view.losing} />}
+        {m.game === 'catch40' && <Catch40Chips m={m} />}
+        {m.game === 'catch40' && m.record && <RecordPills m={m} onOpen={onRecords} />}
       </div>
       {m.game === 'hol' ? <HolScale lo={m.view.lo} hi={m.view.hi} sum={m.view.sum} failed={m.view.failed} /> : <div className="hero-score-row">
         {m.game === 'knockout' ? <ToBeat lowest={m.view.lowest} visit={m.view.visitScore} /> : <div className="mini-big">
@@ -261,7 +269,7 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
       </div>}
       {split && (
         <TurnPanel total={visitScored(m) ?? 0}>
-          {(m.game === '121' || m.game === 'randomco') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
+          {(m.game === '121' || m.game === 'randomco' || m.game === 'catch40') && <RouteHint checkout={m.view.checkout} setup={m.view.setup} />}
         </TurnPanel>
       )}
       {m.game === '121' && <Ladder target={m.view.target} marks={ladderMarks(m.record, m.roster)} onOpen={onRecords} />}
@@ -271,8 +279,19 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords }: { m: MiniMatc
   );
 }
 
-/** 121 holds the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not. */
-const attemptEnd = (m: Extract<MiniMatch, { game: '121' }>): 'out' | 'failed' | null =>
+/** Catch 40, where 121 has the hearts: the player's points and which of the 40 targets he is on (docs/GRY.md#catch-40). */
+function Catch40Chips({ m }: { m: Extract<MiniMatch, { game: 'catch40' }> }) {
+  const attempt = Math.min(TARGETS, m.view.target - FIRST_TARGET + 1);
+  return (
+    <div className="c40-chips">
+      <div className="c40-chip pts"><span className="l">Points</span><span className="num">{m.view.points[m.view.current]}</span></div>
+      <div className="c40-chip"><span className="l">Attempt</span><span className="num">{attempt}<span className="of"> / {TARGETS}</span></span></div>
+    </div>
+  );
+}
+
+/** 121 and Catch 40 hold the finished visit until the takeout: no darts left in the attempt means it just ended, by a checkout or not. */
+const attemptEnd = (m: Extract<MiniMatch, { game: '121' | 'catch40' }>): 'out' | 'failed' | null =>
   m.view.attemptLeft === 0 && m.view.phase !== 'matchWon' ? (m.view.remaining === 0 ? 'out' : 'failed') : null;
 
 /**
@@ -283,18 +302,22 @@ export function MiniSide({ m }: { m: MiniMatch }) {
   // The games with a board show these numbers at the bottom of the left column.
   if (hasBoard(m)) return null;
   const p = m.view.current;
-  const stats = m.roster.length <= 4 ? gameStats(m.game, m.view.stats[p] ?? {}) : [];
-  const n = stats.length + (m.game === '121' ? 1 : 0);
+  // Catch 40 keeps Darts per checkout for the end screen and /stats.
+  const all = m.roster.length <= 4 ? gameStats(m.game, m.view.stats[p] ?? {}) : [];
+  const stats = m.game === 'catch40' ? all.filter(([l]) => l === 'Checkout %') : all;
+  const attempt = m.game === '121' || m.game === 'catch40' ? m : null;
+  const n = stats.length + (attempt ? 1 : 0);
   if (n === 0) return null;
   return (
     <div className="card" style={{ flex: 1, minHeight: 0 }}>
       <div className="caps">{m.roster[p].name.toUpperCase()} · This match</div>
       {/* More than three numbers (Free throw) take the 3×2 grid of X01 instead of one narrow row. */}
       <div className={n > 3 ? 'mstats' : `mstats few ${n > 2 ? 'three' : ''}`} style={n > 3 ? undefined : { gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, gridTemplateRows: 'minmax(0, 1fr)' }}>
-        {m.game === '121' && (
+        {attempt && (
           <div>
             <span className="l">Darts left</span>
-            <AttemptTile left={m.view.attemptLeft} of={m.view.attemptDarts} end={attemptEnd(m)} attempt={`${m.view.target}:${m.view.lives}`} />
+            <AttemptTile left={attempt.view.attemptLeft} of={attempt.view.attemptDarts} end={attemptEnd(attempt)}
+              attempt={attempt.game === '121' ? `${attempt.view.target}:${attempt.view.lives}` : `${attempt.view.current}:${attempt.view.target}`} />
           </div>
         )}
         {/* Three tiles leave no room for the small line under the number. */}
@@ -314,13 +337,16 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
   const hearts = m.game === 'knockout' ? { lives: m.view.lives, max: KNOCKOUT_LIVES } : m.game === 'hol' ? { lives: m.view.lives, max: m.view.maxLives }
     : m.game === 'killer' ? { lives: m.view.lives, max: m.options.lives } : null;
   return (
-    <div className={`plist ${board && m.roster.length <= 3 ? 'few' : ''} ${board && m.roster.length > 5 ? 'many' : ''}`}>
+    <div className={`plist ${board && m.roster.length <= 3 ? 'few' : ''} ${board && m.roster.length > 5 ? 'many' : ''} ${m.game === 'hare' ? 'roles' : ''}`}>
       {playOrder(m).map(i => {
         const r = m.roster[i];
         const row = v.rows[i];
         const active = i === v.current && v.phase !== 'bulloff';
         const note = removedNote(m, i);
-        const bar = board ? boardProgress(m, i) : null;
+        const bar = board ? boardProgress(m, i) : m.game === 'catch40' ? m.view.progress[i] / TARGETS : null;
+        // Hare and Hounds: the role with its token, and the count over its total in small.
+        const role = m.game === 'hare' ? roleOf(m, i) : null;
+        const [count, total] = role ? row.value.split(' / ') : [row.value];
         return (
           <div key={i} className={`prow ${compact ? 'compact' : ''} ${active ? 'active' : ''} ${row.out || note ? 'out' : ''}`} {...pickProps(onPick, i, r.name)}>
             <div className="info">
@@ -328,10 +354,10 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
               {note ? <div className="meta"><span>{note}</span></div>
                 : hearts && !row.out
                 ? <div className="meta list-hearts" aria-label={row.meta}><span className="lh">{Array.from({ length: hearts.max }, (_, k) => <span key={k} className={k < hearts.lives[i] ? 'on' : ''}>{Icon.heart()}</span>)}</span>{m.game === 'killer' && m.view.killer[i] && <b className="tag">Killer</b>}</div>
-                : <div className="meta"><span>{row.meta}</span></div>}
+                : <div className="meta">{role && <RoleToken role={role} />}<span>{row.meta}</span></div>}
               {bar !== null && <span className="pbar" role="presentation"><i style={{ width: `${(bar * 100).toFixed(1)}%` }} /></span>}
             </div>
-            <div className={`score num ${board && row.value.length > 3 ? 'long' : ''}`}>{row.value}</div>
+            <div className={`score num ${board && !role && row.value.length > 3 ? 'long' : ''}`}>{count}{total && <span className="of"> / {total}</span>}</div>
           </div>
         );
       })}

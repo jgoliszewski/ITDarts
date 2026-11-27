@@ -57,7 +57,7 @@ export const MOMENTS: Moment[] = [
   { id: 'life-lost', name: 'Life lost', group: 'Minigames', when: 'Killer, 121, Knockout: a life goes', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
   { id: 'lowest', led: 'life-lost', name: 'Lowest visit', group: 'Minigames', when: 'Knockout: your visit is the lowest of the round so far', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score', note: 'Sound and LEDs of Life lost' },
   { id: 'killer', name: 'Became killer', group: 'Minigames', when: 'Killer: player becomes a killer', strength: 'M', mood: 'good', often: 'once per player', sound: null },
-  { id: 'attempt-failed', name: 'Attempt failed', group: 'Minigames', when: '121: no checkout in the attempt', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
+  { id: 'attempt-failed', name: 'Attempt failed', group: 'Minigames', when: '121, Catch 40: no checkout in the attempt', strength: 'M', mood: 'bad', often: 'a few a game', sound: 'no-score' },
   { id: 'player-out', name: 'Player out', group: 'Minigames', when: 'Player eliminated', strength: 'L', mood: 'bad', often: 'a few a game', sound: 'player-out' },
   { id: 'new-record', name: 'New record', group: 'Minigames', when: 'Office or personal record', strength: 'L', mood: 'good', often: 'rare', sound: 'new-record' },
 

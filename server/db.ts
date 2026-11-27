@@ -171,7 +171,7 @@ export class UserError extends Error {}
 
 /**
  * A player's result in one minigame match, as the lobby and Recent matches show it: the record value, the games won
- * when the game counts them, Free throw's average of 3 darts, or "Won".
+ * when the game counts them, Free throw's average of 3 darts, Catch 40's points, or "Won".
  */
 export function resultValue(gameId: GameId, options: unknown, p: { score: number | null; legs_won: number; stats: string | null; won: number | null }): string {
   const game = GAMES[gameId];
@@ -182,6 +182,8 @@ export function resultValue(gameId: GameId, options: unknown, p: { score: number
     const s = p.stats ? (JSON.parse(p.stats) as { darts?: number; points?: number }) : null;
     return s?.darts ? (((s.points ?? 0) / s.darts) * 3).toFixed(1) : '';
   }
+  // Catch 40 ended early keeps no record score, but its points are still the result.
+  if (gameId === 'catch40' && p.stats) return game.record!.format((JSON.parse(p.stats) as { points?: number }).points ?? 0);
   return p.won ? 'Won' : '';
 }
 
@@ -376,7 +378,8 @@ export class Db {
   }
 
   /** The last match's full roster with who left it; the hub's rematchSetup turns it into the rematch. */
-  lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[]; removed: Removed[] } | null {
+  /** `starter`: who threw first (roster index), from the first stored leg; null when the match has no visits. */
+  lastMatchSetup(): { game: GameId; options: unknown; roster: RosterEntry[]; removed: Removed[]; starter: number | null } | null {
     const m = this.sql.prepare('SELECT id, game, options FROM matches ORDER BY ended_at DESC, id DESC LIMIT 1').get() as { id: number; game: GameId; options: string } | undefined;
     if (!m || !(m.game in GAMES)) return null;
     const rows = this.sql.prepare(`
@@ -387,6 +390,7 @@ export class Db {
       options: JSON.parse(m.options),
       roster: rows.map(({ playerId, name }) => ({ playerId, name })),
       removed: rows.map(r => (r.removed ? 'match' : null)),
+      starter: (this.sql.prepare('SELECT starter_position AS s FROM legs WHERE match_id = ? ORDER BY id LIMIT 1').get(m.id) as { s: number } | undefined)?.s ?? null,
     };
   }
 

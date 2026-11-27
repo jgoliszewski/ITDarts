@@ -112,6 +112,14 @@ _Avoid_: losowanie
 Zapisana gra z opcjami, startowana jednym stuknięciem z kroku Players w Nowym meczu, ze składem i Bull-offem z tego kroku. Trzy sloty osobno dla solo i dla 2+ graczy, wspólne dla wszystkich urządzeń. W UI: Quick game, nagłówek Quick start.
 _Avoid_: preset, ulubiona gra, skrót
 
+**Zając / ogar**:
+Role w Hare and Hounds: zając ucieka po obwodzie tarczy od 20, ogar startuje kilka sektorów za nim i go goni. W UI „Hare” i „Hound”.
+_Avoid_: lis, fox, uciekający, goniący
+
+**Przewaga**:
+Liczba sektorów, o którą ogar startuje za zającem w Hare and Hounds. W UI „Head start”.
+_Avoid_: handicap, gap (w UI „Gap” to bieżący dystans w trakcie gry)
+
 **Gra wspólna**:
 Kilku graczy rzuca na zmianę na jeden wspólny wynik, bez rywalizacji. W UI: Co-op.
 _Avoid_: team, drużyna (zostaje na przyszły tryb drużynowy)

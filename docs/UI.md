@@ -53,6 +53,8 @@ Postanowienia z grillingu z 2026-10-30, żeby gry dało się szybciej rozpoznać
   | Football | piłka |
   | Bullseye | strzałka w tarczy |
   | Free throw | lotka w locie |
+  | Hare and Hounds | dwie kropki goniące się po okręgu |
+  | Catch 40 | stoper |
 
 - **Kafelek gry w setupie:** ikona jest tłem w prawym dolnym rogu, 96 px, ucięta krawędzią o około 1/6. Mocniejsze ucięcie (1/4 i 1/2) odrzuciliśmy, bo ikony przestawały być rozpoznawalne. Ikony bez ucięcia (80 px) też, bo przy niskim kafelku wchodziła pod opis. Na zwykłym kafelku jest szara (`#3A3A40`), a na zaznaczonym przyciemnia pomarańcz. Tekst leży nad nią.
 - **Kafelek kompaktowy** (poniżej 1100 px, od 2026-11-18, patrz [Start i koniec meczu](#start-i-koniec-meczu)): bez opisu, ikona 64 px w rogu, też ucięta krawędzią i szara, a na zaznaczonym przyciemnia pomarańcz.
@@ -132,6 +134,7 @@ Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratc
 - **Orientacja numerów:** każdy numer jest obrócony promieniście, górą cyfr na zewnątrz, jak na prawdziwej tarczy. Numery w dolnej części (od 11 i 6 w dół: 8, 16, 7, 19, 3, 17, 2, 15, 10) są obrócone o 180°, żeby dało się je czytać od dołu.
 - **Kropki lotek** z bieżącej Tury: zielone przy trafieniu, czerwone przy pudle, w białej obwódce, w miejscu wbicia (bez coords na środku swojego pola). Numery leżą nad kropkami, żeby pudło na pierścieniu numerów żadnego nie zasłoniło. Tarcza nie ma animacji.
 - **Stan na tarczy to stan gracza, który rzuca**, więc zmienia się z Turą: w Cricket zamknięte sektory i kreski, w Killer cele i życia, w ATC i Full Board zaliczone cele.
+- **Znaczniki ról** (Hare and Hounds, od 2026-11-27, makieta `.scratch/hh-catch40/`): sektor, na którym stoi zając, ma pas w kolorze `--hare` (turkus gracza 2, `#16B2C9`), a sektor ogara w `--hound` (fiolet `#A78BFA`); oba z ciemnym numerem, klin przygaszony. Na wewnętrznej krawędzi pasa stoi **znacznik**: ciemne kółko z rysunkiem zająca albo ogara w kolorze roli, obrócone jak numer, a numer tego sektora odsuwa się na zewnątrz i maleje (32 zamiast 36). Cel rzucającego (pomarańczowy) wygrywa z kolorem roli, gdy ogar celuje w sektor zająca. Po złapaniu oba znaczniki stoją obok siebie na jednym sektorze, a celu nie ma. Ten sam znacznik (`RoleToken` w `HeroBoard.tsx`) stoi w lewej kolumnie przed nazwą roli i w wierszach listy. Model: stany `hare` i `hound` oraz pole `roles` w `BoardTargets` (`targets.ts`).
 
 | Stan | Segment | Tarcza | Gry |
 |---|---|---|---|
@@ -143,28 +146,30 @@ Od 2026-11-26 (gałąź `feat/board-targets`, plan, decyzje i makiety w `.scratc
 | Poza grą | szary | klin przygaszony | każda gra: sektory bez celu, wyeliminowani w Killer |
 | Zamknięty u wszystkich | szary z ciemniejszym numerem | klin zakreskowany | Cricket |
 | Bez celu w sektorze | szary z jasnym numerem | Free throw: cała tarcza w pełnych kolorach. Football z piłką w Doubles: pierścień double w pełnych kolorach, obrysowany dwoma okręgami | Free throw, Football |
+| Tu stoi zając / ogar | turkusowy / fioletowy, ze znacznikiem roli | klin przygaszony | Hare and Hounds |
 
 ### Ekran wyników dla gier z tarczą
 
-Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket i Killer (`hasBoard` w `web/src/screens/MiniBoard.tsx`). Rozmiary ustala `styles.css` (sekcja „games with a board”), a to, co stoi w lewej kolumnie i na liście, czysta logika w `web/src/screens/boardHero.ts`.
+Od 2026-11-26, dla ATC, Full Board, Shanghai, Football, Bullseye, Free throw, Cricket i Killer, od 2026-11-27 też Hare and Hounds (`hasBoard` w `web/src/screens/MiniBoard.tsx`). Rozmiary ustala `styles.css` (sekcja „games with a board”), a to, co stoi w lewej kolumnie i na liście, czysta logika w `web/src/screens/boardHero.ts`.
 
 - **Trzy kolumny** (340 u, reszta, 460 u): gracz, karta tarczy, lista graczy z przyciskami Pilota pod spodem. Cricket od 6 graczy ma szerszą prawą kolumnę (558, 636, 714 u przy 6, 7, 8 graczach), żeby nagłówek każdego gracza w siatce miał ≥ 44 px przy 1280×720; tarcza maleje (przy 8 graczach ok. 670 px przy 1920).
 - **Lewa kolumna** (hero): imię, w Killer pod nim serca (pięć serc nie wypchnie imienia), kicker z dużą liczbą (200 u, od 5 znaków 120 u), notka, w Cricket od 5 graczy legenda „numer → imię”, a **na dole 1–3 kafelki statystyk gracza z tego meczu**: te same liczby co w podsumowaniu, tylko takie, jakie widok gry już ma. Statystyki dotyczą gracza, który rzuca:
   - ATC: Darts, Hit rate, Per target. Full Board: Darts, Hit rate, Per sector. W Co-op „per” liczy lotki drużyny;
   - Shanghai: Darts, Hit rate, Shanghais. Free throw: Average, Darts, Highest visit;
   - Cricket: Marks i Darts (solo tylko Marks, bo lotki są dużą liczbą). Killer: Lives taken i Rivals left. Football: To win (ile goli brakuje);
-  - Bullseye bez kafelków: widok gry nie ma nic poza punktami.
+  - Bullseye bez kafelków: widok gry nie ma nic poza punktami;
+  - Hare and Hounds: Darts i Hit rate, a nad nimi pod imieniem rola ze znacznikiem („HARE” turkusem, „HOUND” fioletem) i kicker „Gap” nad dystansem jako dużą liczbą.
 - **Kicker i notka** zostają tylko tam, gdzie tarcza ich nie powie: „Target” (ATC), „Sectors” (Full Board), „Round N / M” i punkty („61 points · 12 this visit”, Shanghai), „Goals” i kto ma piłkę (Football), „Points” i zasady punktacji (Bullseye), „This visit” i „Visit N of M” (Free throw), „Killer” albo „Your double” (Killer). Cricket nie ma kickera „Points” (liczba to zawsze punkty, a nagłówek siatki je powtarza), a jego MPR jest notką; solo Cricket ma kicker „Darts”.
 - **Usunięte teksty** (tarcza pokazuje to samo): postęp i lotki w ATC („3 / 21 · 5 darts”) i Full Board („N darts”), „Hit a rival double” i „Hit your double to become a killer” w Killer, „· doubles score” i „· hit the bull” w Football, kicker „Points” w Cricket. „⚽ Your ball”, „Ball in the centre” i „Bob has the ball” zostają, bo tarcza nie mówi, kto ma piłkę.
 - **Karta tarczy** (środek): tarcza tak duża, jak pozwala karta, a pod nią rząd trzech kafelków lotek, dalej do poprawki dotykiem („Fix dart”, „+ Add”). W prawym górnym rogu karty stoją pigułki rekordów, poza pierścieniem numerów ([Rekordy w trakcie gry](#rekordy-w-trakcie-gry)).
-- **Lista graczy** (prawa kolumna): wiersze wypełniają kolumnę i są wyższe niż w grach bez tarczy, a do 3 graczy jeszcze większe (imię 52 u, wynik 120 u; od 4 graczy imię 38 u, wynik 96 u; od 6 graczy kompaktowe: imię 28 u, linia 24 u, wynik 64 u, serca 30 u, cieńszy pasek, żeby 8 wierszy zmieściło się przy 1280×720). W ATC, Full Board i Football każdy wiersz ma **pasek postępu**: zaliczone cele z 21 (ATC), zaliczone sektory z 21 (Full Board), gole z celu gry (Football). Pozostałe gry go nie mają. W Killer serca stoją pod imieniem, a killera oznacza czerwona plakietka „Killer” (od 6 graczy w tej samej linii co serca). Cricket ma zamiast listy siatkę znaczników.
+- **Lista graczy** (prawa kolumna): wiersze wypełniają kolumnę i są wyższe niż w grach bez tarczy, a do 3 graczy jeszcze większe (imię 52 u, wynik 120 u; od 4 graczy imię 38 u, wynik 96 u; od 6 graczy kompaktowe: imię 28 u, linia 24 u, wynik 64 u, serca 30 u, cieńszy pasek, żeby 8 wierszy zmieściło się przy 1280×720). W ATC, Full Board, Football i Hare and Hounds każdy wiersz ma **pasek postępu**: zaliczone cele z 21 (ATC), zaliczone sektory z 21 (Full Board), gole z celu gry (Football), cele zająca z 20 i trafienia ogara z jego drogi do zająca (Hare and Hounds, wynik „7 / 20” i „12 / 13” z mniejszym mianownikiem, wiersz ze znacznikiem roli). Pozostałe gry go nie mają. W Killer serca stoją pod imieniem, a killera oznacza czerwona plakietka „Killer” (od 6 graczy w tej samej linii co serca). Cricket ma zamiast listy siatkę znaczników.
 - **Pod listą tylko przyciski:** karty „THIS MATCH” nie ma, bo liczby są po lewej.
 
 ### Rekordy w trakcie gry
 
 Od 2026-11-23, zasady w [GRY.md](GRY.md#rekordy-w-trakcie-gry), makieta w `.scratch/records-live/mockup.html`.
 
-- **Plakietki** (`RecordPills` w `web/src/screens/MiniBoard.tsx`, logika w `web/src/records.ts`): pigułki 40 u, etykieta wersalikami 17 u, liczba Barlow 28 u (w karcie tarczy 44 u i 18 u, z minimum 30 px i 16 px), w prawym górnym rogu karty tarczy (20 u od prawej i od góry), wyrównane do prawej. „Best” i „Best · PB / Team” pomarańczowe, „PB” i „Team” neutralne na `--raised`, poza zasięgiem wszystko w `--off` z przekreśloną liczbą. Cała grupa jest jednym przyciskiem (co najmniej 44 px), bez dodatkowej ikony. Wszystkie gry z rekordem poza 121 mają tarczę, więc pigułki stoją w karcie tarczy; 121 ma chorągiewki.
+- **Plakietki** (`RecordPills` w `web/src/screens/MiniBoard.tsx`, logika w `web/src/records.ts`): pigułki 40 u, etykieta wersalikami 17 u, liczba Barlow 28 u (w karcie tarczy 44 u i 18 u, z minimum 30 px i 16 px), w prawym górnym rogu karty tarczy (20 u od prawej i od góry), wyrównane do prawej. „Best” i „Best · PB / Team” pomarańczowe, „PB” i „Team” neutralne na `--raised`, poza zasięgiem wszystko w `--off` z przekreśloną liczbą. Cała grupa jest jednym przyciskiem (co najmniej 44 px), bez dodatkowej ikony. Gry z rekordem i tarczą mają pigułki w karcie tarczy; 121 ma chorągiewki, a Catch 40 (bez tarczy i drabinki, od 2026-11-27) ma pigułki w górnym wierszu hero, za chipami „Points” i „Attempt”.
 - **Chorągiewki 121:** PB (Team) na `--raised` w kolorze tekstu, pobity rekord na `--green-bg` w zielonym z ✓, druga chorągiewka na tym samym szczeblu niżej. Chorągiewka jest przyciskiem, a niewidoczny margines daje jej 44 px wysokości.
 - **Modal rekordów** (`RecordModal`): karta 1560 u na przyciemnionym tle, kicker „RECORDS” i nazwa wariantu, dwie kolumny. Lewa: wiersz „Office best” (pomarańczowy; scalony „Office best · PB” z obrysem), pod nim „PB” albo „Team best” z datą lub „First game”, przy kilku graczach sekcja „PB · this match” z mniejszymi wierszami (rzucający z obrysem i „THROWING”, gość „Guest”), dla gościa notka „Guests have no PB.”. Prawa: „Office top 5” (Co-op: „· teams”), #1 pomarańczowy, wiersz gracza lub składu z obrysem, poniżej top 5 pod „⋯” z miejscem. Zamyka X (72 u) i stuknięcie poza kartą; nowy mecz startuje bez modalu. Modal widzi tylko ekran, na którym go otwarto (kiosk albo laptop).
 - **Ekran rekordu:** te same pigułki w większej wersji (72 u, liczba 52 u, imię i data obok), od 5 graczy w dwóch kolumnach po 64 u.

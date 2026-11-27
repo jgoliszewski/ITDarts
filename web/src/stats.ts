@@ -152,6 +152,9 @@ const hitRate = (): Metric => ({
 
 const darts = (): Metric => ({ label: 'Darts', fmt: n => (n === null ? '–' : String(n)), value: t => t.darts ?? 0 });
 
+/** A counter as its sum over the Okno (Hare and Hounds wins by role: an average per match would read as a share). */
+const total = (label: string, key: string): Metric => ({ label, fmt: n => (n === null ? '–' : String(n)), value: t => t[key] ?? 0 });
+
 /** Free throw's 60+, 80+ and 100+ as the share of visits. */
 const band = (label: string, key: string): Metric => ({
   label, better: 'higher', fmt: fmtPct, value: t => percent(t[key], t.visits), sub: t => `${t[key] ?? 0} of ${t.visits ?? 0} visits`,
@@ -176,6 +179,12 @@ export const METRICS: Partial<Record<GameId, Metric[]>> = {
   football: [counter('Goals', 'goals', true)],
   gotcha: [counter('Gotchas', 'gotchas', true)],
   bullseye: [counter('Points', 'points', true)],
+  hare: [hitRate(), total('Wins as hare', 'hareWins'), total('Wins as hound', 'houndWins'), total('Hits', 'hits'), darts()],
+  catch40: [
+    counter('Points', 'points', true),
+    { label: 'Checkout %', better: 'higher', fmt: fmtPct, value: t => percent(t.checkouts, t.attempts), sub: t => `${t.checkouts ?? 0} / ${t.attempts ?? 0} targets` },
+    { label: 'Darts per checkout', better: 'lower', fmt: f1, value: t => (t.checkouts ? Math.round((t.checkoutDarts / t.checkouts) * 10) / 10 : null) },
+  ],
   hol: [{
     label: 'Visits survived', better: 'higher', main: true, fmt: fmtPct,
     // Matches saved before the figure existed have no visits: no data, not zero.
