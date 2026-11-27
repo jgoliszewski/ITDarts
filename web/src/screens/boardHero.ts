@@ -1,4 +1,5 @@
 // What the left column and the player list show around the board in the games with one (docs/UI.md, Ekran wyników). Pure.
+import { BOARD_ORDER } from '../../../games/darts.ts';
 import { SECTORS } from '../../../games/race.ts';
 import type { BoardMatch } from './boardTargets.ts';
 
@@ -74,7 +75,7 @@ export function boardProgress(m: BoardMatch, i: number): number | null {
     // The hare's targets of 20, the hound's hits of his way to the hare: full once he catches him.
     case 'hare': {
       const v = m.view;
-      return i === v.hare ? v.hareHits / 20 : (v.stats[i] as { hits: number }).hits / (v.hareHits + m.options.headStart);
+      return i === v.hare ? v.hareHits / BOARD_ORDER.length : (v.stats[i] as { hits: number }).hits / (v.hareHits + m.options.headStart);
     }
     default: return null;
   }

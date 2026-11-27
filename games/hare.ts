@@ -163,7 +163,8 @@ export const hareAndHounds: GameModule<HareOptions, HareView> = {
   view,
   compact: (events, players, o) => {
     const t = replayTurns(events, players, o.bullOff, x => play(x, o));
-    return compactTurns(t, play(t, o), players, play(t, o).winner);
+    const s = play(t, o);
+    return compactTurns(t, s, players, s.winner);
   },
   happenings: (events, players, o) => {
     const t = replayTurns(events, players, o.bullOff, x => play(x, o));

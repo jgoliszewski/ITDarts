@@ -23,10 +23,10 @@ Backlogu nie ma. Bob's 27, Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2
 - Kolejność kroków: gra, opcje, gracze.
 - **Kafelki gier** są w trzech grupach z nagłówkami, w stałej kolejności (od 2026-10-29, wcześniej ostatnio grana gra była pierwsza):
   - **Classic:** X01;
-  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw;
-  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye.
+  - **Practice:** ATC, Full Board, 121, Random Checkouts, Free throw, Catch 40;
+  - **Versus:** Cricket, Killer, Higher or Lower, Shanghai, Gotcha, Knockout, Football, Bullseye, Hare and Hounds.
 
-  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”, „1 player”). Te same grupy są w wyborze gry na `/stats`.
+  Kafelek ma nazwę, jedno zdanie opisu i liczbę graczy („1–8”, „2–8”, „1 player”, „2 players”). Te same grupy są w wyborze gry na `/stats`.
 - **Gracze, kolejność, Shuffle, goście i Bull-off** działają tak samo jak w X01.
 - **„Start”** jest zablokowany, gdy skład nie pasuje do gry, z komunikatem, np. „Killer needs at least 2 players” albo „Free throw is for 1 player”.
 - **Opcje** setup pamięta osobno dla każdej gry.
@@ -303,7 +303,7 @@ Postanowienia z grillingu z 2026-11-09. Nie mylić z Bull-offem, który ustala k
 
 ## Hare and Hounds
 
-Postanowienia z grillingu z 2026-11-27. Pościg po obwodzie tarczy dla dwóch graczy: zając ucieka, ogar goni. W UI „Hare”, „Hound”, „Head start”.
+Postanowienia z grillingu z 2026-11-27. Pogoń po obwodzie tarczy dla dwóch graczy: zając ucieka, ogar goni. W UI „Hare”, „Hound”, „Head start”.
 
 - **Gracze:** dokładnie 2, bez Co-op. Zającem jest pierwszy w kolejności (Shuffle albo Bull-off ustalają ją jak w innych grach), więc rzuca pierwszy. „Rematch” zamienia role.
 - **Trasa:** sektory w kolejności zgodnej z zegarem (`BOARD_ORDER`: 20, 1, 18, 4 … 12, 5). Zając stoi na 20, a jego pierwszym celem jest 1. Wygrywa, gdy zaliczy 20 celów, czyli wróci na 20, w chwili tego trafienia, także w środku Tury.
@@ -320,7 +320,7 @@ Postanowienia z grillingu z 2026-11-27. Pościg po obwodzie tarczy dla dwóch gr
 - **Wyzwalacze:** tylko istniejące, „Target hit” i „Game won”, bez nowego Momentu.
 - **Statystyki:** wygrane jako zając, wygrane jako ogar i hit rate. Bez rekordu i bez Ekranu rekordu.
 - **Wdrożenie** (2026-11-27, decyzje spoza grillingu i odstępstwa):
-  - „Rematch” zamienia role także po Bull-offie: rewanż startuje bez Bull-offu (wylosowałby role od nowa), a zającem jest ogar poprzedniego meczu. „Rematch” z lobby bierze zająca z zapisanego legu (`legs.starter_position`), bez rzuconych lotek pierwszego w kolejności.
+  - „Rematch” zamienia role także po Bull-offie: rewanż startuje bez Bull-offu (wylosowałby role od nowa), a zającem jest ogar poprzedniego meczu. „Rematch” z lobby bierze zająca z zapisanego legu (`legs.starter_position`), bez rzuconych lotek pierwszego w kolejności. Znane ryzyko: mecz z Bull-offem zakończony przed pierwszą lotką nie ma legu, więc „Rematch” z lobby bierze za zająca pierwszego z zapisanego (przetasowanego) składu i role mogą się nie zamienić. „Rematch” z ekranu końca bierze kolejność z widoku meczu i działa zawsze.
   - Lista graczy według makiety: zając „7 / 20”, ogar „trafienia / (trafienia + dystans)”, np. „12 / 13”, więc jego pasek zapełnia się, gdy dogania zająca, a po złapaniu jest pełny.
   - Wynik gry: „Hound caught the hare on 19” albo „Hare made it round the board”; po wycofaniu „Hare won” / „Hound won”. Kafelki ekranu wygranej: Hits, Darts, Hit rate.
   - Tura, która łapie zająca, ma werdykt „Caught”. Widać go na telefonie; kiosk od razu pokazuje ekran wygranej, jak po każdej wygranej Turze w innych grach, więc karty Tury „CAUGHT” z makiety (ekran 3a) na kiosku nie ma.
@@ -331,7 +331,7 @@ Postanowienia z grillingu z 2026-11-27. Pościg po obwodzie tarczy dla dwóch gr
 Postanowienia z grillingu z 2026-11-27. Trening checkoutów 61–100 z punktami za szybkość (źródło nazwy i zakresu: GoDartsPro; punktacja jest nasza, bo DartCounter nie opisuje jej publicznie).
 
 - **Cele:** kolejno 61, 62 … 100, czyli 40 celów, takie same dla wszystkich graczy. Check-out zawsze z double.
-- **Podejście:** na cel są 2 Tury (6 lotek). Bust jak w X01: wynik wraca do stanu sprzed Tury, a podejście trwa, dopóki są lotki. W drugiej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, jak w [121](#121). Po podejściu, udanym czy nie, gracz przechodzi do następnego celu.
+- **Podejście:** na cel są 2 Tury (6 lotek). Bust jak w X01: wynik wraca do stanu sprzed Tury, a podejście trwa, dopóki są lotki. W drugiej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, jak w [121](#121). Po podejściu, udanym czy nie, gracz przechodzi do następnego celu. Tura zakończona bustem liczy się jako 3 lotki podejścia, jak Tura zamknięta Takeoutem, więc bust nigdy się nie opłaca: T20 (bust) i checkout 2 lotkami w 2. Turze to 5 lotek, 1 pkt, tyle samo co 3 pudła i ten sam checkout (decyzja użytkownika z 2026-11-27, po review). Tak samo liczy średnia lotek na checkout, a karta „Darts left” pokazuje po buście 3.
 - **Punkty:** checkout w 2 lotkach 3 pkt, w 3 lotkach 2 pkt, w 4–6 lotkach 1 pkt, brak checkoutu 0 pkt. Od 61 nie da się zamknąć jedną lotką. Maksimum gry to 120.
 - **Gracze:** 1–8, każdy na siebie, bez Co-op. Tury idą na zmianę jak w X01, a każdy gracz ma własny bieżący cel i własne podejście.
 - **Koniec:** gdy wszyscy zaliczą podejścia do 40 celów. Wygrywa najwięcej punktów, przy remisie mniej lotek, a przy równej liczbie lotek wygrywają wszyscy remisujący.

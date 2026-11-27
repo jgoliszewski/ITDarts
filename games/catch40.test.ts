@@ -58,6 +58,22 @@ describe('catch 40: points', () => {
     expect(v.points).toEqual([3]);
   });
 
+  it('takes a checkout back with Undo and with a fix of its last dart', () => {
+    const out2 = [d(TWO[0]), d(TWO[1])];
+    const undone = view([...out2, undo]);
+    expect(undone).toMatchObject({ points: [0], progress: [0], remaining: 61 - 33, attemptLeft: 5 });
+    expect(undone.visit.verdict).toBeNull();
+    // D14 fixed to a miss: 28 left, the attempt goes on.
+    const fixed = view([...out2, { t: 'fix', index: 1, dart: parseDart('M')! }]);
+    expect(fixed).toMatchObject({ points: [0], progress: [0], remaining: 28, attemptLeft: 4 });
+    expect(fixed.visit.verdict).toBeNull();
+    // Undo after the takeout brings the finished visit back on screen with its card.
+    const back = view([...out2, next, undo]);
+    expect(back).toMatchObject({ points: [3], progress: [1], remaining: 0, attemptLeft: 0, target: 61 });
+    expect(back.visit.verdict).toEqual({ text: '+3', tone: 'good' });
+    expect(view([...out2, next])).toMatchObject({ remaining: 62, target: 62, attemptLeft: 6 });
+  });
+
   it('headlines a checkout with the points it gave', () => {
     expect(view([d(TWO[0]), d(TWO[1])]).visit.verdict).toEqual({ text: '+3', tone: 'good' });
     expect(view(visit(...THREE).slice(0, 3)).visit.verdict).toEqual({ text: '+2', tone: 'good' });
@@ -89,8 +105,13 @@ describe('catch 40: bust and the second visit', () => {
     expect(kinds(visit('T20'))).toContain('bust');
     // Darts scored earlier in the visit are taken back too.
     expect(view(visit('S20', 'T20')).remaining).toBe(61);
-    // The bust dart counts: 1 dart, then a 2-dart checkout is 3 darts, 2 points.
-    expect(view([...visit('T20'), ...visit(...TWO)]).points).toEqual([2]);
+    // A visit that busts counts as 3 darts: then a 2-dart checkout is 5 darts, 1 point, as after 3 misses.
+    const busted = view([...visit('T20'), ...visit(...TWO)]);
+    expect(busted.points).toEqual([1]);
+    expect(busted.points).toEqual(view([...nothing(), ...visit(...TWO)]).points);
+    expect(busted.stats[0]).toMatchObject({ checkouts: 1, checkoutDarts: 5 });
+    // The Darts left card counts the same 3 darts.
+    expect(view(visit('T20')).attemptLeft).toBe(3);
   });
 
   it('fails the attempt on a bust in the second visit', () => {

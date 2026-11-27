@@ -14,8 +14,8 @@ export interface Catch40Options {
 export const FIRST_TARGET = 61;
 export const TARGETS = 40;
 /** Visits per target. */
-export const VISITS = 2;
-export const MAX_POINTS = 3;
+const VISITS = 2;
+const MAX_POINTS = 3;
 
 /** 3 points for a checkout in 2 darts, 2 for 3 darts, 1 for 4 to 6. */
 export const checkoutPoints = (darts: number) => (darts <= 2 ? 3 : darts === 3 ? 2 : 1);
@@ -67,7 +67,8 @@ function play(t: Turns, players: number): State {
     left = w.dartsLeft;
     darts[p] += w.used;
     if (!w.complete || cutShort(t, vi)) continue;
-    attemptDarts[p] += w.used;
+    // A visit that busts counts as 3 darts of the attempt, like one closed by the takeout, so busting never pays (docs/GRY.md#catch-40).
+    attemptDarts[p] += bust ? 3 : w.used;
     const V = `V${vi + 1}`;
     if (bust) fx.push({ slot: `${V}:bust`, fact: { kind: 'bust' } });
     else fx.push({ slot: `${V}:total`, fact: { kind: 'calledTotal', total: visitFrom - after } });
