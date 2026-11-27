@@ -11,7 +11,7 @@ Backlogu nie ma. Halve-It, Count Up i Bermuda Triangle odrzuciliśmy 2026-10-30 
 ## Wspólne zasady
 
 - **Jedna gra, bez legów i setów.** Po końcu gry jest ekran wygranej z „Rematch”, „New match” i „Back to lobby”, jak w X01. Wyjątkiem są Higher or Lower i Gotcha z opcją „First to”.
-- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu), Catch 40, który kończy się po 40 celach, i Bob's 27, który ma 21 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
+- **Bez limitu rund** w żadnej grze poza Shanghai, który ma 7 albo 20 rund, Free throw z opcją „Visits” (10, 20 albo 30 Tur, domyślnie bez limitu), Catch 40, który kończy się po wybranej liczbie celów (5, 10, 20 albo 40), i Bob's 27, który ma 21 rund. Grę, która się zawiesi, kończy „End match” z Pilota. Random Checkouts i Free throw bez limitu nie mają końca wcale i zawsze kończy je „End match”.
 - **Gracze:** 1–8, bez drużyn. Killer i Higher or Lower wymagają co najmniej 2 graczy, Hare and Hounds dokładnie 2, a Free throw dokładnie 1 (pole `maxPlayers` modułu gry: hub odrzuca start z większym składem).
 - **Wycofanie gracza** w trakcie gry jest w każdej grze, zasady w [UI.md](UI.md#wycofanie-gracza).
 - **Silnik:** każda gra liczy stan wyłącznie z Logu zdarzeń. Poprawka i Undo działają więc w każdej grze bez osobnej logiki, np. poprawka cofa zaliczony sektor przez przeliczenie stanu.
@@ -331,19 +331,19 @@ Postanowienia z grillingu z 2026-11-27. Pogoń po obwodzie tarczy dla dwóch gra
 
 Postanowienia z grillingu z 2026-11-27. Trening checkoutów 61–100 z punktami za szybkość (źródło nazwy i zakresu: GoDartsPro; punktacja jest nasza, bo DartCounter nie opisuje jej publicznie).
 
-- **Cele:** kolejno 61, 62 … 100, czyli 40 celów, takie same dla wszystkich graczy. Check-out zawsze z double.
+- **Cele:** kolejno od 61, takie same dla wszystkich graczy; ich liczbę wybiera opcja „Targets” (od 2026-11-27, decyzja użytkownika): 5 to 61–65, 10 to 61–70, 20 to 61–80, 40 to 61–100. Domyślnie w lobby 5. Mecze zapisane przed opcją nie mają jej w opcjach i liczą się jako 40 (tak je grano), więc ich replay, wynik i rekordy się nie zmieniają. Check-out zawsze z double.
 - **Podejście:** na cel są 2 Tury (6 lotek). Bust jak w X01: wynik wraca do stanu sprzed Tury, a podejście trwa, dopóki są lotki. W drugiej Turze podejścia Tura kończy się od razu, gdy pozostałymi lotkami nie da się już zamknąć wyniku, jak w [121](#121). Po podejściu, udanym czy nie, gracz przechodzi do następnego celu. Tura zakończona bustem liczy się jako 3 lotki podejścia, jak Tura zamknięta Takeoutem, więc bust nigdy się nie opłaca: T20 (bust) i checkout 2 lotkami w 2. Turze to 5 lotek, 1 pkt, tyle samo co 3 pudła i ten sam checkout (decyzja użytkownika z 2026-11-27, po review). Tak samo liczy średnia lotek na checkout, a karta „Darts left” pokazuje po buście 3.
-- **Punkty:** checkout w 2 lotkach 3 pkt, w 3 lotkach 2 pkt, w 4–6 lotkach 1 pkt, brak checkoutu 0 pkt. Od 61 nie da się zamknąć jedną lotką. Maksimum gry to 120.
+- **Punkty:** checkout w 2 lotkach 3 pkt, w 3 lotkach 2 pkt, w 4–6 lotkach 1 pkt, brak checkoutu 0 pkt. Od 61 nie da się zamknąć jedną lotką. Maksimum gry to 3 punkty razy liczba celów (przy 40 celach 120).
 - **Gracze:** 1–8, każdy na siebie, bez Co-op. Tury idą na zmianę jak w X01, a każdy gracz ma własny bieżący cel i własne podejście.
-- **Koniec:** gdy wszyscy zaliczą podejścia do 40 celów. Wygrywa najwięcej punktów, przy remisie mniej lotek, a przy równej liczbie lotek wygrywają wszyscy remisujący.
-- **„End match” z „Save”** kończy grę w każdej chwili, bez opcji długości gry: zwycięzca liczony jak wyżej z dotychczasowych punktów, przy 0 punktów nie ma zwycięzcy.
-- **Ekran wyników:** hero jak w [121](#121): cel, reszta do zamknięcia, podpowiedź checkoutu z X01 i kropki lotek podejścia. Zamiast serc punkty gracza i licznik „23 / 40”. Lista graczy pokazuje punkty i postęp. Wygląd ustala makieta `.scratch/hh-catch40/`. Nagłówek „Catch 40”.
+- **Koniec:** gdy wszyscy zaliczą podejścia do wszystkich celów gry. Wygrywa najwięcej punktów, przy remisie mniej lotek, a przy równej liczbie lotek wygrywają wszyscy remisujący.
+- **„End match” z „Save”** kończy grę w każdej chwili, niezależnie od opcji „Targets”: zwycięzca liczony jak wyżej z dotychczasowych punktów, przy 0 punktów nie ma zwycięzcy.
+- **Ekran wyników:** hero jak w [121](#121): cel, reszta do zamknięcia, podpowiedź checkoutu z X01 i kropki lotek podejścia. Zamiast serc punkty gracza i licznik „23 / N” (N to liczba celów). Lista graczy pokazuje punkty i postęp. Wygląd ustala makieta `.scratch/hh-catch40/`. Nagłówek „Catch 40 · 10 targets” (zawsze z liczbą celów, jak „· 7 rounds” w Shanghai).
 - **Caller** jak w 121: wynik Tury i „you require”, bez „game shot” ([EFEKTY.md](EFEKTY.md#caller)).
 - **Wyzwalacze:** „Checkout”, „Bust” i „Attempt failed” (istnieją), „Game won”.
-- **Statystyki:** punkty, skuteczność checkoutów w % i średnia liczba lotek na checkout. Rekordem jest najwięcej punktów, tylko z gry rozegranej przez wszystkie 40 celów; gra zakończona „End match” wchodzi do statystyk, ale nie do rekordów. Jeden wariant, solo i versus razem.
+- **Statystyki:** „Points per target” (punkty ÷ rozegrane cele, główna), skuteczność checkoutów w % i średnia liczba lotek na checkout. Rekordem jest najwięcej punktów, tylko z gry rozegranej przez wszystkie cele; gra zakończona „End match” wchodzi do statystyk, ale nie do rekordów. Osobny wariant na liczbę celów: 40 pod kluczem `catch40` (rekordy sprzed opcji zostają), 5, 10 i 20 pod `catch40:5`, `catch40:10`, `catch40:20`; solo i versus razem.
 - **Wdrożenie** (2026-11-27, decyzje spoza grillingu):
-  - Hero według makiety: chipy „Points” i „Attempt 14 / 40” w miejscu serc 121, „Visit 1 of 2” pod wynikiem, po prawej „This turn” i trasa checkoutu, bez drabinki. Plakietki rekordów (Best, PB) stoją w tym samym wierszu za chipami, bo Catch 40 nie ma tarczy ani drabinki (makieta ich nie pokazywała).
-  - Karta pod listą: „Darts left” z kropkami podejścia i „Checkout %”; „Darts per checkout” tylko na ekranie końca i na `/stats`. Lista: punkty, „Target 74” i pasek rozegranych celów z 40.
+  - Hero według makiety: chipy „Points” i „Attempt 14 / 40” (przy 40 celach; licznik liczy z opcji „Targets”) w miejscu serc 121, „Visit 1 of 2” pod wynikiem, po prawej „This turn” i trasa checkoutu, bez drabinki. Plakietki rekordów (Best, PB) stoją w tym samym wierszu za chipami, bo Catch 40 nie ma tarczy ani drabinki (makieta ich nie pokazywała).
+  - Karta pod listą: „Darts left” z kropkami podejścia i „Checkout %”; „Darts per checkout” tylko na ekranie końca i na `/stats`. Lista: punkty, „Target 74” i pasek rozegranych celów (z liczby celów gry).
   - Karta Tury po checkoucie pokazuje zdobyte punkty („+2”), po nieudanym podejściu „Attempt failed”. Ekran końca: wynik „78 points”, kafelki Points, Checkout %, Darts per checkout.
   - Gra zakończona „End match” nie ma wyniku rekordowego, więc lobby i „Recent matches” pokazują przy niej punkty ze statystyk.
 
@@ -372,6 +372,6 @@ Postanowienia z grillingu z 2026-11-27 (odwracają odrzucenie z 2026-10-30, [#7]
 
 - Wybór gry.
 - Dla gier z rekordem: tabela top 10 osobno dla każdego wariantu, z wynikiem, Graczem albo składem co-op i datą. X01 ma takie tabele bez Ekranu rekordu: Highest visit, Highest checkout i Best leg osobno na wynik startowy.
-- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw, wygrane jako zając i ogar w Hare and Hounds, punkty, skuteczność checkoutów i lotki na checkout w Catch 40, średni wynik (odpadnięty to 0), hit rate double'ów i liczba gier dogranych do końca w Bob's 27.
+- Pod tabelą statystyki per gracz tej gry: hit rate, MPR, skuteczność podejść w 121, wygrane, checkouty i lotki na checkout w Random Checkouts, liczba Shanghai, liczba Gotcha, średnia Tura w Knockout, gole w Football, „Visits survived” w Higher or Lower, średnia z 3 lotek, najwyższa Tura i liczniki 60+/80+/100+ w Free throw, wygrane jako zając i ogar w Hare and Hounds, „Points per target”, skuteczność checkoutów i lotki na checkout w Catch 40, średni wynik (odpadnięty to 0), hit rate double'ów i liczba gier dogranych do końca w Bob's 27.
 - **Liczniki minigierek jako średnia na mecz** (suma małym drukiem), a główna statystyka gry ze strzałką zmiany względem poprzedniego Okna. Winrate liczy się jak w X01, tylko z meczów versus; w grach solo (Free throw) jest samo „Played” ([STATYSTYKI.md](STATYSTYKI.md#progres)).
 - Zasady zapisu i okna są w [STATYSTYKI.md](STATYSTYKI.md).

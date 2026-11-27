@@ -6,7 +6,7 @@ import { GAMES } from '../../../games/index.ts';
 import { label } from '../../../games/darts.ts';
 import { KNOCKOUT_LIVES, roundEndText } from '../../../games/knockout.ts';
 import { SECTORS } from '../../../games/race.ts';
-import { FIRST_TARGET, TARGETS } from '../../../games/catch40.ts';
+import { FIRST_TARGET } from '../../../games/catch40.ts';
 import type { BoardMatch } from './boardTargets.ts';
 import { boardTargets } from './boardTargets.ts';
 import { boardCaption, boardNote, boardProgress, boardStats } from './boardHero.ts';
@@ -288,13 +288,13 @@ export function MiniHero({ m, flash, onDart, canEdit, onRecords, overflow = fals
   );
 }
 
-/** Catch 40, where 121 has the hearts: the player's points and which of the 40 targets he is on (docs/GRY.md#catch-40). */
+/** Catch 40, where 121 has the hearts: the player's points and which target he is on (docs/GRY.md#catch-40). */
 function Catch40Chips({ m }: { m: Extract<MiniMatch, { game: 'catch40' }> }) {
-  const attempt = Math.min(TARGETS, m.view.target - FIRST_TARGET + 1);
+  const attempt = Math.min(m.view.targets, m.view.target - FIRST_TARGET + 1);
   return (
     <div className="c40-chips">
       <div className="c40-chip pts"><span className="l">Points</span><span className="num">{m.view.points[m.view.current]}</span></div>
-      <div className="c40-chip"><span className="l">Attempt</span><span className="num">{attempt}<span className="of"> / {TARGETS}</span></span></div>
+      <div className="c40-chip"><span className="l">Attempt</span><span className="num">{attempt}<span className="of"> / {m.view.targets}</span></span></div>
     </div>
   );
 }
@@ -352,7 +352,7 @@ export function MiniList({ m, onPick }: { m: MiniMatch; onPick?: (i: number) => 
         const row = v.rows[i];
         const active = i === v.current && v.phase !== 'bulloff';
         const note = removedNote(m, i);
-        const bar = board ? boardProgress(m, i) : m.game === 'catch40' ? m.view.progress[i] / TARGETS : null;
+        const bar = board ? boardProgress(m, i) : m.game === 'catch40' ? m.view.progress[i] / m.view.targets : null;
         // Hare and Hounds: the role with its token, and the count over its total in small.
         const role = m.game === 'hare' ? roleOf(m, i) : null;
         const [count, total] = role ? row.value.split(' / ') : [row.value];

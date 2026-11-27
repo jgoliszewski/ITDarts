@@ -9,10 +9,11 @@ import { BULL_OFF, compactTurns, cutShort, frame, isGone, isValidTurnEvent, next
 
 export interface Catch40Options {
   bullOff: BullOff;
+  /** Targets in order from FIRST_TARGET: 5 is 61 to 65, 40 is 61 to 100. */
+  targets: 5 | 10 | 20 | 40;
 }
 
 export const FIRST_TARGET = 61;
-export const TARGETS = 40;
 /** Visits per target. */
 const VISITS = 2;
 const MAX_POINTS = 3;
@@ -21,7 +22,7 @@ const MAX_POINTS = 3;
 export const checkoutPoints = (darts: number) => (darts <= 2 ? 3 : darts === 3 ? 2 : 1);
 
 interface State extends Turn {
-  /** Targets played per player (TARGETS when done). */
+  /** Targets played per player (all targets when done). */
   progress: number[];
   remaining: number[];
   points: number[];
@@ -43,7 +44,7 @@ interface State extends Turn {
   held: { player: number; progress: number; remaining: number; attemptLeft: number; visitNo: number } | null;
 }
 
-function play(t: Turns, players: number): State {
+function play(t: Turns, players: number, targets: number): State {
   const zero = () => Array<number>(players).fill(0);
   const progress = zero(), points = zero(), darts = zero(), attempts = zero(), checkouts = zero(), checkoutDarts = zero();
   const visitsDone = zero(), attemptDarts = zero();
@@ -54,7 +55,7 @@ function play(t: Turns, players: number): State {
   let held: State['held'] = null;
   for (const [vi, v] of t.visits.entries()) {
     const p = v.player;
-    if (progress[p] >= TARGETS) {
+    if (progress[p] >= targets) {
       goods.push([]);
       continue;
     }
@@ -90,7 +91,7 @@ function play(t: Turns, players: number): State {
   }
   const everyone = Array.from({ length: players }, (_, p) => p);
   const ranked = everyone.filter(p => !isGone(t, p));
-  const over = t.ended || ranked.every(p => progress[p] >= TARGETS);
+  const over = t.ended || ranked.every(p => progress[p] >= targets);
   let winners: number[] = [];
   if (over) {
     const best = Math.max(...ranked.map(p => points[p]));
@@ -102,7 +103,7 @@ function play(t: Turns, players: number): State {
   }
   const last = t.visits.at(-1);
   const open = last && !last.closed ? last : null;
-  const current = open ? open.player : nextUp(t, q => progress[q] >= TARGETS);
+  const current = open ? open.player : nextUp(t, q => progress[q] >= targets);
   const usedNow = open && left > 0 ? open.darts.length : 0;
   const attemptLeft = visitsDone.map((n, p) => (VISITS - n) * 3 - (open?.player === p ? usedNow : 0));
   return {
@@ -116,28 +117,30 @@ function play(t: Turns, players: number): State {
 
 export interface Catch40View extends MiniView {
   target: number;
+  /** Targets in the game. */
+  targets: number;
   remaining: number;
   /** Darts left in the current attempt. */
   attemptLeft: number;
   /** Darts in a whole attempt. */
   attemptDarts: number;
   points: number[];
-  /** Targets played per player, of TARGETS. */
+  /** Targets played per player, of `targets`. */
   progress: number[];
   checkout: string | null;
   setup: string | null;
 }
 
 function view(events: TurnEvent[], players: number, o: Catch40Options): Catch40View {
-  const t = replayTurns(events, players, o.bullOff, x => play(x, players));
-  const s = play(t, players);
+  const t = replayTurns(events, players, o.bullOff, x => play(x, players, o.targets));
+  const s = play(t, players, o.targets);
   const f = frame(t, s);
   // The verdict of a failed attempt says so, not "Life lost"; a checkout shows the points it gave.
   if (f.visit.verdict?.text === 'Life lost') f.visit.verdict = { text: 'Attempt failed', tone: 'bad' };
   if (f.visit.verdict?.text === 'Checkout') f.visit.verdict = { text: `+${s.gain}`, tone: 'good' };
   const c = f.current;
   const shown = s.held ?? { player: c, progress: s.progress[c], remaining: s.remaining[c], attemptLeft: s.attemptLeft[c], visitNo: s.visitNo[c] };
-  const done = shown.progress >= TARGETS;
+  const done = shown.progress >= o.targets;
   const hints = done || f.visit.dartsLeft === 0
     ? { checkout: null, setup: null }
     : hintLines(shown.remaining, f.visit.dartsLeft, 'double', s.scored, f.visit.darts.map(d => d.dart));
@@ -149,18 +152,19 @@ function view(events: TurnEvent[], players: number, o: Catch40Options): Catch40V
     hero: {
       big: done ? '-' : String(shown.remaining),
       caption: done ? 'Finished' : `Target ${FIRST_TARGET + shown.progress}`,
-      note: done ? `All ${TARGETS} targets done` : `Visit ${shown.visitNo} of ${VISITS}`,
+      note: done ? `All ${o.targets} targets done` : `Visit ${shown.visitNo} of ${VISITS}`,
     },
     rows: s.points.map((pts, i) => {
       // The player whose finished visit is still on screen keeps the target he just played.
       const at = s.held?.player === i ? s.held.progress : s.progress[i];
-      return { value: String(pts), meta: at >= TARGETS ? 'Finished' : `Target ${FIRST_TARGET + at}`, out: false };
+      return { value: String(pts), meta: at >= o.targets ? 'Finished' : `Target ${FIRST_TARGET + at}`, out: false };
     }),
     result: !s.over ? '' : s.winners.length === 0 ? 'No points scored' : s.winners.length > 1 ? `Shared win · ${plural(s.points[s.winners[0]], 'point')}` : plural(s.points[s.winners[0]], 'point'),
     // Only a game played through all the targets counts for the record.
     scores: s.points.map(pts => (s.over && !s.ended ? pts : null)),
     stats: s.points.map((pts, i) => ({ points: pts, attempts: s.attempts[i], checkouts: s.checkouts[i], checkoutDarts: s.checkoutDarts[i] })),
     target: FIRST_TARGET + shown.progress,
+    targets: o.targets,
     remaining: shown.remaining,
     attemptLeft: shown.attemptLeft,
     attemptDarts: VISITS * 3,
@@ -170,41 +174,50 @@ function view(events: TurnEvent[], players: number, o: Catch40Options): Catch40V
   };
 }
 
-const OPTIONS: OptionDef<Catch40Options>[] = [BULL_OFF as OptionDef<Catch40Options>];
-const DEFAULTS: Catch40Options = { bullOff: 'off' };
+const OPTIONS: OptionDef<Catch40Options>[] = [
+  BULL_OFF as OptionDef<Catch40Options>,
+  { key: 'targets', label: 'Targets', info: 'Targets in order from 61: 5 is 61–65, 10 is 61–70, 20 is 61–80, 40 is 61–100.', choices: [[5, '5'], [10, '10'], [20, '20'], [40, '40']] },
+];
+const DEFAULTS: Catch40Options = { bullOff: 'off', targets: 5 };
+const describe = (o: Catch40Options) => `Catch 40 · ${o.targets} targets`;
 
 export const catch40: GameModule<Catch40Options, Catch40View> = {
   id: 'catch40',
   name: 'Catch 40',
-  blurb: 'Check out 61 to 100, fast. Points for speed.',
+  blurb: 'Check out 61 and up, fast. Points for speed.',
   group: 'practice',
   minPlayers: 1,
   defaults: DEFAULTS,
   options: OPTIONS,
   howTo: {
-    goal: 'Check out every target from 61 to 100, 40 in all, with as few darts as you can.',
+    goal: 'Check out the targets in order from 61, as many as you chose (5, 10, 20 or 40), with as few darts as you can.',
     turn: 'Each target gets 2 visits. Win or lose, you then move on to the next target. With more players you take turns, each on your own target.',
     counts: 'Like X01 with double out. A bust puts the score back to where the visit started. Checkout in 2 darts is 3 points, in 3 darts 2 points, in 4 to 6 darts 1 point, no checkout 0.',
-    win: 'The game ends when everyone has played all 40 targets. Most points wins, then fewer darts; still level, you share the win.',
+    win: 'The game ends when everyone has played all the targets. Most points wins, then fewer darts; still level, you share the win.',
   },
   record: {
-    variant: () => ({ key: 'catch40', label: 'Catch 40' }),
+    // 40 targets keep the key the record had before the option existed.
+    variant: o => ({ key: o.targets === 40 ? 'catch40' : `catch40:${o.targets}`, label: describe(o) }),
     better: 'higher',
     format: v => plural(v, 'point'),
     // Every target left can still give the maximum.
-    bound: (v, p) => v.points[p] + MAX_POINTS * (TARGETS - v.progress[p]),
+    bound: (v, p) => v.points[p] + MAX_POINTS * (v.targets - v.progress[p]),
   },
-  normalizeOptions: input => normalizeByDefs(OPTIONS, DEFAULTS, input),
-  describe: () => 'Catch 40',
+  // A match saved before the option existed has no `targets` and was played with 40; an invalid value falls back to the default.
+  normalizeOptions: input => {
+    const o = normalizeByDefs(OPTIONS, DEFAULTS, input);
+    return input && typeof input === 'object' && 'targets' in input ? o : { ...o, targets: 40 };
+  },
+  describe,
   view,
   compact: (events, players, o) => {
-    const t = replayTurns(events, players, o.bullOff, x => play(x, players));
-    const s = play(t, players);
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o.targets));
+    const s = play(t, players, o.targets);
     return compactTurns(t, s, players, s.winners.length === 1 ? s.winners[0] : null);
   },
   happenings: (events, players, o) => {
-    const t = replayTurns(events, players, o.bullOff, x => play(x, players));
-    return turnHappenings(t, play(t, players));
+    const t = replayTurns(events, players, o.bullOff, x => play(x, players, o.targets));
+    return turnHappenings(t, play(t, players, o.targets));
   },
   isValidEvent: isValidTurnEvent,
 };

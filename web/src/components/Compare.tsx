@@ -31,7 +31,7 @@ export function gameStats(game: GameId, t: Record<string, number>): [string, str
     case 'bullseye': return [['Points', String(t.points ?? 0)]];
     case 'hare': return [['Hits', String(t.hits ?? 0)], ['Darts', String(t.darts ?? 0)], ['Hit rate', pct(t.hits, t.darts), `${t.hits ?? 0} / ${t.darts ?? 0} darts`]];
     case 'catch40': return [
-      ['Points', String(t.points ?? 0)],
+      ['Points per target', t.attempts ? (t.points / t.attempts).toFixed(2) : '–', `${t.points ?? 0} points`],
       ['Checkout %', pct(t.checkouts, t.attempts), `${t.checkouts ?? 0} / ${t.attempts ?? 0}`],
       ['Darts per checkout', t.checkouts ? (t.checkoutDarts / t.checkouts).toFixed(1) : '–'],
     ];

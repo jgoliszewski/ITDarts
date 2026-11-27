@@ -152,9 +152,11 @@ describe('the figures of each game', () => {
     expect(h.map(m => [m.label, m.value])).toEqual([['Hit rate', '25%'], ['Wins as hare', '2'], ['Wins as hound', '1'], ['Hits', '10'], ['Darts', '40']]);
   });
 
-  it('gives Catch 40 points per match, checkout % and darts per checkout', () => {
+  it('gives Catch 40 points per target, checkout % and darts per checkout', () => {
     const c = profileMetrics('catch40', { ...tot({ points: 150, attempts: 80, checkouts: 60, checkoutDarts: 174 }), matches: 2 });
-    expect(c.map(m => [m.label, m.value])).toEqual([['Points', '75.0'], ['Checkout %', '75%'], ['Darts per checkout', '2.9']]);
+    expect(c.map(m => [m.label, m.value])).toEqual([['Points per target', '1.88'], ['Checkout %', '75%'], ['Darts per checkout', '2.9']]);
+    expect(c[0].main).toBe(true);
+    expect(c[0].sub).toBe('150 points in 80 targets');
     expect(c[1].sub).toBe('60 / 80 targets');
   });
 
